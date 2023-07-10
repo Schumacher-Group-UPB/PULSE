@@ -8,7 +8,7 @@ OBJDIR = obj
 
 # Compiler flags
 CPPFLAGS = -std=c++20 -Xcompiler -openmp 
-SFMLLIBS = -I'external/SFML-2.6.0/include' -L'external/SFML-2.6.0/lib/'
+SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
 
 SFML ?= -DSFML_RENDER
 
@@ -31,7 +31,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(NVCC) $(CPPFLAGS) -c $< -o $@ -I$(INCDIR) $(SFML_FLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
-	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -I$(INCDIR)
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -I$(INCDIR) -diag-suppress 177
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
