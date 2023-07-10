@@ -11,8 +11,8 @@ Build with SFML rendering
 - Clone the repositry using `git clone --recursive https://github.com/davidbauch/PC3`
 - Build SFML using CMake and MSVC
 - Alternatively, download SFML for MSVC 2023
-- Compile PC3 using `make`
+- Compile PC3 using `make SFML=TRUE`
 
 Build without rendering
 - Clone the repositry using `git clone https://github.com/davidbauch/PC3`
-- Compile PC3 using `make SFML=TRUE`
+- Compile PC3 using `make`
