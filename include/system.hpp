@@ -13,7 +13,7 @@ using namespace std::complex_literals;
 
 */
 class System {
-    public:
+   public:
     // SI Rescaling Units
     double m_e = 9.10938356E-31;
     double h_bar = 1.0545718E-34;
@@ -22,13 +22,13 @@ class System {
 
     // System Variables
     double m_eff;
-    double gamma_c = 0.15;                // ps^-1
-    double gamma_r = 1.5 * gamma_c;       // ps^-1
-    double g_c = 3.E-6 / h_bar_s;         // meV mum^2
-    double g_r = 2. * g_c;                // meV mum^2
-    double R = 0.01;                      // ps^-1 mum^2
-    //double P0 = 100.;                     // ps^-1 mum^-2
-    //double w = 10.;                       // mum
+    double gamma_c = 0.15;          // ps^-1
+    double gamma_r = 1.5 * gamma_c; // ps^-1
+    double g_c = 3.E-6 / h_bar_s;   // meV mum^2
+    double g_r = 2. * g_c;          // meV mum^2
+    double R = 0.01;                // ps^-1 mum^2
+    // double P0 = 100.;                     // ps^-1 mum^-2
+    // double w = 10.;                       // mum
     double xmax = 100.;                   // mum
     double g_pm = -g_c / 5;               // meV mum^2
     double delta_LT = 0.025E-3 / h_bar_s; // meV
@@ -66,7 +66,7 @@ class System {
 };
 
 class Buffer {
-    public:
+   public:
     Scalar* u_P_plus;
     Scalar* u_P_minus;
     Scalar* Psi_Plus;
@@ -76,7 +76,15 @@ class Buffer {
     Scalar* fft_plus;
     Scalar* fft_minus;
 
-    Buffer(const int N) {
+    // Cache Arrays for max values of Psi
+    std::vector<double> cache_Psi_Plus_max;
+    std::vector<double> cache_Psi_Minus_max;
+
+    // Cache Arrays for history (cut at Y = 0) of Psi
+    std::vector<std::vector<Scalar>> cache_Psi_Plus_history;
+    std::vector<std::vector<Scalar>> cache_Psi_Minus_history;
+
+    Buffer( const int N ) {
         u_P_plus = new Scalar[N * N];
         u_P_minus = new Scalar[N * N];
         Psi_Plus = new Scalar[N * N];
@@ -86,48 +94,52 @@ class Buffer {
         fft_plus = new Scalar[N * N];
         fft_minus = new Scalar[N * N];
     }
-    Buffer(const System& s) : Buffer(s.s_N) {}
-    Buffer() {};
+    Buffer( const System& s ) : Buffer( s.s_N ) {}
+    Buffer(){};
 };
 
-class MatrixHandler {
-    public:
+class FileHandler {
+   public:
     std::map<std::string, std::ofstream> files;
     std::string outputPath = "data";
     std::string loadPath = "";
     std::string outputName = "";
     std::string colorPalette = "resources/colormap.txt";
-    int plotmodulo = 5;
+    int out_modulo = 5;
     bool disableRender = false;
 
-    MatrixHandler() {};
-    MatrixHandler(MatrixHandler& other) : files(std::move(other.files)), outputPath(other.outputPath), 
-    outputName(other.outputName), colorPalette(other.colorPalette), plotmodulo(other.plotmodulo), loadPath(other.loadPath),
-    disableRender(other.disableRender) {};
+    FileHandler(){};
+    FileHandler( FileHandler& other ) : files( std::move( other.files ) ),
+                                        outputPath( other.outputPath ),
+                                        outputName( other.outputName ),
+                                        colorPalette( other.colorPalette ),
+                                        out_modulo( other.out_modulo ),
+                                        loadPath( other.loadPath ),
+                                        disableRender( other.disableRender ){};
 
-    std::string toPath(const std::string& name) {
-        return outputPath + (outputPath.back() == '/' ? "" : "/") + outputName + (outputName.empty() ? "" : "_") + name + ".txt";
+    std::string toPath( const std::string& name ) {
+        return outputPath + ( outputPath.back() == '/' ? "" : "/" ) + outputName + ( outputName.empty() ? "" : "_" ) + name + ".txt";
     }
 
-    std::ofstream& getFile(const std::string& name) {
-        if (files.find(name) == files.end())
-            files[name] = std::ofstream(toPath(name));
+    std::ofstream& getFile( const std::string& name ) {
+        if ( files.find( name ) == files.end() )
+            files[name] = std::ofstream( toPath( name ) );
         return files[name];
     }
 
-    void loadMatrixFromFile(const std::string& filepath, Scalar* buffer) {
-        std::ifstream filein; 
-        filein.open(filepath, std::ios::in);
-        std::istringstream inputstring; 
+    void loadMatrixFromFile( const std::string& filepath, Scalar* buffer ) {
+        std::ifstream filein;
+        filein.open( filepath, std::ios::in );
+        std::istringstream inputstring;
         std::string line;
         int i = 0;
-        double x,y,re,im;
-        if (filein.is_open()) {
-            while(getline(filein,line)) {
-                if (line.size()>2) {
-                    inputstring = std::istringstream(line);
+        double x, y, re, im;
+        if ( filein.is_open() ) {
+            while ( getline( filein, line ) ) {
+                if ( line.size() > 2 ) {
+                    inputstring = std::istringstream( line );
                     inputstring >> x >> y >> re >> im;
-                    buffer[i] = re + 1.0i*im;
+                    buffer[i] = re + 1.0i * im;
                     i++;
                 }
             }
@@ -144,18 +156,18 @@ class MatrixHandler {
                 auto index = j + i * s.s_N;
                 auto x = -s.xmax / 2 + j * s.dx;
                 auto y = -s.xmax / 2 + i * s.dx;
-                out << x << " " << y << " " << std::setprecision(10) << std::real( buffer[index] ) << " " << std::imag( buffer[index] ) << std::endl;
+                out << x << " " << y << " " << std::setprecision( 10 ) << std::real( buffer[index] ) << " " << std::imag( buffer[index] ) << std::endl;
             }
             out << std::endl;
         }
-        std::cout << "Output " << (row_stop-row_start)*(col_stop-col_start) << " elements to " <<  toPath(name) << "." << std::endl;
+        std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) << " elements to " << toPath( name ) << "." << std::endl;
     }
     void outputMatrixToFile( const Scalar* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, const std::string& out ) {
-        auto& file = getFile(out);
+        auto& file = getFile( out );
         outputMatrixToFile( buffer, row_start, row_stop, col_start, col_stop, s, file, out );
     }
     void outputMatrixToFile( const Scalar* buffer, const System& s, const std::string& out ) {
-        auto& file = getFile(out);
+        auto& file = getFile( out );
         outputMatrixToFile( buffer, 0, s.s_N, 0, s.s_N, s, file, out );
     }
     void outputMatrixToFile( const Scalar* buffer, const System& s, std::ofstream& out, const std::string& name ) {
@@ -163,42 +175,60 @@ class MatrixHandler {
     }
 
     void outputMatrices( System& system, Buffer& buffer ) {
-    std::vector<std::string> fileoutputkeys = { "Psi_plus", "Psi_minus", "n_plus", "n_minus", "fft_plus", "fft_minus" };
+        std::vector<std::string> fileoutputkeys = { "Psi_plus", "Psi_minus", "n_plus", "n_minus", "fft_plus", "fft_minus" };
 #pragma omp parallel for
-    for ( int i = 0; i < fileoutputkeys.size(); i++ ) {
-        auto key = fileoutputkeys[i];
-        if ( key == "Psi_plus" )
-            outputMatrixToFile( buffer.Psi_Plus, system, key );
-        if ( key == "Psi_minus" )
-            outputMatrixToFile( buffer.Psi_Minus, system, key );
-        if ( key == "n_plus" )
-            outputMatrixToFile( buffer.n_Plus, system, key );
-        if ( key == "n_minus" )
-            outputMatrixToFile( buffer.n_Minus, system, key );
-        if ( key == "fft_plus" )
-            outputMatrixToFile( buffer.fft_plus, system, key );
-        if ( key == "fft_minus" )
-            outputMatrixToFile( buffer.fft_minus, system, key );
+        for ( int i = 0; i < fileoutputkeys.size(); i++ ) {
+            auto key = fileoutputkeys[i];
+            if ( key == "Psi_plus" )
+                outputMatrixToFile( buffer.Psi_Plus, system, key );
+            if ( key == "Psi_minus" )
+                outputMatrixToFile( buffer.Psi_Minus, system, key );
+            if ( key == "n_plus" )
+                outputMatrixToFile( buffer.n_Plus, system, key );
+            if ( key == "n_minus" )
+                outputMatrixToFile( buffer.n_Minus, system, key );
+            if ( key == "fft_plus" )
+                outputMatrixToFile( buffer.fft_plus, system, key );
+            if ( key == "fft_minus" )
+                outputMatrixToFile( buffer.fft_minus, system, key );
+        }
     }
-}
 
-void loadMatrices( System& system, Buffer& buffer ) {
-    if (loadPath.size() < 1) 
-        return;
-    std::cout << "Loading Matrices from " << loadPath << std::endl;
-    if ( loadPath.back() != '/' )
-        loadPath += "/";
-    std::vector<std::string> fileoutputkeys = { "Psi_plus", "Psi_minus", "n_plus", "n_minus" };
+    void loadMatrices( System& system, Buffer& buffer ) {
+        if ( loadPath.size() < 1 )
+            return;
+        std::cout << "Loading Matrices from " << loadPath << std::endl;
+        if ( loadPath.back() != '/' )
+            loadPath += "/";
+        std::vector<std::string> fileoutputkeys = { "Psi_plus", "Psi_minus", "n_plus", "n_minus" };
 #pragma omp parallel for
-    for ( auto i = 0; i < fileoutputkeys.size(); i++) {
-        if ( fileoutputkeys[i] == "Psi_plus" )
-            loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Plus );
-        else if ( fileoutputkeys[i] == "Psi_minus" )
-            loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Minus );
-        else if ( fileoutputkeys[i] == "n_plus" )
-            loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Plus );
-        else if ( fileoutputkeys[i] == "n_minus" )
-            loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Minus );
+        for ( auto i = 0; i < fileoutputkeys.size(); i++ ) {
+            if ( fileoutputkeys[i] == "Psi_plus" )
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Plus );
+            else if ( fileoutputkeys[i] == "Psi_minus" )
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Minus );
+            else if ( fileoutputkeys[i] == "n_plus" )
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Plus );
+            else if ( fileoutputkeys[i] == "n_minus" )
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Minus );
+        }
     }
-}
+
+    void cacheToFiles(const Buffer& buffer) {
+        auto& file_max = getFile( "max" );
+        auto& file_history_plus = getFile( "history_plus" );
+        auto& file_history_minus = getFile( "history_minus" );
+        for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i++ ) {
+            file_max << " " << buffer.cache_Psi_Plus_max[i] << " " << buffer.cache_Psi_Minus_max[i] << std::endl;
+            for (int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++) {
+                file_history_plus << " " << std::abs(buffer.cache_Psi_Plus_history[i][k]);
+                file_history_minus << " " << std::abs(buffer.cache_Psi_Minus_history[i][k]);
+            }
+            file_history_plus << std::endl;
+            file_history_minus << std::endl;
+        }
+        file_max.close();
+        file_history_plus.close();
+        file_history_minus.close();
+    }
 };

@@ -655,7 +655,7 @@ void rungeFuncIterative( System& system, bool evaluate_pulse ) {
     CHECK_CUDA_ERROR( cufftExecZ2Z( plan, dev_fft_plus, dev_current_Psi_Plus, CUFFT_INVERSE ), "iFFT Exec" );
     CHECK_CUDA_ERROR( cufftExecZ2Z( plan, dev_fft_minus, dev_current_Psi_Minus, CUFFT_INVERSE ), "iFFT Exec" );
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
-    // Scale FFT to logscale
+    // Shift FFT Once again for visualization
     fftshift_2D<<<grid_size, block_size>>>( dev_fft_plus, dev_fft_minus, system.s_N / 2 ); 
     // kernel_makeFFTVisible<<<grid_size, block_size>>>( dev_fft_plus, dev_fft_plus );
     // kernel_makeFFTVisible<<<grid_size, block_size>>>( dev_fft_minus, dev_fft_minus );

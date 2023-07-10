@@ -34,7 +34,7 @@ double timeitGetTotalRuntime() {
     return total;
 }
 
-void timeitStatisticsSummary( System& s, MatrixHandler& mh ) {
+void timeitStatisticsSummary( System& s, FileHandler& mh ) {
     const int l = 15;
     std::cout << "===================================================================================" << std::endl;
     std::cout << "============================== PC^3 Runtime Statistics ============================" << std::endl;
@@ -75,12 +75,13 @@ void timeitStatisticsSummary( System& s, MatrixHandler& mh ) {
 }
 
 void timeitToFile(std::ofstream& file) {
-    file << "t ";
+    file << "iteration ";
     for ( const auto& [key, total] : timeit_times ) {
         file << key << " ";
     }
     file << std::endl;
     for (auto index = 0; index < timeit_times.begin()->second.size(); index++) {
+        file << index << " ";
         for ( const auto& [key, value] : timeit_times ) {
             file << value[index] << " ";
         }

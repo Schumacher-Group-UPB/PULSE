@@ -43,4 +43,4 @@ $(OBJDIR):
 
 clean:
 	@rm -f $(OBJDIR)/*.o main.exe
-	@rmdir $(OBJDIR)
+	@rm -fr $(OBJDIR)

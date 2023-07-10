@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <complex>
+#include <omp.h>
 using namespace std::complex_literals;
 #include "system.hpp"
 
@@ -40,36 +41,36 @@ std::string unifyLength( std::string indicator, std::string unit, std::string de
     return ret;
 }
 
-static void printSystemHelp( System& s, MatrixHandler& h ) {
+static void printSystemHelp( System& s, FileHandler& h ) {
     std::cout << "Welcome to the 'Spriddis fasdzinirnde Schdruhdelsdheoriesrechnungs'. Todey i wil sho you, how to modifi dis progrem.\n\n";
-    std::cout << unifyLength( "General parameters:", "", "\n" ) 
-    << unifyLength( "Flag", "Inputs", "Description\n" ) 
-    << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + h.outputPath + "'\n" ) 
-    << unifyLength( "--name", "[string]", "File prefix. Standard is '" + h.outputName + "'\n" ) 
-    << unifyLength( "--load", "[string]", "Loads matrices from path.\n" ) 
-    << unifyLength( "--addOut, --addOutEvery", "[double]", "[NOT IMPLEMENTED] Adds imageoutput at X ps or every X ps.\n" ) 
-    << unifyLength( "--plotEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( h.plotmodulo ) + " iteration\n" ) 
-    << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
-    std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" ) 
-    << unifyLength( "--N", "[int]", "Grid Dimensions (N x N). Standard is " + std::to_string( s.s_N ) + " x " + std::to_string( s.s_N ) + "\n" ) 
-    << unifyLength( "--tstep", "[double]", "Timestep, standard is magic-timestep\n" ) 
-    << unifyLength( "--tmax", "[double]", "Timelimit, standard is " + std::to_string( s.t_max ) + " ps\n" );
-    //<< unifyLength( "-noNormPhase", "no arguments", "If passed to the program, disables normalization of ring phase states\n" ) 
+    std::cout << unifyLength( "General parameters:", "", "\n" )
+              << unifyLength( "Flag", "Inputs", "Description\n" )
+              << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + h.outputPath + "'\n" )
+              << unifyLength( "--name", "[string]", "File prefix. Standard is '" + h.outputName + "'\n" )
+              << unifyLength( "--load", "[string]", "Loads matrices from path.\n" )
+              //<< unifyLength( "--addOut, --addOutEvery", "[double]", "[NOT IMPLEMENTED] Adds imageoutput at X ps or every X ps.\n" )
+              << unifyLength( "--outEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( h.out_modulo ) + " iteration\n" )
+              << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
+    std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
+              << unifyLength( "--N", "[int]", "Grid Dimensions (N x N). Standard is " + std::to_string( s.s_N ) + " x " + std::to_string( s.s_N ) + "\n" )
+              << unifyLength( "--tstep", "[double]", "Timestep, standard is magic-timestep\n" )
+              << unifyLength( "--tmax", "[double]", "Timelimit, standard is " + std::to_string( s.t_max ) + " ps\n" );
+    //<< unifyLength( "-noNormPhase", "no arguments", "If passed to the program, disables normalization of ring phase states\n" )
     //<< unifyLength( "-normPulsePhase", "no arguments", "If passed to the program, enables normalization of pulse phase\n" ) << std::endl;
-    std::cout << unifyLength( "System parameters", "", "\n" ) 
-    << unifyLength( "Flag", "Inputs", "Description\n" ) 
-    << unifyLength( "--gammaC", "[double]", "Standard is " + std::to_string( s.gamma_c ) + " ps^-1\n" ) 
-    << unifyLength( "--gammaR", "[double]", "Standard is " + std::to_string( s.gamma_r / s.gamma_c ) + "*gammaC\n" ) 
-    << unifyLength( "--gc", "[double]", "Standard is " + std::to_string( s.g_c ) + " meV mum^2\n" ) 
-    << unifyLength( "--gr", "[double]", "Standard is " + std::to_string( s.g_r / s.g_c ) + "*gc\n" ) 
-    << unifyLength( "--g_pm", "[double]", "Standard is " + std::to_string( s.g_pm / s.g_c ) + "*gc\n" ) 
-    << unifyLength( "--R", "[double]", "Standard is " + std::to_string( s.R ) + " ps^-1 mum^2\n" ) 
-    << unifyLength( "--deltaLT", "[double]", "Standard is " + std::to_string( s.delta_LT ) + " meV\n" ) 
-    << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
-    std::cout << unifyLength( "Pulse and pump. Warning: Adding a pump here overwrites all previous pump settings!", "", "\n" ) 
-    << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 ) 
-    << unifyLength( "--pulse ", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 ) 
-    << unifyLength( "--pump ", "[double] [double] [double] [double] [int] {int} {int}", "amplitude, width, posX, posY, pol, {mPlus, mMinus} standard is the pump given by previous parameters.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
+    std::cout << unifyLength( "System parameters", "", "\n" )
+              << unifyLength( "Flag", "Inputs", "Description\n" )
+              << unifyLength( "--gammaC", "[double]", "Standard is " + std::to_string( s.gamma_c ) + " ps^-1\n" )
+              << unifyLength( "--gammaR", "[double]", "Standard is " + std::to_string( s.gamma_r / s.gamma_c ) + "*gammaC\n" )
+              << unifyLength( "--gc", "[double]", "Standard is " + std::to_string( s.g_c ) + " meV mum^2\n" )
+              << unifyLength( "--gr", "[double]", "Standard is " + std::to_string( s.g_r / s.g_c ) + "*gc\n" )
+              << unifyLength( "--g_pm", "[double]", "Standard is " + std::to_string( s.g_pm / s.g_c ) + "*gc\n" )
+              << unifyLength( "--R", "[double]", "Standard is " + std::to_string( s.R ) + " ps^-1 mum^2\n" )
+              << unifyLength( "--deltaLT", "[double]", "Standard is " + std::to_string( s.delta_LT ) + " meV\n" )
+              << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
+    std::cout << unifyLength( "Pulse and pump. Warning: Adding a pump here overwrites all previous pump settings!", "", "\n" )
+              << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
+              << unifyLength( "--pulse ", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
+              << unifyLength( "--pump ", "[double] [double] [double] [double] [int] {int} {int}", "amplitude, width, posX, posY, pol, {mPlus, mMinus} standard is the pump given by previous parameters.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
 }
 
 void addPulse( System& s, double t0, double amp, double freq, double sigma, int m, int pol, double width, double x, double y ) {
@@ -102,11 +103,11 @@ void addPump( System& s, double P0, double w, double x, double y, int pol ) {
     std::cout << "Added pump with P0 = " << P0 << " w = " << w << " x = " << x << " y = " << y << " pol = " << pol << std::endl;
 }
 
-std::tuple<System, MatrixHandler> initializeSystem( int argc, char** argv ) {
+std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     std::vector<std::string> arguments = argv_to_vec( argc, argv );
-    // Initialize system and matrixhandler
+    // Initialize system and FileHandler
     System s;
-    MatrixHandler h;
+    FileHandler h;
     // Check if help is requested
     if ( vec_find_str( "--help", arguments ) != -1 || vec_find_str( "-h", arguments ) != -1 ) {
         printSystemHelp( s, h );
@@ -131,8 +132,8 @@ std::tuple<System, MatrixHandler> initializeSystem( int argc, char** argv ) {
     if ( ( index = vec_find_str( "--name", arguments ) ) != -1 )
         h.outputName = arguments.at( ++index );
 
-    if ( ( index = vec_find_str( "--plotEvery", arguments ) ) != -1 )
-        h.plotmodulo = (int)getNextInput( arguments, "plotmodulo", ++index );
+    if ( ( index = vec_find_str( "--outEvery", arguments ) ) != -1 )
+        h.out_modulo = (int)getNextInput( arguments, "out_modulo", ++index );
     // if ( ( index = vec_find_str( "--threads", arguments ) ) != -1 )
     //     oms.set_num_threads( (int)getNextInput( arguments, "max_threads", ++index ) );
 
@@ -148,8 +149,8 @@ std::tuple<System, MatrixHandler> initializeSystem( int argc, char** argv ) {
         s.g_r = getNextInput( arguments, "g_r", ++index );
     if ( ( index = vec_find_str( "--R", arguments ) ) != -1 )
         s.R = getNextInput( arguments, "R", ++index );
-     if ( ( index = vec_find_str( "--xmax", arguments ) ) != -1 )
-         s.xmax = getNextInput( arguments, "xmax", ++index );
+    if ( ( index = vec_find_str( "--xmax", arguments ) ) != -1 )
+        s.xmax = getNextInput( arguments, "xmax", ++index );
     if ( ( index = vec_find_str( "--g_pm", arguments ) ) != -1 )
         s.g_pm = getNextInput( arguments, "s.gm", ++index );
     if ( ( index = vec_find_str( "--deltaLT", arguments ) ) != -1 )
@@ -166,10 +167,10 @@ std::tuple<System, MatrixHandler> initializeSystem( int argc, char** argv ) {
     //    s.m_minus = getNextInput( arguments, "m_minus", index );
     //}
     // TODO: das hier auch
-    if ( ( index = vec_find_str( "-noNormPhase", arguments ) ) != -1 )
-        s.normalize_phase_states = false;
-    if ( ( index = vec_find_str( "-normPulsePhase", arguments ) ) != -1 )
-        s.normalizePhasePulse = true;
+    //if ( ( index = vec_find_str( "-noNormPhase", arguments ) ) != -1 )
+    //    s.normalize_phase_states = false;
+    //if ( ( index = vec_find_str( "-normPulsePhase", arguments ) ) != -1 )
+    //    s.normalizePhasePulse = true;
 
     // Numerik
     // 351x -> 39.7s, 401x -> 65.3s, 451x -> 104.4s, 501x -> 158.3s, 551x -> 231.9s, 751x -> 837s/250ps, 1501 -> 13796.1
@@ -214,11 +215,11 @@ std::tuple<System, MatrixHandler> initializeSystem( int argc, char** argv ) {
     }
 
     // Save Load Path if passed
-    if ( ( index = vec_find_str( "--load", arguments ) ) != -1 ) 
+    if ( ( index = vec_find_str( "--load", arguments ) ) != -1 )
         h.loadPath = arguments.at( ++index );
-    
+
     // Colormap
-    if ( ( index = vec_find_str( "--cmap", arguments ) ) != -1 ) 
+    if ( ( index = vec_find_str( "--cmap", arguments ) ) != -1 )
         h.colorPalette = arguments.at( ++index );
 
     // We can also disable to SFML renderer by using the --nosfml flag.
@@ -241,25 +242,43 @@ inline double cwiseAbs2( T z ) {
 }
 template <typename T>
 inline void cwiseAbs2( T* z, double* buffer, int size ) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for ( int i = 0; i < size; i++ )
         buffer[i] = std::real( z[i] ) * std::real( z[i] ) + std::imag( z[i] ) * std::imag( z[i] );
 }
-inline std::tuple<double, double> normalize( double* buffer, int size ) {
+
+template <typename T>
+inline std::tuple<double, double> minmax( T* buffer, int size ) {
     double max = 0;
     double min = 0;
+    auto n_cpus = omp_get_max_threads();
+    std::vector<double> maxs( n_cpus );
+    std::vector<double> mins( n_cpus );
+
+#pragma omp parallel for
     for ( int i = 0; i < size; i++ ) {
-        max = std::max( max, buffer[i] );
-        min = std::min( min, buffer[i] );
+        int cpu = omp_get_thread_num();
+        maxs[cpu] = std::max( maxs[cpu], cwiseAbs2( buffer[i] ) );
+        mins[cpu] = std::min( mins[cpu], cwiseAbs2( buffer[i] ) );
     }
-    #pragma omp parallel for
+
+    for ( int i = 0; i < n_cpus; i++ ) {
+        max = std::max( max, maxs[i] );
+        min = std::min( min, mins[i] );
+    }
+    return std::make_tuple( std::sqrt( min ), std::sqrt( max ) );
+}
+
+inline void normalize( double* buffer, int size, double min = 0, double max = 0 ) {
+    if ( min == max )
+        auto [min, max] = minmax( buffer, size );
+#pragma omp parallel for
     for ( int i = 0; i < size; i++ )
         buffer[i] = ( buffer[i] - min ) / ( max - min );
-    return std::make_tuple( min, max );
 }
 
 inline void angle( Scalar* z, double* buffer, int size ) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for ( int i = 0; i < size; i++ )
         buffer[i] = std::arg( z[i] );
 }
@@ -279,4 +298,29 @@ bool doEvaluatePulse( const System& system ) {
         }
     }
     return evaluate_pulse;
+}
+
+std::vector<Scalar> cacheVector(const System& s, const Scalar* buffer) {
+    const Scalar* start = buffer + s.s_N * s.s_N / 2;
+    const Scalar* end = start + s.s_N;
+    
+    std::vector<Scalar> ret(s.s_N);
+    std::copy(start, end, ret.begin());
+    return ret;
+}
+
+/*
+* Calculates the current maximum (and minimum) of the wavefunction and saves it to the buffer.
+*/
+void cacheValues( const System& system, Buffer& buffer) {
+    // Min and Max
+    const auto [min_plus, max_plus] = minmax( buffer.Psi_Plus, system.s_N * system.s_N );
+    const auto [min_minus, max_minus] = minmax( buffer.Psi_Minus, system.s_N * system.s_N );
+    buffer.cache_Psi_Plus_max.emplace_back( max_plus );
+    buffer.cache_Psi_Minus_max.emplace_back( max_minus );
+    // Cut at Y = 0
+    const auto vec_plus = cacheVector(system, buffer.Psi_Plus);
+    const auto vec_minus = cacheVector(system, buffer.Psi_Minus);
+    buffer.cache_Psi_Plus_history.emplace_back( vec_plus );
+    buffer.cache_Psi_Minus_history.emplace_back( vec_minus );
 }
