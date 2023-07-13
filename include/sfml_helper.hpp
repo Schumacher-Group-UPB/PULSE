@@ -3,7 +3,7 @@
 // #define SFML_RENDER
 #include "system.hpp"
 #include "helperfunctions.hpp"
-#include "rk_kernel.hpp"
+#include "kernel.hpp"
 
 #ifdef SFML_RENDER
 #    include <SFML/Graphics.hpp>

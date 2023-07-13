@@ -29,14 +29,14 @@ else
 	TARGET = main.o
 endif
 
-all: clean $(OBJDIR) $(CPP_OBJS) $(CU_OBJS)
-	$(NVCC) -o $(TARGET) $(CPP_OBJS) $(CU_OBJS) -lcufft -I$(INCDIR) -Xcompiler -fopenmp $(SFML_FLAGS)
+all: $(OBJDIR) $(CPP_OBJS) $(CU_OBJS)
+	$(NVCC) -o $(TARGET) $(CPP_OBJS) $(CU_OBJS) -lcufft -I$(INCDIR) -Xcompiler -openmp -rdc=true $(SFML_FLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	$(NVCC) $(CPPFLAGS) -c $< -o $@ -I$(INCDIR) $(SFML_FLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
-	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -I$(INCDIR) -diag-suppress 177
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -I$(INCDIR) -lcufft -rdc=true -Xcompiler -openmp $(SFML_FLAGS) -diag-suppress 177
 
 $(OBJDIR):
 	@mkdir $(OBJDIR)

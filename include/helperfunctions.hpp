@@ -7,239 +7,99 @@
 using namespace std::complex_literals;
 #include "system.hpp"
 
-std::vector<std::string> argv_to_vec( int argc, char** argv ) {
-    std::vector<std::string> ret;
-    ret.reserve( argc );
-    for ( int i = 0; i < argc; i++ )
-        ret.push_back( std::string( argv[i] ) );
-    return ret;
-}
+/**
+ * @brief Converts the command line arguments to a vector of strings.
+ * 
+ * @param argc The number of command line arguments.
+ * @param argv The command line arguments.
+ * @return std::vector<std::string> A vector of strings containing the command line arguments.
+ */
+std::vector<std::string> argv_to_vec( int argc, char** argv );
 
-int vec_find_str( std::string toFind, const std::vector<std::string>& input, int start = 0 ) {
-    for ( int i = start; i < input.size(); i++ ) {
-        if ( input.at( i ).compare( toFind ) == 0 )
-            return i;
-    }
-    return -1;
-}
+/**
+ * @brief Finds a string in a vector of strings and returns its index.
+ * @param toFind The string to find.
+ * @param input The vector of strings to search in.
+ * @param start The index to start searching from.
+*/
+int vec_find_str( std::string toFind, const std::vector<std::string>& input, int start = 0 );
 
-double getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index ) {
-    std::cout << "Read input " << name << " as " << arguments.at( index ) << std::endl;
-    return std::stof( arguments.at( index++ ) );
-}
+/**
+ * @brief Takes the input vector of commandline arguments and returns parameters
+ * at the passed index. The index is then increased by one, allowing for chains 
+ * of this function to parse multiple parameters.
+ * @param arguments The vector of commandline arguments.
+ * @param name The name of the parameter to find. This field is just for
+ * logging purposes.
+ * @param index The index to start searching from. This field is updated to the
+ * index of the next parameter.
+*/
+double getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index );
 
-std::string unifyLength( std::string indicator, std::string unit, std::string description, int L1 = 30, int L2 = 30 ) {
-    int l1 = L1 - indicator.size();
-    int l2 = L2 - unit.size();
-    std::string ret = indicator;
-    for ( int i = 0; i < l1; i++ )
-        ret += " ";
-    ret += unit;
-    for ( int i = 0; i < l2; i++ )
-        ret += " ";
-    ret += description;
-    return ret;
-}
+/**
+ * @brief Helper function to print the help message for the program. The function
+ * will print the indicator, pad empty spaces until the length L1 is reached, then
+ * print the unit, pad empty spaces until the length L2 is reached, then print the
+ * description.
+ * @param indicator The indicator for the parameter.
+ * @param unit The unit of the parameter.
+ * @param description The description of the parameter.
+*/
+std::string unifyLength( std::string indicator, std::string unit, std::string description, int L1 = 30, int L2 = 30 );
 
-static void printSystemHelp( System& s, FileHandler& h ) {
-    std::cout << "Welcome to the 'Spriddis fasdzinirnde Schdruhdelsdheoriesrechnungs'. Todey i wil sho you, how to modifi dis progrem.\n\n";
-    std::cout << unifyLength( "General parameters:", "", "\n" )
-              << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + h.outputPath + "'\n" )
-              << unifyLength( "--name", "[string]", "File prefix. Standard is '" + h.outputName + "'\n" )
-              << unifyLength( "--load", "[string]", "Loads matrices from path.\n" )
-              //<< unifyLength( "--addOut, --addOutEvery", "[double]", "[NOT IMPLEMENTED] Adds imageoutput at X ps or every X ps.\n" )
-              << unifyLength( "--outEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( h.out_modulo ) + " iteration\n" )
-              << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
-    std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--N", "[int]", "Grid Dimensions (N x N). Standard is " + std::to_string( s.s_N ) + " x " + std::to_string( s.s_N ) + "\n" )
-              << unifyLength( "--tstep", "[double]", "Timestep, standard is magic-timestep\n" )
-              << unifyLength( "--tmax", "[double]", "Timelimit, standard is " + std::to_string( s.t_max ) + " ps\n" );
-    //<< unifyLength( "-noNormPhase", "no arguments", "If passed to the program, disables normalization of ring phase states\n" )
-    //<< unifyLength( "-normPulsePhase", "no arguments", "If passed to the program, enables normalization of pulse phase\n" ) << std::endl;
-    std::cout << unifyLength( "System parameters", "", "\n" )
-              << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--gammaC", "[double]", "Standard is " + std::to_string( s.gamma_c ) + " ps^-1\n" )
-              << unifyLength( "--gammaR", "[double]", "Standard is " + std::to_string( s.gamma_r / s.gamma_c ) + "*gammaC\n" )
-              << unifyLength( "--gc", "[double]", "Standard is " + std::to_string( s.g_c ) + " meV mum^2\n" )
-              << unifyLength( "--gr", "[double]", "Standard is " + std::to_string( s.g_r / s.g_c ) + "*gc\n" )
-              << unifyLength( "--g_pm", "[double]", "Standard is " + std::to_string( s.g_pm / s.g_c ) + "*gc\n" )
-              << unifyLength( "--R", "[double]", "Standard is " + std::to_string( s.R ) + " ps^-1 mum^2\n" )
-              << unifyLength( "--deltaLT", "[double]", "Standard is " + std::to_string( s.delta_LT ) + " meV\n" )
-              << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
-    std::cout << unifyLength( "Pulse and pump. Warning: Adding a pump here overwrites all previous pump settings!", "", "\n" )
-              << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
-              << unifyLength( "--pulse ", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
-              << unifyLength( "--pump ", "[double] [double] [double] [double] [int] {int} {int}", "amplitude, width, posX, posY, pol, {mPlus, mMinus} standard is the pump given by previous parameters.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
-}
+/**
+ * @brief Prints the help message for the program.
+*/
+static void printSystemHelp( System& s, FileHandler& h );
 
-void addPulse( System& s, double t0, double amp, double freq, double sigma, int m, int pol, double width, double x, double y ) {
-    if ( amp == 0.0 || sigma == 0 || freq == 0 || width == 0 ) {
-        std::cout << "Pulse with amp = 0 or sigma = 0 or freq = 0 or width = 0 not allowed!" << std::endl;
-        return;
-    }
-    s.pulse_t0.push_back( t0 );
-    s.pulse_amp.push_back( amp );
-    s.pulse_freq.push_back( freq );
-    s.pulse_sigma.push_back( sigma );
-    s.pulse_m.push_back( m );
-    s.pulse_pol.push_back( pol );
-    s.pulse_width.push_back( width );
-    s.pulse_X.push_back( x );
-    s.pulse_Y.push_back( y );
-    std::cout << "Added pulse with t0 = " << t0 << " amp = " << amp << " freq = " << freq << " sigma = " << sigma << " m = " << m << " pol = " << pol << " width = " << width << " x = " << x << " y = " << y << std::endl;
-}
+/**
+ * @brief Takes the system and a given set of pulse parameters and adds it to the
+ * system pulse cache array. This array is then later pushed to the GPU memory.
+*/
+void addPulse( System& s, double t0, double amp, double freq, double sigma, int m, int pol, double width, double x, double y );
 
-void addPump( System& s, double P0, double w, double x, double y, int pol ) {
-    if ( P0 == 0.0 || w == 0 ) {
-        std::cout << "Pump with P0 = 0 or w = 0 not allowed!" << std::endl;
-        return;
-    }
-    s.pump_amp.push_back( P0 );
-    s.pump_width.push_back( w );
-    s.pump_X.push_back( x );
-    s.pump_Y.push_back( y );
-    s.pump_pol.push_back( pol );
-    std::cout << "Added pump with P0 = " << P0 << " w = " << w << " x = " << x << " y = " << y << " pol = " << pol << std::endl;
-}
+/**
+ * @brief Takes the system and a given set of pump parameters and adds it to the
+ * system pump cache array. This array is then later pushed to the GPU memory.
+*/
+void addPump( System& s, double P0, double w, double x, double y, int pol );
 
-std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
-    std::vector<std::string> arguments = argv_to_vec( argc, argv );
-    // Initialize system and FileHandler
-    System s;
-    FileHandler h;
-    // Check if help is requested
-    if ( vec_find_str( "--help", arguments ) != -1 || vec_find_str( "-h", arguments ) != -1 ) {
-        printSystemHelp( s, h );
-        exit( 0 );
-    }
-    // Initialize system
-    int index = 0;
+/**
+ * @brief Initializes the system and the file handler variables from the argc
+ * and argv commandline arguments. This function also handles the help message.
+ * @param argc The number of commandline arguments.
+ * @param argv The commandline arguments.
+*/
+std::tuple<System, FileHandler> initializeSystem( int argc, char** argv );
 
-    if ( ( index = vec_find_str( "--path", arguments ) ) != -1 )
-        h.outputPath = arguments.at( ++index );
-    if ( h.outputPath.back() != '/' )
-        h.outputPath += "/";
+/**
+ * @brief Takes the system variable and transfers its pump array to the GPU.
+*/
+void initializePumpVariables( System& s );
 
-    // Creating output directory
-    const int dir_err = std::system( ( "mkdir " + h.outputPath ).c_str() );
-    if ( -1 == dir_err ) {
-        std::cout << "Error creating directory " << h.outputPath << std::endl;
-    } else {
-        std::cout << "Succesfully created directory " << h.outputPath << std::endl;
-    }
+/**
+ * @brief Takes the system variable and transfers its pulse array to the GPU.
+*/
+void initializePulseVariables( System& s );
 
-    if ( ( index = vec_find_str( "--name", arguments ) ) != -1 )
-        h.outputName = arguments.at( ++index );
-
-    if ( ( index = vec_find_str( "--outEvery", arguments ) ) != -1 )
-        h.out_modulo = (int)getNextInput( arguments, "out_modulo", ++index );
-    // if ( ( index = vec_find_str( "--threads", arguments ) ) != -1 )
-    //     oms.set_num_threads( (int)getNextInput( arguments, "max_threads", ++index ) );
-
-    // Systemparameter
-    s.m_eff = 1E-4 / s.h_bar_s * 5.6856; //      *m_e/h_bar;                 // m_e/hbar
-    if ( ( index = vec_find_str( "--gammaC", arguments ) ) != -1 )
-        s.gamma_c = getNextInput( arguments, "gamma_c", ++index );
-    if ( ( index = vec_find_str( "--gammaR", arguments ) ) != -1 )
-        s.gamma_r = getNextInput( arguments, "gamma_r", ++index );
-    if ( ( index = vec_find_str( "--gc", arguments ) ) != -1 )
-        s.g_c = getNextInput( arguments, "g_c", ++index ) / s.h_bar_s;
-    if ( ( index = vec_find_str( "--gr", arguments ) ) != -1 )
-        s.g_r = getNextInput( arguments, "g_r", ++index );
-    if ( ( index = vec_find_str( "--R", arguments ) ) != -1 )
-        s.R = getNextInput( arguments, "R", ++index );
-    if ( ( index = vec_find_str( "--xmax", arguments ) ) != -1 )
-        s.xmax = getNextInput( arguments, "xmax", ++index );
-    if ( ( index = vec_find_str( "--g_pm", arguments ) ) != -1 )
-        s.g_pm = getNextInput( arguments, "s.gm", ++index );
-    if ( ( index = vec_find_str( "--deltaLT", arguments ) ) != -1 )
-        s.delta_LT = getNextInput( arguments, "deltaLT", ++index );
-    if ( ( index = vec_find_str( "--mPlus", arguments ) ) != -1 )
-        s.m_plus = getNextInput( arguments, "m_plus", ++index );
-    if ( ( index = vec_find_str( "--mMinus", arguments ) ) != -1 )
-        s.m_minus = getNextInput( arguments, "m_plus", ++index );
-    if ( ( index = vec_find_str( "--fft", arguments ) ) != -1 )
-        s.fft_every = getNextInput( arguments, "fft_every", ++index );
-    // TODO: das hier in --pump integrieren und dann hier weg
-    // if ( ( index = vec_find_str( "--m", arguments ) ) != -1 ) {
-    //    s.m_plus = getNextInput( arguments, "m_plus", ++index );
-    //    s.m_minus = getNextInput( arguments, "m_minus", index );
-    //}
-    // TODO: das hier auch
-    //if ( ( index = vec_find_str( "-noNormPhase", arguments ) ) != -1 )
-    //    s.normalize_phase_states = false;
-    //if ( ( index = vec_find_str( "-normPulsePhase", arguments ) ) != -1 )
-    //    s.normalizePhasePulse = true;
-
-    // Numerik
-    // 351x -> 39.7s, 401x -> 65.3s, 451x -> 104.4s, 501x -> 158.3s, 551x -> 231.9s, 751x -> 837s/250ps, 1501 -> 13796.1
-    if ( ( index = vec_find_str( "--N", arguments ) ) != -1 )
-        s.s_N = (int)getNextInput( arguments, "s_N", ++index );
-    if ( s.s_N % 2 == 1 ) {
-        std::cout << "Adjusted N from " << s.s_N << " to N = " << ( s.s_N + 1 ) << std::endl;
-        s.s_N++;
-    }
-    s.dx = s.xmax / ( s.s_N - 1 ); // x-range ist -xmax/2 bis xmax/2
-    s.dt = 0.5 * s.dx * s.dx;
-    std::cout << "Calculated dx = " << s.dx << "\nCalculated dt = " << s.dt << std::endl;
-    if ( ( index = vec_find_str( "--tmax", arguments ) ) != -1 )
-        s.t_max = getNextInput( arguments, "s_t_max", ++index );
-    if ( ( index = vec_find_str( "--tstep", arguments ) ) != -1 )
-        s.dt = getNextInput( arguments, "t_step", ++index );
-    // Initialize t_0 as 0.
-    s.t = 0.0;
-    // Pumps
-    index = 0;
-    while ( ( index = vec_find_str( "--pump", arguments, index ) ) != -1 ) {
-        double amp = getNextInput( arguments, "pump_amp", ++index );
-        double w = getNextInput( arguments, "pump_width", index );
-        double posX = getNextInput( arguments, "pump_X", index );
-        double posY = getNextInput( arguments, "pump_Y", index );
-        int pol = (int)getNextInput( arguments, "pump_pol", index );
-        addPump( s, amp, w, posX, posY, pol );
-    }
-    // Pulses
-    index = 0;
-    while ( ( index = vec_find_str( "--pulse", arguments, index ) ) != -1 ) {
-        double t0 = getNextInput( arguments, "pulse_t0", ++index );
-        double amp = getNextInput( arguments, "pulse_amp", index );
-        double freq = getNextInput( arguments, "pulse_freq", index );
-        double sigma = getNextInput( arguments, "pulse_sigma", index );
-        int m = getNextInput( arguments, "pulse_m", index );
-        int pol = (int)getNextInput( arguments, "pulse_pol", index );
-        double w = getNextInput( arguments, "pulse_width", index );
-        double posX = getNextInput( arguments, "pulse_X", index );
-        double posY = getNextInput( arguments, "pulse_Y", index );
-        addPulse( s, t0, amp, freq, sigma, m, pol, w, posX, posY );
-    }
-
-    // Save Load Path if passed
-    if ( ( index = vec_find_str( "--load", arguments ) ) != -1 )
-        h.loadPath = arguments.at( ++index );
-
-    // Colormap
-    if ( ( index = vec_find_str( "--cmap", arguments ) ) != -1 )
-        h.colorPalette = arguments.at( ++index );
-
-    // We can also disable to SFML renderer by using the --nosfml flag.
-    if ( vec_find_str( "-nosfml", arguments ) != -1 )
-        h.disableRender = true;
-
-    return std::make_tuple( s, h );
-}
-
-void initializePumpVariables( System& s ) {
-    initializePumpVariables( s.pump_amp.data(), s.pump_width.data(), s.pump_X.data(), s.pump_Y.data(), s.pump_pol.data(), s.pump_amp.size() );
-};
-void initializePulseVariables( System& s ) {
-    initializePulseVariables( s.pulse_t0.data(), s.pulse_amp.data(), s.pulse_freq.data(), s.pulse_sigma.data(), s.pulse_m.data(), s.pulse_pol.data(), s.pulse_width.data(), s.pulse_X.data(), s.pulse_Y.data(), s.pulse_t0.size() );
-};
-
+/**
+ * @brief Calculates the abs2 of a (complex) number, as long as std::real and
+ * std::imag are defined for the type T.
+ * @param z The number to calculate the abs2 of.
+ * @return double The abs2 of the number.
+*/
 template <typename T>
 inline double cwiseAbs2( T z ) {
     return std::real( z ) * std::real( z ) + std::imag( z ) * std::imag( z );
 }
+
+/**
+ * @brief Calculates the abs2 of a buffer of (complex) numbers, as long as 
+ * std::real and std::imag are defined for the type T.
+ * @param z The buffer to calculate the abs2 of.
+ * @param buffer The buffer to save the result to.
+ * @param size The size of the buffer.
+*/
 template <typename T>
 inline void cwiseAbs2( T* z, double* buffer, int size ) {
 #pragma omp parallel for
@@ -247,6 +107,13 @@ inline void cwiseAbs2( T* z, double* buffer, int size ) {
         buffer[i] = std::real( z[i] ) * std::real( z[i] ) + std::imag( z[i] ) * std::imag( z[i] );
 }
 
+/**
+ * @brief Calculates the minimum and maximum of a buffer of (complex) numbers,
+ * as long as std::real, std::imag and std::sqrt are defined for the type T.
+ * @param z The buffer to calculate the minimum and maximum of.
+ * @param size The size of the buffer.
+ * @return std::tuple<double, double> A tuple containing the minimum and maximum
+*/
 template <typename T>
 inline std::tuple<double, double> minmax( T* buffer, int size ) {
     double max = 0;
@@ -269,58 +136,42 @@ inline std::tuple<double, double> minmax( T* buffer, int size ) {
     return std::make_tuple( std::sqrt( min ), std::sqrt( max ) );
 }
 
-inline void normalize( double* buffer, int size, double min = 0, double max = 0 ) {
-    if ( min == max )
-        auto [min, max] = minmax( buffer, size );
-#pragma omp parallel for
-    for ( int i = 0; i < size; i++ )
-        buffer[i] = ( buffer[i] - min ) / ( max - min );
-}
-
-inline void angle( Scalar* z, double* buffer, int size ) {
-#pragma omp parallel for
-    for ( int i = 0; i < size; i++ )
-        buffer[i] = std::arg( z[i] );
-}
-
-inline double sign( double x ) {
-    return ( x > 0 ) - ( x < 0 );
-}
-
-bool doEvaluatePulse( const System& system ) {
-    bool evaluate_pulse = false;
-    for ( int c = 0; c < system.pulse_t0.size(); c++ ) {
-        const auto t0 = system.pulse_t0[c];
-        const auto sigma = system.pulse_sigma[c];
-        if ( t0 - 5. * sigma < system.t && system.t < t0 + 5. * sigma ) {
-            evaluate_pulse = true;
-            break;
-        }
-    }
-    return evaluate_pulse;
-}
-
-std::vector<Scalar> cacheVector(const System& s, const Scalar* buffer) {
-    const Scalar* start = buffer + s.s_N * s.s_N / 2;
-    const Scalar* end = start + s.s_N;
-    
-    std::vector<Scalar> ret(s.s_N);
-    std::copy(start, end, ret.begin());
-    return ret;
-}
-
-/*
-* Calculates the current maximum (and minimum) of the wavefunction and saves it to the buffer.
+/**
+ * @brief Normalizes a buffer of real numbers using the minimum and maximum
+ * values passed to the function. If min == max == 0, the min and max are 
+ * recalculated using the minmax function. 
+ * @param buffer The buffer to normalize.
+ * @param size The size of the buffer.
+ * @param min The minimum value to normalize to.
+ * @param max The maximum value to normalize to.
 */
-void cacheValues( const System& system, Buffer& buffer) {
-    // Min and Max
-    const auto [min_plus, max_plus] = minmax( buffer.Psi_Plus, system.s_N * system.s_N );
-    const auto [min_minus, max_minus] = minmax( buffer.Psi_Minus, system.s_N * system.s_N );
-    buffer.cache_Psi_Plus_max.emplace_back( max_plus );
-    buffer.cache_Psi_Minus_max.emplace_back( max_minus );
-    // Cut at Y = 0
-    const auto vec_plus = cacheVector(system, buffer.Psi_Plus);
-    const auto vec_minus = cacheVector(system, buffer.Psi_Minus);
-    buffer.cache_Psi_Plus_history.emplace_back( vec_plus );
-    buffer.cache_Psi_Minus_history.emplace_back( vec_minus );
-}
+void normalize( double* buffer, int size, double min = 0, double max = 0 );
+
+
+/**
+ * @brief Calculates the angle of a buffer of complex numbers, as long as
+ * std::arg is defined for the type T.
+ * @param z The complex number buffer to calculate the angle of.
+ * @param buffer The buffer to save the result to.
+ * @param size The size of the buffer.
+*/
+void angle( Scalar* z, double* buffer, int size );
+
+/**
+ * @brief Helper function to figure out wether or not to evaluate the pulse at the
+ * current time. Returns true if the pulse should be evaluated.
+*/
+bool doEvaluatePulse( const System& system );
+
+/**
+* @brief Helper function to grab the current wavefunction cut at Y = 0 and save
+* it to a vector.
+*/
+std::vector<Scalar> cacheVector(const System& s, const Scalar* buffer);
+
+/**
+* @brief Calculates the current maximum (and minimum) of the wavefunction and
+* saves it to the buffer. Also saves the current wavefunction cut at Y = 0 to
+* the buffer.
+*/
+void cacheValues( const System& system, Buffer& buffer);

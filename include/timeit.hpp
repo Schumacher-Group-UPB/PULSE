@@ -34,7 +34,7 @@ double timeitGetTotalRuntime() {
     return total;
 }
 
-void timeitStatisticsSummary( System& s, FileHandler& mh ) {
+void timeitStatisticsSummary( System& s, FileHandler& handler ) {
     const int l = 15;
     std::cout << "===================================================================================" << std::endl;
     std::cout << "============================== PC^3 Runtime Statistics ============================" << std::endl;
@@ -69,8 +69,23 @@ void timeitStatisticsSummary( System& s, FileHandler& mh ) {
     }
     std::cout << unifyLength( "Total Runtime:", std::to_string( total ) + "s", std::to_string( total / s.t_max * 1E3 ) + "ms/ps", l,l ) << " --> " << std::to_string( total / s.iteration ) << "s/it" << std::endl;
     std::cout << "---------------------------------------- Infos ------------------------------------" << std::endl;
-    if (mh.loadPath.size() > 0)
-        std::cout << "Loaded Initial Matrices from " << mh.loadPath << std::endl;
+    if (handler.loadPath.size() > 0)
+        std::cout << "Loaded Initial Matrices from " << handler.loadPath << std::endl;
+    if (s.fixed_time_step)
+        std::cout << "Calculations done using the fixed timestep RK4 solver" << std::endl;
+    else {
+        std::cout << "Calculations done using the variable timestep RK45 solver" << std::endl;
+        std::cout << " = Tolerance used: " << s.tolerance << std::endl;
+        std::cout << " = dt_max used: " << s.dt_max << std::endl;
+        std::cout << " = dt_min used: " << s.dt_min << std::endl;
+    }
+    if (s.fft_every < s.t_max) {
+        std::cout << "Fourier Transformations done every " << s.fft_every << "ps" << std::endl;
+        std::cout << " = FFT Power: " << s.fft_power << std::endl;
+        std::cout << " = FFT Area: " << s.fft_mask_area << std::endl;
+    }
+    std::cout << "Calculated until t = " << s.t << "ps" << std::endl;
+    std::cout << "Output variables and plots every " << handler.out_modulo << " iterations" << std::endl;
     std::cout << "===================================================================================" << std::endl;
 }
 

@@ -8,7 +8,7 @@
 #include <chrono>
 
 #include "system.hpp"
-#include "rk_kernel.hpp"
+#include "kernel.hpp"
 #include "helperfunctions.hpp"
 #include "timeit.hpp"
 #include "sfml_helper.hpp"
@@ -55,7 +55,7 @@ int main( int argc, char* argv[] ) {
             bool evaluate_pulse = doEvaluatePulse( system );
             // Iterate #out_modulo times
             for ( int i = 0; i < filehandler.out_modulo; i++ ) {
-                rungeFuncIterative( system, evaluate_pulse );
+                rungeFunctionIterate( system, evaluate_pulse );
             },
             "Main" );
 
@@ -67,7 +67,7 @@ int main( int argc, char* argv[] ) {
 
         double duration = timeitGet( "Main" ) + timeitGet( "Plotting" );
         auto [min,max] = minmax( buffer.Psi_Plus, system.s_N * system.s_N );
-        std::cout << "T = " << int( system.t ) << ", Time per " << filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * filehandler.out_modulo << "ps/s                \r";
+        std::cout << "T = " << int( system.t ) << ", Time per " << filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r";
     }
 
     // Get final state from GPU

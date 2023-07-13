@@ -9,8 +9,9 @@ using namespace std::complex_literals;
 #include <vector>
 
 /**
-* @brief Very lightweight System Class containing all of the required system variables
-
+* @brief Very lightweight System Class containing all of the required system variables.
+* Reading the input from the commandline and filling the system variables is done
+* in the helperfunctions.hpp -> initializeSystem() function.
 */
 class System {
    public:
@@ -38,13 +39,24 @@ class System {
     // Numerics
     int s_N = 400;
     double dx;
-    double dt;
-    double t;
     double t_max = 1000;
     bool normalize_phase_states = true;
     bool normalizePhasePulse = false;
-    double fft_every = 1; // ps
     int iteration = 0;
+    // RK Solver Variables
+    double dt;
+    double t;
+    double dt_max = 0.3;
+    double dt_min = 0.0001; // also dt_delta
+    double tolerance = 100;
+
+    // FFT Mask Parameters
+    double fft_every = 1; // ps
+    double fft_power = 6.;
+    double fft_mask_area = 0.7;
+
+    // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
+    bool fixed_time_step = true;
 
     // Pump arrays
     std::vector<double> pump_amp;
@@ -122,8 +134,9 @@ class FileHandler {
     }
 
     std::ofstream& getFile( const std::string& name ) {
-        if ( files.find( name ) == files.end() )
+        if ( files.find( name ) == files.end() ) {
             files[name] = std::ofstream( toPath( name ) );
+        }
         return files[name];
     }
 
@@ -151,6 +164,8 @@ class FileHandler {
     }
 
     void outputMatrixToFile( const Scalar* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, std::ofstream& out, const std::string& name ) {
+        if (! out.is_open())
+            std::cout << "File " << name << " is not open!" << std::endl;
         for ( int i = row_start; i < row_stop; i++ ) {
             for ( int j = col_start; j < col_stop; j++ ) {
                 auto index = j + i * s.s_N;
