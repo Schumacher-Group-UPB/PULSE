@@ -48,7 +48,7 @@ class System {
     double t;
     double dt_max = 0.3;
     double dt_min = 0.0001; // also dt_delta
-    double tolerance = 100;
+    double tolerance = 1E-1;
 
     // FFT Mask Parameters
     double fft_every = 1; // ps

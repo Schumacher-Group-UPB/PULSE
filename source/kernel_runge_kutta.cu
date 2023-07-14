@@ -15,6 +15,7 @@
 #include "kernel_fft.cuh"
 #include "system.hpp"
 #include "kernel.hpp"
+#include "helperfunctions.hpp"
 
 #include <thrust/reduce.h>
 #include <thrust/execution_policy.h>
@@ -160,7 +161,10 @@ void iterateVariableTimestepRungeKutta(System& system, bool evaluate_pulse, dim3
 
     // Use thrust::reduce to calculate the sum of the error matrix
     double final_error = thrust::reduce(thrust::device, dev_rk_error, dev_rk_error + system.s_N*system.s_N, 0.0, thrust::plus<double>()); 
-    
+    //cuDoubleComplex normalizing_factor = thrust::reduce(thrust::device, dev_current_Psi_Plus, dev_current_Psi_Plus + system.s_N*system.s_N, make_cuDoubleComplex(0,0), thrust::plus<cuDoubleComplex>()); 
+    auto plus_max = std::get<1>(minmax(dev_current_Psi_Plus, system.s_N*system.s_N, true));
+    final_error = final_error / plus_max;
+
     // Calculate dh
     double dh = pow(system.tolerance / 2. / max(final_error, 1E-15), 0.25);
     // Check if dh is nan
