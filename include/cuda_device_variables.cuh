@@ -83,6 +83,8 @@ extern cuDoubleComplex* dev_k7_Psi_Minus;
 extern cuDoubleComplex* dev_k7_n_Plus;
 extern cuDoubleComplex* dev_k7_n_Minus;
 
+extern double* dev_rk_error;
+
 // Device Pointers to pulse and pulse2
 extern cuDoubleComplex* dev_fft_plus;
 extern cuDoubleComplex* dev_fft_minus;
@@ -108,5 +110,7 @@ void initializeDeviceArrays( const int s_N );
 void setDeviceArrays( Scalar* psi_plus, Scalar* psi_minus, Scalar* n_plus, Scalar* n_minus, const int s_N );
 
 void getDeviceArrays( Scalar* psi_plus, Scalar* psi_minus, Scalar* n_plus, Scalar* n_minus, Scalar* fft_plus, Scalar* fft_minus, const int s_N );
+
+void getDeviceArraySlice(Scalar* buffer_in, Scalar* buffer_out, const int start, const int length);
 
 void freeDeviceArrays();

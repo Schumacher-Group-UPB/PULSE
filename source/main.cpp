@@ -35,7 +35,7 @@ int main( int argc, char* argv[] ) {
 
     // Copy pump to device
     initializePumpVariables( system );
-    initializePulseVariables( system );
+    initializePulseVariables( system );     
 
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
     initSFMLWindow( system, filehandler );
@@ -60,13 +60,12 @@ int main( int argc, char* argv[] ) {
             "Main" );
 
         timeit(
-            getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
             cacheValues( system, buffer );
             running = plotSFMLWindow( system, filehandler, buffer );
             , "Plotting" );
 
         double duration = timeitGet( "Main" ) + timeitGet( "Plotting" );
-        auto [min,max] = minmax( buffer.Psi_Plus, system.s_N * system.s_N );
+        auto [min, max] = minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true /*This is a device pointer*/ );
         std::cout << "T = " << int( system.t ) << ", Time per " << filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r";
     }
 
@@ -82,7 +81,7 @@ int main( int argc, char* argv[] ) {
 
     // Print Time statistics and output to file
     timeitStatisticsSummary( system, filehandler );
-    timeitToFile( filehandler.getFile("times") );
+    timeitToFile( filehandler.getFile( "times" ) );
 
     return 0;
 }

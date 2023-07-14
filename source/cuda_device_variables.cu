@@ -84,6 +84,8 @@ cuDoubleComplex* dev_k7_n_Minus = nullptr;
 cuDoubleComplex* dev_fft_plus = nullptr;
 cuDoubleComplex* dev_fft_minus = nullptr;
 
+double* dev_rk_error = nullptr;
+
 // CUDA FFT Plan
 cufftHandle plan;
 
@@ -207,6 +209,7 @@ void initializeDeviceArrays( const int s_N ) {
     CHECK_CUDA_ERROR( cudaMalloc( (void**)&dev_k7_n_Minus, size * sizeof( cuDoubleComplex ) ), "malloc dev_k4_n_Minus" );
     CHECK_CUDA_ERROR( cudaMalloc( (void**)&dev_fft_plus, size * sizeof( cuDoubleComplex ) ), "malloc dev_fft_plus" );
     CHECK_CUDA_ERROR( cudaMalloc( (void**)&dev_fft_minus, size * sizeof( cuDoubleComplex ) ), "malloc dev_fft_minus" );
+    CHECK_CUDA_ERROR( cudaMalloc( (void**)&dev_rk_error, size * sizeof( double ) ), "malloc dev_rk_error" );
 
     CHECK_CUDA_ERROR( cufftPlan2d( &plan, s_N, s_N, CUFFT_Z2Z ), "FFT Plan" );
 }
@@ -239,6 +242,10 @@ void getDeviceArrays( Scalar* psi_plus, Scalar* psi_minus, Scalar* n_plus, Scala
         CHECK_CUDA_ERROR( cudaMemcpy( fft_minus, dev_fft_minus, size * sizeof( cuDoubleComplex ), cudaMemcpyDeviceToHost ), "memcpy device to host fft_minus" );
 }
 
+void getDeviceArraySlice(Scalar* buffer_in, Scalar* buffer_out, const int start, const int length) {
+    CHECK_CUDA_ERROR( cudaMemcpy( buffer_out, buffer_in + start, length * sizeof( cuDoubleComplex ), cudaMemcpyDeviceToHost ), "memcpy device to host buffer" );
+}
+
 void freeDeviceArrays() {
     for ( const auto pointer : { dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_k2_Psi_Plus, dev_k2_Psi_Minus, dev_k2_n_Plus, dev_k2_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus, dev_fft_plus, dev_fft_minus } ) {
         CHECK_CUDA_ERROR( cudaFree( pointer ), "free" );
@@ -249,5 +256,6 @@ void freeDeviceArrays() {
     for ( const auto pointer : { dev_pump_pol, dev_pulse_m, dev_pulse_pol } ) {
         CHECK_CUDA_ERROR( cudaFree( pointer ), "free" );
     }
+    CHECK_CUDA_ERROR( cudaFree( dev_rk_error ), "free" );
     CHECK_CUDA_ERROR( cufftDestroy( plan ), "FFT Destroy" );
 }

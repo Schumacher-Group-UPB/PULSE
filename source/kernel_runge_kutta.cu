@@ -16,6 +16,9 @@
 #include "system.hpp"
 #include "kernel.hpp"
 
+#include <thrust/reduce.h>
+#include <thrust/execution_policy.h>
+
 /*
 TODOs for Optimization:
 - remove shift kernel and combine it in mask
@@ -149,33 +152,14 @@ void iterateVariableTimestepRungeKutta(System& system, bool evaluate_pulse, dim3
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
 
     // Calculate the Runge Kutta Error. Since we dont need it here anymore, we use one of the K2 cache arrays to do this.
-    rungeFuncFinalError<<<grid_size, block_size>>>( dev_k2_Psi_Minus /* Out Array */, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus );
+    rungeFuncFinalError<<<grid_size, block_size>>>( dev_rk_error, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus );
     CHECK_CUDA_ERROR( {}, "Final Sum Error" );
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
     //sum <<<1, system.s_N*system.s_N / 2 >>>(dev_k2_Psi_Minus);
 
-    // Didn't bother writing a parallized sum function, so we just copy the result to the host and sum it up there.
-	std::unique_ptr<cuDoubleComplex[]> result( new cuDoubleComplex[system.s_N*system.s_N] );
-	CHECK_CUDA_ERROR(cudaMemcpy(result.get(), dev_k2_Psi_Minus, system.s_N*system.s_N*sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost), "memcpy dev_k2_Psi_Minus as errmat to host");
-    int num_threads = omp_get_max_threads();
-    std::unique_ptr<double[]> sums_error( new double[num_threads] );
-    for ( int i = 0; i < num_threads; i++ ) {
-        sums_error[i] = 0.0;
-    }
-    #pragma omp parallel for
-    for ( int i = 0; i < system.s_N*system.s_N; i++ ) {
-        int thread = omp_get_thread_num();
-        if (std::isnan(result[i].x)) {
-            std::cout << "NaN at " << i << ", row = " << i%system.s_N << ", col = " << floor(i/system.s_N)<<   std::endl;
-            continue;
-            result[i].x = 1.0;
-        }
-        sums_error[thread] += result[i].x;
-    }
-    double final_error = 0.0;
-    for ( int i = 0; i < num_threads; i++ ) {
-        final_error += sums_error[i];
-    }
+
+    // Use thrust::reduce to calculate the sum of the error matrix
+    double final_error = thrust::reduce(thrust::device, dev_rk_error, dev_rk_error + system.s_N*system.s_N, 0.0, thrust::plus<double>()); 
     
     // Calculate dh
     double dh = pow(system.tolerance / 2. / max(final_error, 1E-15), 0.25);

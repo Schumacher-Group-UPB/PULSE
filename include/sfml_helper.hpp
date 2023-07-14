@@ -4,6 +4,7 @@
 #include "system.hpp"
 #include "helperfunctions.hpp"
 #include "kernel.hpp"
+#include "cuda_device_variables.cuh"
 
 #ifdef SFML_RENDER
 #    include <SFML/Graphics.hpp>
@@ -30,8 +31,6 @@ void plotMatrix( BasicWindow& window, T* buffer, int N, int posX, int posY, int 
     window.blitMatrixPtr( plotarray.get(), cp, N, N, posX, posY, 1 /*border*/, skip );
     N = N / skip;
     auto text_height = N * 0.05;
-    // print min and max in scientifc notation
-
     window.print( posX + 5, posY + N - text_height - 5, text_height, title + "Min: " + toScientific( min ) + " Max: " + toScientific( max ), sf::Color::White );
 }
 
@@ -46,7 +45,7 @@ void initSFMLWindow( System& system, FileHandler& filehandler ) {
         std::cout << "Manually disabled SFML Renderer!" << std::endl;
         return;
     }
-    window.construct( system.s_N * 3, system.s_N * 2, "Spriddis fasdzinirnde Schdruhdelsdheoriesrechnungs" );
+    window.construct( 1920, 1080, system.s_N * 3, system.s_N * 2, "PC3" );
     // if .pal in colorpalette, read gnuplot colorpalette, else read as .txt
     if ( filehandler.colorPalette.find( ".pal" ) != std::string::npos )
         colorpalette.readColorPaletteFromGnuplotDOTPAL( filehandler.colorPalette );
@@ -65,6 +64,7 @@ bool plotSFMLWindow( System& system, FileHandler& handler, Buffer& buffer ) {
     if ( handler.disableRender )
         return true;
     bool running = window.run();
+    getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
     plotMatrix( window, buffer.Psi_Plus, system.s_N /*size*/, system.s_N, 0, 1, colorpalette, "Psi+ " );
     plotMatrix( window, buffer.fft_plus, system.s_N /*size*/, system.s_N, 0, 3, colorpalette, "FFT+ " );
     plotMatrix( window, buffer.Psi_Minus, system.s_N /*size*/, system.s_N, system.s_N, 1, colorpalette, "Psi- " );

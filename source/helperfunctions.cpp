@@ -6,6 +6,10 @@
 #include <omp.h>
 using namespace std::complex_literals;
 #include "cuda_device_variables.cuh"
+using Scalar = std::complex<double>;
+
+// To cast the "pointers-to-device-memory" to actual device pointers for thrust
+#include <thrust/device_ptr.h>
 
 std::vector<std::string> argv_to_vec( int argc, char** argv ) {
     std::vector<std::string> ret;
@@ -243,9 +247,9 @@ void initializePulseVariables( System& s ) {
     initializePulseVariables( s.pulse_t0.data(), s.pulse_amp.data(), s.pulse_freq.data(), s.pulse_sigma.data(), s.pulse_m.data(), s.pulse_pol.data(), s.pulse_width.data(), s.pulse_X.data(), s.pulse_Y.data(), s.pulse_t0.size() );
 };
 
-void normalize( double* buffer, int size, double min, double max ) {
+void normalize( double* buffer, int size, double min, double max, bool device_pointer ) {
     if ( min == max )
-        auto [min, max] = minmax( buffer, size );
+        auto [min, max] = minmax( buffer, size, device_pointer );
 #pragma omp parallel for
     for ( int i = 0; i < size; i++ )
         buffer[i] = ( buffer[i] - min ) / ( max - min );
@@ -270,6 +274,7 @@ bool doEvaluatePulse( const System& system ) {
     return evaluate_pulse;
 }
 
+// DEPRECATED
 std::vector<Scalar> cacheVector( const System& s, const Scalar* buffer ) {
     const Scalar* start = buffer + s.s_N * s.s_N / 2;
     const Scalar* end = start + s.s_N;
@@ -281,13 +286,17 @@ std::vector<Scalar> cacheVector( const System& s, const Scalar* buffer ) {
 
 void cacheValues( const System& system, Buffer& buffer ) {
     // Min and Max
-    const auto [min_plus, max_plus] = minmax( buffer.Psi_Plus, system.s_N * system.s_N );
-    const auto [min_minus, max_minus] = minmax( buffer.Psi_Minus, system.s_N * system.s_N );
+    const auto [min_plus, max_plus] = minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true /*Device Pointer*/ );
+    const auto [min_minus, max_minus] = minmax( dev_current_Psi_Minus, system.s_N * system.s_N, true /*Device Pointer*/ );
     buffer.cache_Psi_Plus_max.emplace_back( max_plus );
     buffer.cache_Psi_Minus_max.emplace_back( max_minus );
     // Cut at Y = 0
-    const auto vec_plus = cacheVector( system, buffer.Psi_Plus );
-    const auto vec_minus = cacheVector( system, buffer.Psi_Minus );
-    buffer.cache_Psi_Plus_history.emplace_back( vec_plus );
-    buffer.cache_Psi_Minus_history.emplace_back( vec_minus );
+    std::unique_ptr<Scalar[]> buffer_cut = std::make_unique<Scalar[]>( system.s_N );
+    getDeviceArraySlice( reinterpret_cast<Scalar*>(dev_current_Psi_Plus), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
+    std::vector<Scalar> temp( system.s_N * system.s_N / 2 );
+    std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
+    buffer.cache_Psi_Plus_history.emplace_back( temp );
+    getDeviceArraySlice( reinterpret_cast<Scalar*>(dev_current_Psi_Minus), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
+    std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
+    buffer.cache_Psi_Minus_history.emplace_back( temp );
 }

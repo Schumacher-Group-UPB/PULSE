@@ -53,6 +53,7 @@ class BasicWindow {
    protected:
     int mouseX, mouseY;
     bool mouseLB, mouseRB;
+    int texture_w, texture_h;
 
    public:
     int width;
@@ -70,34 +71,39 @@ class BasicWindow {
     sf::Clock clock;
     int textheight;
     int keyDown = -1;
+    bool maintexture_has_changed = true;
 
     BasicWindow( int w = 300, int h = 300, std::string n = "Unnamed" ) {
-        construct( w, h, n );
+        construct( w, h, w, h, n );
     }
 
-    void construct( int w, int h, std::string n ) {
-        width = w;
-        height = h;
+    void construct( int window_w, int window_h, int tx_w, int tx_h, std::string n ) {
+        // window_w = tx_w;
+        // window_h = tx_h;
+        width = window_w;
+        height = window_h;
+        texture_w = tx_w;
+        texture_h = tx_h;
         name = n;
-        mainTexture.create( w, h );
+        mainTexture.create( tx_w, tx_h );
         pixMat.clear();
-        pixMat.reserve( ( w + 1 ) * ( h + 1 ) );
+        pixMat.reserve( ( tx_w + 1 ) * ( tx_h + 1 ) );
         font.loadFromFile( "resources/font.ttf" );
-        textheight = (int)( 0.015 * h );
+        textheight = (int)( 0.015 * window_h );
         printtext.setFont( font );
         printtext.setCharacterSize( textheight );
         printtext.setOutlineColor( COLOR_BLACK );
         printtext.setOutlineThickness( 1.0f );
-        for ( int i = 0; i < width; i++ ) {
-            for ( int j = 0; j < height; j++ ) {
+        for ( int i = 0; i < tx_w; i++ ) {
+            for ( int j = 0; j < tx_h; j++ ) {
                 pixMat.push_back( sf::Vertex( sf::Vector2f( i + .5f, j + .5f ), sf::Color( 0, 0, 0 ) ) );
             }
         }
-        std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved " << pixMat.size() << " pixels." << std::endl;
+        std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size() << " pixels." << std::endl;
     }
 
     void init() {
-        window.create( sf::VideoMode( width, height, 32 ), name, sf::Style::Default, sf::ContextSettings( 0, 0, 8, 2, 0 ) );
+        window.create( sf::VideoMode( width, height, 32 ), name, sf::Style::Default, sf::ContextSettings( 0, 0, 1, 2, 0 ) );
         window.setVerticalSyncEnabled( true );
         mainTexture.setSmooth( true );
         // window.setFramerateLimit(2);
@@ -107,8 +113,14 @@ class BasicWindow {
         keyDown = -1;
         window.clear();
         updateMouseState();
-        // mainSprite.setScale(1.0f,-1.0f);
-        window.draw( sf::Sprite( mainTexture.getTexture() ) );
+        if ( maintexture_has_changed ) {
+            mainTexture.draw( pixMat.data(), texture_w * texture_h, sf::Points );
+            maintexture_has_changed = false;
+        }
+        sf::Sprite mainSprite( mainTexture.getTexture() );
+        mainSprite.setScale( (float)width / texture_w, (float)height / texture_h );
+        window.draw( mainSprite );
+
         /* Time, FPS */
         frametime = clock.restart().asMilliseconds();
         fps = (int)( 1000.0 / frametime );
@@ -128,14 +140,13 @@ class BasicWindow {
     }
 
     void blitMatrixPtr( const double* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
-    const int cols_over_skip = cols / skip;
-    const int rows_over_skip = rows / skip;
-    #pragma omp parallel for schedule( dynamic )
+        const int cols_over_skip = cols / skip;
+        const int rows_over_skip = rows / skip;
+#pragma omp parallel for schedule( dynamic )
         for ( int i = 0; i < cols_over_skip; i++ ) {
             for ( int j = 0; j < rows_over_skip; j++ ) {
                 auto c = cp.getColor( vector[( i * skip ) * rows + j * skip] );
-                //const auto index = ( i + posX ) * height + j - posY;
-                const auto index = ( i + 1 + posX ) * height - 1 - ( j + posY );
+                const auto index = ( i + 1 + posX ) * texture_h - 1 - ( j + posY );
                 pixMat.at( index ).color.r = c.r;
                 pixMat.at( index ).color.g = c.g;
                 pixMat.at( index ).color.b = c.b;
@@ -146,7 +157,7 @@ class BasicWindow {
                 }
             }
         }
-        mainTexture.draw( pixMat.data(), height * width, sf::Points );
+        maintexture_has_changed = true;
     }
 
     sf::Color convertColorToSFML( int r, int g, int b ) {
@@ -156,12 +167,16 @@ class BasicWindow {
     void print( int x, int y, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ) {
         print( x, y, textheight, text, textcolor, background, backgroundcolor );
     }
-    void print( int x, int y, int height, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ) {
+    void print( int x, int y, int h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ) {
+        float x_scale = (float)width / texture_w;
+        float y_scale = (float)height / texture_h;
+        x = x * x_scale;
+        y = y * y_scale;
         printtext.setFillColor( textcolor );
         printtext.setPosition( (float)x, (float)y );
         printtext.setString( text );
-        if ( height > 0 )
-            printtext.setCharacterSize( height );
+        if ( h > 0 )
+            printtext.setCharacterSize( h*y_scale );
         window.draw( printtext ); // std::cout << "Test " << text << std::endl;
     }
 
@@ -190,12 +205,20 @@ class BasicWindow {
         return mouseRB;
     }
     void horLine( int y0, int x0, int x1, sf::Color color = COLOR_WHITE ) {
+        float x_scale = (float)width / texture_w;
+        float y_scale = (float)height / texture_h;
+        x0 = x0 * x_scale;
+        y0 = y0 * y_scale;
         sf::RectangleShape line( sf::Vector2f( x1 - x0, 1.0f ) );
         line.setPosition( sf::Vector2f( x0, y0 ) );
         line.setFillColor( color );
         window.draw( line );
     }
     void verLine( int x0, int y0, int y1, sf::Color color = COLOR_WHITE ) {
+        float x_scale = (float)width / texture_w;
+        float y_scale = (float)height / texture_h;
+        x0 = x0 * x_scale;
+        y0 = y0 * y_scale;
         sf::RectangleShape line( sf::Vector2f( y1 - y0, 1.0f ) );
         line.setPosition( sf::Vector2f( x0, y0 ) );
         line.setFillColor( color );
