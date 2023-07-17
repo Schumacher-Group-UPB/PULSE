@@ -1,5 +1,5 @@
 # PC3
-Polariton Condensates simulated using CUDA
+Polariton Condensates simulations using CUDA
 
 # Requirements
 - [MSVC](https://visualstudio.microsoft.com/de/downloads/)
