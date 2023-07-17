@@ -4,7 +4,7 @@ Polariton Condensates simulations using CUDA
 # Requirements
 - [MSVC](https://visualstudio.microsoft.com/de/downloads/)
 - [CUDA](https://developer.nvidia.com/cuda-downloads)
-- Optional: [SFML](https://www.sfml-dev.org/download.php)
+- Optional: [SFML](https://www.sfml-dev.org/download.php) v 2.6.x
 
 # Build
 Build with SFML rendering
