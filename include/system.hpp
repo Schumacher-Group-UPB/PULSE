@@ -64,6 +64,7 @@ class System {
     std::vector<double> pump_X;
     std::vector<double> pump_Y;
     std::vector<int> pump_pol;
+    // TODO: pump m???
 
     // Pulse arrays
     std::vector<double> pulse_t0;
@@ -236,11 +237,18 @@ class FileHandler {
     void cacheToFiles( const Buffer& buffer ) {
         auto& file_max = getFile( "max" );
         auto& file_history_plus = getFile( "history_plus" );
+        file_max << "Psi_Plus";
 #ifdef TETMSPLITTING
         auto& file_history_minus = getFile( "history_minus" );
+        file_max << " Psi_Minus";
 #endif
+        file_max << std::endl;
         for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i++ ) {
+#ifdef TETMSPLITTING
             file_max << " " << buffer.cache_Psi_Plus_max[i] << " " << buffer.cache_Psi_Minus_max[i] << std::endl;
+#else
+            file_max << " " << buffer.cache_Psi_Plus_max[i] << std::endl;
+#endif
             for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++ ) {
                 file_history_plus << " " << std::abs( buffer.cache_Psi_Plus_history[i][k] );
 #ifdef TETMSPLITTING
