@@ -9,10 +9,10 @@ using namespace std::complex_literals;
 #include <vector>
 
 /**
-* @brief Very lightweight System Class containing all of the required system variables.
-* Reading the input from the commandline and filling the system variables is done
-* in the helperfunctions.hpp -> initializeSystem() function.
-*/
+ * @brief Very lightweight System Class containing all of the required system variables.
+ * Reading the input from the commandline and filling the system variables is done
+ * in the helperfunctions.hpp -> initializeSystem() function.
+ */
 class System {
    public:
     // SI Rescaling Units
@@ -164,7 +164,7 @@ class FileHandler {
     }
 
     void outputMatrixToFile( const Scalar* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, std::ofstream& out, const std::string& name ) {
-        if (! out.is_open())
+        if ( !out.is_open() )
             std::cout << "File " << name << " is not open!" << std::endl;
         for ( int i = row_start; i < row_stop; i++ ) {
             for ( int j = col_start; j < col_stop; j++ ) {
@@ -196,16 +196,18 @@ class FileHandler {
             auto key = fileoutputkeys[i];
             if ( key == "Psi_plus" )
                 outputMatrixToFile( buffer.Psi_Plus, system, key );
-            if ( key == "Psi_minus" )
-                outputMatrixToFile( buffer.Psi_Minus, system, key );
             if ( key == "n_plus" )
                 outputMatrixToFile( buffer.n_Plus, system, key );
-            if ( key == "n_minus" )
-                outputMatrixToFile( buffer.n_Minus, system, key );
             if ( key == "fft_plus" )
                 outputMatrixToFile( buffer.fft_plus, system, key );
+#ifdef TETMSPLITTING
+            if ( key == "Psi_minus" )
+                outputMatrixToFile( buffer.Psi_Minus, system, key );
+            if ( key == "n_minus" )
+                outputMatrixToFile( buffer.n_Minus, system, key );
             if ( key == "fft_minus" )
                 outputMatrixToFile( buffer.fft_minus, system, key );
+#endif
         }
     }
 
@@ -220,30 +222,40 @@ class FileHandler {
         for ( auto i = 0; i < fileoutputkeys.size(); i++ ) {
             if ( fileoutputkeys[i] == "Psi_plus" )
                 loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Plus );
-            else if ( fileoutputkeys[i] == "Psi_minus" )
-                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Minus );
             else if ( fileoutputkeys[i] == "n_plus" )
                 loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Plus );
+#ifdef TETMSPLITTING
+            else if ( fileoutputkeys[i] == "Psi_minus" )
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Minus );
             else if ( fileoutputkeys[i] == "n_minus" )
                 loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Minus );
+#endif
         }
     }
 
-    void cacheToFiles(const Buffer& buffer) {
+    void cacheToFiles( const Buffer& buffer ) {
         auto& file_max = getFile( "max" );
         auto& file_history_plus = getFile( "history_plus" );
+#ifdef TETMSPLITTING
         auto& file_history_minus = getFile( "history_minus" );
+#endif
         for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i++ ) {
             file_max << " " << buffer.cache_Psi_Plus_max[i] << " " << buffer.cache_Psi_Minus_max[i] << std::endl;
-            for (int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++) {
-                file_history_plus << " " << std::abs(buffer.cache_Psi_Plus_history[i][k]);
-                file_history_minus << " " << std::abs(buffer.cache_Psi_Minus_history[i][k]);
+            for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++ ) {
+                file_history_plus << " " << std::abs( buffer.cache_Psi_Plus_history[i][k] );
+#ifdef TETMSPLITTING
+                file_history_minus << " " << std::abs( buffer.cache_Psi_Minus_history[i][k] );
+#endif
             }
             file_history_plus << std::endl;
+#ifdef TETMSPLITTING
             file_history_minus << std::endl;
+#endif
         }
         file_max.close();
         file_history_plus.close();
+#ifdef TETMSPLITTING
         file_history_minus.close();
+#endif
     }
 };

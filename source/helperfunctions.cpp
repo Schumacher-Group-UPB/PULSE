@@ -47,7 +47,11 @@ std::string unifyLength( std::string indicator, std::string unit, std::string de
 
 static void printSystemHelp( System& s, FileHandler& h ) {
     std::cout << "Welcome to the 'Spriddis fasdzinirnde Schdruhdelsdheoriesrechnungs'. Todey i wil sho you, how to modifi dis progrem.\n\n";
-    std::cout << unifyLength( "General parameters:", "", "\n" )
+#ifdef TETMSPLITTING
+    std::cout << "This program is compiled with TETM-Splitting enabled.\n"
+#endif
+        std::cout
+              << unifyLength( "General parameters:", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n" )
               << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + h.outputPath + "'\n" )
               << unifyLength( "--name", "[string]", "File prefix. Standard is '" + h.outputName + "'\n" )
@@ -67,9 +71,11 @@ static void printSystemHelp( System& s, FileHandler& h ) {
               << unifyLength( "--gammaR", "[double]", "Standard is " + std::to_string( s.gamma_r / s.gamma_c ) + "*gammaC\n" )
               << unifyLength( "--gc", "[double]", "Standard is " + std::to_string( s.g_c ) + " meV mum^2\n" )
               << unifyLength( "--gr", "[double]", "Standard is " + std::to_string( s.g_r / s.g_c ) + "*gc\n" )
+#ifdef TETMSPLITTING
               << unifyLength( "--g_pm", "[double]", "Standard is " + std::to_string( s.g_pm / s.g_c ) + "*gc\n" )
               << unifyLength( "--R", "[double]", "Standard is " + std::to_string( s.R ) + " ps^-1 mum^2\n" )
               << unifyLength( "--deltaLT", "[double]", "Standard is " + std::to_string( s.delta_LT ) + " meV\n" )
+#endif
               << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse and pump. Warning: Adding a pump here overwrites all previous pump settings!", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
@@ -149,14 +155,26 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         s.g_c = getNextInput( arguments, "g_c", ++index ) / s.h_bar_s;
     if ( ( index = vec_find_str( "--gr", arguments ) ) != -1 )
         s.g_r = getNextInput( arguments, "g_r", ++index );
-    if ( ( index = vec_find_str( "--R", arguments ) ) != -1 )
+    if ( ( index = vec_find_str( "--R", arguments ) ) != -1 ) {
+        #ifndef TETMSPLITTING
+        std::cout << "Warning! Input parameter R = " << s.R << " is obsolete without TE/TM splitting!" << std::endl;
+        #endif
         s.R = getNextInput( arguments, "R", ++index );
+    }
     if ( ( index = vec_find_str( "--xmax", arguments ) ) != -1 )
         s.xmax = getNextInput( arguments, "xmax", ++index );
-    if ( ( index = vec_find_str( "--g_pm", arguments ) ) != -1 )
+    if ( ( index = vec_find_str( "--g_pm", arguments ) ) != -1 ) {
         s.g_pm = getNextInput( arguments, "s.gm", ++index );
-    if ( ( index = vec_find_str( "--deltaLT", arguments ) ) != -1 )
+        #ifndef TETMSPLITTING
+        std::cout << "Warning! Input parameter g_m = " << s.g_pm << " is obsolete without TE/TM splitting!" << std::endl;
+        #endif
+    }
+    if ( ( index = vec_find_str( "--deltaLT", arguments ) ) != -1 ) {
         s.delta_LT = getNextInput( arguments, "deltaLT", ++index );
+        #ifndef TETMSPLITTING
+        std::cout << "Warning! Input parameter delta_LT = " << s.delta_LT << " is obsolete without TE/TM splitting!" << std::endl;
+        #endif
+    }
     if ( ( index = vec_find_str( "--mPlus", arguments ) ) != -1 )
         s.m_plus = getNextInput( arguments, "m_plus", ++index );
     if ( ( index = vec_find_str( "--mMinus", arguments ) ) != -1 )
@@ -287,16 +305,20 @@ std::vector<Scalar> cacheVector( const System& s, const Scalar* buffer ) {
 void cacheValues( const System& system, Buffer& buffer ) {
     // Min and Max
     const auto [min_plus, max_plus] = minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true /*Device Pointer*/ );
-    const auto [min_minus, max_minus] = minmax( dev_current_Psi_Minus, system.s_N * system.s_N, true /*Device Pointer*/ );
     buffer.cache_Psi_Plus_max.emplace_back( max_plus );
+    #ifdef TETMSPLITTING
+    const auto [min_minus, max_minus] = minmax( dev_current_Psi_Minus, system.s_N * system.s_N, true /*Device Pointer*/ );
     buffer.cache_Psi_Minus_max.emplace_back( max_minus );
+    #endif
     // Cut at Y = 0
     std::unique_ptr<Scalar[]> buffer_cut = std::make_unique<Scalar[]>( system.s_N );
-    getDeviceArraySlice( reinterpret_cast<Scalar*>(dev_current_Psi_Plus), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
+    getDeviceArraySlice( reinterpret_cast<Scalar*>( dev_current_Psi_Plus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
     std::vector<Scalar> temp( system.s_N * system.s_N / 2 );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Plus_history.emplace_back( temp );
-    getDeviceArraySlice( reinterpret_cast<Scalar*>(dev_current_Psi_Minus), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
+    #ifdef TETMSPLITTING
+    getDeviceArraySlice( reinterpret_cast<Scalar*>( dev_current_Psi_Minus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Minus_history.emplace_back( temp );
+    #endif
 }

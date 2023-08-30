@@ -34,6 +34,14 @@ __device__ static __inline__ cuDoubleComplex right_neighbour( cuDoubleComplex* v
     return vector[index + distance];
 }
 
+__device__ static __inline__ void hamilton( cuDoubleComplex& DT1, cuDoubleComplex* __restrict__ vector, int index, const int row, const int col, const int N ) {
+    const auto upper = upper_neighbour( vector, index, row, col, 1, N );
+    const auto lower = lower_neighbour( vector, index, row, col, 1, N );
+    const auto left = left_neighbour( vector, index, row, col, 1, N );
+    const auto right = right_neighbour( vector, index, row, col, 1, N );
+    DT1 = -4.0 * vector[index] + upper + lower + left + right;
+}
+
 __device__ static __inline__ void hamilton_1( cuDoubleComplex& DT1, cuDoubleComplex& DT4, cuDoubleComplex* __restrict__ vector, int index, const int row, const int col, const int N ) {
     const auto upper = upper_neighbour( vector, index, row, col, 1, N );
     const auto lower = lower_neighbour( vector, index, row, col, 1, N );
