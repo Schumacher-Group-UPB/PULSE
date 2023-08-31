@@ -2,9 +2,9 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include "cuda_complex.cuh"
 #include "cuda_complex_math.cuh"
 #include <omp.h>
-using namespace std::complex_literals;
 #include "system.hpp"
 
 /**
@@ -34,7 +34,7 @@ int vec_find_str( std::string toFind, const std::vector<std::string>& input, int
  * @param index The index to start searching from. This field is updated to the
  * index of the next parameter.
  */
-double getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index );
+real_number getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index );
 
 /**
  * @brief Helper function to print the help message for the program. The function
@@ -56,13 +56,13 @@ static void printSystemHelp( System& s, FileHandler& h );
  * @brief Takes the system and a given set of pulse parameters and adds it to the
  * system pulse cache array. This array is then later pushed to the GPU memory.
  */
-void addPulse( System& s, double t0, double amp, double freq, double sigma, int m, int pol, double width, double x, double y );
+void addPulse( System& s, real_number t0, real_number amp, real_number freq, real_number sigma, int m, int pol, real_number width, real_number x, real_number y );
 
 /**
  * @brief Takes the system and a given set of pump parameters and adds it to the
  * system pump cache array. This array is then later pushed to the GPU memory.
  */
-void addPump( System& s, double P0, double w, double x, double y, int pol );
+void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol );
 
 /**
  * @brief Initializes the system and the file handler variables from the argc
@@ -82,46 +82,21 @@ void initializePumpVariables( System& s );
  */
 void initializePulseVariables( System& s );
 
-/**
- * @brief Calculates the abs2 of a (complex) number, as long as std::real and
- * std::imag are defined for the type T.
- * @param z The number to calculate the abs2 of.
- * @return double The abs2 of the number.
- */
-template <typename T>
-inline double cwiseAbs2( T z ) {
-    return std::real( z ) * std::real( z ) + std::imag( z ) * std::imag( z );
-}
-
-/**
- * @brief Calculates the abs2 of a buffer of (complex) numbers, as long as
- * std::real and std::imag are defined for the type T.
- * @param z The buffer to calculate the abs2 of.
- * @param buffer The buffer to save the result to.
- * @param size The size of the buffer.
- */
-template <typename T>
-inline void cwiseAbs2( T* z, double* buffer, int size ) {
-#pragma omp parallel for
-    for ( int i = 0; i < size; i++ )
-        buffer[i] = std::real( z[i] ) * std::real( z[i] ) + std::imag( z[i] ) * std::imag( z[i] );
-}
 
 struct compare_complex_abs2 {
-    __host__ __device__ bool operator()( cuDoubleComplex lhs, cuDoubleComplex rhs ) {
+    __host__ __device__ bool operator()( complex_number lhs, complex_number rhs ) {
         return lhs.x * lhs.x + lhs.y * lhs.y < rhs.x * rhs.x + rhs.y * rhs.y;
     }
 };
 
 /**
- * @brief Calculates the minimum and maximum of a buffer of (complex) numbers,
- * as long as std::real, std::imag and std::sqrt are defined for the type T.
+ * @brief Calculates the minimum and maximum of a buffer of (complex) numbers
  * @param z The buffer to calculate the minimum and maximum of.
  * @param size The size of the buffer.
- * @return std::tuple<double, double> A tuple containing the minimum and maximum
+ * @return std::tuple<real_number, real_number> A tuple containing the minimum and maximum
  */
-std::tuple<double, double> minmax( cuDoubleComplex* buffer, int size, bool device_pointer = false );
-std::tuple<double, double> minmax( double* buffer, int size, bool device_pointer = false );
+std::tuple<real_number, real_number> minmax( complex_number* buffer, int size, bool device_pointer = false );
+std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool device_pointer = false );
 
 /**
  * @brief Normalizes a buffer of real numbers using the minimum and maximum
@@ -132,7 +107,7 @@ std::tuple<double, double> minmax( double* buffer, int size, bool device_pointer
  * @param min The minimum value to normalize to.
  * @param max The maximum value to normalize to.
  */
-void normalize( double* buffer, int size, double min = 0, double max = 0, bool device_pointer = false );
+void normalize( real_number* buffer, int size, real_number min = 0, real_number max = 0, bool device_pointer = false );
 
 /**
  * @brief Calculates the angle of a buffer of complex numbers, as long as
@@ -141,7 +116,7 @@ void normalize( double* buffer, int size, double min = 0, double max = 0, bool d
  * @param buffer The buffer to save the result to.
  * @param size The size of the buffer.
  */
-void angle( Scalar* z, double* buffer, int size );
+void angle( complex_number* z, real_number* buffer, int size );
 
 /**
  * @brief Helper function to figure out wether or not to evaluate the pulse at the
@@ -153,7 +128,7 @@ bool doEvaluatePulse( const System& system );
  * @brief Helper function to grab the current wavefunction cut at Y = 0 and save
  * it to a vector.
  */
-std::vector<Scalar> cacheVector( const System& s, const Scalar* buffer );
+std::vector<complex_number> cacheVector( const System& s, const complex_number* buffer );
 
 /**
  * @brief Calculates the current maximum (and minimum) of the wavefunction and

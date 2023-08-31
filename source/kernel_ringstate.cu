@@ -1,16 +1,17 @@
+#include "cuda_complex.cuh"
 #include "kernel_ringstate.cuh"
 
-__host__ __device__ void kernel_generateRingPhase( int s_N, double amp, int n, double w1, double w2, double xPos, double yPos, double p_xmax, double s_dx, bool normalize, cuDoubleComplex* buffer, bool reset ) {
-    double largest_r = 0.0;
+__host__ __device__ void kernel_generateRingPhase( int s_N, real_number amp, int n, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset ) {
+    real_number largest_r = 0.0;
     for ( int i = 0; i < s_N; i++ )
         for ( int j = 0; j < s_N; j++ ) {
             auto index = i * s_N + j;
             if ( reset )
-                buffer[index] = make_cuDoubleComplex( 0.0, 0.0 );
-            auto x = -p_xmax / 2.0 + s_dx * i;
-            auto y = -p_xmax / 2.0 + s_dx * j;
-            double r = sqrt( abs2( x - xPos ) + abs2( y - yPos ) );
-            buffer[index] += amp * r / w1 / w1 * exp( -r * r / w2 / w2 ) * pow( ( x - xPos + 1.0 * sign( n ) * make_cuDoubleComplex( 0, 1.0 ) * ( y - yPos ) ), abs( n ) );
+                buffer[index] = { 0.0, 0.0 };
+            real_number x = -p_xmax / 2.0 + s_dx * i;
+            real_number y = -p_xmax / 2.0 + s_dx * j;
+            real_number r = sqrt( abs2( x - xPos ) + abs2( y - yPos ) );
+            buffer[index] += amp * r / w1 / w1 * exp( -r * r / w2 / w2 ) * pow( ( x - xPos + 1.0 * sign( n ) * complex_number{ 0, 1.0 } * ( y - yPos ) ), abs( n ) );
 
             largest_r = max( largest_r, abs2( buffer[index] ) );
         }
@@ -23,16 +24,16 @@ __host__ __device__ void kernel_generateRingPhase( int s_N, double amp, int n, d
         }
 }
 
-__host__ __device__ void kernel_generateRingState( int s_N, double amp, double w1, double w2, double xPos, double yPos, double p_xmax, double s_dx, bool normalize, cuDoubleComplex* buffer, bool reset ) {
-    double max_buffer = 0.0;
+__host__ __device__ void kernel_generateRingState( int s_N, real_number amp, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset ) {
+    real_number max_buffer = 0.0;
     for ( int i = 0; i < s_N; i++ )
         for ( int j = 0; j < s_N; j++ ) {
             auto index = i * s_N + j;
             if ( reset )
-                buffer[index] = make_cuDoubleComplex( 0.0, 0.0 );
-            auto x = -p_xmax / 2.0 + s_dx * i;
-            auto y = -p_xmax / 2.0 + s_dx * j;
-            double r = sqrt( abs2( x - xPos ) + abs2( y - yPos ) );
+                buffer[index] = { 0.0, 0.0 };
+            real_number x = -p_xmax / 2.0 + s_dx * i;
+            real_number y = -p_xmax / 2.0 + s_dx * j;
+            real_number r = sqrt( abs2( x - xPos ) + abs2( y - yPos ) );
             buffer[index] += amp * r * r / w1 / w1 * exp( -r * r / w2 / w2 );
             max_buffer = max( max_buffer, abs2( buffer[index] ) );
         }

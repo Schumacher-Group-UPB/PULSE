@@ -25,6 +25,9 @@ endif
 ifeq ($(TETM),TRUE)
 	ADD_FLAGS = $(ADD_FLAGS) -DTETMSPLITTING
 endif
+ifeq ($(FP32),TRUE)
+	ADD_FLAGS = $(ADD_FLAGS) -DUSEFP32
+endif
 
 # Targets
 ifeq ($(OS),Windows_NT)

@@ -1,7 +1,5 @@
 #pragma once
-#include <complex>
-using Scalar = std::complex<double>;
-using namespace std::complex_literals;
+#include "cuda_complex.cuh"
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -16,96 +14,96 @@ using namespace std::complex_literals;
 class System {
    public:
     // SI Rescaling Units
-    double m_e = 9.10938356E-31;
-    double h_bar = 1.0545718E-34;
-    double e_e = 1.60217662E-19;
-    double h_bar_s = 6.582119514E-4;
+    real_number m_e = 9.10938356E-31;
+    real_number h_bar = 1.0545718E-34;
+    real_number e_e = 1.60217662E-19;
+    real_number h_bar_s = 6.582119514E-4;
 
     // System Variables
-    double m_eff;
-    double gamma_c = 0.15;          // ps^-1
-    double gamma_r = 1.5 * gamma_c; // ps^-1
-    double g_c = 3.E-6 / h_bar_s;   // meV mum^2
-    double g_r = 2. * g_c;          // meV mum^2
-    double R = 0.01;                // ps^-1 mum^2
-    // double P0 = 100.;                     // ps^-1 mum^-2
-    // double w = 10.;                       // mum
-    double xmax = 100.;                   // mum
-    double g_pm = -g_c / 5;               // meV mum^2
-    double delta_LT = 0.025E-3 / h_bar_s; // meV
-    double m_plus = 0.;
-    double m_minus = 0.;
+    real_number m_eff;
+    real_number gamma_c = 0.15;          // ps^-1
+    real_number gamma_r = 1.5 * gamma_c; // ps^-1
+    real_number g_c = 3.E-6 / h_bar_s;   // meV mum^2
+    real_number g_r = 2. * g_c;          // meV mum^2
+    real_number R = 0.01;                // ps^-1 mum^2
+    // real_number P0 = 100.;                     // ps^-1 mum^-2
+    // real_number w = 10.;                       // mum
+    real_number xmax = 100.;                   // mum
+    real_number g_pm = -g_c / 5;               // meV mum^2
+    real_number delta_LT = 0.025E-3 / h_bar_s; // meV
+    real_number m_plus = 0.;
+    real_number m_minus = 0.;
 
     // Numerics
     int s_N = 400;
-    double dx;
-    double t_max = 1000;
+    real_number dx;
+    real_number t_max = 1000;
     bool normalize_phase_states = true;
     bool normalizePhasePulse = false;
     int iteration = 0;
     // RK Solver Variables
-    double dt;
-    double t;
-    double dt_max = 0.3;
-    double dt_min = 0.0001; // also dt_delta
-    double tolerance = 1E-1;
+    real_number dt;
+    real_number t;
+    real_number dt_max = 0.3;
+    real_number dt_min = 0.0001; // also dt_delta
+    real_number tolerance = 1E-1;
 
     // FFT Mask Parameters
-    double fft_every = 1; // ps
-    double fft_power = 6.;
-    double fft_mask_area = 0.7;
+    real_number fft_every = 1; // ps
+    real_number fft_power = 6.;
+    real_number fft_mask_area = 0.7;
 
     // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
     bool fixed_time_step = true;
 
     // Pump arrays
-    std::vector<double> pump_amp;
-    std::vector<double> pump_width;
-    std::vector<double> pump_X;
-    std::vector<double> pump_Y;
+    std::vector<real_number> pump_amp;
+    std::vector<real_number> pump_width;
+    std::vector<real_number> pump_X;
+    std::vector<real_number> pump_Y;
     std::vector<int> pump_pol;
     // TODO: pump m???
 
     // Pulse arrays
-    std::vector<double> pulse_t0;
-    std::vector<double> pulse_amp;
-    std::vector<double> pulse_freq;
-    std::vector<double> pulse_sigma;
+    std::vector<real_number> pulse_t0;
+    std::vector<real_number> pulse_amp;
+    std::vector<real_number> pulse_freq;
+    std::vector<real_number> pulse_sigma;
     std::vector<int> pulse_m;
     std::vector<int> pulse_pol;
-    std::vector<double> pulse_width;
-    std::vector<double> pulse_X;
-    std::vector<double> pulse_Y;
+    std::vector<real_number> pulse_width;
+    std::vector<real_number> pulse_X;
+    std::vector<real_number> pulse_Y;
 };
 
 class Buffer {
    public:
-    Scalar* u_P_plus;
-    Scalar* u_P_minus;
-    Scalar* Psi_Plus;
-    Scalar* Psi_Minus;
-    Scalar* n_Plus;
-    Scalar* n_Minus;
-    Scalar* fft_plus;
-    Scalar* fft_minus;
+    complex_number* u_P_plus;
+    complex_number* u_P_minus;
+    complex_number* Psi_Plus;
+    complex_number* Psi_Minus;
+    complex_number* n_Plus;
+    complex_number* n_Minus;
+    complex_number* fft_plus;
+    complex_number* fft_minus;
 
     // Cache Arrays for max values of Psi
-    std::vector<double> cache_Psi_Plus_max;
-    std::vector<double> cache_Psi_Minus_max;
+    std::vector<real_number> cache_Psi_Plus_max;
+    std::vector<real_number> cache_Psi_Minus_max;
 
     // Cache Arrays for history (cut at Y = 0) of Psi
-    std::vector<std::vector<Scalar>> cache_Psi_Plus_history;
-    std::vector<std::vector<Scalar>> cache_Psi_Minus_history;
+    std::vector<std::vector<complex_number>> cache_Psi_Plus_history;
+    std::vector<std::vector<complex_number>> cache_Psi_Minus_history;
 
     Buffer( const int N ) {
-        u_P_plus = new Scalar[N * N];
-        u_P_minus = new Scalar[N * N];
-        Psi_Plus = new Scalar[N * N];
-        Psi_Minus = new Scalar[N * N];
-        n_Plus = new Scalar[N * N];
-        n_Minus = new Scalar[N * N];
-        fft_plus = new Scalar[N * N];
-        fft_minus = new Scalar[N * N];
+        u_P_plus = new complex_number[N * N];
+        u_P_minus = new complex_number[N * N];
+        Psi_Plus = new complex_number[N * N];
+        Psi_Minus = new complex_number[N * N];
+        n_Plus = new complex_number[N * N];
+        n_Minus = new complex_number[N * N];
+        fft_plus = new complex_number[N * N];
+        fft_minus = new complex_number[N * N];
     }
     Buffer( const System& s ) : Buffer( s.s_N ) {}
     Buffer(){};
@@ -141,19 +139,19 @@ class FileHandler {
         return files[name];
     }
 
-    void loadMatrixFromFile( const std::string& filepath, Scalar* buffer ) {
+    void loadMatrixFromFile( const std::string& filepath, complex_number* buffer ) {
         std::ifstream filein;
         filein.open( filepath, std::ios::in );
         std::istringstream inputstring;
         std::string line;
         int i = 0;
-        double x, y, re, im;
+        real_number x, y, re, im;
         if ( filein.is_open() ) {
             while ( getline( filein, line ) ) {
                 if ( line.size() > 2 ) {
                     inputstring = std::istringstream( line );
                     inputstring >> x >> y >> re >> im;
-                    buffer[i] = re + 1.0i * im;
+                    buffer[i] = {re, im};
                     i++;
                 }
             }
@@ -164,7 +162,7 @@ class FileHandler {
         }
     }
 
-    void outputMatrixToFile( const Scalar* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, std::ofstream& out, const std::string& name ) {
+    void outputMatrixToFile( const complex_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, std::ofstream& out, const std::string& name ) {
         if ( !out.is_open() )
             std::cout << "File " << name << " is not open!" << std::endl;
         for ( int i = row_start; i < row_stop; i++ ) {
@@ -172,21 +170,21 @@ class FileHandler {
                 auto index = j + i * s.s_N;
                 auto x = -s.xmax / 2 + j * s.dx;
                 auto y = -s.xmax / 2 + i * s.dx;
-                out << x << " " << y << " " << std::setprecision( 10 ) << std::real( buffer[index] ) << " " << std::imag( buffer[index] ) << std::endl;
+                out << x << " " << y << " " << std::setprecision( 10 ) << buffer[index].x << " " << buffer[index].y << std::endl;
             }
             out << std::endl;
         }
         std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) << " elements to " << toPath( name ) << "." << std::endl;
     }
-    void outputMatrixToFile( const Scalar* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, const std::string& out ) {
+    void outputMatrixToFile( const complex_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, const std::string& out ) {
         auto& file = getFile( out );
         outputMatrixToFile( buffer, row_start, row_stop, col_start, col_stop, s, file, out );
     }
-    void outputMatrixToFile( const Scalar* buffer, const System& s, const std::string& out ) {
+    void outputMatrixToFile( const complex_number* buffer, const System& s, const std::string& out ) {
         auto& file = getFile( out );
         outputMatrixToFile( buffer, 0, s.s_N, 0, s.s_N, s, file, out );
     }
-    void outputMatrixToFile( const Scalar* buffer, const System& s, std::ofstream& out, const std::string& name ) {
+    void outputMatrixToFile( const complex_number* buffer, const System& s, std::ofstream& out, const std::string& name ) {
         outputMatrixToFile( buffer, 0, s.s_N, 0, s.s_N, s, out, name );
     }
 
@@ -250,9 +248,9 @@ class FileHandler {
             file_max << " " << buffer.cache_Psi_Plus_max[i] << std::endl;
 #endif
             for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++ ) {
-                file_history_plus << " " << std::abs( buffer.cache_Psi_Plus_history[i][k] );
+                file_history_plus << " " << abs( buffer.cache_Psi_Plus_history[i][k] );
 #ifdef TETMSPLITTING
-                file_history_minus << " " << std::abs( buffer.cache_Psi_Minus_history[i][k] );
+                file_history_minus << " " << abs( buffer.cache_Psi_Minus_history[i][k] );
 #endif
             }
             file_history_plus << std::endl;

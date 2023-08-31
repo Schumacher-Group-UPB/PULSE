@@ -1,30 +1,28 @@
 #pragma once
-#include <complex>
-using Scalar = std::complex<double>;
-
+#include "cuda_complex.cuh"
 #include "system.hpp"
 #include "cuda_complex_math.cuh"
 #include "kernel_ringstate.cuh"
 
-void initializeDeviceVariables( const double s_dx, const double s_dt, const double p_g_r, const int s_N, const double p_m_eff, const double p_gamma_c, const double p_g_c, const double p_g_pm, const double p_gamma_r, const double p_R, const double p_delta_LT, const double p_xmax, const double h_bar_s );
+void initializeDeviceVariables( const real_number s_dx, const real_number s_dt, const real_number p_g_r, const int s_N, const real_number p_m_eff, const real_number p_gamma_c, const real_number p_g_c, const real_number p_g_pm, const real_number p_gamma_r, const real_number p_R, const real_number p_delta_LT, const real_number p_xmax, const real_number h_bar_s );
 
 void initializeDeviceArrays(const int s_N);
 
-void setDeviceArrays(Scalar* psi_plus, Scalar* psi_minus, Scalar* n_plus, Scalar* n_minus, const int s_N);
+void setDeviceArrays(complex_number* psi_plus, complex_number* psi_minus, complex_number* n_plus, complex_number* n_minus, const int s_N);
 
-void getDeviceArrays(Scalar* psi_plus, Scalar* psi_minus, Scalar* n_plus, Scalar* n_minus, Scalar* fft_plus, Scalar* fft_minus, const int s_N);
+void getDeviceArrays(complex_number* psi_plus, complex_number* psi_minus, complex_number* n_plus, complex_number* n_minus, complex_number* fft_plus, complex_number* fft_minus, const int s_N);
 
 void freeDeviceArrays();
 
-void setPulse(Scalar* pulse, Scalar* pulse2, const int s_N);
+void setPulse(complex_number* pulse, complex_number* pulse2, const int s_N);
 
 void rungeFunctionIterate( System& s, bool evaluate_pulse );
 
-void generateRingPhase( int s_N, double amp, int n, double w1, double w2, double xPos, double yPos, double p_xmax, double s_dx, bool normalize, Scalar* buffer, bool reset = true );
-void generateRingState( int s_N, double amp, double w1, double w2, double xPos, double yPos, double p_xmax, double s_dx, bool normalize, Scalar* buffer, bool reset = true );
+void generateRingPhase( int s_N, real_number amp, int n, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset = true );
+void generateRingState( int s_N, real_number amp, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset = true );
 
-void initializePumpVariables( double* pump_amp, double* pump_width, double* pump_X, double* pump_Y, int* pump_pol, const int size );
-void initializePulseVariables( double* pulse_t0, double* pulse_amp, double* pulse_freq, double* pulse_sigma, int* pulse_m, int* pulse_pol, double* pulse_width, double* pulse_X, double* pulse_Y, const int size );
+void initializePumpVariables( real_number* pump_amp, real_number* pump_width, real_number* pump_X, real_number* pump_Y, int* pump_pol, const int size );
+void initializePulseVariables( real_number* pulse_t0, real_number* pulse_amp, real_number* pulse_freq, real_number* pulse_sigma, int* pulse_m, int* pulse_pol, real_number* pulse_width, real_number* pulse_X, real_number* pulse_Y, const int size );
 
-void generateRingPhase( int s_N, double amp, int n, double w1, double w2, double xPos, double yPos, double p_xmax, double s_dx, bool normalize, Scalar* buffer, bool reset );
-void generateRingState( int s_N, double amp, double w1, double w2, double xPos, double yPos, double p_xmax, double s_dx, bool normalize, Scalar* buffer, bool reset );
+void generateRingPhase( int s_N, real_number amp, int n, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset );
+void generateRingState( int s_N, real_number amp, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset );

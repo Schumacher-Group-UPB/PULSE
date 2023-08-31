@@ -34,7 +34,7 @@ TODOs for Optimization:
  * We dont need this variable anywhere else, so we just create it
  * locally to this file here.
  */
-double cached_t = 0.0;
+real_number cached_t = 0.0;
 
 /*
  * This function iterates the Runge Kutta Kernel using a fixed time step.
@@ -201,13 +201,13 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
         // sum <<<1, system.s_N*system.s_N / 2 >>>(dev_k2_Psi_Minus);
 
         // Use thrust::reduce to calculate the sum of the error matrix
-        double final_error = thrust::reduce( thrust::device, dev_rk_error, dev_rk_error + system.s_N * system.s_N, 0.0, thrust::plus<double>() );
-        // cuDoubleComplex normalizing_factor = thrust::reduce(thrust::device, dev_current_Psi_Plus, dev_current_Psi_Plus + system.s_N*system.s_N, make_cuDoubleComplex(0,0), thrust::plus<cuDoubleComplex>());
+        real_number final_error = thrust::reduce( thrust::device, dev_rk_error, dev_rk_error + system.s_N * system.s_N, 0.0, thrust::plus<real_number>() );
+        // complex_number normalizing_factor = thrust::reduce(thrust::device, dev_current_Psi_Plus, dev_current_Psi_Plus + system.s_N*system.s_N, complex_number{0,0}, thrust::plus<complex_number>());
         auto plus_max = std::get<1>( minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true ) );
         final_error = final_error / plus_max;
 
         // Calculate dh
-        double dh = pow( system.tolerance / 2. / max( final_error, 1E-15 ), 0.25 );
+        real_number dh = pow( system.tolerance / 2. / max( final_error, 1E-15 ), 0.25 );
         // Check if dh is nan
         if ( std::isnan( dh ) ) {
             dh = 1.0;
@@ -221,7 +221,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
             system.dt = max( system.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
         else
             system.dt = min( system.dt + system.dt_min * std::floor( dh ), system.dt_max );
-        CHECK_CUDA_ERROR( cudaMemcpyToSymbol( dev_s_dt, &system.dt, sizeof( double ) ), "cudaMemcpyToSymbol dt" );
+        CHECK_CUDA_ERROR( cudaMemcpyToSymbol( dev_s_dt, &system.dt, sizeof( real_number ) ), "cudaMemcpyToSymbol dt" );
         // Accept step if error is below tolerance
         if ( final_error < system.tolerance ) {
             accept = true;
@@ -247,8 +247,8 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
  * to a cached filter mask, which itself will be shifted.
  */
 void calculateFFT( System& system, dim3 block_size, dim3 grid_size ) {
-    CHECK_CUDA_ERROR( cufftExecZ2Z( plan, (cufftDoubleComplex*)dev_current_Psi_Plus, (cufftDoubleComplex*)dev_fft_plus, CUFFT_FORWARD ), "FFT Exec" );
-    CHECK_CUDA_ERROR( cufftExecZ2Z( plan, (cufftDoubleComplex*)dev_current_Psi_Minus, (cufftDoubleComplex*)dev_fft_minus, CUFFT_FORWARD ), "FFT Exec" );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)dev_current_Psi_Plus, (fft_complex_number*)dev_fft_plus, CUFFT_FORWARD ), "FFT Exec" );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)dev_current_Psi_Minus, (fft_complex_number*)dev_fft_minus, CUFFT_FORWARD ), "FFT Exec" );
     // CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
     fftshift_2D<<<grid_size, block_size>>>( dev_fft_plus, dev_fft_minus, system.s_N / 2 );
     // CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
@@ -260,9 +260,9 @@ void calculateFFT( System& system, dim3 block_size, dim3 grid_size ) {
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     // CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
     //// Transform back.
-    CHECK_CUDA_ERROR( cufftExecZ2Z( plan, dev_fft_plus, dev_current_Psi_Plus, CUFFT_INVERSE ), "iFFT Exec" );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, dev_fft_plus, dev_current_Psi_Plus, CUFFT_INVERSE ), "iFFT Exec" );
 #ifdef TETMSPLITTING
-    CHECK_CUDA_ERROR( cufftExecZ2Z( plan, dev_fft_minus, dev_current_Psi_Minus, CUFFT_INVERSE ), "iFFT Exec" );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, dev_fft_minus, dev_current_Psi_Minus, CUFFT_INVERSE ), "iFFT Exec" );
 #endif
     // CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
     //  Shift FFT Once again for visualization

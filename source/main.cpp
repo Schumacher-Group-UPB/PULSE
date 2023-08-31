@@ -7,14 +7,12 @@
 #include <omp.h>
 #include <chrono>
 
+#include "cuda_complex.cuh"
 #include "system.hpp"
 #include "kernel.hpp"
 #include "helperfunctions.hpp"
 #include "timeit.hpp"
 #include "sfml_helper.hpp"
-
-using namespace std::complex_literals;
-using Scalar = std::complex<double>;
 
 int main( int argc, char* argv[] ) {
     // Convert input arguments to system and handler variables
@@ -26,8 +24,8 @@ int main( int argc, char* argv[] ) {
     generateRingPhase( system.s_N, 1.0, system.m_plus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Plus, true /*reset to zero*/ );
     generateRingPhase( system.s_N, 1.0, system.m_minus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Minus, true /*reset to zero*/ );
     for ( int i = 0; i < system.s_N * system.s_N; i++ ) {
-        buffer.n_Plus[i] = cwiseAbs2( buffer.Psi_Plus[i] );
-        buffer.n_Minus[i] = cwiseAbs2( buffer.Psi_Minus[i] );
+        buffer.n_Plus[i] = { cwiseAbs2( buffer.Psi_Plus[i] ), 0 };
+        buffer.n_Minus[i] = { cwiseAbs2( buffer.Psi_Minus[i] ), 0 };
     }
 
     // Load Matrices from File. If --load was not passed in argv, this method does nothing.
@@ -35,7 +33,7 @@ int main( int argc, char* argv[] ) {
 
     // Copy pump to device
     initializePumpVariables( system );
-    initializePulseVariables( system );     
+    initializePulseVariables( system );
 
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
     initSFMLWindow( system, filehandler );

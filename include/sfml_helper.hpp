@@ -16,13 +16,13 @@
 #    include <sstream>
 #    include <iomanip>
 
-std::string toScientific( const double in ) {
+std::string toScientific( const real_number in ) {
     std::stringstream ss;
     ss << std::scientific << std::setprecision( 2 ) << in;
     return ss.str();
 }
 
-std::unique_ptr<double[]> plotarray;
+std::unique_ptr<real_number[]> plotarray;
 template <typename T>
 void plotMatrix( BasicWindow& window, T* buffer, int N, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "" ) {
     cwiseAbs2( buffer, plotarray.get(), N * N );
@@ -48,7 +48,7 @@ void initSFMLWindow( System& system, FileHandler& filehandler ) {
     #ifdef TETMSPLITTING
     window.construct( 1920, 1080, system.s_N * 3, system.s_N * 2, "PC3" );
     #else
-    window.construct( 1920, 1080, system.s_N * 3, system.s_N, "PC3" );
+    window.construct( 1920, 540, system.s_N * 3, system.s_N, "PC3" );
     #endif
     // if .pal in colorpalette, read gnuplot colorpalette, else read as .txt
     if ( filehandler.colorPalette.find( ".pal" ) != std::string::npos )
@@ -57,7 +57,7 @@ void initSFMLWindow( System& system, FileHandler& filehandler ) {
         colorpalette.readColorPaletteFromTXT( filehandler.colorPalette );
     colorpalette.initColors();
     window.init();
-    plotarray = std::make_unique<double[]>( system.s_N * system.s_N );
+    plotarray = std::make_unique<real_number[]>( system.s_N * system.s_N );
 #else
     std::cout << "PC^3 Compiled without SFML Renderer!" << std::endl;
 #endif

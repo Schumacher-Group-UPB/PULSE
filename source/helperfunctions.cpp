@@ -4,9 +4,8 @@
 #include <vector>
 #include <complex>
 #include <omp.h>
-using namespace std::complex_literals;
+#include "cuda_complex.cuh"
 #include "cuda_device_variables.cuh"
-using Scalar = std::complex<double>;
 
 // To cast the "pointers-to-device-memory" to actual device pointers for thrust
 #include <thrust/device_ptr.h>
@@ -27,7 +26,7 @@ int vec_find_str( std::string toFind, const std::vector<std::string>& input, int
     return -1;
 }
 
-double getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index ) {
+real_number getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index ) {
     std::cout << "Read input " << name << " as " << arguments.at( index ) << std::endl;
     return std::stof( arguments.at( index++ ) );
 }
@@ -49,6 +48,13 @@ static void printSystemHelp( System& s, FileHandler& h ) {
     std::cout << "Welcome to the 'Spriddis fasdzinirnde Schdruhdelsdheoriesrechnungs'. Todey i wil sho you, how to modifi dis progrem.\n\n";
 #ifdef TETMSPLITTING
     std::cout << "This program is compiled with TETM-Splitting enabled.\n"
+#else
+    std::cout << "This program is compiled with TETM-Splitting disabled.\n"
+#endif
+#ifdef USEFP64
+    std::cout << "This program is compiled with double precision numbers.\n"
+#else
+    std::cout << "This program is compiled with single precision numbers.\n"
 #endif
         std::cout
               << unifyLength( "General parameters:", "", "\n" )
@@ -83,7 +89,7 @@ static void printSystemHelp( System& s, FileHandler& h ) {
               << unifyLength( "--pump ", "[double] [double] [double] [double] [int] {int} {int}", "amplitude, width, posX, posY, pol, {mPlus, mMinus} standard is the pump given by previous parameters.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
 }
 
-void addPulse( System& s, double t0, double amp, double freq, double sigma, int m, int pol, double width, double x, double y ) {
+void addPulse( System& s, real_number t0, real_number amp, real_number freq, real_number sigma, int m, int pol, real_number width, real_number x, real_number y ) {
     if ( amp == 0.0 || sigma == 0 || freq == 0 || width == 0 ) {
         std::cout << "Pulse with amp = 0 or sigma = 0 or freq = 0 or width = 0 not allowed!" << std::endl;
         return;
@@ -100,7 +106,7 @@ void addPulse( System& s, double t0, double amp, double freq, double sigma, int 
     std::cout << "Added pulse with t0 = " << t0 << " amp = " << amp << " freq = " << freq << " sigma = " << sigma << " m = " << m << " pol = " << pol << " width = " << width << " x = " << x << " y = " << y << std::endl;
 }
 
-void addPump( System& s, double P0, double w, double x, double y, int pol ) {
+void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol ) {
     if ( P0 == 0.0 || w == 0 ) {
         std::cout << "Pump with P0 = 0 or w = 0 not allowed!" << std::endl;
         return;
@@ -221,25 +227,25 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     // Pumps
     index = 0;
     while ( ( index = vec_find_str( "--pump", arguments, index ) ) != -1 ) {
-        double amp = getNextInput( arguments, "pump_amp", ++index );
-        double w = getNextInput( arguments, "pump_width", index );
-        double posX = getNextInput( arguments, "pump_X", index );
-        double posY = getNextInput( arguments, "pump_Y", index );
+        real_number amp = getNextInput( arguments, "pump_amp", ++index );
+        real_number w = getNextInput( arguments, "pump_width", index );
+        real_number posX = getNextInput( arguments, "pump_X", index );
+        real_number posY = getNextInput( arguments, "pump_Y", index );
         int pol = (int)getNextInput( arguments, "pump_pol", index );
         addPump( s, amp, w, posX, posY, pol );
     }
     // Pulses
     index = 0;
     while ( ( index = vec_find_str( "--pulse", arguments, index ) ) != -1 ) {
-        double t0 = getNextInput( arguments, "pulse_t0", ++index );
-        double amp = getNextInput( arguments, "pulse_amp", index );
-        double freq = getNextInput( arguments, "pulse_freq", index );
-        double sigma = getNextInput( arguments, "pulse_sigma", index );
+        real_number t0 = getNextInput( arguments, "pulse_t0", ++index );
+        real_number amp = getNextInput( arguments, "pulse_amp", index );
+        real_number freq = getNextInput( arguments, "pulse_freq", index );
+        real_number sigma = getNextInput( arguments, "pulse_sigma", index );
         int m = getNextInput( arguments, "pulse_m", index );
         int pol = (int)getNextInput( arguments, "pulse_pol", index );
-        double w = getNextInput( arguments, "pulse_width", index );
-        double posX = getNextInput( arguments, "pulse_X", index );
-        double posY = getNextInput( arguments, "pulse_Y", index );
+        real_number w = getNextInput( arguments, "pulse_width", index );
+        real_number posX = getNextInput( arguments, "pulse_X", index );
+        real_number posY = getNextInput( arguments, "pulse_Y", index );
         addPulse( s, t0, amp, freq, sigma, m, pol, w, posX, posY );
     }
 
@@ -265,7 +271,7 @@ void initializePulseVariables( System& s ) {
     initializePulseVariables( s.pulse_t0.data(), s.pulse_amp.data(), s.pulse_freq.data(), s.pulse_sigma.data(), s.pulse_m.data(), s.pulse_pol.data(), s.pulse_width.data(), s.pulse_X.data(), s.pulse_Y.data(), s.pulse_t0.size() );
 };
 
-void normalize( double* buffer, int size, double min, double max, bool device_pointer ) {
+void normalize( real_number* buffer, int size, real_number min, real_number max, bool device_pointer ) {
     if ( min == max )
         auto [min, max] = minmax( buffer, size, device_pointer );
 #pragma omp parallel for
@@ -273,10 +279,10 @@ void normalize( double* buffer, int size, double min, double max, bool device_po
         buffer[i] = ( buffer[i] - min ) / ( max - min );
 }
 
-void angle( Scalar* z, double* buffer, int size ) {
+void angle( complex_number* z, real_number* buffer, int size ) {
 #pragma omp parallel for
     for ( int i = 0; i < size; i++ )
-        buffer[i] = std::arg( z[i] );
+        buffer[i] = std::atan2(z[i].y, z[i].x); //std::arg( z[i] );
 }
 
 bool doEvaluatePulse( const System& system ) {
@@ -293,11 +299,11 @@ bool doEvaluatePulse( const System& system ) {
 }
 
 // DEPRECATED
-std::vector<Scalar> cacheVector( const System& s, const Scalar* buffer ) {
-    const Scalar* start = buffer + s.s_N * s.s_N / 2;
-    const Scalar* end = start + s.s_N;
+std::vector<complex_number> cacheVector( const System& s, const complex_number* buffer ) {
+    const complex_number* start = buffer + s.s_N * s.s_N / 2;
+    const complex_number* end = start + s.s_N;
 
-    std::vector<Scalar> ret( s.s_N );
+    std::vector<complex_number> ret( s.s_N );
     std::copy( start, end, ret.begin() );
     return ret;
 }
@@ -311,13 +317,13 @@ void cacheValues( const System& system, Buffer& buffer ) {
     buffer.cache_Psi_Minus_max.emplace_back( max_minus );
     #endif
     // Cut at Y = 0
-    std::unique_ptr<Scalar[]> buffer_cut = std::make_unique<Scalar[]>( system.s_N );
-    getDeviceArraySlice( reinterpret_cast<Scalar*>( dev_current_Psi_Plus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
-    std::vector<Scalar> temp( system.s_N * system.s_N / 2 );
+    std::unique_ptr<complex_number[]> buffer_cut = std::make_unique<complex_number[]>( system.s_N );
+    getDeviceArraySlice( reinterpret_cast<complex_number*>( dev_current_Psi_Plus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
+    std::vector<complex_number> temp( system.s_N * system.s_N / 2 );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Plus_history.emplace_back( temp );
     #ifdef TETMSPLITTING
-    getDeviceArraySlice( reinterpret_cast<Scalar*>( dev_current_Psi_Minus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
+    getDeviceArraySlice( reinterpret_cast<complex_number*>( dev_current_Psi_Minus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Minus_history.emplace_back( temp );
     #endif

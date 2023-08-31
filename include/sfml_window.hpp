@@ -139,7 +139,7 @@ class BasicWindow {
         window.display();
     }
 
-    void blitMatrixPtr( const double* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
+    void blitMatrixPtr( const real_number* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
         const int cols_over_skip = cols / skip;
         const int rows_over_skip = rows / skip;
 #pragma omp parallel for schedule( dynamic )
