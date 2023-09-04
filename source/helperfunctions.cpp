@@ -47,14 +47,14 @@ std::string unifyLength( std::string indicator, std::string unit, std::string de
 static void printSystemHelp( System& s, FileHandler& h ) {
     std::cout << "Welcome to the 'Spriddis fasdzinirnde Schdruhdelsdheoriesrechnungs'. Todey i wil sho you, how to modifi dis progrem.\n\n";
 #ifdef TETMSPLITTING
-    std::cout << "This program is compiled with TETM-Splitting enabled.\n"
+    std::cout << "This program is compiled with TETM-Splitting enabled.\n";
 #else
-    std::cout << "This program is compiled with TETM-Splitting disabled.\n"
+    std::cout << "This program is compiled with TETM-Splitting disabled.\n";
 #endif
 #ifdef USEFP64
-    std::cout << "This program is compiled with double precision numbers.\n"
+    std::cout << "This program is compiled with double precision numbers.\n";
 #else
-    std::cout << "This program is compiled with single precision numbers.\n"
+    std::cout << "This program is compiled with single precision numbers.\n";
 #endif
         std::cout
               << unifyLength( "General parameters:", "", "\n" )

@@ -12,6 +12,7 @@ SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
 
 SFML ?= FALSE
 TETM ?= FALSE
+FP32 ?= FALSE
 
 # Object files
 CPP_SRCS = $(wildcard $(SRCDIR)/*.cpp)
@@ -23,17 +24,19 @@ ifeq ($(SFML),TRUE)
 	ADD_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-main $(SFMLLIBS) -DSFML_RENDER
 endif
 ifeq ($(TETM),TRUE)
-	ADD_FLAGS = $(ADD_FLAGS) -DTETMSPLITTING
+	ADD_FLAGS += -DTETMSPLITTING
 endif
 ifeq ($(FP32),TRUE)
-	ADD_FLAGS = $(ADD_FLAGS) -DUSEFP32
+	ADD_FLAGS += -DUSEFP32
 endif
 
 # Targets
-ifeq ($(OS),Windows_NT)
-	TARGET = main.exe
-else
-	TARGET = main.o
+ifndef TARGET
+	ifeq ($(OS),Windows_NT)
+		TARGET = main.exe
+	else
+		TARGET = main.o
+	endif
 endif
 
 all: $(OBJDIR) $(CPP_OBJS) $(CU_OBJS)
@@ -49,5 +52,5 @@ $(OBJDIR):
 	@mkdir $(OBJDIR)
 
 clean:
-	@rm -f $(OBJDIR)/*.o main.exe
+	@rm -f $(OBJDIR)/*.o $(TARGET)
 	@rm -fr $(OBJDIR)
