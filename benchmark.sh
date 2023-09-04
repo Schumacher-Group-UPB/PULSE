@@ -13,7 +13,7 @@ system_parameters=(
 )
 
 plot=false
-makef=false
+makef=true
 
 # Path to the program to launch
 launch_program="./main_[FP].exe"
