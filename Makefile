@@ -10,7 +10,7 @@ OBJDIR = obj
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true -diag-suppress 177
+	NVCCFLAGS = -std=c++17 -Xcompiler -openmp -lcufft -rdc=true -diag-suppress 177
 endif
 SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
 
