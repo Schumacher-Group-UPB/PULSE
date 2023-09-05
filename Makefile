@@ -7,7 +7,11 @@ INCDIR = include
 OBJDIR = obj
 
 # Compiler flags
-CPPFLAGS = -std=c++20 -Xcompiler -openmp 
+ifeq ($(OS),Windows_NT)
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true
+else
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true -diag-suppress 177
+endif
 SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
 
 SFML ?= FALSE
@@ -40,13 +44,13 @@ ifndef TARGET
 endif
 
 all: $(OBJDIR) $(CPP_OBJS) $(CU_OBJS)
-	$(NVCC) -o $(TARGET) $(CPP_OBJS) $(CU_OBJS) -lcufft -I$(INCDIR) -Xcompiler -openmp -rdc=true $(ADD_FLAGS)
+	$(NVCC) -o $(TARGET) $(CPP_OBJS) $(CU_OBJS) $(NVCCFLAGS) -I$(INCDIR) $(ADD_FLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	$(NVCC) $(CPPFLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
-	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -I$(INCDIR) -lcufft -rdc=true -Xcompiler -openmp $(ADD_FLAGS) -diag-suppress 177
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
 
 $(OBJDIR):
 	@mkdir $(OBJDIR)
