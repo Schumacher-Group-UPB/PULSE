@@ -53,6 +53,9 @@ class System {
     real_number fft_power = 6.;
     real_number fft_mask_area = 0.7;
 
+    // Kernel Block Size
+    int block_size = 16;
+
     // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
     bool fixed_time_step = true;
 

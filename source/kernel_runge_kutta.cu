@@ -52,40 +52,42 @@ real_number cached_t = 0.0;
  * k4 = f(t + dt, input_for_k4) = rungeFuncKernel(input_for_k4)
  * next = current + dt * (1/6 * k1 + 1/3 * k2 + 1/3 * k3 + 1/6 * k4)
  * ------------------------------------------------------------------------------
+ * Note, that this function uses k7-k3 instead of k4-k1 as temporary variables
+ * due to the size increases of the temporary arrays.
  * @param system The system to iterate
  * @param evaluate_pulse If true, the pulse is evaluated at the current time step
  */
 void iterateFixedTimestepRungeKutta( System& system, bool evaluate_pulse, dim3 block_size, dim3 grid_size ) {
     // Iterate the Runge Function on the current Psi and Calculate K1
-    rungeFuncKernel<<<grid_size, block_size>>>( system.t, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    rungeFuncKernel<<<grid_size, block_size>>>( system.t, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
     CHECK_CUDA_ERROR( {}, "K1" );
 
     // Sum K1 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
-    rungeFuncSum<<<grid_size, block_size>>>( 0.5, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus );
+    rungeFuncSum<<<grid_size, block_size>>>( 0.5, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus );
     CHECK_CUDA_ERROR( {}, "Sum(K1)" );
 
     // Iterate the Runge Function on next_Psi and Calculate K2
-    rungeFuncKernel<<<grid_size, block_size>>>( system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k2_Psi_Plus, dev_k2_Psi_Minus, dev_k2_n_Plus, dev_k2_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    rungeFuncKernel<<<grid_size, block_size>>>( system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
     CHECK_CUDA_ERROR( {}, "K2" );
 
     // Sum K2 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
-    rungeFuncSum<<<grid_size, block_size>>>( 0.5, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k2_Psi_Plus, dev_k2_Psi_Minus, dev_k2_n_Plus, dev_k2_n_Minus );
+    rungeFuncSum<<<grid_size, block_size>>>( 0.5, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus );
     CHECK_CUDA_ERROR( {}, "Sum(K2)" );
 
     // Iterate the Runge Function on next_Psi and Calculate K3
-    rungeFuncKernel<<<grid_size, block_size>>>( system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    rungeFuncKernel<<<grid_size, block_size>>>( system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
     CHECK_CUDA_ERROR( {}, "K3" );
 
     // Sum K3 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
-    rungeFuncSum<<<grid_size, block_size>>>( 1.0, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus );
+    rungeFuncSum<<<grid_size, block_size>>>( 1.0, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus );
     CHECK_CUDA_ERROR( {}, "Sum(K3)" );
 
     // Iterate the Runge Function on next_Psi and Calculate K4
-    rungeFuncKernel<<<grid_size, block_size>>>( system.t + system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    rungeFuncKernel<<<grid_size, block_size>>>( system.t + system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
     CHECK_CUDA_ERROR( {}, "K4" );
 
     // Calculate the final Runge Kutta sum, saving the result in dev_in_Psi
-    rungeFuncSumToFinalFixed<<<grid_size, block_size>>>( dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_k2_Psi_Plus, dev_k2_Psi_Minus, dev_k2_n_Plus, dev_k2_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus );
+    rungeFuncSumToFinalFixed<<<grid_size, block_size>>>( dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus );
     CHECK_CUDA_ERROR( {}, "Final Sum" );
     return;
 }
@@ -279,22 +281,25 @@ void calculateFFT( System& system, dim3 block_size, dim3 grid_size ) {
  * @param s_N Number of grid points in one dimension
  */
 void rungeFunctionIterate( System& system, bool evaluate_pulse ) {
-    dim3 block_size( 16, 16 );
-    dim3 grid_size( ( system.s_N + block_size.x ) / block_size.x, ( system.s_N + block_size.y ) / block_size.y );
+    dim3 block_size( system.block_size, system.block_size );
+    int gs = ceil( system.s_N/block_size.x );
+    //dim3 grid_size( ( system.s_N + block_size.x - 1 ) / block_size.x, ( system.s_N + block_size.y - 1 ) / block_size.y );
+    dim3 grid_size( gs, gs );
 
     if ( system.fixed_time_step )
         iterateFixedTimestepRungeKutta( system, evaluate_pulse, block_size, grid_size );
     else
         iterateVariableTimestepRungeKutta( system, evaluate_pulse, block_size, grid_size );
 
+    // Syncronize
+    CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
+    
     // Increase t.
     system.t = system.t + system.dt;
 
     // For statistical purposes, increase the iteration counter
     system.iteration++;
 
-    // Syncronize
-    CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
 
     // Test: Calculate the FFT of dev_current_Psi_Plus using cufft
     if ( system.t - cached_t < system.fft_every )

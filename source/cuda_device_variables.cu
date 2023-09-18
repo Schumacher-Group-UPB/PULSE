@@ -1,5 +1,5 @@
-#include "cuda_macro.cuh"
 #include "cuda_complex.cuh"
+#include "cuda_macro.cuh"
 #include "cuda_device_variables.cuh"
 
 __device__ real_number dev_s_dx = 0;
@@ -166,7 +166,8 @@ void initializePulseVariables( real_number* pulse_t0, real_number* pulse_amp, re
 }
 
 /**
- * Initialize device arrays to zero
+ * Initialize device arrays to zero. 
+ * @param s_N The size of the array
  */
 void initializeDeviceArrays( const int s_N ) {
     const auto size = s_N * s_N;
