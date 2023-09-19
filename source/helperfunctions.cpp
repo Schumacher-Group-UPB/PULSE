@@ -45,7 +45,6 @@ std::string unifyLength( std::string indicator, std::string unit, std::string de
 }
 
 static void printSystemHelp( System& s, FileHandler& h ) {
-    std::cout << "Welcome to the 'Spriddis fasdzinirnde Schdruhdelsdheoriesrechnungs'. Todey i wil sho you, how to modifi dis progrem.\n\n";
 #ifdef TETMSPLITTING
     std::cout << "This program is compiled with TETM-Splitting enabled.\n";
 #else
@@ -55,6 +54,10 @@ static void printSystemHelp( System& s, FileHandler& h ) {
     std::cout << "This program is compiled with double precision numbers.\n";
 #else
     std::cout << "This program is compiled with single precision numbers.\n";
+#endif
+#ifdef USECPU
+    std::cout << "This program is compiled with CPU support.\n";
+    std::cout << "Maximum number of CPU cores utilized " << omp_get_max_threads() << std::endl;
 #endif
         std::cout
               << unifyLength( "General parameters:", "", "\n" )
@@ -87,6 +90,9 @@ static void printSystemHelp( System& s, FileHandler& h ) {
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
               << unifyLength( "--pulse ", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
               << unifyLength( "--pump ", "[double] [double] [double] [double] [int] {int} {int}", "amplitude, width, posX, posY, pol, {mPlus, mMinus} standard is the pump given by previous parameters.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
+#ifdef USECPU
+    std::cout << unifyLength( "--threads", "[int]", "Standard is " + std::to_string( s.omp_max_threads ) + " Threads\n" ) << std::endl;
+#endif
 }
 
 void addPulse( System& s, real_number t0, real_number amp, real_number freq, real_number sigma, int m, int pol, real_number width, real_number x, real_number y ) {
@@ -187,6 +193,9 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         s.m_minus = getNextInput( arguments, "m_plus", ++index );
     if ( ( index = vec_find_str( "--fft", arguments ) ) != -1 )
         s.fft_every = getNextInput( arguments, "fft_every", ++index );
+    if ( ( index = vec_find_str( "--threads", arguments ) ) != -1 )
+        s.omp_max_threads = (int)getNextInput( arguments, "threads", ++index );
+
 
     // Numerik
     // 351x -> 39.7s, 401x -> 65.3s, 451x -> 104.4s, 501x -> 158.3s, 551x -> 231.9s, 751x -> 837s/250ps, 1501 -> 13796.1

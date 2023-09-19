@@ -6,6 +6,7 @@
 #include "cuda_complex.cuh"
 
 std::tuple<real_number, real_number> minmax( complex_number* buffer, int size, bool device_pointer ) {
+    #ifndef USECPU
     if ( device_pointer ) {
         thrust::device_ptr<complex_number> dev_buffer = thrust::device_pointer_cast( buffer );
         auto mm = thrust::minmax_element( thrust::device, dev_buffer, dev_buffer + size, compare_complex_abs2() );
@@ -13,6 +14,7 @@ std::tuple<real_number, real_number> minmax( complex_number* buffer, int size, b
         complex_number max = *mm.second;
         return std::make_tuple( min.x * min.x + min.y * min.y, max.x * max.x + max.y * max.y );
     }
+    #endif
     auto mm = thrust::minmax_element( buffer, buffer + size, compare_complex_abs2() );
     return std::make_tuple( ( *mm.first ).x * ( *mm.first ).x + ( *mm.first ).y * ( *mm.first ).y, ( *mm.second ).x * ( *mm.second ).x + ( *mm.second ).y * ( *mm.second ).y );
 
@@ -37,6 +39,7 @@ std::tuple<real_number, real_number> minmax( complex_number* buffer, int size, b
     //     return std::make_tuple( std::sqrt( min ), std::sqrt( max ) );
 }
 std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool device_pointer ) {
+    #ifndef USECPU
     if (device_pointer) {
         thrust::device_ptr<real_number> dev_buffer = thrust::device_pointer_cast(buffer);
         auto mm = thrust::minmax_element( thrust::device, dev_buffer, dev_buffer + size, thrust::less<real_number>() );
@@ -44,6 +47,7 @@ std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool
         real_number max = *mm.second;
         return std::make_tuple( min, max );
     }
+    #endif
     auto mm = thrust::minmax_element( buffer, buffer + size, thrust::less<real_number>() );
     return std::make_tuple( *mm.first, *mm.second );
 }

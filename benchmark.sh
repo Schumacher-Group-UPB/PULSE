@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-output_path="benchmark/"
+output_path="benchmark_test/"
 
 system_parameters=(
     "--pump 40 10 0 0 0"
@@ -20,16 +20,18 @@ launch_program="./main_[FP].exe"
 
 if [ "$makef" = true ]; then
     make clean
-    make SFML=FALSE TARGET=${launch_program/\[FP\]/fp32} -j10 FP32=TRUE
+    make SFML=FALSE FP32=TRUE TARGET=${launch_program/\[FP\]/fp32} -j10
     make clean
     make SFML=FALSE TARGET=${launch_program/\[FP\]/fp64} -j10
+    make clean
+    make SFML=FALSE CPU=TRUE TARGET=${launch_program/\[FP\]/cpu} -j10
 fi
 
 # Construct Folder
-for fp in "fp32" "fp64"; do
+for fp in "fp32" "fp64" "cpu"; do
     output_path_fp="$output_path$fp/"
     launch_program_fp="${launch_program/\[FP\]/$fp}"
-    for ((N=200; N<=1600; N+=200)); do
+    for ((N=200; N<=400; N+=200)); do
         output_path_N="$output_path_fp$N/"
         mkdir -p "$output_path_N"
         command=("$launch_program_fp" "${system_parameters[@]}" "--path" "$output_path_N" "--N" "$N")
@@ -69,7 +71,7 @@ filepath = "'$output_path'"
 print(filepath)
 
 # Get Files
-parents = ("fp32", "fp64")
+parents = ("fp32", "fp64", "cpu")
 folders = ("200","400","600","800","1000","1200","1400","1600")
 
 N = len(parents)

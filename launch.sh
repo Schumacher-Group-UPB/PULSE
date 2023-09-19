@@ -9,8 +9,8 @@ system_parameters=(
     "--pulse 10 1e-2 1 2 1 1 10 0 0"
     "--pulse 100 1e-2 1 2 -1 1 10 0 0"
     "--outEvery 200"
-    "--tmax 200" 
-    "--N 800"
+    "--tmax 500" 
+    "--N 500"
     #"--tol 10"
     #-nosfml
     #"--t0 100"
@@ -20,7 +20,7 @@ system_parameters=(
 )
 
 # Path to the program to launch
-launch_program="./main.exe"
+launch_program="./main_o3.exe"
 
 # Construct the command to launch the program
 command=("$launch_program" "${system_parameters[@]}" "--path" "$output_path")

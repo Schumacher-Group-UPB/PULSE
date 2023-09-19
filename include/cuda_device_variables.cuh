@@ -6,27 +6,27 @@
 #include "cuda_complex.cuh"
 
 // Use -rdc=true when compiling with nvcc to allow for the "extern" keyword to work
-extern __device__ real_number dev_s_dx;
-extern __device__ real_number dev_p_g_r;
-extern __device__ int dev_s_N;
-extern __device__ real_number dev_p_m_eff;
-extern __device__ real_number dev_p_gamma_c;
-extern __device__ real_number dev_p_g_c;
-extern __device__ real_number dev_p_g_pm;
-extern __device__ real_number dev_p_gamma_r;
-extern __device__ real_number dev_p_R;
-extern __device__ real_number dev_p_delta_LT;
-extern __device__ real_number dev_s_dt;
-extern __device__ real_number dev_p_xmax;
-extern __device__ real_number dev_one_over_h_bar_s;
+extern CUDA_DEVICE real_number dev_s_dx;
+extern CUDA_DEVICE real_number dev_p_g_r;
+extern CUDA_DEVICE int dev_s_N;
+extern CUDA_DEVICE real_number dev_p_m_eff;
+extern CUDA_DEVICE real_number dev_p_gamma_c;
+extern CUDA_DEVICE real_number dev_p_g_c;
+extern CUDA_DEVICE real_number dev_p_g_pm;
+extern CUDA_DEVICE real_number dev_p_gamma_r;
+extern CUDA_DEVICE real_number dev_p_R;
+extern CUDA_DEVICE real_number dev_p_delta_LT;
+extern CUDA_DEVICE real_number dev_s_dt;
+extern CUDA_DEVICE real_number dev_p_xmax;
+extern CUDA_DEVICE real_number dev_one_over_h_bar_s;
 
-extern __device__ int dev_n_pump;
-extern __device__ int dev_n_pulse;
+extern CUDA_DEVICE int dev_n_pump;
+extern CUDA_DEVICE int dev_n_pulse;
 
 // Cached Device Variables
-extern __device__ real_number dev_p_m_eff_scaled;
-extern __device__ real_number dev_p_delta_LT_scaled;
-extern __device__ complex_number dev_pgr_plus_pR;
+extern CUDA_DEVICE real_number dev_p_m_eff_scaled;
+extern CUDA_DEVICE real_number dev_p_delta_LT_scaled;
+extern CUDA_DEVICE complex_number dev_pgr_plus_pR;
 
 // Pump and Pulse device arrays
 extern real_number* dev_pump_amp;

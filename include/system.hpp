@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <map>
 #include <vector>
+#include "omp.h"
 
 /**
  * @brief Very lightweight System Class containing all of the required system variables.
@@ -55,6 +56,7 @@ class System {
 
     // Kernel Block Size
     int block_size = 16;
+    int omp_max_threads = omp_get_max_threads();
 
     // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
     bool fixed_time_step = true;

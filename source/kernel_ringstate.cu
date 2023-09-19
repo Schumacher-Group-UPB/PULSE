@@ -1,7 +1,7 @@
 #include "cuda_complex.cuh"
 #include "kernel_ringstate.cuh"
 
-__host__ __device__ void kernel_generateRingPhase( int s_N, real_number amp, int n, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset ) {
+CUDA_HOST_DEVICE void kernel_generateRingPhase( int s_N, real_number amp, int n, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset ) {
     real_number largest_r = 0.0;
     for ( int i = 0; i < s_N; i++ )
         for ( int j = 0; j < s_N; j++ ) {
@@ -24,7 +24,7 @@ __host__ __device__ void kernel_generateRingPhase( int s_N, real_number amp, int
         }
 }
 
-__host__ __device__ void kernel_generateRingState( int s_N, real_number amp, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset ) {
+CUDA_HOST_DEVICE void kernel_generateRingState( int s_N, real_number amp, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset ) {
     real_number max_buffer = 0.0;
     for ( int i = 0; i < s_N; i++ )
         for ( int j = 0; j < s_N; j++ ) {

@@ -3,7 +3,10 @@
 #include "cuda_complex_math.cuh"
 #include "kernel_fft.cuh"
 
-__global__ void kernel_makeFFTVisible( complex_number* input, complex_number* output ) {
+// These functions are not rquired for the CPU Benchmark Version
+#ifndef USECPU
+
+CUDA_GLOBAL void kernel_makeFFTVisible( complex_number* input, complex_number* output ) {
     int blockId = ( gridDim.x * blockIdx.y ) + blockIdx.x;
     int index = ( blockId * ( blockDim.x * blockDim.y ) ) + ( threadIdx.y * blockDim.x ) + threadIdx.x;
     if ( index < dev_s_N * dev_s_N ) {
@@ -12,7 +15,7 @@ __global__ void kernel_makeFFTVisible( complex_number* input, complex_number* ou
     }
 }
 
-__global__ void fftshift_2D( complex_number* data_plus, complex_number* data_minus, int N_half ) {
+CUDA_GLOBAL void fftshift_2D( complex_number* data_plus, complex_number* data_minus, int N_half ) {
     int blockId = ( gridDim.x * blockIdx.y ) + blockIdx.x;
     int index = ( blockId * ( blockDim.x * blockDim.y ) ) + ( threadIdx.y * blockDim.x ) + threadIdx.x;
     if ( index >= dev_s_N * dev_s_N )
@@ -32,7 +35,7 @@ __global__ void fftshift_2D( complex_number* data_plus, complex_number* data_min
     swap_symbol( data_minus[i * dev_s_N + j + N_half], data_minus[( i + N_half ) * dev_s_N + j] );
 }
 
-__global__ void kernel_maskFFT( complex_number* data_plus, complex_number* data_minus, const real_number s, const real_number w, bool out_mask ) {
+CUDA_GLOBAL void kernel_maskFFT( complex_number* data_plus, complex_number* data_minus, const real_number s, const real_number w, bool out_mask ) {
     int blockId = ( gridDim.x * blockIdx.y ) + blockIdx.x;
     int index = ( blockId * ( blockDim.x * blockDim.y ) ) + ( threadIdx.y * blockDim.x ) + threadIdx.x;
     if ( index < dev_s_N * dev_s_N ) {
@@ -45,3 +48,11 @@ __global__ void kernel_maskFFT( complex_number* data_plus, complex_number* data_
         data_minus[index] = out_mask ? complex_number{ sqrt( mask ), 0 } : data_minus[index] / dev_s_N / dev_s_N * mask;
     }
 }
+
+#else
+
+CUDA_GLOBAL void kernel_makeFFTVisible( complex_number* input, complex_number* output ) {}
+CUDA_GLOBAL void fftshift_2D( complex_number* data_plus, complex_number* data_minus, int N_half ) {}
+CUDA_GLOBAL void kernel_maskFFT( complex_number* data_plus, complex_number* data_minus, const real_number s, const real_number w, bool out_mask ) {}
+
+#endif

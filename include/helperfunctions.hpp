@@ -84,7 +84,7 @@ void initializePulseVariables( System& s );
 
 
 struct compare_complex_abs2 {
-    __host__ __device__ bool operator()( complex_number lhs, complex_number rhs ) {
+    CUDA_HOST_DEVICE bool operator()( complex_number lhs, complex_number rhs ) {
         return lhs.x * lhs.x + lhs.y * lhs.y < rhs.x * rhs.x + rhs.y * rhs.y;
     }
 };
