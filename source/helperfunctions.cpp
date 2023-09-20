@@ -6,9 +6,12 @@
 #include <omp.h>
 #include "cuda_complex.cuh"
 #include "cuda_device_variables.cuh"
+#include <memory>
 
 // To cast the "pointers-to-device-memory" to actual device pointers for thrust
+#ifndef USECPU
 #include <thrust/device_ptr.h>
+#endif
 
 std::vector<std::string> argv_to_vec( int argc, char** argv ) {
     std::vector<std::string> ret;
@@ -291,7 +294,7 @@ void normalize( real_number* buffer, int size, real_number min, real_number max,
 void angle( complex_number* z, real_number* buffer, int size ) {
 #pragma omp parallel for
     for ( int i = 0; i < size; i++ )
-        buffer[i] = std::atan2(z[i].y, z[i].x); //std::arg( z[i] );
+        buffer[i] = std::atan2(imag(z[i]), real(z[i]));
 }
 
 bool doEvaluatePulse( const System& system ) {

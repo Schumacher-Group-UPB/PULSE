@@ -87,7 +87,7 @@ complex_number* dev_fft_minus = nullptr;
 real_number* dev_rk_error = nullptr;
 
 // CUDA FFT Plan
-cufftHandle plan;
+cuda_fft_plan plan;
 
 CUDA_DEVICE complex_number dev_half_i = {0,0};
 CUDA_DEVICE complex_number dev_i = {0,0};

@@ -1,7 +1,9 @@
 #include "cuda_macro.cuh"
-#include <cuda.h>
 #include "cuda_complex_math.cuh"
 #include "kernel_fft.cuh"
+#ifndef USECPU
+#include <cuda.h>
+#endif
 
 // These functions are not rquired for the CPU Benchmark Version
 #ifndef USECPU

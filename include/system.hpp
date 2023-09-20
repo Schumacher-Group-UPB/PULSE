@@ -175,7 +175,7 @@ class FileHandler {
                 auto index = j + i * s.s_N;
                 auto x = -s.xmax / 2 + j * s.dx;
                 auto y = -s.xmax / 2 + i * s.dx;
-                out << x << " " << y << " " << std::setprecision( 10 ) << buffer[index].x << " " << buffer[index].y << std::endl;
+                out << x << " " << y << " " << std::setprecision( 10 ) << real(buffer[index]) << " " << imag(buffer[index]) << std::endl;
             }
             out << std::endl;
         }

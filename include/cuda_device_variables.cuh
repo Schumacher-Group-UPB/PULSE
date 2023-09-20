@@ -1,9 +1,11 @@
 #pragma once
-#include <cuda.h>
 #include <iostream>
 #include "cuda_macro.cuh"
-#include <cufft.h>
 #include "cuda_complex.cuh"
+#ifndef USECPU
+#include <cuda.h>
+#include <cufft.h>
+#endif
 
 // Use -rdc=true when compiling with nvcc to allow for the "extern" keyword to work
 extern CUDA_DEVICE real_number dev_s_dx;
@@ -91,7 +93,7 @@ extern complex_number* dev_fft_plus;
 extern complex_number* dev_fft_minus;
 
 // CUDA FFT Plan
-extern cufftHandle plan;
+extern cuda_fft_plan plan;
 
 /**
  * Initialize device variables from host variables

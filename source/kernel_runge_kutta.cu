@@ -1,9 +1,16 @@
+#ifndef USECPU
 #include <cuComplex.h>
 #include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
 #include <cuda.h>
 #include <device_launch_parameters.h>
 #include <cuda_runtime.h>
 #include <cufft.h>
+#include <thrust/reduce.h>
+#include <thrust/execution_policy.h>
+#else
+#include <numeric>
+#endif
+
 #include <complex>
 #include <omp.h>
 
@@ -16,9 +23,6 @@
 #include "system.hpp"
 #include "kernel.hpp"
 #include "helperfunctions.hpp"
-
-#include <thrust/reduce.h>
-#include <thrust/execution_policy.h>
 
 /*
 TODOs for Optimization:
@@ -181,7 +185,11 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
         CALL_KERNEL(rungeFuncFinalError, "Final Sum Error",grid_size, block_size, dev_rk_error, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus );
 
         // Use thrust::reduce to calculate the sum of the error matrix
+        #ifndef USECPU
         real_number final_error = thrust::reduce( THRUST_DEVICE, dev_rk_error, dev_rk_error + system.s_N * system.s_N, 0.0, thrust::plus<real_number>() );
+        #else
+        real_number final_error = std::reduce( dev_rk_error, dev_rk_error + system.s_N * system.s_N, 0.0, std::plus<real_number>() );
+        #endif
         auto plus_max = std::get<1>( minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true ) );
         final_error = final_error / plus_max;
 

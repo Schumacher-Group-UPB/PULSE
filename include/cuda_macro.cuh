@@ -100,12 +100,18 @@
 #    define CUDA_HOST
 #    define CUDA_GLOBAL
 #    define THRUST_DEVICE thrust::host
+#    define cuda_fft_plan int
+class dim3 {
+    public:
+    int x,y;
+};
 #else
 #    define CUDA_HOST_DEVICE __host__ __device__
 #    define CUDA_DEVICE __device__
 #    define CUDA_HOST __host__
 #    define CUDA_GLOBAL __global__
 #    define THRUST_DEVICE thrust::device
+#    define cuda_fft_plan cufftHandle
 #endif
 
 // TODO: macros für CALL_CUDA_KERNEL, dass dann die dims übergibt, oder wenn cpu

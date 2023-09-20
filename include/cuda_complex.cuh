@@ -1,11 +1,13 @@
 #pragma once
 #include "cuda_macro.cuh"
+#ifndef USECPU
 #include <cuComplex.h>
 #include <cuda.h>
+#endif
 #include <complex>
 
 //#define USEFP32
-
+#ifndef USECPU
 #ifdef USEFP32
 #define real_number float
 #define complex_number cuComplex
@@ -19,7 +21,16 @@
 #define FFTSOLVER cufftExecZ2Z
 #define FFTPLAN CUFFT_Z2Z
 #endif
+#else
+#define real_number double
+#define complex_number std::complex<double>
+#define fft_complex_number 
+#define FFTSOLVER
+#define FFTPLAN
 
+#endif
+
+#ifndef USECPU
 CUDA_HOST_DEVICE static __inline__ cuDoubleComplex operator+( const cuDoubleComplex& a, const cuDoubleComplex& b ) {
     return cuCadd( a, b );
 }
@@ -117,16 +128,7 @@ CUDA_HOST_DEVICE static __inline__ void operator+=( cuComplex& a, const cuComple
 CUDA_HOST_DEVICE static __inline__ void operator+=( cuComplex& a, const real_number& b ) {
     a.x = a.x + b;
 }
-
-/**
- * @brief Calculates the abs2 of a (complex) number, as long as
- * @param z The number to calculate the abs2 of.
- * @return real_number The abs2 of the number.
- */
-template <typename T>
-CUDA_HOST_DEVICE static __inline__ real_number cwiseAbs2( T z ) {
-    return z.x*z.x + z.y*z.y;
-}
+#endif
 
 /**
  * @brief Calculates the abs2 of a buffer of (complex) numbers
@@ -134,6 +136,7 @@ CUDA_HOST_DEVICE static __inline__ real_number cwiseAbs2( T z ) {
  * @param buffer The buffer to save the result to.
  * @param size The size of the buffer.
  */
+#ifndef USECPU
 CUDA_HOST_DEVICE static __inline__ void cwiseAbs2( complex_number* z, real_number* buffer, int size ) {
 #pragma omp parallel for
     for ( int i = 0; i < size; i++ )
@@ -145,6 +148,18 @@ CUDA_HOST_DEVICE static __inline__ void cwiseAbs2( T* z, real_number* buffer, in
     for ( int i = 0; i < size; i++ )
         buffer[i] = z[i] * z[i];
 }
+#else
+static inline void cwiseAbs2( std::complex<real_number>* z, real_number* buffer, int size ) {
+#pragma omp parallel for
+    for ( int i = 0; i < size; i++ )
+        buffer[i] = z[i].real() * z[i].real() + z[i].imag() * z[i].imag();
+}
+static inline void cwiseAbs2( real_number* z, real_number* buffer, int size ) {
+#pragma omp parallel for
+    for ( int i = 0; i < size; i++ )
+        buffer[i] = z[i] * z[i];
+}
+#endif
 
 CUDA_DEVICE static __inline__ real_number device_floor( const real_number x ) {
     return floor( x );
@@ -154,14 +169,25 @@ CUDA_HOST_DEVICE static __inline__ real_number sign( real_number x ) {
     return x > 0 ? 1 : -1;
 }
 
+#ifndef USECPU
 CUDA_HOST_DEVICE static __inline__ real_number abs2( const complex_number& x ) {
     return x.x*x.x + x.y*x.y;
 }
-
 CUDA_HOST_DEVICE static __inline__ real_number abs2( const real_number& x ) {
-    return x * x;
+    return x * x;    
 }
-
+CUDA_HOST_DEVICE static __inline__ real_number real( const complex_number& x ) {
+    return x.x;
+}
+CUDA_HOST_DEVICE static __inline__ real_number real( const real_number& x ) {
+    return x;
+}
+CUDA_HOST_DEVICE static __inline__ real_number imag( const complex_number& x ) {
+    return x.y;
+}
+CUDA_HOST_DEVICE static __inline__ real_number imag( const real_number& x ) {
+    return 0;
+}
 CUDA_HOST_DEVICE static __inline__ complex_number pow( const complex_number& a, const int N ) {
     complex_number res = {1.0, 0 };
     for ( int i = 0; i < abs( N ); i++ )
@@ -169,6 +195,32 @@ CUDA_HOST_DEVICE static __inline__ complex_number pow( const complex_number& a, 
     return N > 0 ? res : 1. / res;
 }
 
+#else
+static inline real_number abs2( const complex_number& x ) {
+    return x.real()*x.real() + x.imag()*x.imag();
+}
+static inline real_number abs2( const real_number& x ) {
+    return std::real(x);
+    
+}
+static inline complex_number pow( const complex_number& a, const int N ) {
+    return std::pow(a,N);
+}
+static inline real_number real( const complex_number& x ) {
+    return x.real();
+}
+static inline real_number real( const real_number& x ) {
+    return x;
+}
+static inline real_number imag( const complex_number& x ) {
+    return x.imag();
+}
+static inline real_number imag( const real_number& x ) {
+    return 0;
+}
+#endif
+
+#ifndef USECPU
 CUDA_HOST_DEVICE static __inline__ complex_number exp( complex_number z ) {
     return { exp( z.x ) * cos( z.y ), exp( z.x ) * sin( z.y ) };
 }
@@ -206,6 +258,26 @@ CUDA_HOST_DEVICE static __inline__ real_number abs( cuDoubleComplex z ) {
 CUDA_HOST_DEVICE static __inline__ real_number abs( cuComplex z ) {
     return sqrtf( z.x * z.x + z.y * z.y );
 }
+#else
+static inline real_number abs( complex_number z ) {
+    return std::abs(z);
+}
+static inline real_number abs( real_number z ) {
+    return std::abs(z);
+}
+static inline complex_number exp( complex_number z ) {
+    return std::exp(z);
+}
+static inline complex_number cuCsqrt( complex_number x ) {
+    return std::sqrt(x);
+}
+static inline real_number max( real_number x, real_number y ) {
+    return std::max(x,y);
+}
+static inline real_number min( real_number x, real_number y ) {
+    return std::min(x,y);
+}
+#endif
 
 // Use -rdc=true when compiling with nvcc to allow for the "extern" keyword to work
 extern CUDA_DEVICE complex_number dev_half_i;

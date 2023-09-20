@@ -7,7 +7,7 @@ INCDIR = include
 OBJDIR = obj
 
 # Compiler flags
-GCCFLAGS = -std=c++20 -fopenmp -O3
+GCCFLAGS = -std=c++20 -fopenmp -O3 -x c++
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true -O3
 else
