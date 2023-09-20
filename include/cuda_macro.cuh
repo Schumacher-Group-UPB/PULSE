@@ -48,18 +48,19 @@
         }
         
 #else
+#include <cstring>
 #    define CHECK_CUDA_ERROR( func, msg )
 #define DEVICE_ALLOC( ptr, size, name ) \
         {                                   \
-            ptr = (decltype(ptr))malloc(size); \
+            ptr = (decltype(ptr))std::malloc(size); \
         }
 #define MEMCOPY_TO_DEVICE( dst, src, size, name ) \
         {                                         \
-            memcpy( dst, src, size );             \
+            std::memcpy( dst, src, size );             \
         }
 #define MEMCOPY_FROM_DEVICE( dst, src, size, name ) \
         {                                         \
-            memcpy( dst, src, size );             \
+            std::memcpy( dst, src, size );             \
         }
 #define SYMBOL_TO_DEVICE( dest, source, size, name ) \
         {                                         \
@@ -71,7 +72,7 @@
         }
 #define DEVICE_FREE( ptr, name ) \
         {                           \
-            free( ptr );            \
+            std::free( ptr );            \
         }
 #define CUDA_FFT_DESTROY( plan )
 #define CUDA_FFT_CREATE( plan, N )
