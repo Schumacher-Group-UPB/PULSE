@@ -36,7 +36,7 @@ std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool
     }
     const auto [first, second] = thrust::minmax_element( buffer, buffer + size, thrust::less<real_number>() );
     #else
-    const auto [first, second] = std::ranges::minmax_element( buffer, buffer + size, thrust::less<real_number>() );
+    const auto [first, second] = std::ranges::minmax_element( buffer, buffer + size, std::less<real_number>() );
     #endif
     return std::make_tuple( *first, *second );
 }
