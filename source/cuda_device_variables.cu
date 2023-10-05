@@ -50,6 +50,10 @@ complex_number* dev_next_Psi_Minus = nullptr;
 complex_number* dev_next_n_Plus = nullptr;
 complex_number* dev_next_n_Minus = nullptr;
 
+// Device Pointers to Pump Cache
+real_number* dev_pump_cache_Plus = nullptr;
+real_number* dev_pump_cache_Minus = nullptr;
+
 // Device Pointers to k1, k2, k3, k4, (k5, k6, k7) arrays
 complex_number* dev_k1_Psi_Plus = nullptr;
 complex_number* dev_k1_Psi_Minus = nullptr;
@@ -127,19 +131,23 @@ void initializeDeviceVariables( const real_number s_dx, const real_number s_dt, 
     SYMBOL_TO_DEVICE( dev_pgr_plus_pR, &pgr_plus_pR, sizeof( complex_number ), "cudaMemcpyToSymbol dev_pgr_plus_pR" );
 }
 
-void initializePumpVariables( real_number* pump_amp, real_number* pump_width, real_number* pump_X, real_number* pump_Y, int* pump_pol, const int size ) {
-    DEVICE_ALLOC( dev_pump_amp, size * sizeof( real_number ), "malloc dev_pump_amp" );
-    MEMCOPY_TO_DEVICE( dev_pump_amp, pump_amp, size * sizeof( real_number ), "memcopy host to device dev_pump_amp" );
-    DEVICE_ALLOC( dev_pump_width, size * sizeof( real_number ), "malloc dev_pump_width" );
-    MEMCOPY_TO_DEVICE( dev_pump_width, pump_width, size * sizeof( real_number ), "memcopy host to device dev_pump_width" );
-    DEVICE_ALLOC( dev_pump_X, size * sizeof( real_number ), "malloc dev_pump_X" );
-    MEMCOPY_TO_DEVICE( dev_pump_X, pump_X, size * sizeof( real_number ), "memcopy host to device dev_pump_X" );
-    DEVICE_ALLOC( dev_pump_Y, size * sizeof( real_number ), "malloc dev_pump_Y" );
-    MEMCOPY_TO_DEVICE( dev_pump_Y, pump_Y, size * sizeof( real_number ), "memcopy host to device dev_pump_Y" );
-    DEVICE_ALLOC( dev_pump_pol, size * sizeof( int ), "malloc dev_pump_pol" );
-    MEMCOPY_TO_DEVICE( dev_pump_pol, pump_pol, size * sizeof( int ), "memcopy host to device dev_pump_pol" );
+void initializePumpVariables( real_number* pump_plus, real_number* pump_minus, const int size ) {
+    //DEVICE_ALLOC( dev_pump_amp, size * sizeof( real_number ), "malloc dev_pump_amp" );
+    //MEMCOPY_TO_DEVICE( dev_pump_amp, pump_amp, size * sizeof( real_number ), "memcopy host to device dev_pump_amp" );
+    //DEVICE_ALLOC( dev_pump_width, size * sizeof( real_number ), "malloc dev_pump_width" );
+    //MEMCOPY_TO_DEVICE( dev_pump_width, pump_width, size * sizeof( real_number ), "memcopy host to device dev_pump_width" );
+    //DEVICE_ALLOC( dev_pump_X, size * sizeof( real_number ), "malloc dev_pump_X" );
+    //MEMCOPY_TO_DEVICE( dev_pump_X, pump_X, size * sizeof( real_number ), "memcopy host to device dev_pump_X" );
+    //DEVICE_ALLOC( dev_pump_Y, size * sizeof( real_number ), "malloc dev_pump_Y" );
+    //MEMCOPY_TO_DEVICE( dev_pump_Y, pump_Y, size * sizeof( real_number ), "memcopy host to device dev_pump_Y" );
+    //DEVICE_ALLOC( dev_pump_pol, size * sizeof( int ), "malloc dev_pump_pol" );
+    //MEMCOPY_TO_DEVICE( dev_pump_pol, pump_pol, size * sizeof( int ), "memcopy host to device dev_pump_pol" );
 
-    SYMBOL_TO_DEVICE( dev_n_pump, &size, sizeof( int ), "cudaMemcpyToSymbol dev_n_pump" );
+    //SYMBOL_TO_DEVICE( dev_n_pump, &size, sizeof( int ), "cudaMemcpyToSymbol dev_n_pump" );
+    MEMCOPY_TO_DEVICE( dev_pump_cache_Plus, pump_plus, size * sizeof( real_number ), "memcopy host to device dev_pump_cache_Plus" );
+    #ifdef TETMSPLITTING
+    MEMCOPY_TO_DEVICE( dev_pump_cache_Minus, pump_minus, size * sizeof( real_number ), "memcopy host to device dev_pump_cache_Minus" );
+    #endif
 }
 
 void initializePulseVariables( real_number* pulse_t0, real_number* pulse_amp, real_number* pulse_freq, real_number* pulse_sigma, int* pulse_m, int* pulse_pol, real_number* pulse_width, real_number* pulse_X, real_number* pulse_Y, const int size ) {
@@ -211,6 +219,8 @@ void initializeDeviceArrays( const int s_N ) {
     DEVICE_ALLOC( dev_fft_plus, size * sizeof( complex_number ), "malloc dev_fft_plus" );
     DEVICE_ALLOC( dev_fft_minus, size * sizeof( complex_number ), "malloc dev_fft_minus" );
     DEVICE_ALLOC( dev_rk_error, size * sizeof( real_number ), "malloc dev_rk_error" );
+    DEVICE_ALLOC( dev_pump_cache_Plus, size * sizeof( complex_number ), "malloc dev_pump_cache_plus" );
+    DEVICE_ALLOC( dev_pump_cache_Minus, size * sizeof( complex_number ), "malloc dev_pump_cache_minus" );
 
     CUDA_FFT_CREATE(&plan, s_N );
 }
@@ -258,5 +268,7 @@ void freeDeviceArrays() {
         DEVICE_FREE( pointer, "free" );
     }
     DEVICE_FREE( dev_rk_error, "free" );
+    DEVICE_FREE( dev_pump_cache_Plus, "free" );
+    DEVICE_FREE( dev_pump_cache_Minus, "free" );
     CUDA_FFT_DESTROY( plan );
 }

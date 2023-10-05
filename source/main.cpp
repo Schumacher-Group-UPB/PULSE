@@ -31,9 +31,6 @@ int main( int argc, char* argv[] ) {
     // Load Matrices from File. If --load was not passed in argv, this method does nothing.
     filehandler.loadMatrices( system, buffer );
 
-    // Copy pump to device
-    initializePumpVariables( system );
-    initializePulseVariables( system );
 
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
     initSFMLWindow( system, filehandler );
@@ -41,6 +38,10 @@ int main( int argc, char* argv[] ) {
     // TODO: das hier in eine funktion und dann nur system übergeben!
     initializeDeviceVariables( system.dx, system.dt, system.g_r, system.s_N, system.m_eff, system.gamma_c, system.g_c, system.g_pm, system.gamma_r, system.R, system.delta_LT, system.xmax, system.h_bar_s );
     initializeDeviceArrays( system.s_N );
+    
+    // Copy pump to device
+    initializePumpVariables( system, filehandler );
+    initializePulseVariables( system );
 
     // Move Initial State to the GPU
     setDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, system.s_N );
@@ -68,11 +69,14 @@ int main( int argc, char* argv[] ) {
     }
 
     // Get final state from GPU
-    getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
+    if (system.output_enabled >= 2)
+        getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
 
     // Fileoutput
-    filehandler.outputMatrices( system, buffer );
-    filehandler.cacheToFiles( buffer );
+    if (system.output_enabled >= 3)
+        filehandler.outputMatrices( system, buffer );
+    if (system.output_enabled >= 1)
+        filehandler.cacheToFiles( buffer );
 
     // Free Device Memory
     freeDeviceArrays();

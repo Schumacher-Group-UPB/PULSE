@@ -60,7 +60,7 @@ void timeitStatisticsSummary( System& s, FileHandler& handler ) {
         std::cout << "Pulse at t0 = " << s.pulse_t0[i] << ", amp = " << s.pulse_amp[i] << ", freq = " << s.pulse_freq[i] << ", sigma = " << s.pulse_sigma[i] << "\n         m = " << s.pulse_m[i] << ", pol = " << s.pulse_pol[i] << ", width = " << s.pulse_width[i] << ", X = " << s.pulse_X[i] << ", Y = " << s.pulse_Y[i] << std::endl;
     }
     for (int i = 0; i < s.pump_amp.size(); i++) {
-        std::cout << "Pump at amp = " << s.pump_amp[i] << ", width = " << s.pump_width[i] << ", X = " << s.pump_X[i] << ", Y = " << s.pump_Y[i] << ", pol = " << s.pump_pol[i] << std::endl;
+        std::cout << "Pump at amp = " << s.pump_amp[i] << ", width = " << s.pump_width[i] << ", X = " << s.pump_X[i] << ", Y = " << s.pump_Y[i] << ", pol = " << s.pump_pol[i] << ", type = " << s.pump_type[i] << std::endl;
     }
     std::cout << "--------------------------------- Runtime Statistics ------------------------------" << std::endl;
     double total = timeitGetTotalRuntime();

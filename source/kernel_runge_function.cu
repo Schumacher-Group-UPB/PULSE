@@ -9,7 +9,7 @@
  * ...
  */
 CUDA_GLOBAL void rungeFuncKernel( int i, real_number t, complex_number* __restrict__ in_Psi_Plus, complex_number* __restrict__ in_Psi_Minus, complex_number* __restrict__ in_n_Plus, complex_number* __restrict__ in_n_Minus, complex_number* __restrict__ k_Psi_Plus, complex_number* __restrict__ k_Psi_Minus, complex_number* __restrict__ k_n_Plus, complex_number* __restrict__ k_n_Minus,
-                                 /* Pump Parameters */ real_number* __restrict__ dev_pump_amp, real_number* __restrict__ dev_pump_width, real_number* __restrict__ dev_pump_X, real_number* __restrict__ dev_pump_Y, int* __restrict__ dev_pump_pol,
+                                 /* Pump Parameters */ real_number* __restrict__ dev_pump_cache_Plus, real_number* __restrict__ dev_pump_cache_Minus,
                                  /* Pulse Parameters */ real_number* __restrict__ dev_pulse_t0, real_number* __restrict__ dev_pulse_amp, real_number* __restrict__ dev_pulse_freq, real_number* __restrict__ dev_pulse_sigma, int* __restrict__ dev_pulse_m, int* __restrict__ dev_pulse_pol, real_number* __restrict__ dev_pulse_width, real_number* __restrict__ dev_pulse_X, real_number* __restrict__ dev_pulse_Y, bool evaluate_pulse ) {
     
     // If the GPU is used, overwrite the current index with the gpu thread index.
@@ -33,19 +33,21 @@ CUDA_GLOBAL void rungeFuncKernel( int i, real_number t, complex_number* __restri
     k_n_Plus[i] = -dev_p_gamma_r * in_n_Plus[i] - dev_p_R * in_psi_plus_norm * in_n_Plus[i];
     k_n_Minus[i] = -dev_p_gamma_r * in_n_Minus[i] - dev_p_R * in_psi_minus_norm * in_n_Minus[i];
     // Add Pumps
-    if ( dev_n_pump ) {
-        auto x = -dev_p_xmax / 2.0 + dev_s_dx * col;
-        auto y = -dev_p_xmax / 2.0 + dev_s_dx * row;
-        for ( int c = 0; c < dev_n_pump; c++ ) {
-            const real_number r_squared = abs2( x - dev_pump_X[c] ) + abs2( y - dev_pump_Y[c] );
-            const auto w = dev_pump_width[c];
-            const auto exp_factor = r_squared / w / w;
-            if ( dev_pump_pol[c] >= 0 )
-                k_n_Plus[i] += dev_pump_amp[c] * exp_factor * exp( -exp_factor );
-            if ( dev_pump_pol[c] <= 0 )
-                k_n_Minus[i] += dev_pump_amp[c] * exp_factor * exp( -exp_factor );
-        }
-    }
+    //if ( dev_n_pump ) {
+    //    auto x = -dev_p_xmax / 2.0 + dev_s_dx * col;
+    //    auto y = -dev_p_xmax / 2.0 + dev_s_dx * row;
+    //    for ( int c = 0; c < dev_n_pump; c++ ) {
+    //        const real_number r_squared = abs2( x - dev_pump_X[c] ) + abs2( y - dev_pump_Y[c] );
+    //        const auto w = dev_pump_width[c];
+    //        const auto exp_factor = r_squared / w / w;
+    //        if ( dev_pump_pol[c] >= 0 )
+    //            k_n_Plus[i] += dev_pump_amp[c] * exp_factor * exp( -exp_factor );
+    //        if ( dev_pump_pol[c] <= 0 )
+    //            k_n_Minus[i] += dev_pump_amp[c] * exp_factor * exp( -exp_factor );
+    //    }
+    //}
+    k_n_Plus[i] += dev_pump_cache_Plus[i];
+    k_n_Minus[i] += dev_pump_cache_Minus[i];
     // Add Pulse
     if ( evaluate_pulse ) {
         auto x = -dev_p_xmax / 2.0 + dev_s_dx * col;
@@ -75,7 +77,7 @@ CUDA_GLOBAL void rungeFuncKernel( int i, real_number t, complex_number* __restri
  * ...
  */
 CUDA_GLOBAL void rungeFuncKernel( int i, real_number t, complex_number* __restrict__ in_Psi_Plus, complex_number* __restrict__ in_Psi_Minus, complex_number* __restrict__ in_n_Plus, complex_number* __restrict__ in_n_Minus, complex_number* __restrict__ k_Psi_Plus, complex_number* __restrict__ k_Psi_Minus, complex_number* __restrict__ k_n_Plus, complex_number* __restrict__ k_n_Minus,
-                                 /* Pump Parameters */ real_number* __restrict__ dev_pump_amp, real_number* __restrict__ dev_pump_width, real_number* __restrict__ dev_pump_X, real_number* __restrict__ dev_pump_Y, int* __restrict__ dev_pump_pol,
+                                 /* Pump Parameters */ real_number* __restrict__ dev_pump_cache_Plus, real_number* __restrict__ dev_pump_cache_Minus,
                                  /* Pulse Parameters */ real_number* __restrict__ dev_pulse_t0, real_number* __restrict__ dev_pulse_amp, real_number* __restrict__ dev_pulse_freq, real_number* __restrict__ dev_pulse_sigma, int* __restrict__ dev_pulse_m, int* __restrict__ dev_pulse_pol, real_number* __restrict__ dev_pulse_width, real_number* __restrict__ dev_pulse_X, real_number* __restrict__ dev_pulse_Y, bool evaluate_pulse ) {
     
     // If the GPU is used, overwrite the current index with the gpu thread index.
@@ -94,16 +96,17 @@ CUDA_GLOBAL void rungeFuncKernel( int i, real_number t, complex_number* __restri
     k_Psi_Plus[i] = dev_minus_i * ( dev_p_m_eff_scaled * DT1 - dev_half_i * dev_p_gamma_c * in_Psi_Plus[i] + dev_p_g_c * in_psi_plus_norm * in_Psi_Plus[i] + dev_pgr_plus_pR * in_n_Plus[i] * in_Psi_Plus[i] );
     k_n_Plus[i] = -dev_p_gamma_r * in_n_Plus[i] - dev_p_R * in_psi_plus_norm * in_n_Plus[i];
     // Add Pumps
-    if ( dev_n_pump ) {
-        const real_number x = -dev_p_xmax / 2.0 + dev_s_dx * col;
-        const real_number y = -dev_p_xmax / 2.0 + dev_s_dx * row;
-        for ( int c = 0; c < dev_n_pump; c++ ) {
-            const real_number r_squared = abs2( x - dev_pump_X[c] ) + abs2( y - dev_pump_Y[c] );
-            const real_number w = dev_pump_width[c];
-            const real_number exp_factor = r_squared / w / w;
-            k_n_Plus[i] += dev_pump_amp[c] * exp_factor * exp( -exp_factor );
-        }
-    }
+    //if ( dev_n_pump ) {
+    //    const real_number x = -dev_p_xmax / 2.0 + dev_s_dx * col;
+    //    const real_number y = -dev_p_xmax / 2.0 + dev_s_dx * row;
+    //    for ( int c = 0; c < dev_n_pump; c++ ) {
+    //        const real_number r_squared = abs2( x - dev_pump_X[c] ) + abs2( y - dev_pump_Y[c] );
+    //        const real_number w = dev_pump_width[c];
+    //        const real_number exp_factor = r_squared / w / w;
+    //        k_n_Plus[i] += dev_pump_amp[c] * exp_factor * exp( -exp_factor );
+    //    }
+    //}
+    k_n_Plus[i] += dev_pump_cache_Plus[i];
     // Add Pulse
     if ( evaluate_pulse ) {
         const real_number x = -dev_p_xmax / 2.0 + dev_s_dx * col;

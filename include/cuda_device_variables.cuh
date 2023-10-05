@@ -56,6 +56,10 @@ extern complex_number* dev_next_Psi_Minus;
 extern complex_number* dev_next_n_Plus;
 extern complex_number* dev_next_n_Minus;
 
+// Device Pointers to Pump cache
+extern real_number* dev_pump_cache_Plus;
+extern real_number* dev_pump_cache_Minus;
+
 // Device Pointers to k1, k2, k3, k4, (k5, k6, k7) arrays
 extern complex_number* dev_k1_Psi_Plus;
 extern complex_number* dev_k1_Psi_Minus;
@@ -101,7 +105,7 @@ extern cuda_fft_plan plan;
 
 void initializeDeviceVariables( const real_number s_dx, const real_number s_dt, const real_number p_g_r, const int s_N, const real_number p_m_eff, const real_number p_gamma_c, const real_number p_g_c, const real_number p_g_pm, const real_number p_gamma_r, const real_number p_R, const real_number p_delta_LT, const real_number p_xmax, const real_number h_bar_s );
 
-void initializePumpVariables( real_number* pump_amp, real_number* pump_width, real_number* pump_X, real_number* pump_Y, int* pump_pol, const int size );
+void initializePumpVariables( real_number* pump_plus, real_number* pump_minus, const int size );
 
 void initializePulseVariables( real_number* pulse_t0, real_number* pulse_amp, real_number* pulse_freq, real_number* pulse_sigma, int* pulse_m, int* pulse_pol, real_number* pulse_width, real_number* pulse_X, real_number* pulse_Y, const int size );
 

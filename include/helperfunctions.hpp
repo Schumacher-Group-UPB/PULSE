@@ -35,6 +35,7 @@ int vec_find_str( std::string toFind, const std::vector<std::string>& input, int
  * index of the next parameter.
  */
 real_number getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index );
+std::string getNextStringInput( const std::vector<std::string>& arguments, const std::string name, int& index );
 
 /**
  * @brief Helper function to print the help message for the program. The function
@@ -62,7 +63,7 @@ void addPulse( System& s, real_number t0, real_number amp, real_number freq, rea
  * @brief Takes the system and a given set of pump parameters and adds it to the
  * system pump cache array. This array is then later pushed to the GPU memory.
  */
-void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol );
+void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol, real_number exponent, int type );
 
 /**
  * @brief Initializes the system and the file handler variables from the argc
@@ -75,7 +76,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv );
 /**
  * @brief Takes the system variable and transfers its pump array to the GPU.
  */
-void initializePumpVariables( System& s );
+void initializePumpVariables( System& s, FileHandler& filehandler );
 
 /**
  * @brief Takes the system variable and transfers its pulse array to the GPU.

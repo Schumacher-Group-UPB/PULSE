@@ -31,7 +31,11 @@ int vec_find_str( std::string toFind, const std::vector<std::string>& input, int
 
 real_number getNextInput( const std::vector<std::string>& arguments, const std::string name, int& index ) {
     std::cout << "Read input " << name << " as " << arguments.at( index ) << std::endl;
-    return std::stof( arguments.at( index++ ) );
+    return std::stod( arguments.at( index++ ) );
+}
+std::string getNextStringInput( const std::vector<std::string>& arguments, const std::string name, int& index ) {
+    std::cout << "Read input " << name << " as " << arguments.at( index ) << std::endl;
+    return arguments.at( index++ );
 }
 
 std::string unifyLength( std::string indicator, std::string unit, std::string description, int L1, int L2 ) {
@@ -92,7 +96,7 @@ static void printSystemHelp( System& s, FileHandler& h ) {
     std::cout << unifyLength( "Pulse and pump. Warning: Adding a pump here overwrites all previous pump settings!", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
               << unifyLength( "--pulse ", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
-              << unifyLength( "--pump ", "[double] [double] [double] [double] [int] {int} {int}", "amplitude, width, posX, posY, pol, {mPlus, mMinus} standard is the pump given by previous parameters.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
+              << unifyLength( "--pump ", "[double] [double] [double] [double] [int] [double] [string]", "amplitude or 'adaptive', width, posX, posY, pol, exponent, type. standard is no pump. type can be either gauss or ring.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
 #ifdef USECPU
     std::cout << unifyLength( "--threads", "[int]", "Standard is " + std::to_string( s.omp_max_threads ) + " Threads\n" ) << std::endl;
 #endif
@@ -115,7 +119,7 @@ void addPulse( System& s, real_number t0, real_number amp, real_number freq, rea
     std::cout << "Added pulse with t0 = " << t0 << " amp = " << amp << " freq = " << freq << " sigma = " << sigma << " m = " << m << " pol = " << pol << " width = " << width << " x = " << x << " y = " << y << std::endl;
 }
 
-void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol ) {
+void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol, real_number exponent, int type ) {
     if ( P0 == 0.0 || w == 0 ) {
         std::cout << "Pump with P0 = 0 or w = 0 not allowed!" << std::endl;
         return;
@@ -125,7 +129,9 @@ void addPump( System& s, real_number P0, real_number w, real_number x, real_numb
     s.pump_X.push_back( x );
     s.pump_Y.push_back( y );
     s.pump_pol.push_back( pol );
-    std::cout << "Added pump with P0 = " << P0 << " w = " << w << " x = " << x << " y = " << y << " pol = " << pol << std::endl;
+    s.pump_type.push_back( type );
+    s.pump_exponent.push_back( exponent );
+    std::cout << "Added pump with P0 = " << P0 << " w = " << w << " x = " << x << " y = " << y << " pol = " << pol << " exponent = " << exponent << " type = " << (type == 0 ? "ring shaped" : "gauss shaped")<< std::endl;
 }
 
 std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
@@ -162,6 +168,8 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
 
     // Systemparameter
     s.m_eff = 1E-4 / s.h_bar_s * 5.6856; //      *m_e/h_bar;                 // m_e/hbar
+    if ( ( index = vec_find_str( "--meff", arguments ) ) != -1 )
+        s.m_eff = getNextInput( arguments, "m_eff", ++index );
     if ( ( index = vec_find_str( "--gammaC", arguments ) ) != -1 )
         s.gamma_c = getNextInput( arguments, "gamma_c", ++index );
     if ( ( index = vec_find_str( "--gammaR", arguments ) ) != -1 )
@@ -198,6 +206,8 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         s.fft_every = getNextInput( arguments, "fft_every", ++index );
     if ( ( index = vec_find_str( "--threads", arguments ) ) != -1 )
         s.omp_max_threads = (int)getNextInput( arguments, "threads", ++index );
+    if ( ( index = vec_find_str( "--output", arguments ) ) != -1 )
+        s.output_enabled = (int)getNextInput( arguments, "output", ++index );
 
 
     // Numerik
@@ -239,12 +249,20 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     // Pumps
     index = 0;
     while ( ( index = vec_find_str( "--pump", arguments, index ) ) != -1 ) {
-        real_number amp = getNextInput( arguments, "pump_amp", ++index );
+        auto samp = getNextStringInput( arguments, "pump_amp", ++index );
+        real_number amp = samp == "adaptive" ? -666. : std::stod( samp );
         real_number w = getNextInput( arguments, "pump_width", index );
         real_number posX = getNextInput( arguments, "pump_X", index );
         real_number posY = getNextInput( arguments, "pump_Y", index );
         int pol = (int)getNextInput( arguments, "pump_pol", index );
-        addPump( s, amp, w, posX, posY, pol );
+        real_number exponent = getNextInput( arguments, "pump_exponent", index );
+        auto stype = getNextStringInput( arguments, "pump_type", index );
+        int type = 0;
+        if (stype == "ring")
+                type = 0;
+        else if (stype == "gauss")
+                type = 1;
+        addPump( s, amp, w, posX, posY, pol, exponent, type );
     }
     // Pulses
     index = 0;
@@ -276,12 +294,46 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     return std::make_tuple( s, h );
 }
 
-void initializePumpVariables( System& s ) {
-    initializePumpVariables( s.pump_amp.data(), s.pump_width.data(), s.pump_X.data(), s.pump_Y.data(), s.pump_pol.data(), s.pump_amp.size() );
-};
+void initializePumpVariables( System& s, FileHandler& filehandler ) {
+    // Allocate memory for pump cache on cpu
+    auto host_pump_plus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
+    auto host_pump_minus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
+    for (int col = 0; col < s.s_N; col++) {
+        for (int row = 0; row < s.s_N; row++) {
+            auto x = -s.xmax / 2.0 + s.dx * col;
+            auto y = -s.xmax / 2.0 + s.dx * row;
+            int i = col * s.s_N + row;
+            for ( int c = 0; c < s.pump_amp.size(); c++ ) {
+                const real_number r_squared = abs2( x - s.pump_X[c] ) + abs2( y - s.pump_Y[c] );
+                const auto w = s.pump_width[c];
+                const auto exp_factor = std::pow(r_squared / w / w, s.pump_exponent[c]);
+                auto pre_fractor = s.pump_type[c] == 0 ? exp_factor : 1.0;
+                if ( s.pump_pol[c] >= 0 ) {
+                    auto pump_amp = s.pump_amp[c] == -666 ? -1.*host_pump_plus[i] : s.pump_amp[c];
+                    host_pump_plus[i] += pump_amp * pre_fractor * exp( -exp_factor );
+                }
+                #ifdef TETMSPLITTING
+                if ( s.pump_pol[c] <= 0 ){
+                    auto pump_amp = s.pump_amp[c] == 666 ? -1.*host_pump_plus[i] : s.pump_amp[c];
+                    host_pump_minus[i] += pump_amp * pre_fractor * exp( -exp_factor );
+                }
+                #endif
+            }
+        }
+    }
+
+    // Output Matrices to file
+    filehandler.outputMatrixToFile(host_pump_plus.get(), s, "pump_plus");
+    #ifdef TETMSPLITTING
+    filehandler.outputMatrixToFile(host_pump_minus.get(), s, "pump_minus");
+    #endif
+
+    initializePumpVariables( host_pump_plus.get(), host_pump_minus.get(), s.s_N * s.s_N );
+}
+
 void initializePulseVariables( System& s ) {
     initializePulseVariables( s.pulse_t0.data(), s.pulse_amp.data(), s.pulse_freq.data(), s.pulse_sigma.data(), s.pulse_m.data(), s.pulse_pol.data(), s.pulse_width.data(), s.pulse_X.data(), s.pulse_Y.data(), s.pulse_t0.size() );
-};
+}
 
 void normalize( real_number* buffer, int size, real_number min, real_number max, bool device_pointer ) {
     if ( min == max )

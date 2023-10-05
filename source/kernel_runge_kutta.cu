@@ -64,25 +64,25 @@ real_number cached_t = 0.0;
 void iterateFixedTimestepRungeKutta( System& system, bool evaluate_pulse, dim3 block_size, dim3 grid_size ) {
 
     // Iterate the Runge Function on the current Psi and Calculate K1
-    CALL_KERNEL(rungeFuncKernel, "K1", grid_size, block_size, system.t, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    CALL_KERNEL(rungeFuncKernel, "K1", grid_size, block_size, system.t, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
     // Sum K1 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
     CALL_KERNEL(rungeFuncSum, "Sum(K1)",grid_size, block_size, 0.5, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus );
 
     // Iterate the Runge Function on next_Psi and Calculate K2
-    CALL_KERNEL(rungeFuncKernel, "K2", grid_size, block_size, system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    CALL_KERNEL(rungeFuncKernel, "K2", grid_size, block_size, system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
     // Sum K2 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
     CALL_KERNEL(rungeFuncSum, "Sum(K2)",grid_size, block_size, 0.5, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus );
 
     // Iterate the Runge Function on next_Psi and Calculate K3
-    CALL_KERNEL(rungeFuncKernel, "K3", grid_size, block_size, system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    CALL_KERNEL(rungeFuncKernel, "K3", grid_size, block_size, system.t + 0.5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
     // Sum K3 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
     CALL_KERNEL(rungeFuncSum, "Sum(K3)",grid_size, block_size, 1.0, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus );
 
     // Iterate the Runge Function on next_Psi and Calculate K4
-    CALL_KERNEL(rungeFuncKernel, "K4", grid_size, block_size, system.t + system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+    CALL_KERNEL(rungeFuncKernel, "K4", grid_size, block_size, system.t + system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
     // Calculate the final Runge Kutta sum, saving the result in dev_in_Psi
     CALL_KERNEL(rungeFuncSumToFinalFixed, "Final Sum",grid_size, block_size, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus );
@@ -130,7 +130,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
     bool accept = false;
     do {
         // Iterate the Runge Function on the current Psi and Calculate K1
-        CALL_KERNEL(rungeFuncKernel, "K1", grid_size, block_size, system.t, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+        CALL_KERNEL(rungeFuncKernel, "K1", grid_size, block_size, system.t, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k1_Psi_Plus, dev_k1_Psi_Minus, dev_k1_n_Plus, dev_k1_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
 
         // Sum K1 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
@@ -138,7 +138,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
 
 
         // Iterate the Runge Function on next_Psi and Calculate K2
-        CALL_KERNEL(rungeFuncKernel, "K2", grid_size, block_size, system.t + RKCoefficients::a2 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k2_Psi_Plus, dev_k2_Psi_Minus, dev_k2_n_Plus, dev_k2_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+        CALL_KERNEL(rungeFuncKernel, "K2", grid_size, block_size, system.t + RKCoefficients::a2 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k2_Psi_Plus, dev_k2_Psi_Minus, dev_k2_n_Plus, dev_k2_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
 
         // Sum K2 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
@@ -146,7 +146,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
 
 
         // Iterate the Runge Function on next_Psi and Calculate K3
-        CALL_KERNEL(rungeFuncKernel, "K3", grid_size, block_size, system.t + RKCoefficients::a3 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+        CALL_KERNEL(rungeFuncKernel, "K3", grid_size, block_size, system.t + RKCoefficients::a3 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k3_Psi_Plus, dev_k3_Psi_Minus, dev_k3_n_Plus, dev_k3_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
 
         // Sum K3 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
@@ -154,7 +154,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
 
 
         // Iterate the Runge Function on next_Psi and Calculate K4
-        CALL_KERNEL(rungeFuncKernel, "K4", grid_size, block_size, system.t + RKCoefficients::a4 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+        CALL_KERNEL(rungeFuncKernel, "K4", grid_size, block_size, system.t + RKCoefficients::a4 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k4_Psi_Plus, dev_k4_Psi_Minus, dev_k4_n_Plus, dev_k4_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
 
         // Sum K4 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
@@ -162,7 +162,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
 
 
         // Iterate the Runge Function on next_Psi and Calculate K4
-        CALL_KERNEL(rungeFuncKernel, "K5", grid_size, block_size, system.t + RKCoefficients::a5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+        CALL_KERNEL(rungeFuncKernel, "K5", grid_size, block_size, system.t + RKCoefficients::a5 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k5_Psi_Plus, dev_k5_Psi_Minus, dev_k5_n_Plus, dev_k5_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
 
         // Sum K5 to get next_Psi_Plus, next_Psi_Minus, next_n_Plus, next_n_Minus
@@ -170,7 +170,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
 
 
         // Iterate the Runge Function on next_Psi and Calculate K6
-        CALL_KERNEL(rungeFuncKernel, "K6", grid_size, block_size, system.t + RKCoefficients::a6 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+        CALL_KERNEL(rungeFuncKernel, "K6", grid_size, block_size, system.t + RKCoefficients::a6 * system.dt, dev_next_Psi_Plus, dev_next_Psi_Minus, dev_next_n_Plus, dev_next_n_Minus, dev_k6_Psi_Plus, dev_k6_Psi_Minus, dev_k6_n_Plus, dev_k6_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
 
         // Calculate the final Runge Kutta sum , saving the result in dev_in_Psi
@@ -178,7 +178,7 @@ void iterateVariableTimestepRungeKutta( System& system, bool evaluate_pulse, dim
 
 
         // Calculate the Error Contribution Matrix K7 from dev_in_Psi
-        CALL_KERNEL(rungeFuncKernel, "K7", grid_size, block_size, system.t + RKCoefficients::a7 * system.dt, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus, dev_pump_amp, dev_pump_width, dev_pump_X, dev_pump_Y, dev_pump_pol, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
+        CALL_KERNEL(rungeFuncKernel, "K7", grid_size, block_size, system.t + RKCoefficients::a7 * system.dt, dev_current_Psi_Plus, dev_current_Psi_Minus, dev_current_n_Plus, dev_current_n_Minus, dev_k7_Psi_Plus, dev_k7_Psi_Minus, dev_k7_n_Plus, dev_k7_n_Minus, dev_pump_cache_Plus, dev_pump_cache_Minus, dev_pulse_t0, dev_pulse_amp, dev_pulse_freq, dev_pulse_sigma, dev_pulse_m, dev_pulse_pol, dev_pulse_width, dev_pulse_X, dev_pulse_Y, evaluate_pulse );
 
 
         // Calculate the Runge Kutta Error. Since we dont need it here anymore, we use one of the K2 cache arrays to do this.

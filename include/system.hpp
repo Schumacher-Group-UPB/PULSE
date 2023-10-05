@@ -61,12 +61,17 @@ class System {
     // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
     bool fixed_time_step = true;
 
+    // Output of Variables; 3 == Output everything, 2 == dont output final states, 1 == dont output any matrices, 0 == output only scalars.
+    int output_enabled = 3;
+
     // Pump arrays
     std::vector<real_number> pump_amp;
     std::vector<real_number> pump_width;
     std::vector<real_number> pump_X;
     std::vector<real_number> pump_Y;
+    std::vector<real_number> pump_exponent;
     std::vector<int> pump_pol;
+    std::vector<int> pump_type;
     // TODO: pump m???
 
     // Pulse arrays
@@ -190,6 +195,32 @@ class FileHandler {
         outputMatrixToFile( buffer, 0, s.s_N, 0, s.s_N, s, file, out );
     }
     void outputMatrixToFile( const complex_number* buffer, const System& s, std::ofstream& out, const std::string& name ) {
+        outputMatrixToFile( buffer, 0, s.s_N, 0, s.s_N, s, out, name );
+    }
+
+    void outputMatrixToFile( const real_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, std::ofstream& out, const std::string& name ) {
+        if ( !out.is_open() )
+            std::cout << "File " << name << " is not open!" << std::endl;
+        for ( int i = row_start; i < row_stop; i++ ) {
+            for ( int j = col_start; j < col_stop; j++ ) {
+                auto index = j + i * s.s_N;
+                auto x = -s.xmax / 2 + j * s.dx;
+                auto y = -s.xmax / 2 + i * s.dx;
+                out << x << " " << y << " " << std::setprecision( 10 ) << buffer[index] << std::endl;
+            }
+            out << std::endl;
+        }
+        std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) << " elements to " << toPath( name ) << "." << std::endl;
+    }
+    void outputMatrixToFile( const real_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const System& s, const std::string& out ) {
+        auto& file = getFile( out );
+        outputMatrixToFile( buffer, row_start, row_stop, col_start, col_stop, s, file, out );
+    }
+    void outputMatrixToFile( const real_number* buffer, const System& s, const std::string& out ) {
+        auto& file = getFile( out );
+        outputMatrixToFile( buffer, 0, s.s_N, 0, s.s_N, s, file, out );
+    }
+    void outputMatrixToFile( const real_number* buffer, const System& s, std::ofstream& out, const std::string& name ) {
         outputMatrixToFile( buffer, 0, s.s_N, 0, s.s_N, s, out, name );
     }
 

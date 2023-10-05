@@ -14,14 +14,12 @@ void getDeviceArrays(complex_number* psi_plus, complex_number* psi_minus, comple
 
 void freeDeviceArrays();
 
-void setPulse(complex_number* pulse, complex_number* pulse2, const int s_N);
-
 void rungeFunctionIterate( System& s, bool evaluate_pulse );
 
 void generateRingPhase( int s_N, real_number amp, int n, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset = true );
 void generateRingState( int s_N, real_number amp, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset = true );
 
-void initializePumpVariables( real_number* pump_amp, real_number* pump_width, real_number* pump_X, real_number* pump_Y, int* pump_pol, const int size );
+void initializePumpVariables( real_number* pump_plus, real_number* pump_minus, const int size );
 void initializePulseVariables( real_number* pulse_t0, real_number* pulse_amp, real_number* pulse_freq, real_number* pulse_sigma, int* pulse_m, int* pulse_pol, real_number* pulse_width, real_number* pulse_X, real_number* pulse_Y, const int size );
 
 void generateRingPhase( int s_N, real_number amp, int n, real_number w1, real_number w2, real_number xPos, real_number yPos, real_number p_xmax, real_number s_dx, bool normalize, complex_number* buffer, bool reset );
