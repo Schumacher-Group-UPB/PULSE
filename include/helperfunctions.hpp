@@ -83,6 +83,7 @@ void initializePumpVariables( System& s, FileHandler& filehandler );
  */
 void initializePulseVariables( System& s );
 
+void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler );
 
 struct compare_complex_abs2 {
     CUDA_HOST_DEVICE bool operator()( complex_number lhs, complex_number rhs ) {

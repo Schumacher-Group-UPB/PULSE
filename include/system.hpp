@@ -64,7 +64,7 @@ class System {
     // Output of Variables; 3 == Output everything, 2 == dont output final states, 1 == dont output any matrices, 0 == output only scalars.
     int output_enabled = 3;
 
-    // Pump arrays
+    // Pump arrays. These are highly deprecated as the pump is now cached
     std::vector<real_number> pump_amp;
     std::vector<real_number> pump_width;
     std::vector<real_number> pump_X;
@@ -84,6 +84,14 @@ class System {
     std::vector<real_number> pulse_width;
     std::vector<real_number> pulse_X;
     std::vector<real_number> pulse_Y;
+
+    struct Envelope {
+        std::vector<real_number> amp, width, x, y, exponent;
+        std::vector<int> pol, type;
+    };
+    //TODO: struct Pump : Envelope und Pulse : Envelope
+
+    Envelope mask;
 };
 
 class Buffer {
@@ -283,6 +291,10 @@ class FileHandler {
 #else
             file_max << " " << buffer.cache_Psi_Plus_max[i] << std::endl;
 #endif
+        }
+        const auto interval = int(std::max(1., buffer.cache_Psi_Plus_max.size() / 500.)); 
+        for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i+=interval ) {
+            std::cout << "Writing history " << i << " of " << buffer.cache_Psi_Plus_max.size() << "\r";
             for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++ ) {
                 file_history_plus << " " << abs( buffer.cache_Psi_Plus_history[i][k] );
 #ifdef TETMSPLITTING
@@ -294,6 +306,7 @@ class FileHandler {
             file_history_minus << std::endl;
 #endif
         }
+        std::cout << "Writing history done, closing all files." << std::endl;
         file_max.close();
         file_history_plus.close();
 #ifdef TETMSPLITTING

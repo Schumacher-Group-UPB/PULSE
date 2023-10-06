@@ -7,6 +7,7 @@
 #include "cuda_complex.cuh"
 #include "cuda_device_variables.cuh"
 #include <memory>
+#include <algorithm>
 
 // To cast the "pointers-to-device-memory" to actual device pointers for thrust
 #ifndef USECPU
@@ -93,10 +94,11 @@ static void printSystemHelp( System& s, FileHandler& h ) {
               << unifyLength( "--deltaLT", "[double]", "Standard is " + std::to_string( s.delta_LT ) + " meV\n" )
 #endif
               << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
-    std::cout << unifyLength( "Pulse and pump. Warning: Adding a pump here overwrites all previous pump settings!", "", "\n" )
+    std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
               << unifyLength( "--pulse ", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
-              << unifyLength( "--pump ", "[double] [double] [double] [double] [int] [double] [string]", "amplitude or 'adaptive', width, posX, posY, pol, exponent, type. standard is no pump. type can be either gauss or ring.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 ) << std::endl;
+              << unifyLength( "--pump ", "[double] [double] [double] [double] [int] [double] [string]", "amplitude or 'adaptive', width, posX, posY, pol, exponent, type. standard is no pump. type can be either gauss or ring.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 )
+              << unifyLength( "--mask ", "[double] [double] [double] [double] [int] [double]", "amplitude or 'adaptive', width, posX, posY, pol, exponent. standard is no mask.\n", 30, 80 ) << std::endl;
 #ifdef USECPU
     std::cout << unifyLength( "--threads", "[int]", "Standard is " + std::to_string( s.omp_max_threads ) + " Threads\n" ) << std::endl;
 #endif
@@ -278,6 +280,23 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         real_number posY = getNextInput( arguments, "pulse_Y", index );
         addPulse( s, t0, amp, freq, sigma, m, pol, w, posX, posY );
     }
+    // Soll Mask.
+    index = 0;
+    while ( ( index = vec_find_str( "--mask", arguments, index ) ) != -1 ) {
+        auto samp = getNextStringInput( arguments, "mask_amp", ++index );
+        real_number amp = samp == "adaptive" ? -666. : std::stod( samp );
+        real_number w = getNextInput( arguments, "mask_width", index );
+        real_number posX = getNextInput( arguments, "mask_X", index );
+        real_number posY = getNextInput( arguments, "mask_Y", index );
+        int pol = (int)getNextInput( arguments, "mask_pol", index );
+        real_number exponent = getNextInput( arguments, "mask_exponent", index );
+        s.mask.amp.push_back( amp );
+        s.mask.width.push_back( w );
+        s.mask.x.push_back( posX );
+        s.mask.y.push_back( posY );
+        s.mask.pol.push_back( pol );
+        s.mask.exponent.push_back( exponent );
+    }
 
     // Save Load Path if passed
     if ( ( index = vec_find_str( "--load", arguments ) ) != -1 )
@@ -314,7 +333,7 @@ void initializePumpVariables( System& s, FileHandler& filehandler ) {
                 }
                 #ifdef TETMSPLITTING
                 if ( s.pump_pol[c] <= 0 ){
-                    auto pump_amp = s.pump_amp[c] == 666 ? -1.*host_pump_plus[i] : s.pump_amp[c];
+                    auto pump_amp = s.pump_amp[c] == 666 ? -1.*host_pump_minus[i] : s.pump_amp[c];
                     host_pump_minus[i] += pump_amp * pre_fractor * exp( -exp_factor );
                 }
                 #endif
@@ -390,5 +409,60 @@ void cacheValues( const System& system, Buffer& buffer ) {
     getDeviceArraySlice( reinterpret_cast<complex_number*>( dev_current_Psi_Minus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Minus_history.emplace_back( temp );
+    #endif
+}
+
+void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
+    if (s.mask.x.size() == 0) {
+        std::cout << "No mask provided, skipping soll value calculation" << std::endl;
+        return;
+    }
+
+    // First, calculate soll mask from s.mask
+    auto host_mask_plus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
+    auto host_mask_minus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
+    for (int col = 0; col < s.s_N; col++) {
+        for (int row = 0; row < s.s_N; row++) {
+            auto x = -s.xmax / 2.0 + s.dx * col;
+            auto y = -s.xmax / 2.0 + s.dx * row;
+            int i = col * s.s_N + row;
+            for ( int c = 0; c < s.mask.amp.size(); c++ ) {
+                const real_number r_squared = abs2( x - s.mask.x[c] ) + abs2( y - s.mask.y[c] );
+                const auto w = s.mask.width[c];
+                const auto exp_factor = std::pow(r_squared / w / w, s.mask.exponent[c]);
+                if ( s.mask.pol[c] >= 0 ) {
+                    auto amp = s.mask.amp[c] == -666 ? -1.*host_mask_plus[i] : s.mask.amp[c];
+                    host_mask_plus[i] += amp * exp( -exp_factor );
+                }
+                #ifdef TETMSPLITTING
+                if ( s.mask.pol[c] <= 0 ){
+                    auto amp = s.mask.amp[c] == 666 ? -1.*host_mask_minus[i] : s.mask.amp[c];
+                    host_mask_minus[i] += amp * exp( -exp_factor );
+                }
+                #endif
+            }
+        }
+    }
+    // Output Mask
+    filehandler.outputMatrixToFile(host_mask_plus.get(), s, "mask_plus");
+    #ifdef TETMSPLITTING
+    filehandler.outputMatrixToFile(host_mask_minus.get(), s, "mask_minus");
+    #endif
+    // Then, check matching
+    #pragma omp parallel for
+    for (int i = 0; i < s.s_N*s.s_N; i++) {
+        host_mask_plus[i] = abs( abs( buffer.Psi_Plus[i] ) - host_mask_plus[i] );
+        #ifdef TETMSPLITTING
+        host_mask_minus[i] = abs( abs( buffer.Psi_Minus[i] ) - host_mask_minus[i] );
+        #endif
+    }
+    // Thirdly, calculate sum of all elements
+    real_number sum_plus = 0;
+    std::ranges::for_each( host_mask_plus.get(), host_mask_plus.get() + s.s_N * s.s_N, [&sum_plus]( real_number n ) { sum_plus += n; } );
+    std::cout << "Error in Psi_Plus: " << sum_plus << std::endl;
+    #ifdef TETMSPLITTING
+    real_number sum_minus = 0;
+    std::ranges::for_each( host_mask_plus.get(), host_mask_plus.get() + s.s_N * s.s_N, [&sum_minus]( real_number n ) { sum_minus += n; } );
+    std::cout << "Error in Psi_Minus: " << sum_minus << std::endl;
     #endif
 }
