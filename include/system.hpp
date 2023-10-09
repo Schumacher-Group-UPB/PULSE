@@ -61,8 +61,8 @@ class System {
     // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
     bool fixed_time_step = true;
 
-    // Output of Variables; 3 == Output everything, 2 == dont output final states, 1 == dont output any matrices, 0 == output only scalars.
-    int output_enabled = 3;
+    // Output of Variables
+    std::vector<std::string> output_keys;
 
     // Pump arrays. These are highly deprecated as the pump is now cached
     std::vector<real_number> pump_amp;
@@ -89,9 +89,15 @@ class System {
         std::vector<real_number> amp, width, x, y, exponent;
         std::vector<int> pol, type;
     };
-    //TODO: struct Pump : Envelope und Pulse : Envelope
+    // TODO: struct Pump : Envelope und Pulse : Envelope
 
     Envelope mask;
+    bool normalize_before_masking = false;
+
+    template <typename... Args>
+    bool doOutput( const Args&... args ) {
+        return ( ( std::find( output_keys.begin(), output_keys.end(), args ) != output_keys.end() ) || ... );
+    }
 };
 
 class Buffer {
@@ -169,7 +175,7 @@ class FileHandler {
                 if ( line.size() > 2 ) {
                     inputstring = std::istringstream( line );
                     inputstring >> x >> y >> re >> im;
-                    buffer[i] = {re, im};
+                    buffer[i] = { re, im };
                     i++;
                 }
             }
@@ -188,7 +194,7 @@ class FileHandler {
                 auto index = j + i * s.s_N;
                 auto x = -s.xmax / 2 + j * s.dx;
                 auto y = -s.xmax / 2 + i * s.dx;
-                out << x << " " << y << " " << std::setprecision( 10 ) << real(buffer[index]) << " " << imag(buffer[index]) << std::endl;
+                out << x << " " << y << " " << std::setprecision( 10 ) << real( buffer[index] ) << " " << imag( buffer[index] ) << std::endl;
             }
             out << std::endl;
         }
@@ -237,18 +243,18 @@ class FileHandler {
 #pragma omp parallel for
         for ( int i = 0; i < fileoutputkeys.size(); i++ ) {
             auto key = fileoutputkeys[i];
-            if ( key == "Psi_plus" )
+            if ( key == "Psi_plus" and system.doOutput( "mat", "psi_plus", "plus", "psi" ) )
                 outputMatrixToFile( buffer.Psi_Plus, system, key );
-            if ( key == "n_plus" )
+            if ( key == "n_plus" and system.doOutput( "mat", "n_plus", "plus", "n" ) )
                 outputMatrixToFile( buffer.n_Plus, system, key );
-            if ( key == "fft_plus" )
+            if ( key == "fft_plus" and system.doOutput( "mat", "fft_plus", "plus", "fft" ) )
                 outputMatrixToFile( buffer.fft_plus, system, key );
 #ifdef TETMSPLITTING
-            if ( key == "Psi_minus" )
+            if ( key == "Psi_minus" and system.doOutput( "mat", "psi_minus", "minus", "psi" ) )
                 outputMatrixToFile( buffer.Psi_Minus, system, key );
-            if ( key == "n_minus" )
+            if ( key == "n_minus" and system.doOutput( "mat", "n_minus", "minus", "n" ) )
                 outputMatrixToFile( buffer.n_Minus, system, key );
-            if ( key == "fft_minus" )
+            if ( key == "fft_minus" and system.doOutput( "mat", "fft_minus", "minus", "fft" ) )
                 outputMatrixToFile( buffer.fft_minus, system, key );
 #endif
         }
@@ -276,41 +282,48 @@ class FileHandler {
         }
     }
 
-    void cacheToFiles( const Buffer& buffer ) {
-        auto& file_max = getFile( "max" );
-        auto& file_history_plus = getFile( "history_plus" );
-        file_max << "Psi_Plus";
+    void cacheToFiles( System& system, const Buffer& buffer ) {
+        if ( system.doOutput( "max", "scalar" ) ) {
+            auto& file_max = getFile( "max" );
+            file_max << "Psi_Plus";
 #ifdef TETMSPLITTING
-        auto& file_history_minus = getFile( "history_minus" );
-        file_max << " Psi_Minus";
+            file_max << " Psi_Minus";
 #endif
-        file_max << std::endl;
-        for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i++ ) {
+            file_max << std::endl;
+            for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i++ ) {
 #ifdef TETMSPLITTING
-            file_max << " " << buffer.cache_Psi_Plus_max[i] << " " << buffer.cache_Psi_Minus_max[i] << std::endl;
+                file_max << " " << buffer.cache_Psi_Plus_max[i] << " " << buffer.cache_Psi_Minus_max[i] << std::endl;
 #else
-            file_max << " " << buffer.cache_Psi_Plus_max[i] << std::endl;
-#endif
-        }
-        const auto interval = int(std::max(1., buffer.cache_Psi_Plus_max.size() / 500.)); 
-        for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i+=interval ) {
-            std::cout << "Writing history " << i << " of " << buffer.cache_Psi_Plus_max.size() << "\r";
-            for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++ ) {
-                file_history_plus << " " << abs( buffer.cache_Psi_Plus_history[i][k] );
-#ifdef TETMSPLITTING
-                file_history_minus << " " << abs( buffer.cache_Psi_Minus_history[i][k] );
+                file_max << " " << buffer.cache_Psi_Plus_max[i] << std::endl;
 #endif
             }
-            file_history_plus << std::endl;
+            file_max.close();
+        }
+
+        if ( system.doOutput( "mat", "history" ) ) {
+            auto& file_history_plus = getFile( "history_plus" );
 #ifdef TETMSPLITTING
-            file_history_minus << std::endl;
+            auto& file_history_minus = getFile( "history_minus" );
+#endif
+            const auto interval = int( std::max( 1., buffer.cache_Psi_Plus_max.size() / 500. ) );
+            for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i += interval ) {
+                std::cout << "Writing history " << i << " of " << buffer.cache_Psi_Plus_max.size() << "\r";
+                for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++ ) {
+                    file_history_plus << " " << abs( buffer.cache_Psi_Plus_history[i][k] );
+#ifdef TETMSPLITTING
+                    file_history_minus << " " << abs( buffer.cache_Psi_Minus_history[i][k] );
+#endif
+                }
+                file_history_plus << std::endl;
+#ifdef TETMSPLITTING
+                file_history_minus << std::endl;
+#endif
+            }
+            std::cout << "Writing history done, closing all files." << std::endl;
+            file_history_plus.close();
+#ifdef TETMSPLITTING
+            file_history_minus.close();
 #endif
         }
-        std::cout << "Writing history done, closing all files." << std::endl;
-        file_max.close();
-        file_history_plus.close();
-#ifdef TETMSPLITTING
-        file_history_minus.close();
-#endif
     }
 };

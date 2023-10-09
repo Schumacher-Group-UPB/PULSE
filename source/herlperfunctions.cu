@@ -17,13 +17,13 @@ std::tuple<real_number, real_number> minmax( complex_number* buffer, int size, b
         auto mm = thrust::minmax_element( thrust::device, dev_buffer, dev_buffer + size, compare_complex_abs2() );
         complex_number min = *mm.first;
         complex_number max = *mm.second;
-        return std::make_tuple( min.x * min.x + min.y * min.y, max.x * max.x + max.y * max.y );
+        return std::make_tuple( sqrt(min.x * min.x + min.y * min.y), sqrt(max.x * max.x + max.y * max.y) );
     }
     const auto [first, second] = thrust::minmax_element( buffer, buffer + size, compare_complex_abs2() );
     #else
     const auto [first, second] = std::ranges::minmax_element( buffer, buffer + size, compare_complex_abs2() );
     #endif
-    return std::make_tuple( real( *first ) * real( *first ) + imag( *first ) * imag( *first ), real( *second ) * real( *second ) + imag( *second ) * imag( *second ) );
+    return std::make_tuple( sqrt(real( *first ) * real( *first ) + imag( *first ) * imag( *first )), sqrt(real( *second ) * real( *second ) + imag( *second ) * imag( *second )) );
 }
 std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool device_pointer ) {
     #ifndef USECPU

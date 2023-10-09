@@ -69,16 +69,13 @@ int main( int argc, char* argv[] ) {
     }
 
     // Get final state from GPU
-    //if (system.output_enabled >= 2)
-    getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
+        getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
     
     calculateSollValue(system, buffer, filehandler);
 
     // Fileoutput
-    if (system.output_enabled >= 3)
-        filehandler.outputMatrices( system, buffer );
-    if (system.output_enabled >= 1)
-        filehandler.cacheToFiles( buffer );
+    filehandler.outputMatrices( system, buffer );
+    filehandler.cacheToFiles( system, buffer );
 
     // Free Device Memory
     freeDeviceArrays();

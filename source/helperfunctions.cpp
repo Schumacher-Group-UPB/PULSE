@@ -8,10 +8,11 @@
 #include "cuda_device_variables.cuh"
 #include <memory>
 #include <algorithm>
+#include <ranges>
 
 // To cast the "pointers-to-device-memory" to actual device pointers for thrust
 #ifndef USECPU
-#include <thrust/device_ptr.h>
+#    include <thrust/device_ptr.h>
 #endif
 
 std::vector<std::string> argv_to_vec( int argc, char** argv ) {
@@ -67,21 +68,19 @@ static void printSystemHelp( System& s, FileHandler& h ) {
     std::cout << "This program is compiled with CPU support.\n";
     std::cout << "Maximum number of CPU cores utilized " << omp_get_max_threads() << std::endl;
 #endif
-        std::cout
-              << unifyLength( "General parameters:", "", "\n" )
-              << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + h.outputPath + "'\n" )
-              << unifyLength( "--name", "[string]", "File prefix. Standard is '" + h.outputName + "'\n" )
-              << unifyLength( "--load", "[string]", "Loads matrices from path.\n" )
-              //<< unifyLength( "--addOut, --addOutEvery", "[double]", "[NOT IMPLEMENTED] Adds imageoutput at X ps or every X ps.\n" )
-              << unifyLength( "--outEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( h.out_modulo ) + " iteration\n" )
-              << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
+    std::cout
+        << unifyLength( "General parameters:", "", "\n" )
+        << unifyLength( "Flag", "Inputs", "Description\n" )
+        << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + h.outputPath + "'\n" )
+        << unifyLength( "--name", "[string]", "File prefix. Standard is '" + h.outputName + "'\n" )
+        << unifyLength( "--load", "[string]", "Loads matrices from path.\n" )
+        << unifyLength( "--outEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( h.out_modulo ) + " iteration\n" )
+        << unifyLength( "--output", "[list of str]", "Comma seperated list of things to output. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
+        << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
     std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
               << unifyLength( "--N", "[int]", "Grid Dimensions (N x N). Standard is " + std::to_string( s.s_N ) + " x " + std::to_string( s.s_N ) + "\n" )
               << unifyLength( "--tstep", "[double]", "Timestep, standard is magic-timestep\n" )
               << unifyLength( "--tmax", "[double]", "Timelimit, standard is " + std::to_string( s.t_max ) + " ps\n" );
-    //<< unifyLength( "-noNormPhase", "no arguments", "If passed to the program, disables normalization of ring phase states\n" )
-    //<< unifyLength( "-normPulsePhase", "no arguments", "If passed to the program, enables normalization of pulse phase\n" ) << std::endl;
     std::cout << unifyLength( "System parameters", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n" )
               << unifyLength( "--gammaC", "[double]", "Standard is " + std::to_string( s.gamma_c ) + " ps^-1\n" )
@@ -96,9 +95,10 @@ static void printSystemHelp( System& s, FileHandler& h ) {
               << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
-              << unifyLength( "--pulse ", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
-              << unifyLength( "--pump ", "[double] [double] [double] [double] [int] [double] [string]", "amplitude or 'adaptive', width, posX, posY, pol, exponent, type. standard is no pump. type can be either gauss or ring.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 )
-              << unifyLength( "--mask ", "[double] [double] [double] [double] [int] [double]", "amplitude or 'adaptive', width, posX, posY, pol, exponent. standard is no mask.\n", 30, 80 ) << std::endl;
+              << unifyLength( "--pulse", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
+              << unifyLength( "--pump", "[double] [double] [double] [double] [int] [double] [string]", "amplitude or 'adaptive', width, posX, posY, pol, exponent, type. standard is no pump. type can be either gauss or ring.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 )
+              << unifyLength( "--mask", "[double] [double] [double] [double] [int] [double]", "amplitude or 'adaptive', width, posX, posY, pol, exponent. standard is no mask.\n", 30, 80 )
+              << unifyLength( "-masknorm", "no arguments", "If passed, both the mask and Psi will be normalized before calculating the error.\n", 30, 80 ) << std::endl;
 #ifdef USECPU
     std::cout << unifyLength( "--threads", "[int]", "Standard is " + std::to_string( s.omp_max_threads ) + " Threads\n" ) << std::endl;
 #endif
@@ -133,7 +133,16 @@ void addPump( System& s, real_number P0, real_number w, real_number x, real_numb
     s.pump_pol.push_back( pol );
     s.pump_type.push_back( type );
     s.pump_exponent.push_back( exponent );
-    std::cout << "Added pump with P0 = " << P0 << " w = " << w << " x = " << x << " y = " << y << " pol = " << pol << " exponent = " << exponent << " type = " << (type == 0 ? "ring shaped" : "gauss shaped")<< std::endl;
+    std::cout << "Added pump with P0 = " << P0 << " w = " << w << " x = " << x << " y = " << y << " pol = " << pol << " exponent = " << exponent << " type = " << ( type == 0 ? "ring shaped" : "gauss shaped" ) << std::endl;
+}
+void addMask( System& s, real_number amp, real_number w, real_number posX, real_number posY, int pol, real_number exponent ) {
+    s.mask.amp.push_back( amp );
+    s.mask.width.push_back( w );
+    s.mask.x.push_back( posX );
+    s.mask.y.push_back( posY );
+    s.mask.pol.push_back( pol );
+    s.mask.exponent.push_back( exponent );
+    std::cout << "Added mask with amp = " << amp << " w = " << w << " posX = " << posX << " posY = " << posY << " pol = " << pol << " exponent = " << exponent << std::endl;
 }
 
 std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
@@ -181,24 +190,24 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     if ( ( index = vec_find_str( "--gr", arguments ) ) != -1 )
         s.g_r = getNextInput( arguments, "g_r", ++index );
     if ( ( index = vec_find_str( "--R", arguments ) ) != -1 ) {
-        #ifndef TETMSPLITTING
+#ifndef TETMSPLITTING
         std::cout << "Warning! Input parameter R = " << s.R << " is obsolete without TE/TM splitting!" << std::endl;
-        #endif
+#endif
         s.R = getNextInput( arguments, "R", ++index );
     }
     if ( ( index = vec_find_str( "--xmax", arguments ) ) != -1 )
         s.xmax = getNextInput( arguments, "xmax", ++index );
     if ( ( index = vec_find_str( "--g_pm", arguments ) ) != -1 ) {
         s.g_pm = getNextInput( arguments, "s.gm", ++index );
-        #ifndef TETMSPLITTING
+#ifndef TETMSPLITTING
         std::cout << "Warning! Input parameter g_m = " << s.g_pm << " is obsolete without TE/TM splitting!" << std::endl;
-        #endif
+#endif
     }
     if ( ( index = vec_find_str( "--deltaLT", arguments ) ) != -1 ) {
         s.delta_LT = getNextInput( arguments, "deltaLT", ++index );
-        #ifndef TETMSPLITTING
+#ifndef TETMSPLITTING
         std::cout << "Warning! Input parameter delta_LT = " << s.delta_LT << " is obsolete without TE/TM splitting!" << std::endl;
-        #endif
+#endif
     }
     if ( ( index = vec_find_str( "--mPlus", arguments ) ) != -1 )
         s.m_plus = getNextInput( arguments, "m_plus", ++index );
@@ -208,12 +217,15 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         s.fft_every = getNextInput( arguments, "fft_every", ++index );
     if ( ( index = vec_find_str( "--threads", arguments ) ) != -1 )
         s.omp_max_threads = (int)getNextInput( arguments, "threads", ++index );
-    if ( ( index = vec_find_str( "--output", arguments ) ) != -1 )
-        s.output_enabled = (int)getNextInput( arguments, "output", ++index );
-
+    if ( ( index = vec_find_str( "--output", arguments ) ) != -1 ) {
+        auto output_string = getNextStringInput( arguments, "output", ++index );
+        // Split output_string at ","
+        for (auto range : output_string | std::views::split(',')) {
+            s.output_keys.emplace_back(std::string{std::ranges::begin(range), std::ranges::end(range)});
+        }
+    }
 
     // Numerik
-    // 351x -> 39.7s, 401x -> 65.3s, 451x -> 104.4s, 501x -> 158.3s, 551x -> 231.9s, 751x -> 837s/250ps, 1501 -> 13796.1
     if ( ( index = vec_find_str( "--N", arguments ) ) != -1 )
         s.s_N = (int)getNextInput( arguments, "s_N", ++index );
     if ( s.s_N % 2 == 1 ) {
@@ -241,6 +253,11 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         s.fixed_time_step = false;
     }
 
+    // If -masknorm is passed to the program, the mask and psi is normalized before the error calculations.
+    if ( ( index = vec_find_str( "-masknorm", arguments ) ) != -1 ) {
+        s.normalize_before_masking = true;
+    }
+
     // Initialize t_0 as 0.
     s.t = 0.0;
     if ( ( index = vec_find_str( "--t0", arguments ) ) != -1 ) {
@@ -260,10 +277,10 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         real_number exponent = getNextInput( arguments, "pump_exponent", index );
         auto stype = getNextStringInput( arguments, "pump_type", index );
         int type = 0;
-        if (stype == "ring")
-                type = 0;
-        else if (stype == "gauss")
-                type = 1;
+        if ( stype == "ring" )
+            type = 0;
+        else if ( stype == "gauss" )
+            type = 1;
         addPump( s, amp, w, posX, posY, pol, exponent, type );
     }
     // Pulses
@@ -290,12 +307,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         real_number posY = getNextInput( arguments, "mask_Y", index );
         int pol = (int)getNextInput( arguments, "mask_pol", index );
         real_number exponent = getNextInput( arguments, "mask_exponent", index );
-        s.mask.amp.push_back( amp );
-        s.mask.width.push_back( w );
-        s.mask.x.push_back( posX );
-        s.mask.y.push_back( posY );
-        s.mask.pol.push_back( pol );
-        s.mask.exponent.push_back( exponent );
+        addMask( s, amp, w, posX, posY, pol, exponent );
     }
 
     // Save Load Path if passed
@@ -315,37 +327,39 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
 
 void initializePumpVariables( System& s, FileHandler& filehandler ) {
     // Allocate memory for pump cache on cpu
-    auto host_pump_plus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
-    auto host_pump_minus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
-    for (int col = 0; col < s.s_N; col++) {
-        for (int row = 0; row < s.s_N; row++) {
+    auto host_pump_plus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
+    auto host_pump_minus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
+    for ( int col = 0; col < s.s_N; col++ ) {
+        for ( int row = 0; row < s.s_N; row++ ) {
             auto x = -s.xmax / 2.0 + s.dx * col;
             auto y = -s.xmax / 2.0 + s.dx * row;
             int i = col * s.s_N + row;
             for ( int c = 0; c < s.pump_amp.size(); c++ ) {
                 const real_number r_squared = abs2( x - s.pump_X[c] ) + abs2( y - s.pump_Y[c] );
                 const auto w = s.pump_width[c];
-                const auto exp_factor = std::pow(r_squared / w / w, s.pump_exponent[c]);
+                const auto exp_factor = std::pow( r_squared / w / w, s.pump_exponent[c] );
                 auto pre_fractor = s.pump_type[c] == 0 ? exp_factor : 1.0;
                 if ( s.pump_pol[c] >= 0 ) {
-                    auto pump_amp = s.pump_amp[c] == -666 ? -1.*host_pump_plus[i] : s.pump_amp[c];
+                    auto pump_amp = s.pump_amp[c] == -666 ? -1. * host_pump_plus[i] : s.pump_amp[c];
                     host_pump_plus[i] += pump_amp * pre_fractor * exp( -exp_factor );
                 }
-                #ifdef TETMSPLITTING
-                if ( s.pump_pol[c] <= 0 ){
-                    auto pump_amp = s.pump_amp[c] == 666 ? -1.*host_pump_minus[i] : s.pump_amp[c];
+#ifdef TETMSPLITTING
+                if ( s.pump_pol[c] <= 0 ) {
+                    auto pump_amp = s.pump_amp[c] == 666 ? -1. * host_pump_minus[i] : s.pump_amp[c];
                     host_pump_minus[i] += pump_amp * pre_fractor * exp( -exp_factor );
                 }
-                #endif
+#endif
             }
         }
     }
 
     // Output Matrices to file
-    filehandler.outputMatrixToFile(host_pump_plus.get(), s, "pump_plus");
-    #ifdef TETMSPLITTING
-    filehandler.outputMatrixToFile(host_pump_minus.get(), s, "pump_minus");
-    #endif
+    if (s.doOutput("mat","pump_plus", "pump"))
+    filehandler.outputMatrixToFile( host_pump_plus.get(), s, "pump_plus" );
+#ifdef TETMSPLITTING
+    if (s.doOutput("mat","pump_minus", "pump"))
+    filehandler.outputMatrixToFile( host_pump_minus.get(), s, "pump_minus" );
+#endif
 
     initializePumpVariables( host_pump_plus.get(), host_pump_minus.get(), s.s_N * s.s_N );
 }
@@ -365,7 +379,7 @@ void normalize( real_number* buffer, int size, real_number min, real_number max,
 void angle( complex_number* z, real_number* buffer, int size ) {
 #pragma omp parallel for
     for ( int i = 0; i < size; i++ )
-        buffer[i] = std::atan2(imag(z[i]), real(z[i]));
+        buffer[i] = std::atan2( imag( z[i] ), real( z[i] ) );
 }
 
 bool doEvaluatePulse( const System& system ) {
@@ -395,74 +409,110 @@ void cacheValues( const System& system, Buffer& buffer ) {
     // Min and Max
     const auto [min_plus, max_plus] = minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true /*Device Pointer*/ );
     buffer.cache_Psi_Plus_max.emplace_back( max_plus );
-    #ifdef TETMSPLITTING
+#ifdef TETMSPLITTING
     const auto [min_minus, max_minus] = minmax( dev_current_Psi_Minus, system.s_N * system.s_N, true /*Device Pointer*/ );
     buffer.cache_Psi_Minus_max.emplace_back( max_minus );
-    #endif
+#endif
     // Cut at Y = 0
     std::unique_ptr<complex_number[]> buffer_cut = std::make_unique<complex_number[]>( system.s_N );
     getDeviceArraySlice( reinterpret_cast<complex_number*>( dev_current_Psi_Plus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
     std::vector<complex_number> temp( system.s_N * system.s_N / 2 );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Plus_history.emplace_back( temp );
-    #ifdef TETMSPLITTING
+#ifdef TETMSPLITTING
     getDeviceArraySlice( reinterpret_cast<complex_number*>( dev_current_Psi_Minus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Minus_history.emplace_back( temp );
-    #endif
+#endif
 }
 
 void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
-    if (s.mask.x.size() == 0) {
-        std::cout << "No mask provided, skipping soll value calculation" << std::endl;
+    if ( s.mask.x.size() == 0 ) {
+        std::cout << "No mask provided, skipping soll value calculation!" << std::endl;
         return;
     }
 
     // First, calculate soll mask from s.mask
-    auto host_mask_plus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
-    auto host_mask_minus = std::unique_ptr<real_number[]>( new real_number[ s.s_N * s.s_N ] );
-    for (int col = 0; col < s.s_N; col++) {
-        for (int row = 0; row < s.s_N; row++) {
+    auto host_mask_plus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
+    auto host_mask_minus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
+    for ( int col = 0; col < s.s_N; col++ ) {
+        for ( int row = 0; row < s.s_N; row++ ) {
             auto x = -s.xmax / 2.0 + s.dx * col;
             auto y = -s.xmax / 2.0 + s.dx * row;
             int i = col * s.s_N + row;
             for ( int c = 0; c < s.mask.amp.size(); c++ ) {
                 const real_number r_squared = abs2( x - s.mask.x[c] ) + abs2( y - s.mask.y[c] );
                 const auto w = s.mask.width[c];
-                const auto exp_factor = std::pow(r_squared / w / w, s.mask.exponent[c]);
+                const auto exp_factor = std::pow( r_squared / w / w, s.mask.exponent[c] );
                 if ( s.mask.pol[c] >= 0 ) {
-                    auto amp = s.mask.amp[c] == -666 ? -1.*host_mask_plus[i] : s.mask.amp[c];
+                    auto amp = s.mask.amp[c] == -666 ? -1. * host_mask_plus[i] : s.mask.amp[c];
                     host_mask_plus[i] += amp * exp( -exp_factor );
                 }
-                #ifdef TETMSPLITTING
-                if ( s.mask.pol[c] <= 0 ){
-                    auto amp = s.mask.amp[c] == 666 ? -1.*host_mask_minus[i] : s.mask.amp[c];
+#ifdef TETMSPLITTING
+                if ( s.mask.pol[c] <= 0 ) {
+                    auto amp = s.mask.amp[c] == 666 ? -1. * host_mask_minus[i] : s.mask.amp[c];
                     host_mask_minus[i] += amp * exp( -exp_factor );
                 }
-                #endif
+#endif
             }
         }
     }
+
+    // Calculate min and max to normalize both Psi and the mask. We dont really care about efficiency here, since its
+    // only done once.
+    real_number max_mask_plus = 1.;
+    real_number max_psi_plus = 1.;
+    real_number max_mask_minus = 1.;
+    real_number max_psi_minus = 1.;
+    real_number min_mask_plus = 0.;
+    real_number min_psi_plus = 0.;
+    real_number min_mask_minus = 0.;
+    real_number min_psi_minus = 0.;
+
+    if ( s.normalize_before_masking ) {
+        std::tie( min_mask_plus, max_mask_plus ) = minmax( host_mask_plus.get(), s.s_N * s.s_N, false /*Device Pointer*/ );
+        std::tie( min_psi_plus, max_psi_plus ) = minmax( buffer.Psi_Plus, s.s_N * s.s_N, false /*Device Pointer*/ );
+#ifdef TETMSPLITTING
+        std::tie( min_mask_minus, max_mask_minus ) = minmax( host_mask_minus.get(), s.s_N * s.s_N, false /*Device Pointer*/ );
+        std::tie( min_psi_minus, max_psi_minus ) = minmax( buffer.Psi_Minus, s.s_N * s.s_N, false /*Device Pointer*/ );
+#endif
+        std::cout << "The mask calculation will use normalizing constants:" << std::endl;
+        std::cout << "min_mask_plus = " << min_mask_plus << " max_mask_plus = " << max_mask_plus << std::endl;
+        std::cout << "min_psi_plus = " << min_psi_plus << " max_psi_plus = " << max_psi_plus << std::endl;
+#ifdef TETMSPLITTING
+        std::cout << "min_mask_minus = " << min_mask_minus << " max_mask_minus = " << max_mask_minus << std::endl;
+        std::cout << "min_psi_minus = " << min_psi_minus << " max_psi_minus = " << max_psi_minus << std::endl;
+#endif
+    // Devide error by N^2
+    max_mask_plus *= s.s_N * s.s_N;
+    max_psi_plus *= s.s_N * s.s_N;
+    max_mask_minus *= s.s_N * s.s_N;
+    max_psi_minus *= s.s_N * s.s_N;
+    
+    }
+
     // Output Mask
-    filehandler.outputMatrixToFile(host_mask_plus.get(), s, "mask_plus");
-    #ifdef TETMSPLITTING
-    filehandler.outputMatrixToFile(host_mask_minus.get(), s, "mask_minus");
-    #endif
-    // Then, check matching
-    #pragma omp parallel for
-    for (int i = 0; i < s.s_N*s.s_N; i++) {
-        host_mask_plus[i] = abs( abs( buffer.Psi_Plus[i] ) - host_mask_plus[i] );
-        #ifdef TETMSPLITTING
-        host_mask_minus[i] = abs( abs( buffer.Psi_Minus[i] ) - host_mask_minus[i] );
-        #endif
+    if (s.doOutput("mat","mask_plus", "mask"))
+    filehandler.outputMatrixToFile( host_mask_plus.get(), s, "mask_plus" );
+#ifdef TETMSPLITTING
+    if (s.doOutput("mat","mask_minus", "mask"))
+    filehandler.outputMatrixToFile( host_mask_minus.get(), s, "mask_minus" );
+#endif
+// Then, check matching
+#pragma omp parallel for
+    for ( int i = 0; i < s.s_N * s.s_N; i++ ) {
+        host_mask_plus[i] = abs( abs( buffer.Psi_Plus[i] ) / max_psi_plus - host_mask_plus[i] / max_mask_plus );
+#ifdef TETMSPLITTING
+        host_mask_minus[i] = abs( abs( buffer.Psi_Minus[i] ) / max_psi_minus - host_mask_minus[i] / max_mask_minus );
+#endif
     }
     // Thirdly, calculate sum of all elements
     real_number sum_plus = 0;
     std::ranges::for_each( host_mask_plus.get(), host_mask_plus.get() + s.s_N * s.s_N, [&sum_plus]( real_number n ) { sum_plus += n; } );
     std::cout << "Error in Psi_Plus: " << sum_plus << std::endl;
-    #ifdef TETMSPLITTING
+#ifdef TETMSPLITTING
     real_number sum_minus = 0;
     std::ranges::for_each( host_mask_plus.get(), host_mask_plus.get() + s.s_N * s.s_N, [&sum_minus]( real_number n ) { sum_minus += n; } );
     std::cout << "Error in Psi_Minus: " << sum_minus << std::endl;
-    #endif
+#endif
 }
