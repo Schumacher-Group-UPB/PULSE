@@ -87,9 +87,10 @@ static void printSystemHelp( System& s, FileHandler& h ) {
               << unifyLength( "--gammaR", "[double]", "Standard is " + std::to_string( s.gamma_r / s.gamma_c ) + "*gammaC\n" )
               << unifyLength( "--gc", "[double]", "Standard is " + std::to_string( s.g_c ) + " meV mum^2\n" )
               << unifyLength( "--gr", "[double]", "Standard is " + std::to_string( s.g_r / s.g_c ) + "*gc\n" )
+              << unifyLength( "--meff", "[double]", "Standard is " + std::to_string( s.m_eff ) + "\n" )
+              << unifyLength( "--R", "[double]", "Standard is " + std::to_string( s.R ) + " ps^-1 mum^2\n" )
 #ifdef TETMSPLITTING
               << unifyLength( "--g_pm", "[double]", "Standard is " + std::to_string( s.g_pm / s.g_c ) + "*gc\n" )
-              << unifyLength( "--R", "[double]", "Standard is " + std::to_string( s.R ) + " ps^-1 mum^2\n" )
               << unifyLength( "--deltaLT", "[double]", "Standard is " + std::to_string( s.delta_LT ) + " meV\n" )
 #endif
               << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
@@ -150,11 +151,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     // Initialize system and FileHandler
     System s;
     FileHandler h;
-    // Check if help is requested
-    if ( vec_find_str( "--help", arguments ) != -1 || vec_find_str( "-h", arguments ) != -1 ) {
-        printSystemHelp( s, h );
-        exit( 0 );
-    }
+
     // Initialize system
     int index = 0;
 
@@ -162,14 +159,6 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         h.outputPath = arguments.at( ++index );
     if ( h.outputPath.back() != '/' )
         h.outputPath += "/";
-
-    // Creating output directory
-    const int dir_err = std::system( ( "mkdir " + h.outputPath ).c_str() );
-    if ( -1 == dir_err ) {
-        std::cout << "Error creating directory " << h.outputPath << std::endl;
-    } else {
-        std::cout << "Succesfully created directory " << h.outputPath << std::endl;
-    }
 
     if ( ( index = vec_find_str( "--name", arguments ) ) != -1 )
         h.outputName = arguments.at( ++index );
@@ -186,13 +175,10 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     if ( ( index = vec_find_str( "--gammaR", arguments ) ) != -1 )
         s.gamma_r = getNextInput( arguments, "gamma_r", ++index );
     if ( ( index = vec_find_str( "--gc", arguments ) ) != -1 )
-        s.g_c = getNextInput( arguments, "g_c", ++index ) / s.h_bar_s;
+        s.g_c = getNextInput( arguments, "g_c", ++index );
     if ( ( index = vec_find_str( "--gr", arguments ) ) != -1 )
         s.g_r = getNextInput( arguments, "g_r", ++index );
     if ( ( index = vec_find_str( "--R", arguments ) ) != -1 ) {
-#ifndef TETMSPLITTING
-        std::cout << "Warning! Input parameter R = " << s.R << " is obsolete without TE/TM splitting!" << std::endl;
-#endif
         s.R = getNextInput( arguments, "R", ++index );
     }
     if ( ( index = vec_find_str( "--xmax", arguments ) ) != -1 )
@@ -218,6 +204,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     if ( ( index = vec_find_str( "--threads", arguments ) ) != -1 )
         s.omp_max_threads = (int)getNextInput( arguments, "threads", ++index );
     if ( ( index = vec_find_str( "--output", arguments ) ) != -1 ) {
+        s.output_keys.clear();
         auto output_string = getNextStringInput( arguments, "output", ++index );
         // Split output_string at ","
         for (auto range : output_string | std::views::split(',')) {
@@ -322,6 +309,20 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     if ( vec_find_str( "-nosfml", arguments ) != -1 )
         h.disableRender = true;
 
+    // Check if help is requested
+    if ( vec_find_str( "--help", arguments ) != -1 || vec_find_str( "-h", arguments ) != -1 ) {
+        printSystemHelp( s, h );
+        exit( 0 );
+    }
+
+    // Creating output directory
+    const int dir_err = std::system( ( "mkdir " + h.outputPath ).c_str() );
+    if ( -1 == dir_err ) {
+        std::cout << "Error creating directory " << h.outputPath << std::endl;
+    } else {
+        std::cout << "Succesfully created directory " << h.outputPath << std::endl;
+    }
+
     return std::make_tuple( s, h );
 }
 
@@ -334,18 +335,19 @@ void initializePumpVariables( System& s, FileHandler& filehandler ) {
             auto x = -s.xmax / 2.0 + s.dx * col;
             auto y = -s.xmax / 2.0 + s.dx * row;
             int i = col * s.s_N + row;
+            host_pump_plus[i] = 0;
             for ( int c = 0; c < s.pump_amp.size(); c++ ) {
                 const real_number r_squared = abs2( x - s.pump_X[c] ) + abs2( y - s.pump_Y[c] );
                 const auto w = s.pump_width[c];
                 const auto exp_factor = std::pow( r_squared / w / w, s.pump_exponent[c] );
                 auto pre_fractor = s.pump_type[c] == 0 ? exp_factor : 1.0;
                 if ( s.pump_pol[c] >= 0 ) {
-                    auto pump_amp = s.pump_amp[c] == -666 ? -1. * host_pump_plus[i] : s.pump_amp[c];
+                    auto pump_amp = s.pump_amp[c] == -666 ? -1. * host_pump_plus[i] : s.pump_amp[c] / sqrt(2*3.1415) / w;
                     host_pump_plus[i] += pump_amp * pre_fractor * exp( -exp_factor );
                 }
 #ifdef TETMSPLITTING
                 if ( s.pump_pol[c] <= 0 ) {
-                    auto pump_amp = s.pump_amp[c] == 666 ? -1. * host_pump_minus[i] : s.pump_amp[c];
+                    auto pump_amp = s.pump_amp[c] == 666 ? -1. * host_pump_minus[i] : s.pump_amp[c] / sqrt(2*3.1415) / w;
                     host_pump_minus[i] += pump_amp * pre_fractor * exp( -exp_factor );
                 }
 #endif

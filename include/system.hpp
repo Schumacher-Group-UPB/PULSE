@@ -62,7 +62,7 @@ class System {
     bool fixed_time_step = true;
 
     // Output of Variables
-    std::vector<std::string> output_keys;
+    std::vector<std::string> output_keys = {"mat","scalar"};
 
     // Pump arrays. These are highly deprecated as the pump is now cached
     std::vector<real_number> pump_amp;
