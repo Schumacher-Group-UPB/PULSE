@@ -336,6 +336,7 @@ void initializePumpVariables( System& s, FileHandler& filehandler ) {
             auto y = -s.xmax / 2.0 + s.dx * row;
             int i = col * s.s_N + row;
             host_pump_plus[i] = 0;
+            host_pump_minus[i] = 0;
             for ( int c = 0; c < s.pump_amp.size(); c++ ) {
                 const real_number r_squared = abs2( x - s.pump_X[c] ) + abs2( y - s.pump_Y[c] );
                 const auto w = s.pump_width[c];
@@ -443,6 +444,7 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
             auto y = -s.xmax / 2.0 + s.dx * row;
             int i = col * s.s_N + row;
             host_mask_plus[i] = 0;
+            host_mask_minus[i] = 0;
             for ( int c = 0; c < s.mask.amp.size(); c++ ) {
                 const real_number r_squared = abs2( x - s.mask.x[c] ) + abs2( y - s.mask.y[c] );
                 const auto w = s.mask.width[c];
