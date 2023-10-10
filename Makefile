@@ -11,7 +11,7 @@ GCCFLAGS = -std=c++20 -fopenmp -O3 -x c++
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true -O3
 else
-	NVCCFLAGS = -std=c++17 -Xcompiler -fopenmp -lcufft -rdc=true -diag-suppress 177 -O3
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -rdc=true -diag-suppress 177 -O3
 endif
 SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
 
