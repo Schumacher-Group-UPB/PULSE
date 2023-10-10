@@ -21,11 +21,11 @@ int main( int argc, char* argv[] ) {
 
     // Initialize Buffer Arrays
     // This way of generating the initial state can be replaced by e.g. random initialization in the future
-    generateRingPhase( system.s_N, 1.0, system.m_plus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Plus, true /*reset to zero*/ );
-    generateRingPhase( system.s_N, 1.0, system.m_minus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Minus, true /*reset to zero*/ );
+    generateRingPhase( system.s_N, 1.0, system.m_plus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Plus.get(), true /*reset to zero*/ );
+    generateRingPhase( system.s_N, 1.0, system.m_minus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Minus.get(), true /*reset to zero*/ );
     for ( int i = 0; i < system.s_N * system.s_N; i++ ) {
-        buffer.n_Plus[i] = { abs2( buffer.Psi_Plus[i] ), 0 };
-        buffer.n_Minus[i] = { abs2( buffer.Psi_Minus[i] ), 0 };
+        buffer.n_Plus.get()[i] = { abs2( buffer.Psi_Plus.get()[i] ), 0 };
+        buffer.n_Minus.get()[i] = { abs2( buffer.Psi_Minus.get()[i] ), 0 };
     }
 
     // Load Matrices from File. If --load was not passed in argv, this method does nothing.
@@ -44,7 +44,7 @@ int main( int argc, char* argv[] ) {
     initializePulseVariables( system );
 
     // Move Initial State to the GPU
-    setDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, system.s_N );
+    setDeviceArrays( buffer.Psi_Plus.get(), buffer.Psi_Minus.get(), buffer.n_Plus.get(), buffer.n_Minus.get(), system.s_N );
 
     bool running = true;
     // Main Loop
@@ -69,7 +69,7 @@ int main( int argc, char* argv[] ) {
     }
 
     // Get final state from GPU
-        getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
+    getDeviceArrays( buffer.Psi_Plus.get(), buffer.Psi_Minus.get(), buffer.n_Plus.get(), buffer.n_Minus.get(), buffer.fft_plus.get(), buffer.fft_minus.get(), system.s_N );
     
     calculateSollValue(system, buffer, filehandler);
 

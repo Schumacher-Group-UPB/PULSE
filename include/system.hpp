@@ -103,14 +103,14 @@ class System {
 
 class Buffer {
    public:
-    complex_number* u_P_plus;
-    complex_number* u_P_minus;
-    complex_number* Psi_Plus;
-    complex_number* Psi_Minus;
-    complex_number* n_Plus;
-    complex_number* n_Minus;
-    complex_number* fft_plus;
-    complex_number* fft_minus;
+    std::unique_ptr<complex_number[]> u_P_plus;
+    std::unique_ptr<complex_number[]> u_P_minus;
+    std::unique_ptr<complex_number[]> Psi_Plus;
+    std::unique_ptr<complex_number[]> Psi_Minus;
+    std::unique_ptr<complex_number[]> n_Plus;
+    std::unique_ptr<complex_number[]> n_Minus;
+    std::unique_ptr<complex_number[]> fft_plus;
+    std::unique_ptr<complex_number[]> fft_minus;
 
     // Cache Arrays for max values of Psi
     std::vector<real_number> cache_Psi_Plus_max;
@@ -121,14 +121,14 @@ class Buffer {
     std::vector<std::vector<complex_number>> cache_Psi_Minus_history;
 
     Buffer( const int N ) {
-        u_P_plus = new complex_number[N * N];
-        u_P_minus = new complex_number[N * N];
-        Psi_Plus = new complex_number[N * N];
-        Psi_Minus = new complex_number[N * N];
-        n_Plus = new complex_number[N * N];
-        n_Minus = new complex_number[N * N];
-        fft_plus = new complex_number[N * N];
-        fft_minus = new complex_number[N * N];
+        u_P_plus = std::make_unique<complex_number[]>(N * N);
+        u_P_minus = std::make_unique<complex_number[]>(N * N);
+        Psi_Plus = std::make_unique<complex_number[]>(N * N);
+        Psi_Minus = std::make_unique<complex_number[]>(N * N);
+        n_Plus = std::make_unique<complex_number[]>(N * N);
+        n_Minus = std::make_unique<complex_number[]>(N * N);
+        fft_plus = std::make_unique<complex_number[]>(N * N);
+        fft_minus = std::make_unique<complex_number[]>(N * N);
     }
     Buffer( const System& s ) : Buffer( s.s_N ) {}
     Buffer(){};
@@ -245,18 +245,18 @@ class FileHandler {
         for ( int i = 0; i < fileoutputkeys.size(); i++ ) {
             auto key = fileoutputkeys[i];
             if ( key == "Psi_plus" and system.doOutput( "mat", "psi_plus", "plus", "psi" ) )
-                outputMatrixToFile( buffer.Psi_Plus, system, key );
+                outputMatrixToFile( buffer.Psi_Plus.get(), system, key );
             if ( key == "n_plus" and system.doOutput( "mat", "n_plus", "plus", "n" ) )
-                outputMatrixToFile( buffer.n_Plus, system, key );
+                outputMatrixToFile( buffer.n_Plus.get(), system, key );
             if ( key == "fft_plus" and system.doOutput( "mat", "fft_plus", "plus", "fft" ) )
-                outputMatrixToFile( buffer.fft_plus, system, key );
+                outputMatrixToFile( buffer.fft_plus.get(), system, key );
 #ifdef TETMSPLITTING
             if ( key == "Psi_minus" and system.doOutput( "mat", "psi_minus", "minus", "psi" ) )
-                outputMatrixToFile( buffer.Psi_Minus, system, key );
+                outputMatrixToFile( buffer.Psi_Minus.get(), system, key );
             if ( key == "n_minus" and system.doOutput( "mat", "n_minus", "minus", "n" ) )
-                outputMatrixToFile( buffer.n_Minus, system, key );
+                outputMatrixToFile( buffer.n_Minus.get(), system, key );
             if ( key == "fft_minus" and system.doOutput( "mat", "fft_minus", "minus", "fft" ) )
-                outputMatrixToFile( buffer.fft_minus, system, key );
+                outputMatrixToFile( buffer.fft_minus.get(), system, key );
 #endif
         }
     }
@@ -271,14 +271,14 @@ class FileHandler {
 #pragma omp parallel for
         for ( auto i = 0; i < fileoutputkeys.size(); i++ ) {
             if ( fileoutputkeys[i] == "Psi_plus" )
-                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Plus );
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Plus.get() );
             else if ( fileoutputkeys[i] == "n_plus" )
-                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Plus );
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Plus.get() );
 #ifdef TETMSPLITTING
             else if ( fileoutputkeys[i] == "Psi_minus" )
-                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Minus );
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.Psi_Minus.get() );
             else if ( fileoutputkeys[i] == "n_minus" )
-                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Minus );
+                loadMatrixFromFile( loadPath + fileoutputkeys[i] + ".txt", buffer.n_Minus.get() );
 #endif
         }
     }

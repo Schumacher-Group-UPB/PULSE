@@ -68,17 +68,17 @@ bool plotSFMLWindow( System& system, FileHandler& handler, Buffer& buffer ) {
     if ( handler.disableRender )
         return true;
     bool running = window.run();
-    getDeviceArrays( buffer.Psi_Plus, buffer.Psi_Minus, buffer.n_Plus, buffer.n_Minus, buffer.fft_plus, buffer.fft_minus, system.s_N );
-    plotMatrix( window, buffer.Psi_Plus, system.s_N /*size*/, system.s_N, 0, 1, colorpalette, "Psi+ " );
-    plotMatrix( window, buffer.fft_plus, system.s_N /*size*/, system.s_N, 0, 3, colorpalette, "FFT+ " );
-    plotMatrix( window, buffer.n_Plus, system.s_N /*size*/, 2 * system.s_N, 0, 1, colorpalette, "n+ " );
-    angle( buffer.Psi_Plus, plotarray.get(), system.s_N * system.s_N );
+    getDeviceArrays( buffer.Psi_Plus.get(), buffer.Psi_Minus.get(), buffer.n_Plus.get(), buffer.n_Minus.get(), buffer.fft_plus.get(), buffer.fft_minus.get(), system.s_N );
+    plotMatrix( window, buffer.Psi_Plus.get(), system.s_N /*size*/, system.s_N, 0, 1, colorpalette, "Psi+ " );
+    plotMatrix( window, buffer.fft_plus.get(), system.s_N /*size*/, system.s_N, 0, 3, colorpalette, "FFT+ " );
+    plotMatrix( window, buffer.n_Plus.get(), system.s_N /*size*/, 2 * system.s_N, 0, 1, colorpalette, "n+ " );
+    angle( buffer.Psi_Plus.get(), plotarray.get(), system.s_N * system.s_N );
     plotMatrix( window, plotarray.get(), system.s_N, 0, 0, 1, colorpalette, "ang(Psi+) " );
     #ifdef TETMSPLITTING
-    plotMatrix( window, buffer.Psi_Minus, system.s_N /*size*/, system.s_N, system.s_N, 1, colorpalette, "Psi- " );
-    plotMatrix( window, buffer.fft_minus, system.s_N /*size*/, system.s_N, system.s_N, 3, colorpalette, "FFT- " );
-    plotMatrix( window, buffer.n_Minus, system.s_N /*size*/, 2 * system.s_N, system.s_N, 1, colorpalette, "n- " );
-    angle( buffer.Psi_Minus, plotarray.get(), system.s_N * system.s_N );
+    plotMatrix( window, buffer.Psi_Minus.get(), system.s_N /*size*/, system.s_N, system.s_N, 1, colorpalette, "Psi- " );
+    plotMatrix( window, buffer.fft_minus.get(), system.s_N /*size*/, system.s_N, system.s_N, 3, colorpalette, "FFT- " );
+    plotMatrix( window, buffer.n_Minus.get(), system.s_N /*size*/, 2 * system.s_N, system.s_N, 1, colorpalette, "n- " );
+    angle( buffer.Psi_Minus.get(), plotarray.get(), system.s_N * system.s_N );
     plotMatrix( window, plotarray.get(), system.s_N, 0, system.s_N, 1, colorpalette, "ang(Psi-) " );
     #endif
     window.flipscreen();

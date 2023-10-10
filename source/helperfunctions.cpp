@@ -328,8 +328,9 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
 
 void initializePumpVariables( System& s, FileHandler& filehandler ) {
     // Allocate memory for pump cache on cpu
-    auto host_pump_plus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
-    auto host_pump_minus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
+    std::unique_ptr<real_number[]> host_pump_plus, host_pump_minus;
+    host_pump_plus = std::make_unique<real_number[]>( s.s_N * s.s_N );
+    host_pump_minus = std::make_unique<real_number[]>( s.s_N * s.s_N );
     for ( int col = 0; col < s.s_N; col++ ) {
         for ( int row = 0; row < s.s_N; row++ ) {
             auto x = -s.xmax / 2.0 + s.dx * col;
@@ -436,8 +437,9 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
     }
 
     // First, calculate soll mask from s.mask
-    auto host_mask_plus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
-    auto host_mask_minus = std::unique_ptr<real_number[]>( new real_number[s.s_N * s.s_N] );
+    std::unique_ptr<real_number[]> host_mask_plus, host_mask_minus;
+    host_mask_plus = std::make_unique<real_number[]>( s.s_N * s.s_N );
+    host_mask_minus = std::make_unique<real_number[]>( s.s_N * s.s_N );
     for ( int col = 0; col < s.s_N; col++ ) {
         for ( int row = 0; row < s.s_N; row++ ) {
             auto x = -s.xmax / 2.0 + s.dx * col;
@@ -476,10 +478,10 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
 
     if ( s.normalize_before_masking ) {
         std::tie( min_mask_plus, max_mask_plus ) = minmax( host_mask_plus.get(), s.s_N * s.s_N, false /*Device Pointer*/ );
-        std::tie( min_psi_plus, max_psi_plus ) = minmax( buffer.Psi_Plus, s.s_N * s.s_N, false /*Device Pointer*/ );
+        std::tie( min_psi_plus, max_psi_plus ) = minmax( buffer.Psi_Plus.get(), s.s_N * s.s_N, false /*Device Pointer*/ );
 #ifdef TETMSPLITTING
         std::tie( min_mask_minus, max_mask_minus ) = minmax( host_mask_minus.get(), s.s_N * s.s_N, false /*Device Pointer*/ );
-        std::tie( min_psi_minus, max_psi_minus ) = minmax( buffer.Psi_Minus, s.s_N * s.s_N, false /*Device Pointer*/ );
+        std::tie( min_psi_minus, max_psi_minus ) = minmax( buffer.Psi_Minus.get(), s.s_N * s.s_N, false /*Device Pointer*/ );
 #endif
         std::cout << "The mask calculation will use normalizing constants:" << std::endl;
         std::cout << "min_mask_plus = " << min_mask_plus << " max_mask_plus = " << max_mask_plus << std::endl;
@@ -506,9 +508,9 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
 // Then, check matching
 #pragma omp parallel for
     for ( int i = 0; i < s.s_N * s.s_N; i++ ) {
-        host_mask_plus[i] = abs( abs( buffer.Psi_Plus[i] ) / max_psi_plus - host_mask_plus[i] / max_mask_plus );
+        host_mask_plus[i] = abs( abs( buffer.Psi_Plus.get()[i] ) / max_psi_plus - host_mask_plus[i] / max_mask_plus );
 #ifdef TETMSPLITTING
-        host_mask_minus[i] = abs( abs( buffer.Psi_Minus[i] ) / max_psi_minus - host_mask_minus[i] / max_mask_minus );
+        host_mask_minus[i] = abs( abs( buffer.Psi_Minus.get()[i] ) / max_psi_minus - host_mask_minus[i] / max_mask_minus );
 #endif
     }
     // Thirdly, calculate sum of all elements
