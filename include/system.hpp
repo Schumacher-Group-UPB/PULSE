@@ -7,6 +7,7 @@
 #include <vector>
 #include "omp.h"
 #include <algorithm>
+#include <memory>
 
 /**
  * @brief Very lightweight System Class containing all of the required system variables.
