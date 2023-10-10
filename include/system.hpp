@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include "omp.h"
+#include <alogrithm>
 
 /**
  * @brief Very lightweight System Class containing all of the required system variables.
