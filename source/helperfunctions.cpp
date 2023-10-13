@@ -168,8 +168,10 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
 
     // Systemparameter
     s.m_eff = 1E-4 / s.h_bar_s * 5.6856; //      *m_e/h_bar;                 // m_e/hbar
+    double dt_scaling_factor = s.m_eff;
     if ( ( index = vec_find_str( "--meff", arguments ) ) != -1 )
         s.m_eff = getNextInput( arguments, "m_eff", ++index );
+    dt_scaling_factor /= s.m_eff;
     if ( ( index = vec_find_str( "--gammaC", arguments ) ) != -1 )
         s.gamma_c = getNextInput( arguments, "gamma_c", ++index );
     if ( ( index = vec_find_str( "--gammaR", arguments ) ) != -1 )
@@ -220,7 +222,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         s.s_N++;
     }
     s.dx = s.xmax / ( s.s_N - 1 ); // x-range ist -xmax/2 bis xmax/2
-    s.dt = 0.5 * s.dx * s.dx;
+    s.dt = 0.5 * s.dx * s.dx / dt_scaling_factor;
     std::cout << "Calculated dx = " << s.dx << "\nCalculated dt = " << s.dt << std::endl;
     if ( ( index = vec_find_str( "--tmax", arguments ) ) != -1 )
         s.t_max = getNextInput( arguments, "s_t_max", ++index );
