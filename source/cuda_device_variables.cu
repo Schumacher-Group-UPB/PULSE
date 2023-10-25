@@ -15,6 +15,8 @@ CUDA_DEVICE real_number dev_p_delta_LT = 0;
 CUDA_DEVICE real_number dev_s_dt = 0;
 CUDA_DEVICE real_number dev_p_xmax = 0;
 CUDA_DEVICE real_number dev_one_over_h_bar_s = 0;
+CUDA_DEVICE complex_number dev_minus_i_over_h_bar_s = {0,0};
+CUDA_DEVICE complex_number dev_i_h_bar_s = {0,0};
 
 CUDA_DEVICE int dev_n_pump = 0;
 CUDA_DEVICE int dev_n_pulse = 0;
@@ -113,6 +115,10 @@ void initializeDeviceVariables( const real_number s_dx, const real_number s_dt, 
     SYMBOL_TO_DEVICE( dev_p_xmax, &p_xmax, sizeof( real_number ), "cudaMemcpyToSymbol dev_p_xmax" );
     const real_number one_over_h_bar_s = 1.0 / h_bar_s;
     SYMBOL_TO_DEVICE( dev_one_over_h_bar_s, &one_over_h_bar_s, sizeof( real_number ), "cudaMemcpyToSymbol dev_one_over_h_bar_s" );
+    const complex_number i_over_h_bar_s = {0, -one_over_h_bar_s};
+    SYMBOL_TO_DEVICE( dev_minus_i_over_h_bar_s, &i_over_h_bar_s, sizeof( complex_number ), "cudaMemcpyToSymbol dev_minus_i_over_h_bar_s" );
+    const complex_number i_h_bar_s = {0, h_bar_s};
+    SYMBOL_TO_DEVICE( dev_i_h_bar_s, &i_h_bar_s, sizeof( complex_number ), "cudaMemcpyToSymbol dev_i_h_bar_s" );
     // P/M 0.5i/1i
     complex_number half_i = { 0.0, 0.5 };
     complex_number i = { 0.0, 1.0 };
@@ -123,12 +129,12 @@ void initializeDeviceVariables( const real_number s_dx, const real_number s_dt, 
     SYMBOL_TO_DEVICE( dev_minus_half_i, &minus_half_i, sizeof( complex_number ), "cudaMemcpyToSymbol dev_minus_half_i" );
     SYMBOL_TO_DEVICE( dev_minus_i, &minus_i, sizeof( complex_number ), "cudaMemcpyToSymbol dev_minus_i" );
     // Constant variables
-    const real_number p_m_eff_scaled = -0.5 / ( p_m_eff * s_dx * s_dx );
+    const real_number p_m_eff_scaled = -0.5 * h_bar_s* h_bar_s / ( p_m_eff * s_dx * s_dx );
     const real_number p_delta_LT_scaled = p_delta_LT / s_dx / s_dx;
-    const complex_number pgr_plus_pR = { p_g_r, 0.5 * p_R };
+    //const complex_number pgr_plus_pR = { p_g_r, 0.5 * p_R };
     SYMBOL_TO_DEVICE( dev_p_m_eff_scaled, &p_m_eff_scaled, sizeof( real_number ), "cudaMemcpyToSymbol dev_p_m_eff_scaled" );
     SYMBOL_TO_DEVICE( dev_p_delta_LT_scaled, &p_delta_LT_scaled, sizeof( real_number ), "cudaMemcpyToSymbol dev_p_delta_LT_scaled" );
-    SYMBOL_TO_DEVICE( dev_pgr_plus_pR, &pgr_plus_pR, sizeof( complex_number ), "cudaMemcpyToSymbol dev_pgr_plus_pR" );
+    //SYMBOL_TO_DEVICE( dev_pgr_plus_pR, &pgr_plus_pR, sizeof( complex_number ), "cudaMemcpyToSymbol dev_pgr_plus_pR" );
 }
 
 void initializePumpVariables( real_number* pump_plus, real_number* pump_minus, const int size ) {

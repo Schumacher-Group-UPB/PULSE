@@ -167,7 +167,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         h.out_modulo = (int)getNextInput( arguments, "out_modulo", ++index );
 
     // Systemparameter
-    s.m_eff = 1E-4 / s.h_bar_s * 5.6856; //      *m_e/h_bar;                 // m_e/hbar
+    s.m_eff = 1E-4 * 5.6856;
     double dt_scaling_factor = s.m_eff;
     if ( ( index = vec_find_str( "--meff", arguments ) ) != -1 )
         s.m_eff = getNextInput( arguments, "m_eff", ++index );
@@ -343,16 +343,16 @@ void initializePumpVariables( System& s, FileHandler& filehandler ) {
             for ( int c = 0; c < s.pump_amp.size(); c++ ) {
                 const real_number r_squared = abs2( x - s.pump_X[c] ) + abs2( y - s.pump_Y[c] );
                 const auto w = s.pump_width[c];
-                const auto exp_factor = std::pow( r_squared / w / w, s.pump_exponent[c] );
+                const auto exp_factor = 0.5 * r_squared / w / w; //std::pow( 0.5 * r_squared / w / w, s.pump_exponent[c] ); //TODO: angleich pump
                 auto pre_fractor = s.pump_type[c] == 0 ? exp_factor : 1.0;
                 if ( s.pump_pol[c] >= 0 ) {
                     auto pump_amp = s.pump_amp[c] == -666 ? -1. * host_pump_plus[i] : s.pump_amp[c] / sqrt(2*3.1415) / w;
-                    host_pump_plus[i] += pump_amp * pre_fractor * exp( -exp_factor );
+                    host_pump_plus[i] += pump_amp * pre_fractor * std::pow(exp( -exp_factor ),s.pump_exponent[c]);
                 }
 #ifdef TETMSPLITTING
                 if ( s.pump_pol[c] <= 0 ) {
                     auto pump_amp = s.pump_amp[c] == 666 ? -1. * host_pump_minus[i] : s.pump_amp[c] / sqrt(2*3.1415) / w;
-                    host_pump_minus[i] += pump_amp * pre_fractor * exp( -exp_factor );
+                    host_pump_minus[i] += pump_amp * pre_fractor * std::pow(exp( -exp_factor ),s.pump_exponent[c]);
                 }
 #endif
             }
@@ -422,7 +422,7 @@ void cacheValues( const System& system, Buffer& buffer ) {
     // Cut at Y = 0
     std::unique_ptr<complex_number[]> buffer_cut = std::make_unique<complex_number[]>( system.s_N );
     getDeviceArraySlice( reinterpret_cast<complex_number*>( dev_current_Psi_Plus ), buffer_cut.get(), system.s_N * system.s_N / 2, system.s_N );
-    std::vector<complex_number> temp( system.s_N * system.s_N / 2 );
+    std::vector<complex_number> temp( system.s_N );
     std::copy( buffer_cut.get(), buffer_cut.get() + system.s_N, temp.begin() );
     buffer.cache_Psi_Plus_history.emplace_back( temp );
 #ifdef TETMSPLITTING

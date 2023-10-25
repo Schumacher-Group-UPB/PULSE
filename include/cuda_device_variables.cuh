@@ -21,6 +21,8 @@ extern CUDA_DEVICE real_number dev_p_delta_LT;
 extern CUDA_DEVICE real_number dev_s_dt;
 extern CUDA_DEVICE real_number dev_p_xmax;
 extern CUDA_DEVICE real_number dev_one_over_h_bar_s;
+extern CUDA_DEVICE complex_number dev_minus_i_over_h_bar_s;
+extern CUDA_DEVICE complex_number dev_i_h_bar_s;
 
 extern CUDA_DEVICE int dev_n_pump;
 extern CUDA_DEVICE int dev_n_pulse;

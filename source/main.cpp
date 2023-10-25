@@ -21,11 +21,14 @@ int main( int argc, char* argv[] ) {
 
     // Initialize Buffer Arrays
     // This way of generating the initial state can be replaced by e.g. random initialization in the future
-    generateRingPhase( system.s_N, 1.0, system.m_plus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Plus.get(), true /*reset to zero*/ );
-    generateRingPhase( system.s_N, 1.0, system.m_minus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Minus.get(), true /*reset to zero*/ );
+    //generateRingPhase( system.s_N, 1.0, system.m_plus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Plus.get(), true /*reset to zero*/ );
+    //generateRingPhase( system.s_N, 1.0, system.m_minus, system.xmax / 10, system.xmax / 10, 0.0, 0.0, system.xmax, system.dx, system.normalize_phase_states, buffer.Psi_Minus.get(), true /*reset to zero*/ );
+    real_number noise = (real_number)1E-2;
     for ( int i = 0; i < system.s_N * system.s_N; i++ ) {
-        buffer.n_Plus.get()[i] = { abs2( buffer.Psi_Plus.get()[i] ), 0 };
-        buffer.n_Minus.get()[i] = { abs2( buffer.Psi_Minus.get()[i] ), 0 };
+        buffer.Psi_Plus.get()[i] = { -noise + (real_number)(2.0)*noise*(real_number)rand() / RAND_MAX, -noise + (real_number)(2.0)*noise*(real_number)rand() / RAND_MAX };
+        buffer.Psi_Minus.get()[i] = { -noise + (real_number)(2.0)*noise*(real_number)rand() / RAND_MAX, -noise + (real_number)(2.0)*noise*(real_number)rand() / RAND_MAX };
+        buffer.n_Plus.get()[i] = { 0, 0 };
+        buffer.n_Minus.get()[i] = { 0, 0 };
     }
 
     // Load Matrices from File. If --load was not passed in argv, this method does nothing.
@@ -62,7 +65,6 @@ int main( int argc, char* argv[] ) {
             cacheValues( system, buffer );
             running = plotSFMLWindow( system, filehandler, buffer );
             , "Plotting" );
-
         double duration = timeitGet( "Main" ) + timeitGet( "Plotting" );
         auto [min, max] = minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true /*This is a device pointer*/ );
         std::cout << "T = " << int( system.t ) << ", Time per " << filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r";

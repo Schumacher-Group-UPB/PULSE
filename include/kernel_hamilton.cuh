@@ -34,28 +34,28 @@ CUDA_DEVICE static __inline__ complex_number right_neighbour( complex_number* ve
     return vector[index + distance];
 }
 
-CUDA_DEVICE static __inline__ void hamilton( complex_number& DT1, complex_number* __restrict__ vector, int index, const int row, const int col, const int N ) {
+CUDA_DEVICE static __inline__ void hamilton( complex_number& regular, complex_number* __restrict__ vector, int index, const int row, const int col, const int N ) {
     const auto upper = upper_neighbour( vector, index, row, col, 1, N );
     const auto lower = lower_neighbour( vector, index, row, col, 1, N );
     const auto left = left_neighbour( vector, index, row, col, 1, N );
     const auto right = right_neighbour( vector, index, row, col, 1, N );
-    DT1 = -4.0 * vector[index] + upper + lower + left + right;
+    regular = -4.0 * vector[index] + upper + lower + left + right;
 }
 
-CUDA_DEVICE static __inline__ void hamilton_1( complex_number& DT1, complex_number& DT4, complex_number* __restrict__ vector, int index, const int row, const int col, const int N ) {
+CUDA_DEVICE static __inline__ void hamilton_1( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N ) {
     const auto upper = upper_neighbour( vector, index, row, col, 1, N );
     const auto lower = lower_neighbour( vector, index, row, col, 1, N );
     const auto left = left_neighbour( vector, index, row, col, 1, N );
     const auto right = right_neighbour( vector, index, row, col, 1, N );
-    DT1 = -4.0 * vector[index] + upper + lower + left + right;
-    DT4 = upper + lower - left - right - dev_half_i * ( right_neighbour( vector, index - N, row - 1, col, 1, N ) - left_neighbour( vector, index - N, row - 1, col, 1, N ) ) + dev_half_i * ( right_neighbour( vector, index + N, row + 1, col, 1, N ) - left_neighbour( vector, index + N, row + 1, col, 1, N ) );
+    regular = -4.0 * vector[index] + upper + lower + left + right;
+    cross = upper + lower - left - right - dev_half_i * ( right_neighbour( vector, index - N, row - 1, col, 1, N ) - left_neighbour( vector, index - N, row - 1, col, 1, N ) ) + dev_half_i * ( right_neighbour( vector, index + N, row + 1, col, 1, N ) - left_neighbour( vector, index + N, row + 1, col, 1, N ) );
 }
 
-CUDA_DEVICE static __inline__ void hamilton_2( complex_number& DT2, complex_number& DT3, complex_number* __restrict__ vector, int index, const int row, const int col, const int N ) {
+CUDA_DEVICE static __inline__ void hamilton_2( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N ) {
     const auto upper = upper_neighbour( vector, index, row, col, 1, N );
     const auto lower = lower_neighbour( vector, index, row, col, 1, N );
     const auto left = left_neighbour( vector, index, row, col, 1, N );
     const auto right = right_neighbour( vector, index, row, col, 1, N );
-    DT3 = -4. * vector[index] + upper + lower + left + right;
-    DT2 = upper + lower - left - right + dev_half_i * ( right_neighbour( vector, index - N, row - 1, col, 1, N ) - left_neighbour( vector, index - N, row - 1, col, 1, N ) ) - dev_half_i * ( right_neighbour( vector, index + N, row + 1, col, 1, N ) - left_neighbour( vector, index + N, row + 1, col, 1, N ) );
+    regular = -4. * vector[index] + upper + lower + left + right;
+    cross = upper + lower - left - right + dev_half_i * ( right_neighbour( vector, index - N, row - 1, col, 1, N ) - left_neighbour( vector, index - N, row - 1, col, 1, N ) ) - dev_half_i * ( right_neighbour( vector, index + N, row + 1, col, 1, N ) - left_neighbour( vector, index + N, row + 1, col, 1, N ) );
 }

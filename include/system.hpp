@@ -26,14 +26,14 @@ class System {
     real_number m_eff;
     real_number gamma_c = 0.15;          // ps^-1
     real_number gamma_r = 1.5 * gamma_c; // ps^-1
-    real_number g_c = 3.E-6 / h_bar_s;   // meV mum^2
+    real_number g_c = 3.E-6;            // meV mum^2
     real_number g_r = 2. * g_c;          // meV mum^2
     real_number R = 0.01;                // ps^-1 mum^2
     // real_number P0 = 100.;                     // ps^-1 mum^-2
     // real_number w = 10.;                       // mum
     real_number xmax = 100.;                   // mum
     real_number g_pm = -g_c / 5;               // meV mum^2
-    real_number delta_LT = 0.025E-3 / h_bar_s; // meV
+    real_number delta_LT = 0.025E-3; // meV
     real_number m_plus = 0.;
     real_number m_minus = 0.;
 
@@ -287,16 +287,16 @@ class FileHandler {
     void cacheToFiles( System& system, const Buffer& buffer ) {
         if ( system.doOutput( "max", "scalar" ) ) {
             auto& file_max = getFile( "max" );
-            file_max << "Psi_Plus";
+            file_max << "t Psi_Plus";
 #ifdef TETMSPLITTING
             file_max << " Psi_Minus";
 #endif
             file_max << std::endl;
             for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i++ ) {
 #ifdef TETMSPLITTING
-                file_max << " " << buffer.cache_Psi_Plus_max[i] << " " << buffer.cache_Psi_Minus_max[i] << std::endl;
+                file_max << i << " " << buffer.cache_Psi_Plus_max[i] << " " << buffer.cache_Psi_Minus_max[i] << std::endl;
 #else
-                file_max << " " << buffer.cache_Psi_Plus_max[i] << std::endl;
+                file_max << i << " " << buffer.cache_Psi_Plus_max[i] << std::endl;
 #endif
             }
             file_max.close();
@@ -307,18 +307,21 @@ class FileHandler {
 #ifdef TETMSPLITTING
             auto& file_history_minus = getFile( "history_minus" );
 #endif
-            const auto interval = int( std::max( 1., buffer.cache_Psi_Plus_max.size() / 500. ) );
-            for ( int i = 0; i < buffer.cache_Psi_Plus_max.size(); i += interval ) {
+            const auto interval_time = int( std::max( 1., buffer.cache_Psi_Plus_history.size() / 200. ) );
+            const auto interval_x = int( std::max( 1., buffer.cache_Psi_Plus_history.front().size() / 200. ) );
+            for ( int i = 0; i < buffer.cache_Psi_Plus_history.size(); i += interval_time ) {
                 std::cout << "Writing history " << i << " of " << buffer.cache_Psi_Plus_max.size() << "\r";
-                for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k++ ) {
-                    file_history_plus << " " << abs( buffer.cache_Psi_Plus_history[i][k] );
+                for ( int k = 0; k < buffer.cache_Psi_Plus_history.front().size(); k += interval_x ) {
+                    const auto current_plus = buffer.cache_Psi_Plus_history[i][k];
+                    file_history_plus << i << " " << k << " " << real( current_plus ) << " " << imag( current_plus ) << "\n";
 #ifdef TETMSPLITTING
-                    file_history_minus << " " << abs( buffer.cache_Psi_Minus_history[i][k] );
+                    const auto current_minus = buffer.cache_Psi_Plus_history[i][k];
+                    file_history_minus << i << " " << k << " " << real( current_minus ) << " " << imag( current_minus ) << "\n";
 #endif
                 }
-                file_history_plus << std::endl;
+                file_history_plus << "\n";
 #ifdef TETMSPLITTING
-                file_history_minus << std::endl;
+                file_history_minus << "\n";
 #endif
             }
             std::cout << "Writing history done, closing all files." << std::endl;
