@@ -521,7 +521,7 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
     std::cout << "Error in Psi_Plus: " << sum_plus << std::endl;
 #ifdef TETMSPLITTING
     real_number sum_minus = 0;
-    std::ranges::for_each( host_mask_plus.get(), host_mask_plus.get() + s.s_N * s.s_N, [&sum_minus]( real_number n ) { sum_minus += n; } );
+    std::ranges::for_each( host_mask_minus.get(), host_mask_minus.get() + s.s_N * s.s_N, [&sum_minus]( real_number n ) { sum_minus += n; } );
     std::cout << "Error in Psi_Minus: " << sum_minus << std::endl;
 #endif
 }

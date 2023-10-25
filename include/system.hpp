@@ -315,7 +315,7 @@ class FileHandler {
                     const auto current_plus = buffer.cache_Psi_Plus_history[i][k];
                     file_history_plus << i << " " << k << " " << real( current_plus ) << " " << imag( current_plus ) << "\n";
 #ifdef TETMSPLITTING
-                    const auto current_minus = buffer.cache_Psi_Plus_history[i][k];
+                    const auto current_minus = buffer.cache_Psi_Minus_history[i][k];
                     file_history_minus << i << " " << k << " " << real( current_minus ) << " " << imag( current_minus ) << "\n";
 #endif
                 }
