@@ -2,7 +2,7 @@
 
 # User-defined launch parameters
 
-output_path="data/should_sammel_tetm/"
+output_path="data/"
 
 system_parameters=(
     "--pump 40 30 0 0 1 1 gauss" # Center Pump
@@ -30,7 +30,7 @@ system_parameters=(
 )
 
 # Path to the program to launch
-launch_program="./main_wr_tetm_fp32.exe"
+launch_program="./main.exe"
 
 # Construct the command to launch the program
 command=("$launch_program" "${system_parameters[@]}" "--path" "$output_path")
@@ -49,7 +49,7 @@ if [ ! -f "${output_path}Psi_Minus.txt" ]; then
     gnuplot "-e" "set term png size 1000,500; stats '${output_path}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path}psi.png'; set multiplot layout 1,1; plot '${output_path}psi_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
     gnuplot "-e" "set term png size 1000,500; stats '${output_path}n_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path}n.png'; set multiplot layout 1,1; plot '${output_path}n_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
     gnuplot "-e" "set term png size 1000,500; stats '${output_path}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path}angle.png'; set multiplot layout 1,1; plot '${output_path}psi_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w image;"
-    gnuplot "-e" "set term png size 1000,500; set output '${output_path}lines.png'; set multiplot layout 1,2; plot for [i=2:3] '${output_path}times.txt' u 1:i w l lw 3 t columnhead(i); plot '${output_path}max.txt' u 1:2 w l lw 3 axes x2y1 t columnhead(2);"
+    gnuplot "-e" "set term png size 1000,500; set output '${output_path}lines.png'; set multiplot layout 1,2; plot for [i=2:3] '${output_path}times.txt' u 1:i w l lw 3 t columnhead(i); plot '${output_path}max.txt' u 1:2 w l lw 3 t columnhead(2);"
     exit 0
 fi
 
@@ -58,4 +58,4 @@ gnuplot "-e" "set term png size 1000,500; stats '${output_path}history_plus.txt'
 gnuplot "-e" "set term png size 1000,500; stats '${output_path}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path}psi.png'; set multiplot layout 1,2; plot '${output_path}psi_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image; plot '${output_path}psi_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
 gnuplot "-e" "set term png size 1000,500; stats '${output_path}n_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path}n.png'; set multiplot layout 1,2; plot '${output_path}n_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image; plot '${output_path}n_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
 gnuplot "-e" "set term png size 1000,500; stats '${output_path}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path}angle.png'; set multiplot layout 1,2; plot '${output_path}psi_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w image; plot '${output_path}psi_minus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w image;"
-gnuplot "-e" "set term png size 1000,500; set output '${output_path}lines.png'; set multiplot layout 1,2; plot for [i=2:3] '${output_path}times.txt' u 1:i w l lw 3 t columnhead(i); plot for [i=2:3] '${output_path}max.txt' u 1:i w l lw 3 axes x2y1 t columnhead(i);"
+gnuplot "-e" "set term png size 1000,500; set output '${output_path}lines.png'; set multiplot layout 1,2; plot for [i=2:3] '${output_path}times.txt' u 1:i w l lw 3 t columnhead(i); plot for [i=2:3] '${output_path}max.txt' u 1:i w l lw 3 t columnhead(i);"
