@@ -87,14 +87,57 @@ class System {
     std::vector<real_number> pulse_X;
     std::vector<real_number> pulse_Y;
 
-    struct Envelope {
+    class Envelope {
+        public:
         std::vector<real_number> amp, width, x, y, exponent;
-        std::vector<int> pol, type;
-    };
-    // TODO: struct Pump : Envelope und Pulse : Envelope
+        std::vector<real_number> freq, sigma, t0;
+        std::vector<int> m;
+        
+        enum class Type {
+            Gauss,
+            GaussOuter,
+            Ring
+        };
+        std::vector<Type> type;
 
-    Envelope mask;
+        enum class Polarization {
+            Plus,
+            Minus,
+            Both
+        };
+        std::vector<Polarization> pol;
+
+        enum class Behavior {
+            Add,
+            Multiply,
+            Replace,
+            Adaptive
+        };
+        std::vector<Behavior> behavior;
+
+        void addSpacial(real_number amp, real_number width, real_number x, real_number y, real_number exponent, Type type, Polarization pol, Behavior behavior) {
+            this->amp.push_back(amp);
+            this->width.push_back(width);
+            this->x.push_back(x);
+            this->y.push_back(y);
+            this->exponent.push_back(exponent);
+            this->type.push_back(type);
+            this->pol.push_back(pol);
+            this->behavior.push_back(behavior);
+        }
+        void addTemporal(real_number t0, real_number sigma, real_number freq) {
+            this->t0.push_back(t0);
+            this->sigma.push_back(sigma);
+            this->freq.push_back(freq);
+        }
+
+    };
+
+    Envelope pulse, pump, mask, initial_state;
     bool normalize_before_masking = false;
+
+    bool randomly_initialize_system = false;
+    real_number random_system_amplitude = 1.0;
 
     template <typename... Args>
     bool doOutput( const Args&... args ) {

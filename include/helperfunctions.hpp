@@ -54,18 +54,6 @@ std::string unifyLength( std::string indicator, std::string unit, std::string de
 static void printSystemHelp( System& s, FileHandler& h );
 
 /**
- * @brief Takes the system and a given set of pulse parameters and adds it to the
- * system pulse cache array. This array is then later pushed to the GPU memory.
- */
-void addPulse( System& s, real_number t0, real_number amp, real_number freq, real_number sigma, int m, int pol, real_number width, real_number x, real_number y );
-
-/**
- * @brief Takes the system and a given set of pump parameters and adds it to the
- * system pump cache array. This array is then later pushed to the GPU memory.
- */
-void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol, real_number exponent, int type );
-
-/**
  * @brief Initializes the system and the file handler variables from the argc
  * and argv commandline arguments. This function also handles the help message.
  * @param argc The number of commandline arguments.
@@ -83,6 +71,25 @@ void initializePumpVariables( System& s, FileHandler& filehandler );
  */
 void initializePulseVariables( System& s );
 
+System::Envelope getEnvelope( const std::vector<std::string>& arguments, const std::string& key, const bool time = false ); 
+
+/**
+ * @brief Calculates a mask for the given system and saves it to the mask buffer.
+ * @param s The system to calculate the mask for.
+ * @param buffer The buffer to save the mask to.
+ * @param mask The envelope of the mask.
+ * @param polarization The polarization of the mask. If set to 0, the mask will
+ * always be applied no matter the polarization. If set to 1, the mask will only
+ * be applied to the plus polarization. If set to -1, the mask will only be
+ * applied to the minus polarization.
+*/
+void calculateEnvelope(System& s, real_number* buffer, const System::Envelope& mask, System::Envelope::Polarization polarization);
+
+/**
+ * @brief Calculates the "soll" value of a given buffer. The soll value is the
+ * value that the buffer should have at the current time step. This function
+ * calculates the soll value for the current time step and saves it to a file.
+*/
 void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler );
 
 struct compare_complex_abs2 {
@@ -127,14 +134,14 @@ void angle( complex_number* z, real_number* buffer, int size );
 bool doEvaluatePulse( const System& system );
 
 /**
- * @brief Helper function to grab the current wavefunction cut at Y = 0 and save
- * it to a vector.
- */
-std::vector<complex_number> cacheVector( const System& s, const complex_number* buffer );
-
-/**
  * @brief Calculates the current maximum (and minimum) of the wavefunction and
  * saves it to the buffer. Also saves the current wavefunction cut at Y = 0 to
  * the buffer.
  */
 void cacheValues( const System& system, Buffer& buffer );
+
+/**
+ * @brief System initialization; We have two options, either randomly initializing 
+ * the Psi functions, or mask-initializing them. This function handles both cases.
+*/
+void initializeSystem( System& system, Buffer& buffer );

@@ -2,16 +2,21 @@
 
 # User-defined launch parameters
 
-output_path="data/"
+output_path="data/kekwtest1/"
 
 system_parameters=(
-    "--pump 40 30 0 0 1 1 gauss" # Center Pump
-    "--pump 10 2.5 0 26 1 1 gauss" # Narrow
-    "--pump adaptive 2.5 0 15 1 5 gauss" # Potential Well
-    "--pump adaptive 2.5 0 7.5 1 5 gauss" # Potential Well
-    "--pump adaptive 2.5 0 0 1 5 gauss" # Potential Well
-    "--pump adaptive 2.5 0 -7.5 1 5 gauss" # Potential Well
-    "--pump adaptive 2.5 0 -15 1 5 gauss" # Potential Well
+    "--pump 40 add 30 0 0 plus 1 gauss" # Center Pump
+    "--pump 10 add 2.5 0 21 plus 1 gauss" # Narrow
+    "--pump -1 adaptive 2.5 0 15 plus 5 gaussouter" # Potential Well
+    "--pump -1 adaptive 2.5 0 7.5 plus 5 gaussouter" # Potential Well
+    "--pump -1 adaptive 2.5 0 0 plus 5 gaussouter" # Potential Well
+    "--pump -1 adaptive 2.5 0 -7.5 plus 5 gaussouter" # Potential Well
+    "--pump -1 adaptive 2.5 0 -15 plus 5 gaussouter" # Potential Well
+    "--mask 5 add 4.5 0 7.5 plus 5 gauss" # Soll
+    "-masknorm"
+    "--initRandom 0.5"
+    "--initialState 1 add 4.5 0 7.5 plus 5 gauss" # Soll
+    #"--pulse 1000 0.01 1 2 3 1 2.5 26 0"
     "--outEvery 200"
     "--tmax 5000" 
     "--N 500"
@@ -30,7 +35,7 @@ system_parameters=(
 )
 
 # Path to the program to launch
-launch_program="./main.exe"
+launch_program="./main_wr_fp32.exe"
 
 # Construct the command to launch the program
 command=("$launch_program" "${system_parameters[@]}" "--path" "$output_path")

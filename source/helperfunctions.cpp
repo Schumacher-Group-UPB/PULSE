@@ -8,6 +8,7 @@
 #include "cuda_device_variables.cuh"
 #include <memory>
 #include <algorithm>
+#include <random>
 #include <ranges>
 
 // To cast the "pointers-to-device-memory" to actual device pointers for thrust
@@ -96,54 +97,15 @@ static void printSystemHelp( System& s, FileHandler& h ) {
               << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( s.xmax ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
-              << unifyLength( "--pulse", "[double] [double] [double] [double] [int] [int] [double] [double] [double]", "t0, amplitude, frequency, sigma, m, pol, width, posX, posY, standard is no pulse. pol = +/-1 or 0 for both\n", 30, 80 )
-              << unifyLength( "--pump", "[double] [double] [double] [double] [int] [double] [string]", "amplitude or 'adaptive', width, posX, posY, pol, exponent, type. standard is no pump. type can be either gauss or ring.\n", 30, 80 ) << unifyLength( " ", " ", "mPlus and mMinus are optional and take effect when --adjustStartingStates is provided\n", 30, 80 ) << unifyLength( "--adjustStartingStates, -ASS ", "", "Adjusts the polarization and amplitude of the starting Psi(+,-) and n(+,-) to match the pump given by --pump. Does nothing if no --pump is provided.\n", 30, 80 )
-              << unifyLength( "--mask", "[double] [double] [double] [double] [int] [double]", "amplitude or 'adaptive', width, posX, posY, pol, exponent. standard is no mask.\n", 30, 80 )
+              << unifyLength( "--pump", "[double] [string] [double] [double] [double] [string] [double] [string]", "amplitude, behaviour (add,multiply,replace,adaptive), width, posX, posY, pol (plus,minus,both), exponent, type (gauss, ring)\n", 30, 80)
+              << unifyLength( "--mask", "[Same as Pump]","\n", 30, 80 )
+              << unifyLength( "--initialState", "[Same as Pump]","\n", 30, 80 )
+              << unifyLength( "--initRandom", "[double]","Amplitude. Randomly initialize Psi\n", 30, 80 )
+              << unifyLength( "--pulse", "[Same as Pump] [double] [double] [double] [int]", "t0, frequency, sigma, m\n", 30, 80 )
               << unifyLength( "-masknorm", "no arguments", "If passed, both the mask and Psi will be normalized before calculating the error.\n", 30, 80 ) << std::endl;
 #ifdef USECPU
     std::cout << unifyLength( "--threads", "[int]", "Standard is " + std::to_string( s.omp_max_threads ) + " Threads\n" ) << std::endl;
 #endif
-}
-
-void addPulse( System& s, real_number t0, real_number amp, real_number freq, real_number sigma, int m, int pol, real_number width, real_number x, real_number y ) {
-    if ( amp == 0.0 || sigma == 0 || freq == 0 || width == 0 ) {
-        std::cout << "Pulse with amp = 0 or sigma = 0 or freq = 0 or width = 0 not allowed!" << std::endl;
-        return;
-    }
-    s.pulse_t0.push_back( t0 );
-    s.pulse_amp.push_back( amp );
-    s.pulse_freq.push_back( freq );
-    s.pulse_sigma.push_back( sigma );
-    s.pulse_m.push_back( m );
-    s.pulse_pol.push_back( pol );
-    s.pulse_width.push_back( width );
-    s.pulse_X.push_back( x );
-    s.pulse_Y.push_back( y );
-    std::cout << "Added pulse with t0 = " << t0 << " amp = " << amp << " freq = " << freq << " sigma = " << sigma << " m = " << m << " pol = " << pol << " width = " << width << " x = " << x << " y = " << y << std::endl;
-}
-
-void addPump( System& s, real_number P0, real_number w, real_number x, real_number y, int pol, real_number exponent, int type ) {
-    if ( P0 == 0.0 || w == 0 ) {
-        std::cout << "Pump with P0 = 0 or w = 0 not allowed!" << std::endl;
-        return;
-    }
-    s.pump_amp.push_back( P0 );
-    s.pump_width.push_back( w );
-    s.pump_X.push_back( x );
-    s.pump_Y.push_back( y );
-    s.pump_pol.push_back( pol );
-    s.pump_type.push_back( type );
-    s.pump_exponent.push_back( exponent );
-    std::cout << "Added pump with P0 = " << P0 << " w = " << w << " x = " << x << " y = " << y << " pol = " << pol << " exponent = " << exponent << " type = " << ( type == 0 ? "ring shaped" : "gauss shaped" ) << std::endl;
-}
-void addMask( System& s, real_number amp, real_number w, real_number posX, real_number posY, int pol, real_number exponent ) {
-    s.mask.amp.push_back( amp );
-    s.mask.width.push_back( w );
-    s.mask.x.push_back( posX );
-    s.mask.y.push_back( posY );
-    s.mask.pol.push_back( pol );
-    s.mask.exponent.push_back( exponent );
-    std::cout << "Added mask with amp = " << amp << " w = " << w << " posX = " << posX << " posY = " << posY << " pol = " << pol << " exponent = " << exponent << std::endl;
 }
 
 std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
@@ -209,8 +171,8 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         s.output_keys.clear();
         auto output_string = getNextStringInput( arguments, "output", ++index );
         // Split output_string at ","
-        for (auto range : output_string | std::views::split(',')) {
-            s.output_keys.emplace_back(std::string{std::ranges::begin(range), std::ranges::end(range)});
+        for ( auto range : output_string | std::views::split( ',' ) ) {
+            s.output_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
         }
     }
 
@@ -241,6 +203,10 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     if ( ( index = vec_find_str( "-rk45", arguments ) ) != -1 ) {
         s.fixed_time_step = false;
     }
+    if ( ( index = vec_find_str( "--initRandom", arguments ) ) != -1 ) {
+        s.randomly_initialize_system = true;
+        s.random_system_amplitude = getNextInput( arguments, "random_system_amplitude", ++index );
+    }
 
     // If -masknorm is passed to the program, the mask and psi is normalized before the error calculations.
     if ( ( index = vec_find_str( "-masknorm", arguments ) ) != -1 ) {
@@ -255,49 +221,13 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
     }
 
     // Pumps
-    index = 0;
-    while ( ( index = vec_find_str( "--pump", arguments, index ) ) != -1 ) {
-        auto samp = getNextStringInput( arguments, "pump_amp", ++index );
-        real_number amp = samp == "adaptive" ? -666. : std::stod( samp );
-        real_number w = getNextInput( arguments, "pump_width", index );
-        real_number posX = getNextInput( arguments, "pump_X", index );
-        real_number posY = getNextInput( arguments, "pump_Y", index );
-        int pol = (int)getNextInput( arguments, "pump_pol", index );
-        real_number exponent = getNextInput( arguments, "pump_exponent", index );
-        auto stype = getNextStringInput( arguments, "pump_type", index );
-        int type = 0;
-        if ( stype == "ring" )
-            type = 0;
-        else if ( stype == "gauss" )
-            type = 1;
-        addPump( s, amp, w, posX, posY, pol, exponent, type );
-    }
+    s.pump = getEnvelope( arguments, "pump", false );
     // Pulses
-    index = 0;
-    while ( ( index = vec_find_str( "--pulse", arguments, index ) ) != -1 ) {
-        real_number t0 = getNextInput( arguments, "pulse_t0", ++index );
-        real_number amp = getNextInput( arguments, "pulse_amp", index );
-        real_number freq = getNextInput( arguments, "pulse_freq", index );
-        real_number sigma = getNextInput( arguments, "pulse_sigma", index );
-        int m = getNextInput( arguments, "pulse_m", index );
-        int pol = (int)getNextInput( arguments, "pulse_pol", index );
-        real_number w = getNextInput( arguments, "pulse_width", index );
-        real_number posX = getNextInput( arguments, "pulse_X", index );
-        real_number posY = getNextInput( arguments, "pulse_Y", index );
-        addPulse( s, t0, amp, freq, sigma, m, pol, w, posX, posY );
-    }
+    s.pulse = getEnvelope( arguments, "pulse", true );
     // Soll Mask.
-    index = 0;
-    while ( ( index = vec_find_str( "--mask", arguments, index ) ) != -1 ) {
-        auto samp = getNextStringInput( arguments, "mask_amp", ++index );
-        real_number amp = samp == "adaptive" ? -666. : std::stod( samp );
-        real_number w = getNextInput( arguments, "mask_width", index );
-        real_number posX = getNextInput( arguments, "mask_X", index );
-        real_number posY = getNextInput( arguments, "mask_Y", index );
-        int pol = (int)getNextInput( arguments, "mask_pol", index );
-        real_number exponent = getNextInput( arguments, "mask_exponent", index );
-        addMask( s, amp, w, posX, posY, pol, exponent );
-    }
+    s.mask = getEnvelope( arguments, "mask", false );
+    // Initial State
+    s.initial_state = getEnvelope( arguments, "initialState", false );
 
     // Save Load Path if passed
     if ( ( index = vec_find_str( "--load", arguments ) ) != -1 )
@@ -332,46 +262,92 @@ void initializePumpVariables( System& s, FileHandler& filehandler ) {
     // Allocate memory for pump cache on cpu
     std::unique_ptr<real_number[]> host_pump_plus, host_pump_minus;
     host_pump_plus = std::make_unique<real_number[]>( s.s_N * s.s_N );
-    host_pump_minus = std::make_unique<real_number[]>( s.s_N * s.s_N );
-    for ( int col = 0; col < s.s_N; col++ ) {
-        for ( int row = 0; row < s.s_N; row++ ) {
-            auto x = -s.xmax / 2.0 + s.dx * col;
-            auto y = -s.xmax / 2.0 + s.dx * row;
-            int i = col * s.s_N + row;
-            host_pump_plus[i] = 0;
-            host_pump_minus[i] = 0;
-            for ( int c = 0; c < s.pump_amp.size(); c++ ) {
-                const real_number r_squared = abs2( x - s.pump_X[c] ) + abs2( y - s.pump_Y[c] );
-                const auto w = s.pump_width[c];
-                const auto exp_factor = 0.5 * r_squared / w / w; //std::pow( 0.5 * r_squared / w / w, s.pump_exponent[c] ); //TODO: angleich pump
-                auto pre_fractor = s.pump_type[c] == 0 ? exp_factor : 1.0;
-                if ( s.pump_pol[c] >= 0 ) {
-                    auto pump_amp = s.pump_amp[c] == -666 ? -1. * host_pump_plus[i] : s.pump_amp[c] / sqrt(2*3.1415) / w;
-                    host_pump_plus[i] += pump_amp * pre_fractor * std::pow(exp( -exp_factor ),s.pump_exponent[c]);
-                }
+    calculateEnvelope( s, host_pump_plus.get(), s.pump, System::Envelope::Polarization::Plus );
 #ifdef TETMSPLITTING
-                if ( s.pump_pol[c] <= 0 ) {
-                    auto pump_amp = s.pump_amp[c] == 666 ? -1. * host_pump_minus[i] : s.pump_amp[c] / sqrt(2*3.1415) / w;
-                    host_pump_minus[i] += pump_amp * pre_fractor * std::pow(exp( -exp_factor ),s.pump_exponent[c]);
-                }
+    host_pump_minus = std::make_unique<real_number[]>( s.s_N * s.s_N );
+    calculateEnvelope( s, host_pump_plus.get(), s.pump, System::Envelope::Polarization::Minus );
 #endif
-            }
-        }
-    }
 
     // Output Matrices to file
-    if (s.doOutput("mat","pump_plus", "pump"))
-    filehandler.outputMatrixToFile( host_pump_plus.get(), s, "pump_plus" );
+    if ( s.doOutput( "mat", "pump_plus", "pump" ) )
+        filehandler.outputMatrixToFile( host_pump_plus.get(), s, "pump_plus" );
 #ifdef TETMSPLITTING
-    if (s.doOutput("mat","pump_minus", "pump"))
-    filehandler.outputMatrixToFile( host_pump_minus.get(), s, "pump_minus" );
+    if ( s.doOutput( "mat", "pump_minus", "pump" ) )
+        filehandler.outputMatrixToFile( host_pump_minus.get(), s, "pump_minus" );
 #endif
 
     initializePumpVariables( host_pump_plus.get(), host_pump_minus.get(), s.s_N * s.s_N );
 }
 
 void initializePulseVariables( System& s ) {
-    initializePulseVariables( s.pulse_t0.data(), s.pulse_amp.data(), s.pulse_freq.data(), s.pulse_sigma.data(), s.pulse_m.data(), s.pulse_pol.data(), s.pulse_width.data(), s.pulse_X.data(), s.pulse_Y.data(), s.pulse_t0.size() );
+    // TODO: Change how pulses are handeled. Maybe.
+    std::vector<int> polarizations;
+    std::ranges::for_each( s.pulse.pol, [&polarizations]( auto pol ) { polarizations.emplace_back( pol == System::Envelope::Polarization::Plus ? 1 : ( pol == System::Envelope::Polarization::Minus ? -1 : 0 ) ); } );
+    initializePulseVariables( s.pulse.t0.data(), s.pulse.amp.data(), s.pulse.freq.data(), s.pulse.sigma.data(), s.pulse.m.data(), polarizations.data(), s.pulse.width.data(), s.pulse.x.data(), s.pulse.y.data(), s.pulse.t0.size() );
+}
+
+System::Envelope getEnvelope( const std::vector<std::string>& arguments, const std::string& key, const bool time ) {
+    int index = 0;
+    System::Envelope ret;
+
+    std::map<std::string, System::Envelope::Behavior> possible_behavior_keys = {
+        { "add", System::Envelope::Behavior::Add },
+        { "multiply", System::Envelope::Behavior::Multiply },
+        { "replace", System::Envelope::Behavior::Replace },
+        { "adaptive", System::Envelope::Behavior::Adaptive },
+    };
+    std::map<std::string, System::Envelope::Polarization> possible_polarization_keys = {
+        { "plus", System::Envelope::Polarization::Plus },
+        { "minus", System::Envelope::Polarization::Minus },
+        { "both", System::Envelope::Polarization::Both },
+    };
+    std::map<std::string, System::Envelope::Type> possible_type_keys = {
+        { "ring", System::Envelope::Type::Ring },
+        { "gauss", System::Envelope::Type::Gauss },
+        { "gaussouter", System::Envelope::Type::GaussOuter },
+    };
+
+    while ( ( index = vec_find_str( "--" + key, arguments, index ) ) != -1 ) {
+        // Spacial Component
+
+        // Ampltitude.
+        real_number amp = getNextInput( arguments, key + "_amp", ++index );
+        // Behaviour
+        auto sbehaviour = getNextStringInput( arguments, key + "_behaviour", index );
+        System::Envelope::Behavior behavior = possible_behavior_keys.at( sbehaviour );
+
+        // Width
+        real_number width = getNextInput( arguments, key + "_width", index );
+        // X Position
+        real_number posX = getNextInput( arguments, key + "_X", index );
+        // Y Position
+        real_number posY = getNextInput( arguments, key + "_Y", index );
+
+        // Polarization
+        auto spol = getNextStringInput( arguments, key + "_pol", index );
+        System::Envelope::Polarization pol = possible_polarization_keys.at( spol );
+
+        // Exponent
+        real_number exponent = getNextInput( arguments, key + "_exponent", index );
+
+        auto stype = getNextStringInput( arguments, key + "_type", index );
+        System::Envelope::Type type = possible_type_keys.at( stype );
+
+        ret.addSpacial( amp, width, posX, posY, exponent, type, pol, behavior );
+
+        if ( not time )
+            continue;
+
+        // Temporal Component
+        real_number t0 = getNextInput( arguments, "pulse_t0", ++index );
+        real_number freq = getNextInput( arguments, "pulse_freq", index );
+        real_number sigma = getNextInput( arguments, "pulse_sigma", index );
+        ret.addTemporal( t0, sigma, freq );
+        // Charge
+        int m = getNextInput( arguments, "pulse_m", index );
+        ret.m.emplace_back( m );
+    }
+    return ret;
 }
 
 void normalize( real_number* buffer, int size, real_number min, real_number max, bool device_pointer ) {
@@ -401,16 +377,6 @@ bool doEvaluatePulse( const System& system ) {
     return evaluate_pulse;
 }
 
-// DEPRECATED
-std::vector<complex_number> cacheVector( const System& s, const complex_number* buffer ) {
-    const complex_number* start = buffer + s.s_N * s.s_N / 2;
-    const complex_number* end = start + s.s_N;
-
-    std::vector<complex_number> ret( s.s_N );
-    std::copy( start, end, ret.begin() );
-    return ret;
-}
-
 void cacheValues( const System& system, Buffer& buffer ) {
     // Min and Max
     const auto [min_plus, max_plus] = minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true /*Device Pointer*/ );
@@ -432,6 +398,47 @@ void cacheValues( const System& system, Buffer& buffer ) {
 #endif
 }
 
+void calculateEnvelope( System& s, real_number* buffer, const System::Envelope& mask, System::Envelope::Polarization polarization ) {
+    for ( int col = 0; col < s.s_N; col++ ) {
+        for ( int row = 0; row < s.s_N; row++ ) {
+            auto x = -s.xmax / 2.0 + s.dx * col;
+            auto y = -s.xmax / 2.0 + s.dx * row;
+            int i = col * s.s_N + row;
+            buffer[i] = 0;
+            for ( int c = 0; c < mask.amp.size(); c++ ) {
+                if ( mask.pol[c] != System::Envelope::Polarization::Both and mask.pol[c] != polarization )
+                    continue;
+                // Calculate ethe "r^2" distance to the center of the pump.
+                const real_number r_squared = abs2( x - mask.x[c] ) + abs2( y - mask.y[c] );
+                // Calculate Content of Exponential function
+                const auto exp_factor = 0.5 * r_squared / mask.width[c] / mask.width[c];
+                // Calculate the exponential function
+                auto exp_function = exp( -std::pow( exp_factor, mask.exponent[c] ) );
+                // If the type is a gaussian outer, we calculate exp(...)^N instead of exp((...)^N)
+                if ( mask.type[c] == System::Envelope::Type::GaussOuter )
+                    exp_function = std::pow( exp( -exp_factor ), mask.exponent[c] );
+                // If the shape is a ring, we multiply the exp function with the exp_factor again.
+                auto pre_fractor = 1.0;
+                if ( mask.type[c] == System::Envelope::Type::Ring )
+                    pre_fractor = exp_factor;
+                // Default amplitude is A/sqrt(2pi)/w
+                real_number amplitude = mask.amp[c] / sqrt( 2 * 3.1415 ) / mask.width[c];
+                // If the behaviour is adaptive, the amplitude is set to the current value of the buffer instead.
+                if ( mask.behavior[c] == System::Envelope::Behavior::Adaptive )
+                    amplitude = mask.amp[c]*buffer[i];
+                real_number contribution = amplitude * pre_fractor * exp_function;
+                // Add, multiply or replace the contribution to the buffer.
+                if ( mask.behavior[c] == System::Envelope::Behavior::Add or mask.behavior[c] == System::Envelope::Behavior::Adaptive )
+                    buffer[i] += contribution;
+                else if ( mask.behavior[c] == System::Envelope::Behavior::Multiply )
+                    buffer[i] *= contribution;
+                else if ( mask.behavior[c] == System::Envelope::Behavior::Replace )
+                    buffer[i] = contribution;
+            }
+        }
+    }
+}
+
 void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
     if ( s.mask.x.size() == 0 ) {
         std::cout << "No mask provided, skipping soll value calculation!" << std::endl;
@@ -442,30 +449,10 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
     std::unique_ptr<real_number[]> host_mask_plus, host_mask_minus;
     host_mask_plus = std::make_unique<real_number[]>( s.s_N * s.s_N );
     host_mask_minus = std::make_unique<real_number[]>( s.s_N * s.s_N );
-    for ( int col = 0; col < s.s_N; col++ ) {
-        for ( int row = 0; row < s.s_N; row++ ) {
-            auto x = -s.xmax / 2.0 + s.dx * col;
-            auto y = -s.xmax / 2.0 + s.dx * row;
-            int i = col * s.s_N + row;
-            host_mask_plus[i] = 0;
-            host_mask_minus[i] = 0;
-            for ( int c = 0; c < s.mask.amp.size(); c++ ) {
-                const real_number r_squared = abs2( x - s.mask.x[c] ) + abs2( y - s.mask.y[c] );
-                const auto w = s.mask.width[c];
-                const auto exp_factor = std::pow( r_squared / w / w, s.mask.exponent[c] );
-                if ( s.mask.pol[c] >= 0 ) {
-                    auto amp = s.mask.amp[c] == -666 ? -1. * host_mask_plus[i] : s.mask.amp[c];
-                    host_mask_plus[i] += amp * exp( -exp_factor );
-                }
+    calculateEnvelope( s, host_mask_plus.get(), s.mask, System::Envelope::Polarization::Plus );
 #ifdef TETMSPLITTING
-                if ( s.mask.pol[c] <= 0 ) {
-                    auto amp = s.mask.amp[c] == 666 ? -1. * host_mask_minus[i] : s.mask.amp[c];
-                    host_mask_minus[i] += amp * exp( -exp_factor );
-                }
+    calculateEnvelope( s, host_mask_minus.get(), s.mask, System::Envelope::Polarization::Minus );
 #endif
-            }
-        }
-    }
 
     // Calculate min and max to normalize both Psi and the mask. We dont really care about efficiency here, since its
     // only done once.
@@ -492,20 +479,19 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
         std::cout << "min_mask_minus = " << min_mask_minus << " max_mask_minus = " << max_mask_minus << std::endl;
         std::cout << "min_psi_minus = " << min_psi_minus << " max_psi_minus = " << max_psi_minus << std::endl;
 #endif
-    // Devide error by N^2
-    max_mask_plus *= s.s_N * s.s_N;
-    max_psi_plus *= s.s_N * s.s_N;
-    max_mask_minus *= s.s_N * s.s_N;
-    max_psi_minus *= s.s_N * s.s_N;
-    
+        // Devide error by N^2
+        max_mask_plus *= s.s_N * s.s_N;
+        max_psi_plus *= s.s_N * s.s_N;
+        max_mask_minus *= s.s_N * s.s_N;
+        max_psi_minus *= s.s_N * s.s_N;
     }
 
     // Output Mask
-    if (s.doOutput("mat","mask_plus", "mask"))
-    filehandler.outputMatrixToFile( host_mask_plus.get(), s, "mask_plus" );
+    if ( s.doOutput( "mat", "mask_plus", "mask" ) )
+        filehandler.outputMatrixToFile( host_mask_plus.get(), s, "mask_plus" );
 #ifdef TETMSPLITTING
-    if (s.doOutput("mat","mask_minus", "mask"))
-    filehandler.outputMatrixToFile( host_mask_minus.get(), s, "mask_minus" );
+    if ( s.doOutput( "mat", "mask_minus", "mask" ) )
+        filehandler.outputMatrixToFile( host_mask_minus.get(), s, "mask_minus" );
 #endif
 // Then, check matching
 #pragma omp parallel for
@@ -523,5 +509,26 @@ void calculateSollValue( System& s, Buffer& buffer, FileHandler& filehandler ) {
     real_number sum_minus = 0;
     std::ranges::for_each( host_mask_minus.get(), host_mask_minus.get() + s.s_N * s.s_N, [&sum_minus]( real_number n ) { sum_minus += n; } );
     std::cout << "Error in Psi_Minus: " << sum_minus << std::endl;
+#endif
+}
+
+void initializeSystem( System& system, Buffer& buffer ) {
+    // First, check whether we should initialize the system randomly.
+    if (system.randomly_initialize_system) {
+        // Fill the buffer with random values
+        std::mt19937 gen{std::random_device{}()};
+        std::uniform_real_distribution<real_number> dist{-system.random_system_amplitude, system.random_system_amplitude};
+        std::ranges::generate_n( buffer.Psi_Plus.get(), system.s_N * system.s_N, [&dist,&gen]() { return complex_number{dist(gen),dist(gen)}; } );
+#ifdef TETMSPLITTING
+        std::ranges::generate_n( buffer.Psi_Minus.get(), system.s_N * system.s_N, [&dist,&gen]() { return complex_number{dist(gen),dist(gen)}; } );
+#endif
+    }
+    // Then, check whether we should adjust the starting states to match a mask.
+    std::unique_ptr<real_number[]> initial_state = std::make_unique<real_number[]>( system.s_N * system.s_N );
+    calculateEnvelope(system, initial_state.get(), system.initial_state, System::Envelope::Polarization::Plus);
+    std::ranges::for_each( buffer.Psi_Plus.get(), buffer.Psi_Plus.get() + system.s_N * system.s_N, [&initial_state,i=0] ( complex_number& z ) mutable { z = z + initial_state[i]; i++; } );
+#ifdef TETMSPLITTING
+    calculateEnvelope(system, initial_state.get(), system.initial_state, System::Envelope::Polarization::Minus);
+    std::ranges::for_each( buffer.Psi_Minus.get(), buffer.Psi_Minus.get() + system.s_N * system.s_N, [&initial_state,i=0] ( complex_number& z ) mutable { z = z + initial_state[i]; i++; } );
 #endif
 }
