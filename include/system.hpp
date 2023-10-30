@@ -184,7 +184,8 @@ class FileHandler {
     std::string outputPath = "data";
     std::string loadPath = "";
     std::string outputName = "";
-    std::string colorPalette = "resources/colormap.txt";
+    std::string color_palette = "resources/vik.txt";
+    std::string color_palette_phase = "resources/viko.txt";
     int out_modulo = 5;
     bool disableRender = false;
 
@@ -192,7 +193,7 @@ class FileHandler {
     FileHandler( FileHandler& other ) : files( std::move( other.files ) ),
                                         outputPath( other.outputPath ),
                                         outputName( other.outputName ),
-                                        colorPalette( other.colorPalette ),
+                                        color_palette( other.color_palette ),
                                         out_modulo( other.out_modulo ),
                                         loadPath( other.loadPath ),
                                         disableRender( other.disableRender ){};

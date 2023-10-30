@@ -235,7 +235,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
 
     // Colormap
     if ( ( index = vec_find_str( "--cmap", arguments ) ) != -1 )
-        h.colorPalette = arguments.at( ++index );
+        h.color_palette = arguments.at( ++index );
 
     // We can also disable to SFML renderer by using the --nosfml flag.
     if ( vec_find_str( "-nosfml", arguments ) != -1 )

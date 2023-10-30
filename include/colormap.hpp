@@ -73,7 +73,6 @@ class ColorPalette {
                     int b = std::stoi(line[2]);
                     input_colors.push_back(Color(r,g,b));
                 }
-
             }
         }
 

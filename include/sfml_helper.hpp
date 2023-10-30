@@ -34,7 +34,9 @@ void plotMatrix( BasicWindow& window, T* buffer, int N, int posX, int posY, int 
     window.print( posX + 5, posY + N - text_height - 5, text_height, title + "Min: " + toScientific( min ) + " Max: " + toScientific( max ), sf::Color::White );
 }
 
+// Very bad practice, as this header can only be imported once without redefinitions
 BasicWindow window;
+ColorPalette colorpalette_phase;
 ColorPalette colorpalette;
 
 #endif
@@ -51,11 +53,15 @@ void initSFMLWindow( System& system, FileHandler& filehandler ) {
     window.construct( 1920, 540, system.s_N * 3, system.s_N, "PC3" );
     #endif
     // if .pal in colorpalette, read gnuplot colorpalette, else read as .txt
-    if ( filehandler.colorPalette.find( ".pal" ) != std::string::npos )
-        colorpalette.readColorPaletteFromGnuplotDOTPAL( filehandler.colorPalette );
-    else
-        colorpalette.readColorPaletteFromTXT( filehandler.colorPalette );
+    if ( filehandler.color_palette.find( ".pal" ) != std::string::npos ){
+        colorpalette.readColorPaletteFromGnuplotDOTPAL( filehandler.color_palette );
+        colorpalette_phase.readColorPaletteFromGnuplotDOTPAL( filehandler.color_palette_phase );
+    }else{
+        colorpalette.readColorPaletteFromTXT( filehandler.color_palette );
+        colorpalette_phase.readColorPaletteFromTXT( filehandler.color_palette_phase );
+    }
     colorpalette.initColors();
+    colorpalette_phase.initColors();
     window.init();
     plotarray = std::make_unique<real_number[]>( system.s_N * system.s_N );
 #else
@@ -73,13 +79,13 @@ bool plotSFMLWindow( System& system, FileHandler& handler, Buffer& buffer ) {
     plotMatrix( window, buffer.fft_plus.get(), system.s_N /*size*/, system.s_N, 0, 3, colorpalette, "FFT+ " );
     plotMatrix( window, buffer.n_Plus.get(), system.s_N /*size*/, 2 * system.s_N, 0, 1, colorpalette, "n+ " );
     angle( buffer.Psi_Plus.get(), plotarray.get(), system.s_N * system.s_N );
-    plotMatrix( window, plotarray.get(), system.s_N, 0, 0, 1, colorpalette, "ang(Psi+) " );
+    plotMatrix( window, plotarray.get(), system.s_N, 0, 0, 1, colorpalette_phase, "ang(Psi+) " );
     #ifdef TETMSPLITTING
     plotMatrix( window, buffer.Psi_Minus.get(), system.s_N /*size*/, system.s_N, system.s_N, 1, colorpalette, "Psi- " );
     plotMatrix( window, buffer.fft_minus.get(), system.s_N /*size*/, system.s_N, system.s_N, 3, colorpalette, "FFT- " );
     plotMatrix( window, buffer.n_Minus.get(), system.s_N /*size*/, 2 * system.s_N, system.s_N, 1, colorpalette, "n- " );
     angle( buffer.Psi_Minus.get(), plotarray.get(), system.s_N * system.s_N );
-    plotMatrix( window, plotarray.get(), system.s_N, 0, system.s_N, 1, colorpalette, "ang(Psi-) " );
+    plotMatrix( window, plotarray.get(), system.s_N, 0, system.s_N, 1, colorpalette_phase, "ang(Psi-) " );
     #endif
     window.flipscreen();
     return running;
