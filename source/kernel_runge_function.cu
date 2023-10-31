@@ -34,8 +34,8 @@ CUDA_GLOBAL void rungeFuncKernel( int i, real_number t, complex_number* __restri
     k_n_Minus[i] = dev_pump_cache_Minus[i] - (dev_p_gamma_r + dev_p_R * in_psi_minus_norm) * in_n_Minus[i];
     // Add Pulse
     if ( evaluate_pulse ) {
-        auto x = -dev_p_xmax / 2.0 + dev_s_dx * col;
-        auto y = -dev_p_xmax / 2.0 + dev_s_dx * row;
+        auto x = -dev_p_xmax + dev_s_dx * col;
+        auto y = -dev_p_xmax + dev_s_dx * row;
         for ( int c = 0; c < dev_n_pulse; c++ ) {
             const auto xpos = dev_pulse_X[c];
             const auto ypos = dev_pulse_Y[c];
@@ -81,8 +81,8 @@ CUDA_GLOBAL void rungeFuncKernel( int i, real_number t, complex_number* __restri
     k_n_Plus[i] = dev_pump_cache_Plus[i] - (dev_p_gamma_r + dev_p_R * in_psi_plus_norm) * in_n_Plus[i];
     // Add Pulse
     if ( evaluate_pulse ) {
-        const real_number x = -dev_p_xmax / 2.0 + dev_s_dx * col;
-        const real_number y = -dev_p_xmax / 2.0 + dev_s_dx * row;
+        const real_number x = -dev_p_xmax + dev_s_dx * col;
+        const real_number y = -dev_p_xmax + dev_s_dx * row;
         for ( int c = 0; c < dev_n_pulse; c++ ) {
             const real_number xpos = dev_pulse_X[c];
             const real_number ypos = dev_pulse_Y[c];

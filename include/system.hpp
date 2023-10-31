@@ -238,8 +238,8 @@ class FileHandler {
         for ( int i = row_start; i < row_stop; i++ ) {
             for ( int j = col_start; j < col_stop; j++ ) {
                 auto index = j + i * s.s_N;
-                auto x = -s.xmax / 2 + j * s.dx;
-                auto y = -s.xmax / 2 + i * s.dx;
+                auto x = -s.xmax + j * s.dx;
+                auto y = -s.xmax + i * s.dx;
                 out << x << " " << y << " " << std::setprecision( 10 ) << real( buffer[index] ) << " " << imag( buffer[index] ) << std::endl;
             }
             out << std::endl;
@@ -264,8 +264,8 @@ class FileHandler {
         for ( int i = row_start; i < row_stop; i++ ) {
             for ( int j = col_start; j < col_stop; j++ ) {
                 auto index = j + i * s.s_N;
-                auto x = -s.xmax / 2 + j * s.dx;
-                auto y = -s.xmax / 2 + i * s.dx;
+                auto x = -s.xmax + j * s.dx;
+                auto y = -s.xmax + i * s.dx;
                 out << x << " " << y << " " << std::setprecision( 10 ) << buffer[index] << std::endl;
             }
             out << std::endl;

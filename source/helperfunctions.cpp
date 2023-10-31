@@ -183,7 +183,7 @@ std::tuple<System, FileHandler> initializeSystem( int argc, char** argv ) {
         std::cout << "Adjusted N from " << s.s_N << " to N = " << ( s.s_N + 1 ) << std::endl;
         s.s_N++;
     }
-    s.dx = s.xmax / ( s.s_N - 1 ); // x-range ist -xmax/2 bis xmax/2
+    s.dx = 2.0 * s.xmax / s.s_N ; // x-range ist -xmax/2 bis xmax/2
     s.dt = 0.5 * s.dx * s.dx / dt_scaling_factor;
     std::cout << "Calculated dx = " << s.dx << "\nCalculated dt = " << s.dt << std::endl;
     if ( ( index = vec_find_str( "--tmax", arguments ) ) != -1 )
@@ -401,8 +401,8 @@ void cacheValues( const System& system, Buffer& buffer ) {
 void calculateEnvelope( System& s, real_number* buffer, const System::Envelope& mask, System::Envelope::Polarization polarization ) {
     for ( int col = 0; col < s.s_N; col++ ) {
         for ( int row = 0; row < s.s_N; row++ ) {
-            auto x = -s.xmax / 2.0 + s.dx * col;
-            auto y = -s.xmax / 2.0 + s.dx * row;
+            auto x = -s.xmax + s.dx * col;
+            auto y = -s.xmax + s.dx * row;
             int i = col * s.s_N + row;
             buffer[i] = 0;
             for ( int c = 0; c < mask.amp.size(); c++ ) {
