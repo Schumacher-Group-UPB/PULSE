@@ -18,7 +18,6 @@
 #include "cuda_complex.cuh"
 #include "kernel_runge_function.cuh"
 #include "kernel_summation.cuh"
-#include "kernel_ringstate.cuh"
 #include "kernel_fft.cuh"
 #include "system.hpp"
 #include "kernel.hpp"
