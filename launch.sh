@@ -5,13 +5,15 @@
 output_path="data/kekwtest14/"
 
 system_parameters=(
-    "--pump 40 add 30 0 0 plus 1 gauss" # Center Pump
-    "--pump -1 add+adaptive 2.5 0 15 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -1 add+adaptive 2.5 0 7.5 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.975 add+adaptive 2.5 0 0 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.95 add+adaptive 2.5 0 -7.5 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.93 add+adaptive 2.5 0 -15 plus 5 gauss+outerExponent" # Potential Well
-    "--pump 10 add 2.5 0 19 plus 1 gauss" # Narrow
+    #"--pump 40 add 30 0 0 plus 1 gauss" # Center Pump
+    #"--pump -1 add+adaptive 2.5 0 15 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -1 add+adaptive 2.5 0 7.5 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -0.975 add+adaptive 2.5 0 0 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -0.95 add+adaptive 2.5 0 -7.5 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -0.93 add+adaptive 2.5 0 -15 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump 10 add 2.5 0 19 plus 1 gauss" # Narrow
+    "--loadFrom data/load_test"
+    "--input all"
     "--mask 5 add 4.5 0 7.5 plus 5 gauss" # Soll
     #"--pulse 2 add 2.5 0 19 plus 1 gauss 150 0.1 10 2" # test pump
     "--fftMask 1 add 0.7 0 0 plus 10 gauss+local+noDivide" # FFT Mask

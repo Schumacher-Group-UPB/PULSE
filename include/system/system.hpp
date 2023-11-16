@@ -61,7 +61,7 @@ class System {
     unsigned int random_seed;
 
     // Output of Variables
-    std::vector<std::string> output_keys;
+    std::vector<std::string> output_keys, input_keys;
 
     // Envelope ReadIns
     PC3::Envelope pulse, pump, mask, initial_state, fft_mask;
@@ -77,6 +77,12 @@ class System {
     bool doOutput( const Args&... args ) {
         return ( ( std::find( output_keys.begin(), output_keys.end(), args ) != output_keys.end() ) || ... );
     }
+
+    template <typename... Args>
+    bool doInput( const Args&... args ) {
+        return ( ( std::find( input_keys.begin(), input_keys.end(), args ) != input_keys.end() ) || ... );
+    }
+
 
     /**
      * @brief Calculates a mask for the given system and saves it to the mask buffer.

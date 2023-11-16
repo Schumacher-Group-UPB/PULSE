@@ -5,7 +5,7 @@
 
 PC3::FileHandler::FileHandler() : 
     outputPath( "data" ),
-    loadPath( "" ),
+    loadPath( "data" ),
     outputName( "" ),
     color_palette( "resources/vik.txt" ),
     color_palette_phase( "resources/viko.txt" ),
@@ -30,9 +30,10 @@ void PC3::FileHandler::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--outEvery", argc, argv ) ) != -1 )
         out_modulo = (int)getNextInput( argv, "out_modulo", ++index );
 
-    // Save Load Path if passed
-    if ( ( index = findInArgv( "--load", argc, argv ) ) != -1 )
-        loadPath = getNextStringInput( argv, "load", ++index );
+    // Save Load Path if passed, else use output path as laod path
+    loadPath = outputPath;
+    if ( ( index = findInArgv( "--loadFrom", argc, argv ) ) != -1 )
+        loadPath = getNextStringInput( argv, "loadFrom", ++index );
 
     // Colormap
     if ( ( index = findInArgv( "--cmap", argc, argv ) ) != -1 )
@@ -71,10 +72,33 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
     real_number x, y, re, im;
     if ( filein.is_open() ) {
         while ( getline( filein, line ) ) {
-            if ( line.size() > 2 ) {
+            if ( line.size() > 3 ) {
                 inputstring = std::istringstream( line );
                 inputstring >> x >> y >> re >> im;
                 buffer[i] = { re, im };
+                i++;
+            }
+        }
+        filein.close();
+        std::cout << "Loaded " << i << " elements from " << filepath << std::endl;
+    } else {
+        std::cout << "Error: Couldn't load " << filepath << std::endl;
+    }
+}
+
+void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_number* buffer ) {
+    std::ifstream filein;
+    filein.open( filepath, std::ios::in );
+    std::istringstream inputstring;
+    std::string line;
+    int i = 0;
+    real_number x, y, val;
+    if ( filein.is_open() ) {
+        while ( getline( filein, line ) ) {
+            if ( line.size() > 2 ) {
+                inputstring = std::istringstream( line );
+                inputstring >> x >> y >> val;
+                buffer[i] = val;
                 i++;
             }
         }

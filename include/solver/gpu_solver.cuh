@@ -105,13 +105,12 @@ class Solver {
         // Finally, initialize the FFT Plan
         CUDA_FFT_CREATE(&plan, system.s_N );
 
-        std::cout << "Init Host" << std::endl;
         // Initialize all host matrices
         initializeHostMatricesFromSystem();
-        std::cout << "LOAD" << std::endl;
-        // Overwrite them by loading Matrices from File. If --load was not passed in argv, this method does nothing.
+        // Overwrite them by loading Matrices from File. If --input was not passed in argv, this method does nothing.
         loadMatrices();
-        std::cout << "Copy" << std::endl;
+        // Then output all matrices to file. If --output was not passed in argv, this method outputs everything.
+        outputInitialMatrices();
         // Copy to Device. 
         initializeDeviceMatricesFromHost();
     }
@@ -132,10 +131,12 @@ class Solver {
     void initializeDeviceParametersFromSystemParameters(); // Transfers the host parameters to their device equivalents
     void initializeDeviceMatricesFromHost( ); // Transfers the host matrices to their device equivalents
     
-    // Output Host Matrices to files
+    // Output (Final) Host Matrices to files
     void outputMatrices();
     // Load Host Matrices from files
     void loadMatrices();
+    // Output Initial Host Matrices to files
+    void outputInitialMatrices();
 
     // Output the history and max caches to files. should be called from finalize()
     void cacheToFiles();

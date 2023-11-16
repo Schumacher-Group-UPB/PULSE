@@ -110,6 +110,14 @@ PC3::System::System( int argc, char** argv ) : System() {
             output_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
         }
     }
+    if ( ( index = findInArgv( "--input", argc, argv ) ) != -1 ) {
+        input_keys.clear();
+        auto output_string = getNextStringInput( argv, "input", ++index );
+        // Split output_string at ","
+        for ( auto range : output_string | std::views::split( ',' ) ) {
+            input_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
+        }
+    }
 
     // Numerik
     if ( ( index = findInArgv( "--N", argc, argv ) ) != -1 )
@@ -167,8 +175,7 @@ PC3::System::System( int argc, char** argv ) : System() {
 
     // Check if help is requested
     if ( findInArgv( "--help", argc, argv ) != -1 || findInArgv( "-h", argc, argv ) != -1 ) {
-        //printSystemHelp( *this, h );
-        std::cout << "TODO: re-implement help." << std::endl;
+        printHelp();
         exit( 0 );
     }
 
@@ -276,9 +283,10 @@ void PC3::System::printHelp() {
         << unifyLength( "Flag", "Inputs", "Description\n" )
         << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + filehandler.outputPath + "'\n" )
         << unifyLength( "--name", "[string]", "File prefix. Standard is '" + filehandler.outputName + "'\n" )
-        << unifyLength( "--load", "[string]", "Loads matrices from path.\n" )
+        << unifyLength( "--loadFrom", "[string] [files,...]", "Loads list of matrices from path.\n" )
         << unifyLength( "--outEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( filehandler.out_modulo ) + " iteration\n" )
         << unifyLength( "--output", "[list of str]", "Comma seperated list of things to output. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
+        << unifyLength( "--input", "[list of str]", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
         << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
     std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
               << unifyLength( "--N", "[int]", "Grid Dimensions (N x N). Standard is " + std::to_string( s_N ) + " x " + std::to_string( s_N ) + "\n" )
