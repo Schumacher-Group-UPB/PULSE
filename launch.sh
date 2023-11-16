@@ -18,7 +18,7 @@ system_parameters=(
     "-masknorm"
     "--initRandom 0.5 53242423412"
     "--initialState 10 add 4.5 0 7.5 plus 5 gauss" # Soll
-    "--outEvery 2"
+    "--outEvery 20"
     "--tmax 4000" 
     "--N 500"
     #"--tstep 0.01"
