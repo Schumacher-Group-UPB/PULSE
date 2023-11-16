@@ -1,19 +1,25 @@
 #!/bin/bash
+export CUDA_VISIBLE_DEVICES=1
 
-
-output_path="benchmark_test/"
+output_path="benchmark_4090/"
+N_list=(100 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500)
+makef=true
 
 system_parameters=(
-    "--pump 40 10 0 0 0"
-    "--pulse 10 1e-2 1 2 1 1 10 0 0"
-    "--pulse 40 1e-2 1 2 -1 1 10 0 0"
+    "--pump 40 add 30 0 0 plus 1 gauss" # Center Pump
+    "--pump -1 add+adaptive 2.5 0 15 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -1 add+adaptive 2.5 0 7.5 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -0.975 add+adaptive 2.5 0 0 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -0.95 add+adaptive 2.5 0 -7.5 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -0.93 add+adaptive 2.5 0 -15 plus 5 gauss+outerExponent" # Potential Well
+    "--pump 10 add 2.5 0 19 plus 1 gauss" # Narrow
     "--outEvery 200"
+    #"--pulse 10 add 2 0 19 plus 1 gauss 10 2 1e-2 2"
+    #"--pulse 40 add 2 0 19 plus 1 gauss 10 2 1e-2 2"
     "--tmax 50"
     "-nosfml"
 )
 
-plot=false
-makef=true
 
 # Path to the program to launch
 launch_program="./main_[FP].exe"
@@ -26,36 +32,14 @@ if [ "$makef" = true ]; then
 fi
 
 # Construct Folder
-for fp in "fp32" "fp64" do
+for fp in "fp32" "fp64"; do
     output_path_fp="$output_path$fp/"
     launch_program_fp="${launch_program/\[FP\]/$fp}"
-    for ((N=200; N<=400; N+=200)); do
+    for N in "${N_list[@]}"; do
         output_path_N="$output_path_fp$N/"
         mkdir -p "$output_path_N"
         command=("$launch_program_fp" "${system_parameters[@]}" "--path" "$output_path_N" "--N" "$N")
         eval "${command[@]}" | tee -a "$output_path_N/output.log"
-
-        # Plot if plot=true
-        if [ "$plot" = true ]; then
-            # Check if "Psi_Minus.txt" exists in the output_path directory.
-            # If not, then plot the scalar model.
-            if [ ! -f "${output_path_N}Psi_Minus.txt" ]; then
-                echo "Plotting Scalar Model"
-                gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}history_plus.txt' nooutput; set yrange[0:STATS_records]; set xrange[0:]; set output '${output_path_N}history.png'; set multiplot layout 1,1; plot '${output_path_N}history_plus.txt' matrix w image;"
-                gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path_N}psi.png'; set multiplot layout 1,1; plot '${output_path_N}psi_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
-                gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}n_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path_N}n.png'; set multiplot layout 1,1; plot '${output_path_N}n_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
-                gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path_N}angle.png'; set multiplot layout 1,1; plot '${output_path_N}psi_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w image;"
-                gnuplot "-e" "set term png size 1000,500; set output '${output_path_N}lines.png'; set multiplot layout 1,2; plot for [i=2:3] '${output_path_N}times.txt' u 1:i w l lw 3 t columnhead(i); plot for [i=1:1] '${output_path_N}max.txt' u i w l lw 3 axes x2y1 t columnhead(i);"
-                exit 0
-            fi
-
-            # Launch gnuplot scripts
-            gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}history_plus.txt' nooutput; set yrange[0:STATS_records]; set xrange[0:]; set output '${output_path_N}history.png'; set multiplot layout 1,2; plot '${output_path_N}history_plus.txt' matrix w image; plot '${output_path_N}history_minus.txt' matrix w image;"
-            gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path_N}psi.png'; set multiplot layout 1,2; plot '${output_path_N}psi_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image; plot '${output_path_N}psi_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
-            gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}n_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path_N}n.png'; set multiplot layout 1,2; plot '${output_path_N}n_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image; plot '${output_path_N}n_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w image;"
-            gnuplot "-e" "set term png size 1000,500; stats '${output_path_N}psi_plus.txt' nooutput; set xrange[STATS_min_x:STATS_max_x]; set yrange[STATS_min_x:STATS_max_x]; set output '${output_path_N}angle.png'; set multiplot layout 1,2; plot '${output_path_N}psi_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w image; plot '${output_path_N}psi_minus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w image;"
-            gnuplot "-e" "set term png size 1000,500; set output '${output_path_N}lines.png'; set multiplot layout 1,2; plot for [i=2:3] '${output_path_N}times.txt' u 1:i w l lw 3 t columnhead(i); plot for [i=1:2] '${output_path_N}max.txt' u i w l lw 3 axes x2y1 t columnhead(i);"
-        fi
     done
 done
 
@@ -70,15 +54,16 @@ print(filepath)
 
 # Get Files
 parents = ("fp32", "fp64")
-folders = ("200","400","600","800","1000","1200","1400","1600")
 
 N = len(parents)
 
 data = {}
 for parent in parents:
+    parent_dir = os.path.join(filepath,parent)
+    folders = sorted(os.listdir(parent_dir), key=lambda x: int(x))
     data[parent] = [[],[],[],[]] # X, Total Runtime, ms/ps, s/it
     for folder in folders:
-        fp = os.path.join(filepath,parent,folder,"output.log")
+        fp = os.path.join(parent_dir,folder,"output.log")
         tr,msps,sit = 0,0,0
         try:
             with open(fp, "r") as current:

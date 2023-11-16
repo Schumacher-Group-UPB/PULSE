@@ -7,75 +7,55 @@
 #include <omp.h>
 #include <chrono>
 
-#include "cuda_complex.cuh"
-#include "system.hpp"
-#include "kernel.hpp"
-#include "helperfunctions.hpp"
-#include "timeit.hpp"
-#include "sfml_helper.hpp"
+#include "cuda/cuda_complex.cuh"
+#include "system/system.hpp"
+#include "system/filehandler.hpp"
+#include "misc/helperfunctions.hpp"
+#include "misc/timeit.hpp"
+#include "misc/sfml_helper.hpp"
+#include "solver/gpu_solver.cuh"
 
 int main( int argc, char* argv[] ) {
     // Convert input arguments to system and handler variables
-    auto [system, filehandler] = initializeSystem( argc, argv );
-    auto buffer = Buffer( system.s_N /*Matrix Size*/ );
+    auto system = PC3::System(argc, argv);
 
-    // Initialize Buffer Arrays. Either randomly, or using a mask.
-    initializeSystem(system, buffer);
-
-    // Load Matrices from File. If --load was not passed in argv, this method does nothing.
-    filehandler.loadMatrices( system, buffer );
-
+    // Create Solver Class
+    auto cuda_solver = PC3::Solver( system, PC3::Solver::Symmetry::TETM );
 
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
-    initSFMLWindow( system, filehandler );
-
-    // TODO: das hier in eine funktion und dann nur system übergeben!
-    initializeDeviceVariables( system.dx, system.dt, system.g_r, system.s_N, system.m_eff, system.gamma_c, system.g_c, system.g_pm, system.gamma_r, system.R, system.delta_LT, system.xmax, system.h_bar_s );
-    initializeDeviceArrays( system.s_N );
-    
-    // Copy pump to device
-    initializePumpVariables( system, filehandler );
-    initializePulseVariables( system );
-
-    // Move Initial State to the GPU
-    setDeviceArrays( buffer.Psi_Plus.get(), buffer.Psi_Minus.get(), buffer.n_Plus.get(), buffer.n_Minus.get(), system.s_N );
-
+    initSFMLWindow( cuda_solver );
+ 
     bool running = true;
     // Main Loop
     while ( system.t < system.t_max and running ) {
-        timeit(
+        TimeThis(
             // The CPU should briefly evaluate wether the pulses have to be evaluated
-            bool evaluate_pulse = doEvaluatePulse( system );
+            bool evaluate_pulse = system.evaluatePulse();
             // Iterate #out_modulo times
-            for ( int i = 0; i < filehandler.out_modulo; i++ ) {
-                rungeFunctionIterate( system, evaluate_pulse );
-            },
-            "Main" );
+            for ( int i = 0; i < cuda_solver.system.filehandler.out_modulo; i++ ) {
+                cuda_solver.iterateRungeKutta( evaluate_pulse );
+            }
+            , "Main" );
 
-        timeit(
-            cacheValues( system, buffer );
-            running = plotSFMLWindow( system, filehandler, buffer );
+        TimeThis(
+            // Sync the current device arrays to their host array equivalents
+            cuda_solver.syncDeviceArrays();
+            // Cache the history and max values
+            cuda_solver.cacheValues();
+            // Plot
+            running = plotSFMLWindow( cuda_solver );
             , "Plotting" );
-        double duration = timeitGet( "Main" ) + timeitGet( "Plotting" );
-        auto [min, max] = minmax( dev_current_Psi_Plus, system.s_N * system.s_N, true /*This is a device pointer*/ );
-        std::cout << "T = " << int( system.t ) << ", Time per " << filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r";
+        double duration = PC3::TimeIt::get( "Main" ) + PC3::TimeIt::get( "Plotting" );
+        auto [min, max] = minmax( cuda_solver.device.wavefunction_plus.get(), system.s_N * system.s_N, true /*This is a device pointer*/ );
+        std::cout << "T = " << int( system.t ) << ", Time per " << system.filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * system.filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r";
     }
 
-    // Get final state from GPU
-    getDeviceArrays( buffer.Psi_Plus.get(), buffer.Psi_Minus.get(), buffer.n_Plus.get(), buffer.n_Minus.get(), buffer.fft_plus.get(), buffer.fft_minus.get(), system.s_N );
-    
-    calculateSollValue(system, buffer, filehandler);
-
     // Fileoutput
-    filehandler.outputMatrices( system, buffer );
-    filehandler.cacheToFiles( system, buffer );
-
-    // Free Device Memory
-    freeDeviceArrays();
+    cuda_solver.finalize();
 
     // Print Time statistics and output to file
-    timeitStatisticsSummary( system, filehandler );
-    timeitToFile( filehandler.getFile( "times" ) );
+    system.printSummary( PC3::TimeIt::getTimes(), PC3::TimeIt::getTimesTotal() );
+    PC3::TimeIt::toFile( system.filehandler.getFile( "times" ) );
 
     return 0;
 }

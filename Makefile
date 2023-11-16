@@ -21,8 +21,9 @@ FP32 ?= FALSE
 CPU ?= FALSE
 
 # Object files
-CPP_SRCS = $(wildcard $(SRCDIR)/*.cpp)
-CU_SRCS = $(wildcard $(SRCDIR)/*.cu)
+CPP_SRCS = $(shell find $(SRCDIR) -name "*.cpp")
+CU_SRCS = $(shell find $(SRCDIR) -name "*.cu")
+
 CPP_OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(CPP_SRCS))
 CU_OBJS = $(patsubst $(SRCDIR)/%.cu,$(OBJDIR)/%.o,$(CU_SRCS))
 
@@ -58,9 +59,11 @@ all: $(OBJDIR) $(CPP_OBJS) $(CU_OBJS)
 	$(COMPILER) -o $(TARGET) $(CPP_OBJS) $(CU_OBJS) $(COMPILER_FLAGS) -I$(INCDIR) $(ADD_FLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(dir $@)
 	$(COMPILER) $(COMPILER_FLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
+	@mkdir -p $(dir $@)
 	$(COMPILER) $(COMPILER_FLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
 
 $(OBJDIR):
