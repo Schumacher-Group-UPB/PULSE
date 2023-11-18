@@ -2,6 +2,8 @@
 
 #include "system/filehandler.hpp"
 #include "misc/commandline_input.hpp"
+#include "misc/escape_sequences.hpp"
+#include "omp.h"
 
 PC3::FileHandler::FileHandler() : 
     outputPath( "data" ),
@@ -46,7 +48,7 @@ void PC3::FileHandler::init( int argc, char** argv ) {
     // Creating output directory
     const int dir_err = std::system( ( "mkdir " + outputPath ).c_str() );
     if ( -1 == dir_err ) {
-        std::cout << "Error creating directory " << outputPath << std::endl;
+        std::cout << EscapeSequence::RED << "Error creating directory " << outputPath << EscapeSequence::RESET << std::endl;
     } else {
         std::cout << "Succesfully created directory " << outputPath << std::endl;
     }
@@ -82,7 +84,8 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
         filein.close();
         std::cout << "Loaded " << i << " elements from " << filepath << std::endl;
     } else {
-        std::cout << "Error: Couldn't load " << filepath << std::endl;
+        #pragma omp critical
+        std::cout << EscapeSequence::YELLOW << "Warning: Couldn't load " << filepath << EscapeSequence::RESET << std::endl;
     }
 }
 
@@ -105,7 +108,8 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
         filein.close();
         std::cout << "Loaded " << i << " elements from " << filepath << std::endl;
     } else {
-        std::cout << "Error: Couldn't load " << filepath << std::endl;
+        #pragma omp critical
+        std::cout << EscapeSequence::YELLOW << "Warning: Couldn't load " << filepath << EscapeSequence::RESET << std::endl;
     }
 }
 

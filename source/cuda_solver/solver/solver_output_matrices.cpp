@@ -4,6 +4,7 @@
 #include "cuda/cuda_macro.cuh"
 
 void PC3::Solver::outputMatrices() {
+    std::cout << "---------------------------- Outputting Final Matrices ----------------------------" << std::endl;
     std::vector<std::string> fileoutputkeys = { "wavefunction_plus", "wavefunction_minus", "reservoir_plus", "reservoir_minus", "fft_plus", "fft_minus" };
 #pragma omp parallel for
     for ( int i = 0; i < fileoutputkeys.size(); i++ ) {

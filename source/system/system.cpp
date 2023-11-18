@@ -42,7 +42,7 @@ PC3::System::System() {
     // RK Solver Variables
     dt;
     t;
-    dt_max = 0.3;
+    dt_max = 3;
     dt_min = 0.0001; // also dt_delta
     tolerance = 1E-1;
 
@@ -153,6 +153,11 @@ PC3::System::System( int argc, char** argv ) : System() {
     // If -masknorm is passed to the program, the mask and psi is normalized before the error calculation
     if ( ( index = findInArgv( "-masknorm", argc, argv ) ) != -1 ) {
         normalize_before_masking = true;
+    }
+
+    periodic_boundary_conditions = false;
+    if ( ( index = findInArgv( "-periodic", argc, argv ) ) != -1 ) {
+        periodic_boundary_conditions = true;
     }
 
     // Initialize t_0 as 0.

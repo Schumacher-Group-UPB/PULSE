@@ -2,10 +2,14 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "cuda_complex.cuh"
-#include "cuda_macro.cuh"
+#include "cuda/cuda_complex.cuh"
+#include "cuda/cuda_macro.cuh"
+#include "misc/escape_sequences.hpp"
 
 namespace PC3 {
+
+static inline bool global_matrix_creation_log = true;
+static inline bool global_matrix_transfer_log = false;
 
 // Forward declaration of HostMatrix
 template <typename T>
@@ -29,7 +33,6 @@ class CUDAMatrix {
 
     public:
 
-    static inline bool log = false; 
     static inline double total_mb = 0;
     static inline double total_mb_max = 0;
 
@@ -65,8 +68,8 @@ class CUDAMatrix {
         if (device_data == nullptr)
             return;
         total_mb -= size_in_mb;
-        if (log)
-            std::cout << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated device space: " << total_mb << " MB." << std::endl;
+        if (global_matrix_creation_log)
+            std::cout << EscapeSequence::GREY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated device space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
         DEVICE_FREE( device_data, "free " );
         device_data = nullptr;
     }
@@ -79,8 +82,8 @@ class CUDAMatrix {
         this->name = name;
         this->rows = rows;
         this->cols = cols;
-        if (log)
-            std::cout << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated device space: " << total_mb << " MB." << std::endl;
+        if (global_matrix_creation_log)
+            std::cout << EscapeSequence::GREY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated device space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
         DEVICE_ALLOC( device_data, total_size * sizeof( T ), "malloc " );
         return *this;
     }
@@ -89,8 +92,8 @@ class CUDAMatrix {
     }
 
     void setTo(T* host_data) {
-        if (log)
-            std::cout << "Copying " << rows << "x" << cols << " matrix to device matrix '" << name << "'" << std::endl;
+        if (global_matrix_transfer_log)
+            std::cout << EscapeSequence::GREY << "Copying " << rows << "x" << cols << " matrix to device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
         MEMCOPY_TO_DEVICE( device_data, host_data, total_size * sizeof( T ), "memcopy host to device " );
     }
     void fromHost(HostMatrix<T>& host_matrix) {
@@ -98,8 +101,8 @@ class CUDAMatrix {
     }
     
     void copyTo(T* host_data) {
-        if (log)
-            std::cout << "Copying " << rows << "x" << cols << " matrix from device matrix '" << name << "'" << std::endl;
+        if (global_matrix_transfer_log)
+            std::cout << EscapeSequence::GREY << "Copying " << rows << "x" << cols << " matrix from device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
         MEMCOPY_FROM_DEVICE( host_data, device_data, total_size * sizeof( T ), "memcpy device to host " );
     }
     void toHost(HostMatrix<T>& host_matrix) {
@@ -171,7 +174,6 @@ class HostMatrix {
 
     public:
 
-    static inline bool log = false; 
     static inline double total_mb = 0;
     static inline double total_mb_max = 0;
 
@@ -208,8 +210,8 @@ class HostMatrix {
 
     ~HostMatrix() {
         total_mb -= size_in_mb;
-        if (log)
-            std::cout << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated host space: " << total_mb << " MB." << std::endl;
+        if (global_matrix_creation_log)
+            std::cout << EscapeSequence::GREY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated host space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
         host_data.reset();
     }
 
@@ -221,8 +223,8 @@ class HostMatrix {
         this->name = name;
         this->rows = rows;
         this->cols = cols;
-        if (log)
-            std::cout << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated host space: " << total_mb << " MB." << std::endl;
+        if (global_matrix_creation_log)
+            std::cout << EscapeSequence::GREY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated host space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
         host_data = std::make_unique<T[]>(total_size);
         return *this;
     }
@@ -231,8 +233,8 @@ class HostMatrix {
     }
 
     void setTo(T* data) {
-        if (log)
-            std::cout << "Copying " << rows << "x" << cols << " matrix to device matrix '" << name << "'" << std::endl;
+        if (global_matrix_transfer_log)
+            std::cout << EscapeSequence::GREY << "Copying " << rows << "x" << cols << " matrix to device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
         std::copy(data, data + total_size, host_data.get());
     }
     void fromDevice(CUDAMatrix<T>& device_matrix) {
@@ -241,8 +243,8 @@ class HostMatrix {
     }
     
     void copyTo(T* host_data) {
-        if (log)
-            std::cout << "Copying " << rows << "x" << cols << " matrix from device matrix '" << name << "'" << std::endl;
+        if (global_matrix_transfer_log)
+            std::cout << EscapeSequence::GREY << "Copying " << rows << "x" << cols << " matrix from device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
         std::copy(this->host_data.get(), this->host_data.get() + total_size, host_data);
     }
     void toDevice(CUDAMatrix<T>& device_matrix) {
@@ -275,7 +277,7 @@ class HostMatrix {
     // Device Pointer Getter
     inline T* get() const {
         if (total_size == 0)
-            std::cout << "Warning: accessing empty host matrix '" << name << "'." << std::endl;
+            std::cout << EscapeSequence::YELLOW << "Warning: accessing empty host matrix '" << name << "'." << EscapeSequence::RESET << std::endl;
         return host_data.get();
     }
 

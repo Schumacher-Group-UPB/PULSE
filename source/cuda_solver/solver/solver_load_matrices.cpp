@@ -18,7 +18,7 @@ std::vector<std::string> _split_string_at(const std::string& input, std::string 
 }
 
 void PC3::Solver::loadMatrices() {
-    if ( filehandler.loadPath.size() < 1 )
+    if ( filehandler.loadPath.size() < 1 or system.input_keys.empty() )
         return;
     std::cout << "-------------------------------- Loading Matrices ---------------------------------" << std::endl;
     std::cout << "Load Path: " << filehandler.loadPath << std::endl;

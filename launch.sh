@@ -5,25 +5,24 @@
 output_path="data/kekwtest14/"
 
 system_parameters=(
-    #"--pump 40 add 30 0 0 plus 1 gauss" # Center Pump
-    #"--pump -1 add+adaptive 2.5 0 15 plus 5 gauss+outerExponent" # Potential Well
-    #"--pump -1 add+adaptive 2.5 0 7.5 plus 5 gauss+outerExponent" # Potential Well
-    #"--pump -0.975 add+adaptive 2.5 0 0 plus 5 gauss+outerExponent" # Potential Well
-    #"--pump -0.95 add+adaptive 2.5 0 -7.5 plus 5 gauss+outerExponent" # Potential Well
-    #"--pump -0.93 add+adaptive 2.5 0 -15 plus 5 gauss+outerExponent" # Potential Well
-    #"--pump 10 add 2.5 0 19 plus 1 gauss" # Narrow
-    "--loadFrom data/load_test"
-    "--input all"
+    "--pump 40 add 30 100 0 plus 1 gauss" # Center Pump
+    "--pump -1 add+adaptive 2.5 100 15 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -1 add+adaptive 2.5 100 7.5 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -0.975 add+adaptive 2.5 100 0 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -0.95 add+adaptive 2.5 100 -7.5 plus 5 gauss+outerExponent" # Potential Well
+    "--pump -0.93 add+adaptive 2.5 100 -15 plus 5 gauss+outerExponent" # Potential Well
+    "--pump 10 add 2.5 100 19 plus 1 gauss" # Narrow
+    #"--loadFrom data/load2"
+    #"--input all"
     "--mask 5 add 4.5 0 7.5 plus 5 gauss" # Soll
     #"--pulse 2 add 2.5 0 19 plus 1 gauss 150 0.1 10 2" # test pump
-    "--fftMask 1 add 0.7 0 0 plus 10 gauss+local+noDivide" # FFT Mask
+    "--fftMask 1 add 0.4 0 0 plus 10 gauss+local+noDivide" # FFT Mask
     "-masknorm"
     "--initRandom 0.5 53242423412"
     "--initialState 10 add 4.5 0 7.5 plus 5 gauss" # Soll
-    "--outEvery 20"
+    "--outEvery 200"
     "--tmax 4000" 
     "--N 500"
-    #"--tstep 0.01"
     "--gammaC 0.05"
     "--gammaR 0.07"
     "--gc 1e-6"
@@ -31,10 +30,12 @@ system_parameters=(
     "--meff 0.00056856"
     "--R 0.01"
     "--xmax 150"
-    #"--tol 10"
+    "-periodic"
     #-nosfml
-    #"--load data2" 
     #"-rk45"
+    #"--tol 1E-2"
+    "--fftEvery 1"
+    #"--tstep 0.00001"
 )
 
 # Path to the program to launch

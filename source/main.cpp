@@ -20,7 +20,7 @@ int main( int argc, char* argv[] ) {
     auto system = PC3::System(argc, argv);
 
     // Create Solver Class
-    auto cuda_solver = PC3::Solver( system, PC3::Solver::Symmetry::TETM );
+    auto cuda_solver = PC3::Solver( system, PC3::Solver::Symmetry::Scalar );
 
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
     initSFMLWindow( cuda_solver );
@@ -47,7 +47,7 @@ int main( int argc, char* argv[] ) {
             , "Plotting" );
         double duration = PC3::TimeIt::get( "Main" ) + PC3::TimeIt::get( "Plotting" );
         auto [min, max] = minmax( cuda_solver.device.wavefunction_plus.get(), system.s_N * system.s_N, true /*This is a device pointer*/ );
-        std::cout << "T = " << int( system.t ) << ", Time per " << system.filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * system.filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r";
+        std::cout << "T = " << int( system.t ) << ", Time per " << system.filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * system.filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r" << std::flush;
     }
 
     // Fileoutput

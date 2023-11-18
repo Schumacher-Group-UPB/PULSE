@@ -69,38 +69,8 @@ class Solver {
 
     Solver( PC3::System& system, Symmetry scalar_or_twin ) : system(system), filehandler(system.filehandler) {
         use_te_tm_splitting = (scalar_or_twin == Symmetry::TETM);
-
+        
         std::cout << "Creating Solver with TE/TM Splitting: " << use_te_tm_splitting << std::endl;
-
-        // Instanciate all Psi Matrices. Only Instanciate the Minus components if we have a twin system.
-        device.wavefunction_plus.construct(system.s_N, "device.wavefunction_plus");
-        device.reservoir_plus.construct(system.s_N, "device.reservoir_plus");
-        device.buffer_wavefunction_plus.construct(system.s_N, "device.buffer_wavefunction_plus");
-        // Construct Pump and Pulse cache (TODO: Pulse cache)
-        device.pump_plus.construct(system.s_N, "device.pump_plus");
-        
-        // Construct the _minus components only when we have a TE/TM splitting system
-        if (use_te_tm_splitting) {
-            device.wavefunction_minus.construct(system.s_N, "device.wavefunction_minus");
-            device.reservoir_minus.construct(system.s_N, "device.reservoir_minus");
-            device.buffer_wavefunction_minus.construct(system.s_N, "device.buffer_wavefunction_minus");
-            device.pump_minus.construct(system.s_N, "device.pump_minus");
-        }
-
-        
-        // Construct K1 to K4 Matrices for RK4
-        INSTANCIATE_K( 1, use_te_tm_splitting );
-        INSTANCIATE_K( 2, use_te_tm_splitting );
-        INSTANCIATE_K( 3, use_te_tm_splitting );
-        INSTANCIATE_K( 4, use_te_tm_splitting );
-        // Construct K5-K7 and the RK Error Matrix for RK45
-        if (not system.fixed_time_step) {
-            INSTANCIATE_K( 5, use_te_tm_splitting );
-            INSTANCIATE_K( 6, use_te_tm_splitting );
-            INSTANCIATE_K( 7, use_te_tm_splitting );
-            // Single Error Matrix for RK45
-            device.rk_error.construct(system.s_N, "device.rk_error");
-        }
 
         // Finally, initialize the FFT Plan
         CUDA_FFT_CREATE(&plan, system.s_N );

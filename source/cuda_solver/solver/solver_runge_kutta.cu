@@ -6,6 +6,7 @@
 #include <cuda_runtime.h>
 #include <cufft.h>
 #include <thrust/reduce.h>
+#include <thrust/transform_reduce.h>
 #include <thrust/execution_policy.h>
 #else
 #include <numeric>
@@ -57,7 +58,7 @@ real_number cached_t = 0.0;
  */
 void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 block_size, dim3 grid_size ) {
     // This variable contains all the system parameters the kernel could need
-    auto current_system_parameters = system.getKernelParameters();
+    auto current_system_parameters = system.snapshotParameters();
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = device.pointers();
     
@@ -121,6 +122,17 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 bloc
     return;
 }
 
+
+struct thrust_square
+{
+    __host__ __device__
+    real_number operator()(const complex_number& x) const { 
+        const real_number res = abs2(x);
+        return res; 
+    }
+};
+
+
 /*
 * This function iterates the Runge Kutta Kernel using a variable time step.
 * A 4th order Runge-Kutta method is used to calculate
@@ -163,7 +175,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = device.pointers();
     // This variable contains all the system parameters the kernel could need
-    auto current_system_parameters = system.getKernelParameters();
+    auto current_system_parameters = system.snapshotParameters();
     
     do {
 
@@ -267,17 +279,18 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
             device_pointers, current_system_parameters, use_te_tm_splitting
         );
 
-        // Use thrust::reduce to calculate the sum of the error matrix
-
         #ifndef USECPU
         real_number final_error = thrust::reduce( THRUST_DEVICE, device.rk_error.get(), device.rk_error.get() + system.s_N * system.s_N, 0.0, thrust::plus<real_number>() );
+        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N * system.s_N, thrust_square(), 0.0, thrust::plus<real_number>() );
         #else
         real_number final_error = std::reduce( device.rk_error.get(), device.rk_error.get() + system.s_N * system.s_N, 0.0, std::plus<real_number>() );
+        real_number sum_abs2 = std::transform_reduce( device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N * system.s_N, 0.0, [](auto& a, auto& b){ auto abs_value = abs(b); return a+abs_value*abs_value; } );
         #endif
 
-        auto plus_max = std::get<1>( minmax( device.wavefunction_plus.get(), system.s_N * system.s_N, true /*Device Pointer*/ ) );
-        final_error = final_error / plus_max;
+        // TODO: maybe go back to using max since thats faster
+        //auto plus_max = std::get<1>( minmax( device.wavefunction_plus.get(), system.s_N * system.s_N, true /*Device Pointer*/ ) );
 
+        final_error = final_error / sum_abs2;
         // Calculate dh
         real_number dh = pow( system.tolerance / 2. / max( final_error, 1E-15 ), 0.25 );
         // Check if dh is nan
@@ -291,8 +304,13 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
         // system.dt = min(system.dt * dh, system.dt_max);
         if ( dh < 1.0 )
             system.dt = max( system.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
+            //system.dt -= system.dt_min;
         else
             system.dt = min( system.dt + system.dt_min * std::floor( dh ), system.dt_max );
+            //system.dt += system.dt_min;
+        
+        // Make sure to also update dt from current_system_parameters
+        current_system_parameters.dt = system.dt;
 
         // Accept step if error is below tolerance
         if ( final_error < system.tolerance ) {
@@ -347,17 +365,18 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size ) {
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     
     // Do the same for the minus component
-    if (use_te_tm_splitting)
-        CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device.wavefunction_minus.get(), (fft_complex_number*)device.fft_minus.get(), CUFFT_FORWARD ), "FFT Exec" );
-        fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N );
-        CHECK_CUDA_ERROR( {}, "FFT Shift Minus" );
-        kernel_mask_fft<<<grid_size, block_size>>>( device.fft_minus.get(), device.fft_mask_minus.get(), system.s_N );
-        CHECK_CUDA_ERROR( {}, "FFT Filter" )
-        fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N );
-        CHECK_CUDA_ERROR( {}, "FFT Shift" )
-        CHECK_CUDA_ERROR( FFTSOLVER( plan, device.fft_minus.get(), device.wavefunction_minus.get(), CUFFT_INVERSE ), "iFFT Exec" );
-        fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N );
-        CHECK_CUDA_ERROR( {}, "FFT Shift" );
+    if (not use_te_tm_splitting)
+        return;
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device.wavefunction_minus.get(), (fft_complex_number*)device.fft_minus.get(), CUFFT_FORWARD ), "FFT Exec" );
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N );
+    CHECK_CUDA_ERROR( {}, "FFT Shift Minus" );
+    kernel_mask_fft<<<grid_size, block_size>>>( device.fft_minus.get(), device.fft_mask_minus.get(), system.s_N );
+    CHECK_CUDA_ERROR( {}, "FFT Filter" )
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N );
+    CHECK_CUDA_ERROR( {}, "FFT Shift" )
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, device.fft_minus.get(), device.wavefunction_minus.get(), CUFFT_INVERSE ), "iFFT Exec" );
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N );
+    CHECK_CUDA_ERROR( {}, "FFT Shift" );
     #endif
 }
 
