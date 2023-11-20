@@ -1,5 +1,6 @@
 #include <iostream>
 #include "misc/commandline_input.hpp"
+#include "misc/escape_sequences.hpp"
 
 int findInArgv( std::string toFind, int argc, char** argv, int start ) {
     for ( int i = start; i < argc; i++ ) {
@@ -11,12 +12,12 @@ int findInArgv( std::string toFind, int argc, char** argv, int start ) {
 }
 
 real_number getNextInput( char** argv, const std::string name, int& index ) {
-    std::cout << "Read input " << name << " as " << argv[ index ] << std::endl;
+    std::cout << EscapeSequence::GREY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
     return std::stod( argv[ index++ ] );
 }
 
 std::string getNextStringInput( char** argv, const std::string name, int& index ) {
-    std::cout << "Read input " << name << " as " << argv[ index ] << std::endl;
+    std::cout << EscapeSequence::GREY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
     return argv[ index++ ];
 }
 

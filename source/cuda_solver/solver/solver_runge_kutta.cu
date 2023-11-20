@@ -17,6 +17,7 @@
 
 // Include Cuda Kernel headers
 #include "cuda/cuda_complex.cuh"
+#include "cuda/cuda_macro.cuh"
 #include "kernel/kernel_runge_function.cuh"
 #include "kernel/kernel_summation.cuh"
 #include "kernel/kernel_fft.cuh"
@@ -61,10 +62,12 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 bloc
     auto current_system_parameters = system.snapshotParameters();
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = device.pointers();
+    // Pointers to Pulse Variables. This is subject to change
+    auto pulse_pointers = dev_pulse_parameters.pointers();
     
     CALL_KERNEL(
         RUNGE_FUNCTION, "K1", grid_size, block_size, 
-        system.t, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+        system.t, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
         { 
             device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
             device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus
@@ -78,7 +81,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 bloc
 
     CALL_KERNEL(
         RUNGE_FUNCTION, "K2", grid_size, block_size, 
-        system.t + 0.5*system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+        system.t + 0.5*system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
         { 
             device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
             device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
@@ -92,7 +95,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 bloc
 
     CALL_KERNEL(
         RUNGE_FUNCTION, "K3", grid_size, block_size, 
-        system.t + 0.5*system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+        system.t + 0.5*system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
         { 
             device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
             device_pointers.k3_wavefunction_plus, device_pointers.k3_wavefunction_minus, device_pointers.k3_reservoir_plus, device_pointers.k3_reservoir_minus
@@ -106,7 +109,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 bloc
 
     CALL_KERNEL(
         RUNGE_FUNCTION, "K4", grid_size, block_size, 
-        system.t + system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+        system.t + system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
         { 
             device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
             device_pointers.k4_wavefunction_plus, device_pointers.k4_wavefunction_minus, device_pointers.k4_reservoir_plus, device_pointers.k4_reservoir_minus
@@ -123,10 +126,9 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 bloc
 }
 
 
-struct thrust_square
+struct square_reduction
 {
-    __host__ __device__
-    real_number operator()(const complex_number& x) const { 
+    CUDA_HOST_DEVICE real_number operator()(const complex_number& x) const { 
         const real_number res = abs2(x);
         return res; 
     }
@@ -176,12 +178,14 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
     auto device_pointers = device.pointers();
     // This variable contains all the system parameters the kernel could need
     auto current_system_parameters = system.snapshotParameters();
+    // Pointers to Pulse Variables. This is subject to change
+    auto pulse_pointers = dev_pulse_parameters.pointers();
     
     do {
 
         CALL_KERNEL(
             RUNGE_FUNCTION, "K1", grid_size, block_size, 
-            system.t, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+            system.t, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
             { 
                 device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
                 device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus
@@ -195,7 +199,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         CALL_KERNEL(
             RUNGE_FUNCTION, "K2", grid_size, block_size, 
-            system.t + RKCoefficients::a2 * system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+            system.t + RKCoefficients::a2 * system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
             { 
                 device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
                 device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
@@ -210,7 +214,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         CALL_KERNEL(
             RUNGE_FUNCTION, "K3", grid_size, block_size, 
-            system.t + RKCoefficients::a3 * system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+            system.t + RKCoefficients::a3 * system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
             { 
                 device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
                 device_pointers.k3_wavefunction_plus, device_pointers.k3_wavefunction_minus, device_pointers.k3_reservoir_plus, device_pointers.k3_reservoir_minus
@@ -224,7 +228,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         CALL_KERNEL(
             RUNGE_FUNCTION, "K4", grid_size, block_size, 
-            system.t + RKCoefficients::a4 * system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+            system.t + RKCoefficients::a4 * system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
             { 
                 device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
                 device_pointers.k4_wavefunction_plus, device_pointers.k4_wavefunction_minus, device_pointers.k4_reservoir_plus, device_pointers.k4_reservoir_minus
@@ -238,7 +242,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         CALL_KERNEL(
             RUNGE_FUNCTION, "K5", grid_size, block_size, 
-            system.t + RKCoefficients::a5 * system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+            system.t + RKCoefficients::a5 * system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
             { 
                 device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
                 device_pointers.k5_wavefunction_plus, device_pointers.k5_wavefunction_minus, device_pointers.k5_reservoir_plus, device_pointers.k5_reservoir_minus
@@ -252,7 +256,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         CALL_KERNEL(
             RUNGE_FUNCTION, "K6", grid_size, block_size, 
-            system.t + RKCoefficients::a6 * system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+            system.t + RKCoefficients::a6 * system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
             { 
                 device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
                 device_pointers.k6_wavefunction_plus, device_pointers.k6_wavefunction_minus, device_pointers.k6_reservoir_plus, device_pointers.k6_reservoir_minus
@@ -267,7 +271,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         CALL_KERNEL(
             RUNGE_FUNCTION, "K7", grid_size, block_size, 
-            system.t + RKCoefficients::a7 * system.dt, device_pointers, current_system_parameters, dev_pulse_parameters, evaluate_pulse,
+            system.t + RKCoefficients::a7 * system.dt, device_pointers, current_system_parameters, pulse_pointers, evaluate_pulse,
             { 
                 device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
                 device_pointers.k7_wavefunction_plus, device_pointers.k7_wavefunction_minus, device_pointers.k7_reservoir_plus, device_pointers.k7_reservoir_minus
@@ -281,10 +285,10 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         #ifndef USECPU
         real_number final_error = thrust::reduce( THRUST_DEVICE, device.rk_error.get(), device.rk_error.get() + system.s_N * system.s_N, 0.0, thrust::plus<real_number>() );
-        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N * system.s_N, thrust_square(), 0.0, thrust::plus<real_number>() );
+        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N * system.s_N, square_reduction(), 0.0, thrust::plus<real_number>() );
         #else
         real_number final_error = std::reduce( device.rk_error.get(), device.rk_error.get() + system.s_N * system.s_N, 0.0, std::plus<real_number>() );
-        real_number sum_abs2 = std::transform_reduce( device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N * system.s_N, 0.0, [](auto& a, auto& b){ auto abs_value = abs(b); return a+abs_value*abs_value; } );
+        real_number sum_abs2 = std::transform_reduce( device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N * system.s_N, 0.0, std::plus<real_number>(), square_reduction() );
         #endif
 
         // TODO: maybe go back to using max since thats faster

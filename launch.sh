@@ -5,23 +5,26 @@
 output_path="data/kekwtest14/"
 
 system_parameters=(
-    "--pump 40 add 30 100 0 plus 1 gauss" # Center Pump
-    "--pump -1 add+adaptive 2.5 100 15 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -1 add+adaptive 2.5 100 7.5 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.975 add+adaptive 2.5 100 0 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.95 add+adaptive 2.5 100 -7.5 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.93 add+adaptive 2.5 100 -15 plus 5 gauss+outerExponent" # Potential Well
-    "--pump 10 add 2.5 100 19 plus 1 gauss" # Narrow
+    "--pump 60 add 15 0 0 plus 1 gauss+ring" # Center Pump
+    #"--pump -1 add+adaptive 2.5 100 15 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -1 add+adaptive 2.5 100 7.5 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -0.975 add+adaptive 2.5 100 0 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -0.95 add+adaptive 2.5 100 -7.5 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump -0.93 add+adaptive 2.5 100 -15 plus 5 gauss+outerExponent" # Potential Well
+    #"--pump 10 add 2.5 100 19 plus 1 gauss" # Narrow
     #"--loadFrom data/load2"
     #"--input all"
     "--mask 5 add 4.5 0 7.5 plus 5 gauss" # Soll
-    #"--pulse 2 add 2.5 0 19 plus 1 gauss 150 0.1 10 2" # test pump
-    "--fftMask 1 add 0.4 0 0 plus 10 gauss+local+noDivide" # FFT Mask
+    #"--pulse 2 add 2.5 0 19 plus 1 gauss 150 0.1 10 2" # test pulse
+    "--pulse 0.001 add 2 0 0 plus 1 gauss+ring 350 0.1 10 2" # test pulse
+    #"--pulse 0.0001 add 30 0 0 plus 1 gauss+ring 1350 0.1 10 -2" # test pulse
+    #"--fftMask 1 add 0.4 0 0 plus 10 gauss+local+noDivide" # FFT Mask
     "-masknorm"
-    "--initRandom 0.5 53242423412"
-    "--initialState 10 add 4.5 0 7.5 plus 5 gauss" # Soll
-    "--outEvery 200"
-    "--tmax 4000" 
+    #"--initRandom 0.5 53242423412"
+    "--initialState 5 add 15 0 0 plus 1 gauss+ring" # Center Pump
+    #"--initialState 10 add 4.5 0 7.5 plus 5 gauss" # Soll
+    "--outEvery 50"
+    "--tmax 20000" 
     "--N 500"
     "--gammaC 0.05"
     "--gammaR 0.07"
@@ -29,7 +32,7 @@ system_parameters=(
     "--gr 12e-6"
     "--meff 0.00056856"
     "--R 0.01"
-    "--xmax 150"
+    "--xmax 50"
     "-periodic"
     #-nosfml
     #"-rk45"
@@ -39,6 +42,7 @@ system_parameters=(
 )
 
 # Path to the program to launch
+#launch_program="./main_2.0_wr_fp64_cpu.exe"
 launch_program="./main_2.0_wr_fp32.exe"
 
 # Construct the command to launch the program

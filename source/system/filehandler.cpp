@@ -11,7 +11,7 @@ PC3::FileHandler::FileHandler() :
     outputName( "" ),
     color_palette( "resources/vik.txt" ),
     color_palette_phase( "resources/viko.txt" ),
-    out_modulo( 5 ),
+    output_every( 5 ),
     disableRender( false ) {};
 
 PC3::FileHandler::FileHandler( int argc, char** argv) : FileHandler() {
@@ -30,7 +30,7 @@ void PC3::FileHandler::init( int argc, char** argv ) {
         outputName = getNextStringInput( argv, "name", ++index );
 
     if ( ( index = findInArgv( "--outEvery", argc, argv ) ) != -1 )
-        out_modulo = (int)getNextInput( argv, "out_modulo", ++index );
+        output_every = (int)getNextInput( argv, "output_every", ++index );
 
     // Save Load Path if passed, else use output path as laod path
     loadPath = outputPath;

@@ -143,7 +143,7 @@ class ColorPalette {
         void initColors() {
             int intermediateColors = std::floor(numberOfOutputColors/input_colors.size());
             // Creating interpolation list for colors
-            for (int c = 0; c < input_colors.size(); c++) {;
+            for (int c = 0; c < input_colors.size()-1; c++) {;
                 for (int i = 0; i < intermediateColors; i++){
                     int r = (int)(lerp(input_colors[c].r,input_colors[(c+1)%input_colors.size()].r,(double)(i)/intermediateColors));
                     int g = (int)(lerp(input_colors[c].g,input_colors[(c+1)%input_colors.size()].g,(double)(i)/intermediateColors));
@@ -151,6 +151,6 @@ class ColorPalette {
                     output_colors.push_back(Color(r,g,b));
                 }
             }
-            int numberOfOutputColors = output_colors.size();
+            numberOfOutputColors = output_colors.size();
         }
 };

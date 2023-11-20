@@ -6,6 +6,7 @@
 #include "misc/helperfunctions.hpp"
 #include "solver/gpu_solver.cuh"
 #include "cuda/cuda_macro.cuh"
+#include "misc/escape_sequences.hpp"
 
 void PC3::Solver::outputInitialMatrices() {
     std::cout << "--------------------------- Outputting Initial Matrices ---------------------------" << std::endl;
@@ -33,7 +34,7 @@ void PC3::Solver::outputInitialMatrices() {
 }
 
 void PC3::Solver::initializeHostMatricesFromSystem( ) {
-    std::cout << "--------------------------- Initializing Host Matrices ----------------------------" << std::endl;
+    std::cout << EscapeSequence::BOLD << "--------------------------- Initializing Host Matrices ----------------------------" << EscapeSequence::RESET << std::endl;
     // First, construct all required host matrices
     host.constructAll( system.s_N, use_te_tm_splitting, not system.fixed_time_step  /* Use RK45 */ );
 
@@ -98,7 +99,7 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
 
 
 void PC3::Solver::initializeDeviceMatricesFromHost() {
-    std::cout << "-------------------------- Initializing Device Matrices ---------------------------" << std::endl;
+    std::cout << "Initializing Device Matrices..." << std::endl;
     // Construct all Device Matrices
     device.constructAll( system.s_N, use_te_tm_splitting, not system.fixed_time_step /* Use RK45 */ );
 
@@ -114,11 +115,11 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     dev_pulse_parameters.width.construct(n, "dev.pulse_width").setTo( system.pulse.width.data() );
     dev_pulse_parameters.x.construct(n, "dev.pulse_x").setTo( system.pulse.x.data() );
     dev_pulse_parameters.y.construct(n, "dev.pulse_y").setTo( system.pulse.y.data() );
-    std::vector<int> pol( system.pulse.pol.size() );
-    for (auto& p : system.pulse.pol)
-        pol.emplace_back( p == PC3::Envelope::Polarization::Minus ? -1 : ( p == PC3::Envelope::Polarization::Plus ? 1 : 0) );
-    dev_pulse_parameters.pol.construct(n, "dev.pulse_pol").setTo( pol.data() );
+    dev_pulse_parameters.pol.construct(n, "dev.pulse_pol").setTo( system.pulse.pol.data() );
     dev_pulse_parameters.n = n;
+    dev_pulse_parameters.type.construct(n, "dev.pulse_type").setTo(system.pulse.type.data());
+    dev_pulse_parameters.exponent.construct(n, "dev.pulse_exponent").setTo(system.pulse.exponent.data());
+    dev_pulse_parameters.behavior.construct(n, "dev.pulse_behavior").setTo(system.pulse.behavior.data());
 
     // Copy Buffer matrices to device equivalents
     device.wavefunction_plus.fromHost( host.initial_state_plus );

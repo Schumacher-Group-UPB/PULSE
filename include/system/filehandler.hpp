@@ -14,7 +14,7 @@ class FileHandler {
     std::map<std::string, std::ofstream> files;
     std::string outputPath, loadPath, outputName, color_palette, color_palette_phase;
 
-    int out_modulo;
+    int output_every;
     bool disableRender;
 
     FileHandler();

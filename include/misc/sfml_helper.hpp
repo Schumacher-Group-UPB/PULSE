@@ -60,19 +60,22 @@ void initSFMLWindow( PC3::Solver& solver ) {
     plotarray = std::make_unique<real_number[]>( solver.system.s_N * solver.system.s_N );
 }
 
-bool plotSFMLWindow( PC3::Solver& solver  ) {
+bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second  ) {
     if ( solver.system.filehandler.disableRender )
         return true;
     bool running = window.run();
+    
     // Get Device arrays
-
     solver.syncDeviceArrays();
+    
+    // Plot Plus
     plotMatrix( window, solver.host.wavefunction_plus.get(), solver.system.s_N /*size*/, solver.system.s_N, 0, 1, colorpalette, "Psi+ " );
     plotMatrix( window, solver.host.fft_plus.get(), solver.system.s_N /*size*/, solver.system.s_N, 0, 3, colorpalette, "FFT+ " );
     plotMatrix( window, solver.host.reservoir_plus.get(), solver.system.s_N /*size*/, 2 * solver.system.s_N, 0, 1, colorpalette, "n+ " );
     angle( solver.host.wavefunction_plus.get(), plotarray.get(), solver.system.s_N * solver.system.s_N );
     plotMatrix( window, plotarray.get(), solver.system.s_N, 0, 0, 1, colorpalette_phase, "ang(Psi+) " );
     
+    // Plot Minus
     if (solver.use_te_tm_splitting) {
     plotMatrix( window, solver.host.wavefunction_minus.get(), solver.system.s_N /*size*/, solver.system.s_N, solver.system.s_N, 1, colorpalette, "Psi- " );
     plotMatrix( window, solver.host.fft_minus.get(), solver.system.s_N /*size*/, solver.system.s_N, solver.system.s_N, 3, colorpalette, "FFT- " );
@@ -80,12 +83,19 @@ bool plotSFMLWindow( PC3::Solver& solver  ) {
     angle( solver.host.wavefunction_minus.get(), plotarray.get(), solver.system.s_N * solver.system.s_N );
     plotMatrix( window, plotarray.get(), solver.system.s_N, 0, solver.system.s_N, 1, colorpalette_phase, "ang(Psi-) " );
     }
+
+    // FPS and ps/s
+    window.print( 5, 5, 0.05, "t = " + std::to_string(int(solver.system.t)) + ", FPS: " + std::to_string( int(window.fps) ) + ", ps/s: " + std::to_string( int(ps_per_second) ), sf::Color::White );
+
+    // Blit
     window.flipscreen();
     return running;
 }
 
 #else
 void initSFMLWindow( PC3::Solver& solver ) {};
-bool plotSFMLWindow( PC3::Solver& solver ) {};
+bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second  ) {
+    return true;
+};
 #endif
 

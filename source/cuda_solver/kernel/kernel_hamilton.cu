@@ -1,3 +1,4 @@
+
 #include "kernel/kernel_hamilton.cuh"
 
 CUDA_DEVICE void PC3::Hamilton::scalar( complex_number& regular, complex_number* __restrict__ vector, int index, const int row, const int col, const int N, const bool periodic ) {

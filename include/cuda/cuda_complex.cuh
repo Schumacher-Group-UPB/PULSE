@@ -22,8 +22,13 @@
 #define FFTPLAN CUFFT_Z2Z
 #endif
 #else
+#ifdef USEFP32
+#define real_number float
+#define complex_number std::complex<float>
+#else
 #define real_number double
 #define complex_number std::complex<double>
+#endif
 #define fft_complex_number 
 #define FFTSOLVER
 #define FFTPLAN
@@ -166,7 +171,7 @@ CUDA_DEVICE static __inline__ real_number device_floor( const real_number x ) {
 }
 
 CUDA_HOST_DEVICE static __inline__ real_number sign( real_number x ) {
-    return x > 0 ? 1 : -1;
+    return x > 0.0 ? 1.0 : -1.0;
 }
 
 #ifndef USECPU

@@ -9,7 +9,7 @@ namespace PC3::Kernel {
     i = ( blockId * ( blockDim.x * blockDim.y ) ) + ( threadIdx.y * blockDim.x ) + threadIdx.x;
 #else
 // Else the macro is empty.
-#define OVERWRITE_INDEX_CPU(i)
+#define OVERWRITE_INDEX_GPU(i)
 #endif
 
 }

@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ * Copyright (c) 2023 David Bauch
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -26,13 +49,14 @@ int main( int argc, char* argv[] ) {
     initSFMLWindow( cuda_solver );
  
     bool running = true;
+    double duration = 0.;
     // Main Loop
     while ( system.t < system.t_max and running ) {
         TimeThis(
             // The CPU should briefly evaluate wether the pulses have to be evaluated
             bool evaluate_pulse = system.evaluatePulse();
-            // Iterate #out_modulo times
-            for ( int i = 0; i < cuda_solver.system.filehandler.out_modulo; i++ ) {
+            // Iterate #output_every times
+            for ( int i = 0; i < cuda_solver.system.filehandler.output_every; i++ ) {
                 cuda_solver.iterateRungeKutta( evaluate_pulse );
             }
             , "Main" );
@@ -43,11 +67,11 @@ int main( int argc, char* argv[] ) {
             // Cache the history and max values
             cuda_solver.cacheValues();
             // Plot
-            running = plotSFMLWindow( cuda_solver );
+            running = plotSFMLWindow( cuda_solver, 1. / (duration)*system.dt * system.filehandler.output_every );
             , "Plotting" );
-        double duration = PC3::TimeIt::get( "Main" ) + PC3::TimeIt::get( "Plotting" );
+        duration = PC3::TimeIt::get( "Main" ) + PC3::TimeIt::get( "Plotting" );
         auto [min, max] = minmax( cuda_solver.device.wavefunction_plus.get(), system.s_N * system.s_N, true /*This is a device pointer*/ );
-        std::cout << "T = " << int( system.t ) << ", Time per " << system.filehandler.out_modulo << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * system.filehandler.out_modulo << "ps/s, current dt = " << system.dt << "                \r" << std::flush;
+        std::cout << "T = " << int( system.t ) << ", Time per " << system.filehandler.output_every << " iterations: " << duration << "s -> " << 1. / (duration)*system.dt * system.filehandler.output_every << "ps/s, current dt = " << system.dt << "                \r" << std::flush;
     }
 
     // Fileoutput

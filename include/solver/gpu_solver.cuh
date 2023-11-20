@@ -47,11 +47,39 @@ class Solver {
         PC3::CUDAMatrix<real_number> x;
         PC3::CUDAMatrix<real_number> y;
         PC3::CUDAMatrix<int> m;
-        PC3::CUDAMatrix<int> pol;
+        
+        PC3::CUDAMatrix<PC3::Envelope::Polarization> pol;
+        PC3::CUDAMatrix<PC3::Envelope::Type> type;
+        PC3::CUDAMatrix<PC3::Envelope::Behavior> behavior;
+        PC3::CUDAMatrix<real_number> exponent;
+
         PC3::CUDAMatrix<real_number> t0;
         PC3::CUDAMatrix<real_number> freq;
         PC3::CUDAMatrix<real_number> width;
         unsigned int n;
+
+        struct Pointers {
+            real_number* amp;
+            real_number* sigma;
+            real_number* x;
+            real_number* y;
+            int* m;
+            real_number* exponent;
+            real_number* t0;
+            real_number* freq;
+            real_number* width;
+            PC3::Envelope::Polarization* pol;
+            PC3::Envelope::Type* type;
+            PC3::Envelope::Behavior* behavior;
+            unsigned int n;
+        };
+
+        Pointers pointers() {
+            return Pointers {
+                amp.get(), sigma.get(), x.get(), y.get(), m.get(), exponent.get(), t0.get(), freq.get(), width.get(),
+                pol.get(), type.get(), behavior.get(), n
+            };
+        }
     } dev_pulse_parameters;
 
     // Device Variables
