@@ -6,23 +6,20 @@ output_path="data/kekwtest14/"
 
 system_parameters=(
     "--pump 40 add 30 0 0 plus 1 0 gauss" # Center Pump
-    "--pump -1 add+adaptive 2.5 100 15 plus 5 0 gauss+outerExponent" # Potential Well
-    "--pump -1 add+adaptive 2.5 100 7.5 plus 5 0 gauss+outerExponent" # Potential Well
-    "--pump -0.975 add+adaptive 2.5 100 0 plus 5 0 gauss+outerExponent" # Potential Well
-    "--pump -0.95 add+adaptive 2.5 100 -7.5 plus 5 0 gauss+outerExponent" # Potential Well
-    "--pump -0.93 add+adaptive 2.5 100 -15 plus 5 0 gauss+outerExponent" # Potential Well
-    "--pump 10 add 2.5 100 19 plus 1 0 gauss" # Narrow
+    "--pump -1 add+adaptive 2.5 0 15 plus 5 0 gauss+outerExponent" # Potential Well
+    "--pump -1 add+adaptive 2.5 0 7.5 plus 5 0 gauss+outerExponent" # Potential Well
+    "--pump -0.975 add+adaptive 2.5 0 0 plus 5 0 gauss+outerExponent" # Potential Well
+    "--pump -0.95 add+adaptive 2.5 0 -7.5 plus 5 0 gauss+outerExponent" # Potential Well
+    "--pump -0.93 add+adaptive 2.5 0 -15 plus 5 0 gauss+outerExponent" # Potential Well
+    "--pump 10 add 2.5 0 19 plus 1 0 gauss" # Narrow
     #"--loadFrom data/load2"
     #"--input all"
     "--mask 5 add 4.5 0 7.5 plus 5 none gauss" # Soll
-    #"--pulse 2 add 2.5 0 19 plus 1 0 gauss 150 0.1 10" # test pulse
-    #"--pulse 0.01 add 5.5 0 0 plus 1 0 gauss+ring 350 0.1 10" # test pulse
     "--fftMask 1 add 0.4 0 0 plus 10 none gauss+local+noDivide" # FFT Mask
     "-masknorm"
-    #"--initRandom 0.5 53242423412"
-    "--initialState 10 add 14.5 0 27.5 plus 5 none gauss" # Initial State
-    "--outEvery 20"
-    "--tmax 10000" 
+    "--initRandom 0.5 53242423412"
+    "--outEvery 200"
+    "--tmax 3000" 
     "--N 500"
     "--gammaC 0.05"
     "--gammaR 0.07"
@@ -35,8 +32,8 @@ system_parameters=(
     #-nosfml
     #"-rk45"
     #"--tol 1E-2"
-    "--fftEvery 1"
     #"--tstep 0.00001"
+    "--fftEvery 1" # FFT Every 1 ps
 )
 
 # Path to the program to launch
