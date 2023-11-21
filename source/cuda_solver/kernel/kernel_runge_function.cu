@@ -26,22 +26,6 @@ CUDA_GLOBAL void PC3::Kernel::runge_func_kernel_tetm( int i, real_number t, Devi
     if ( evaluate_pulse ) {
         io.out_wf_plus[i] += kernel_inline_calculate_pulse(row, col, PC3::Envelope::Polarization::Plus, t, p, pulse);
         io.out_wf_minus[i] += kernel_inline_calculate_pulse(row, col, PC3::Envelope::Polarization::Minus, t, p, pulse);
-        //auto x = -p.xmax + p.dx * col;
-        //auto y = -p.xmax + p.dx * row;
-        //for ( int c = 0; c < pulse.n; c++ ) {
-        //    const auto xpos = pulse.x[c];
-        //    const auto ypos = pulse.y[c];
-        //    real_number r = sqrt( abs2( x - xpos ) + abs2( y - ypos ) );
-        //    const auto w = pulse.width[c];
-        //    const auto exp_factor = r * r / w / w;
-        //    complex_number space_shape = pulse.amp[c] * r / w / w * exp( -exp_factor ) * pow( ( x - xpos + 1.0 * sign( pulse.m[c] ) * p.i * ( y - ypos ) ), abs( pulse.m[c] ) );
-        //    const auto t0 = pulse.t0[c];
-        //    complex_number temp_shape = p.one_over_h_bar_s * exp( -( t - t0 ) * ( t - t0 ) / pulse.sigma[c] / pulse.sigma[c] - p.i * pulse.freq[c] * ( t - t0 ) );
-        //    if ( pulse.pol[c] >= 0 )
-        //        io.out_wf_plus[i] += space_shape * temp_shape;
-        //    if ( pulse.pol[c] <= 0 )
-        //        io.out_wf_minus[i] += space_shape * temp_shape;
-        //}
     }
 }
 
@@ -67,19 +51,6 @@ CUDA_GLOBAL void PC3::Kernel::runge_func_kernel_scalar( int i, real_number t, De
     // Add Pulse
     if ( evaluate_pulse ) {
         io.out_wf_plus[i] += kernel_inline_calculate_pulse(row, col, PC3::Envelope::Polarization::Plus, t, p, pulse);
-        //const real_number x = -p.xmax + p.dx * col;
-        //const real_number y = -p.xmax + p.dx * row;
-        //for ( int c = 0; c < pulse.n; c++ ) {
-        //    const real_number xpos = pulse.x[c];
-        //    const real_number ypos = pulse.y[c];
-        //    const real_number r = sqrt( abs2( x - xpos ) + abs2( y - ypos ) );
-        //    const real_number w = pulse.width[c];
-        //    const real_number exp_factor = r * r / w / w;
-        //    const complex_number space_shape = pulse.amp[c] * r / w / w * exp( -exp_factor ) * pow( ( x - xpos + 1.0 * sign( pulse.m[c] ) * p.i * ( y - ypos ) ), abs( pulse.m[c] ) );
-        //    const real_number t0 = pulse.t0[c];
-        //    const complex_number temp_shape = p.one_over_h_bar_s*exp( -( t - t0 ) * ( t - t0 ) / pulse.sigma[c] / pulse.sigma[c] - p.i * pulse.freq[c] * ( t - t0 ) );
-        //    io.out_wf_plus[i] += space_shape * temp_shape;
-        //}
     }
 }
 

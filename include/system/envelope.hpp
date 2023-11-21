@@ -10,8 +10,8 @@ namespace PC3 {
 class Envelope {
     public:
     std::vector<real_number> amp, width, x, y, exponent;
-    std::vector<real_number> freq, sigma, t0;
     std::vector<int> m;
+    std::vector<real_number> freq, sigma, t0;
     std::vector<std::string> s_type, s_pol, s_behavior;
 
     enum class Type : unsigned int {
@@ -34,7 +34,8 @@ class Envelope {
         Add = 1,
         Multiply = 1 << 1,
         Replace = 1 << 2,
-        Adaptive = 1 << 3
+        Adaptive = 1 << 3,
+        Complex = 1 << 4,
     };
     std::vector<Behavior> behavior;
 
@@ -43,6 +44,7 @@ class Envelope {
         { "multiply", Behavior::Multiply },
         { "replace", Behavior::Replace },
         { "adaptive", Behavior::Adaptive },
+        { "complex", Behavior::Complex },
     };
     static inline std::map<std::string, Polarization> PolarizationFromString = {
         { "plus", Polarization::Plus },
@@ -57,7 +59,7 @@ class Envelope {
         { "local", Type::Local },
     };
 
-    void addSpacial(real_number amp, real_number width, real_number x, real_number y, real_number exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior);
+    void addSpacial(real_number amp, real_number width, real_number x, real_number y, real_number exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
     void addTemporal(real_number t0, real_number sigma, real_number freq);
     int size();
 

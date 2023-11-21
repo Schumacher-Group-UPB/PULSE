@@ -39,6 +39,7 @@ endif
 ifeq ($(CPU),TRUE)
 	ADD_FLAGS += -DUSECPU
 endif
+ADD_FLAGS += -gencode arch=compute_86,code=sm_86 # A100: 80, 4090: 89
 
 # Targets
 ifndef TARGET

@@ -90,15 +90,9 @@ PC3::System::System( int argc, char** argv ) : System() {
         xmax = getNextInput( argv, "xmax", ++index );
     if ( ( index = findInArgv( "--g_pm", argc, argv ) ) != -1 ) {
         g_pm = getNextInput( argv, "gm", ++index );
-#ifndef TETMSPLITTING
-        std::cout << EscapeSequence::YELLOW << "Warning! Input parameter g_m = " << g_pm << " is obsolete without TE/TM splitting!" << EscapeSequence::RESET << std::endl;
-#endif
     }
     if ( ( index = findInArgv( "--deltaLT", argc, argv ) ) != -1 ) {
         delta_LT = getNextInput( argv, "deltaLT", ++index );
-#ifndef TETMSPLITTING
-        std::cout << EscapeSequence::YELLOW << "Warning! Input parameter delta_LT = " << delta_LT << " is obsolete without TE/TM splitting!" << EscapeSequence::RESET << std::endl;
-#endif
     }
     if ( ( index = findInArgv( "--threads", argc, argv ) ) != -1 )
         omp_max_threads = (int)getNextInput( argv, "threads", ++index );
