@@ -22,9 +22,9 @@ std::string toScientific( const real_number in ) {
 std::unique_ptr<real_number[]> plotarray;
 template <typename T>
 void plotMatrix( BasicWindow& window, T* buffer, int N, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "" ) {
-    cwiseAbs2( buffer, plotarray.get(), N * N );
+    PC3::CUDA::cwiseAbs2( buffer, plotarray.get(), N * N );
     auto [min, max] = minmax( plotarray.get(), N * N );
-    normalize( plotarray.get(), N * N, min, max );
+    PC3::CUDA::normalize( plotarray.get(), N * N, min, max );
     window.blitMatrixPtr( plotarray.get(), cp, N, N, posX, posY, 1 /*border*/, skip );
     N = N / skip;
     auto text_height = N * 0.05;
@@ -72,7 +72,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second  ) {
     plotMatrix( window, solver.host.wavefunction_plus.get(), solver.system.s_N /*size*/, solver.system.s_N, 0, 1, colorpalette, "Psi+ " );
     plotMatrix( window, solver.host.fft_plus.get(), solver.system.s_N /*size*/, solver.system.s_N, 0, 3, colorpalette, "FFT+ " );
     plotMatrix( window, solver.host.reservoir_plus.get(), solver.system.s_N /*size*/, 2 * solver.system.s_N, 0, 1, colorpalette, "n+ " );
-    angle( solver.host.wavefunction_plus.get(), plotarray.get(), solver.system.s_N * solver.system.s_N );
+    PC3::CUDA::angle( solver.host.wavefunction_plus.get(), plotarray.get(), solver.system.s_N * solver.system.s_N );
     plotMatrix( window, plotarray.get(), solver.system.s_N, 0, 0, 1, colorpalette_phase, "ang(Psi+) " );
     
     // Plot Minus
@@ -80,7 +80,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second  ) {
     plotMatrix( window, solver.host.wavefunction_minus.get(), solver.system.s_N /*size*/, solver.system.s_N, solver.system.s_N, 1, colorpalette, "Psi- " );
     plotMatrix( window, solver.host.fft_minus.get(), solver.system.s_N /*size*/, solver.system.s_N, solver.system.s_N, 3, colorpalette, "FFT- " );
     plotMatrix( window, solver.host.reservoir_minus.get(), solver.system.s_N /*size*/, 2 * solver.system.s_N, solver.system.s_N, 1, colorpalette, "n- " );
-    angle( solver.host.wavefunction_minus.get(), plotarray.get(), solver.system.s_N * solver.system.s_N );
+    PC3::CUDA::angle( solver.host.wavefunction_minus.get(), plotarray.get(), solver.system.s_N * solver.system.s_N );
     plotMatrix( window, plotarray.get(), solver.system.s_N, 0, solver.system.s_N, 1, colorpalette_phase, "ang(Psi-) " );
     }
 

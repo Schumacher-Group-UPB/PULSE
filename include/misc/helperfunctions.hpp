@@ -3,9 +3,11 @@
 
 struct compare_complex_abs2 {
     CUDA_HOST_DEVICE bool operator()( complex_number lhs, complex_number rhs ) {
-        return real(lhs) * real(lhs) + imag(lhs) * imag(lhs) < real(rhs) * real(rhs) + imag(rhs) * imag(rhs);
+        return PC3::CUDA::real(lhs) * PC3::CUDA::real(lhs) + PC3::CUDA::imag(lhs) * PC3::CUDA::imag(lhs) < PC3::CUDA::real(rhs) * PC3::CUDA::real(rhs) + PC3::CUDA::imag(rhs) * PC3::CUDA::imag(rhs);
     }
 };
+
+namespace PC3::CUDA {
 
 /**
  * @brief Calculates the minimum and maximum of a buffer of (complex) numbers
@@ -35,3 +37,5 @@ void normalize( real_number* buffer, int size, real_number min = 0, real_number 
  * @param size The size of the buffer.
  */
 void angle( complex_number* z, real_number* buffer, int size );
+
+} // namespace PC3::Kernel

@@ -9,21 +9,40 @@
 
 namespace PC3 {
 
-static inline bool global_matrix_creation_log = true;
+static inline bool global_matrix_creation_log = false;
 static inline bool global_matrix_transfer_log = false;
+
+/**
+ * @brief Base class for all device matrices. Mostly a gimmick to have a global
+ * counter for the total amount of allocated device memory.
+*/
+class DeviceMatrixBase {
+   public:
+    static inline double global_total_mb = 0;
+    static inline double global_total_mb_max = 0;
+};
+
+/**
+ * @brief Base class for all host matrices. 
+*/
+class HostMatrixBase {
+   public:
+    static inline double global_total_mb = 0;
+    static inline double global_total_mb_max = 0;
+};
 
 // Forward declaration of HostMatrix
 template <typename T>
 class HostMatrix;
 
 /**
- * @brief CUDA Wrapper for a matrix of either real or complex numbers
+ * @brief CUDA Wrapper for a matrix
  * Handles memory management.
  *
  * @tparam T either real_number or complex_number
  */
-template <typename T> //, typename = std::enable_if_t<std::is_same_v<T, real_number> || std::is_same_v<T, complex_number>>>
-class CUDAMatrix {
+template <typename T> 
+class CUDAMatrix : DeviceMatrixBase {
    private:
     unsigned int rows, cols; // One-Dimensional Size of size x size matrix
     unsigned int total_size;
@@ -32,10 +51,7 @@ class CUDAMatrix {
     double size_in_mb;
 
    public:
-    static inline double total_mb = 0;
-    static inline double total_mb_max = 0;
-
-    CUDAMatrix(){
+    CUDAMatrix() {
         device_data = nullptr;
         name = "unnamed";
         rows = 0;
@@ -70,9 +86,9 @@ class CUDAMatrix {
     ~CUDAMatrix() {
         if ( device_data == nullptr or rows == 0 or cols == 0 or total_size == 0 )
             return;
-        total_mb -= size_in_mb;
+        global_total_mb -= size_in_mb;
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GREY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated device space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << EscapeSequence::GREY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated device space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
         DEVICE_FREE( device_data, "free " );
         device_data = nullptr;
     }
@@ -80,13 +96,13 @@ class CUDAMatrix {
     CUDAMatrix<T>& construct( unsigned int rows, unsigned int cols, const std::string& name ) {
         total_size = rows * cols;
         size_in_mb = total_size * sizeof( T ) / 1024.0 / 1024.0;
-        total_mb += size_in_mb;
-        total_mb_max = std::max( total_mb, total_mb_max );
+        global_total_mb += size_in_mb;
+        global_total_mb_max = std::max( global_total_mb, global_total_mb_max );
         this->name = name;
         this->rows = rows;
         this->cols = cols;
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GREY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated device space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << EscapeSequence::GREY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated device space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
         DEVICE_ALLOC( device_data, total_size * sizeof( T ), "malloc " );
         return *this;
     }
@@ -140,33 +156,33 @@ class CUDAMatrix {
     // into a HostMatrix instance.
 
     // Device Pointer Getter
-    inline CUDA_HOST_DEVICE T* get() const {
+    CUDA_INLINE CUDA_HOST_DEVICE T* get() const {
         return device_data;
     }
 
     // Row, col and index getters
-    inline CUDA_HOST_DEVICE T at( int index ) const {
+    CUDA_INLINE CUDA_HOST_DEVICE T at( int index ) const {
         return device_data[index];
     }
-    inline CUDA_HOST_DEVICE T at( int row, int column ) const {
+    CUDA_INLINE CUDA_HOST_DEVICE T at( int row, int column ) const {
         return device_data[row * rows + column];
     }
-    inline CUDA_HOST_DEVICE T& at( int index ) {
+    CUDA_INLINE CUDA_HOST_DEVICE T& at( int index ) {
         return device_data[index];
     }
-    inline CUDA_HOST_DEVICE T& at( int row, int column ) {
+    CUDA_INLINE CUDA_HOST_DEVICE T& at( int row, int column ) {
         return device_data[row * rows + column];
     }
-    inline CUDA_HOST_DEVICE T& operator[]( int index ) {
+    CUDA_INLINE CUDA_HOST_DEVICE T& operator[]( int index ) {
         return device_data[index];
     }
-    inline CUDA_HOST_DEVICE T operator()( int row, int column ) {
+    CUDA_INLINE CUDA_HOST_DEVICE T operator()( int row, int column ) {
         return device_data[row * rows + column];
     }
 };
 
-template <typename T> //, typename = std::enable_if_t<std::is_same_v<T, real_number> || std::is_same_v<T, complex_number>>>
-class HostMatrix {
+template <typename T> 
+class HostMatrix : HostMatrixBase {
    private:
     unsigned int rows, cols; // One-Dimensional Size of size x size matrix
     unsigned int total_size;
@@ -175,9 +191,6 @@ class HostMatrix {
     double size_in_mb;
 
    public:
-    static inline double total_mb = 0;
-    static inline double total_mb_max = 0;
-
     HostMatrix() {
         host_data = nullptr;
         name = "unnamed";
@@ -211,22 +224,22 @@ class HostMatrix {
     HostMatrix( unsigned int root_size, T* data, const std::string& name ) : HostMatrix( root_size, root_size, data, name ){};
 
     ~HostMatrix() {
-        total_mb -= size_in_mb;
+        global_total_mb -= size_in_mb;
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GREY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated host space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << EscapeSequence::GREY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated host space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
         host_data.reset();
     }
 
     HostMatrix<T>& construct( unsigned int rows, unsigned int cols, const std::string& name = "unnamed" ) {
         total_size = rows * cols;
         size_in_mb = total_size * sizeof( T ) / 1024.0 / 1024.0;
-        total_mb += size_in_mb;
-        total_mb_max = std::max( total_mb, total_mb_max );
+        global_total_mb += size_in_mb;
+        global_total_mb_max = std::max( global_total_mb, global_total_mb_max );
         this->name = name;
         this->rows = rows;
         this->cols = cols;
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GREY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated host space: " << total_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << EscapeSequence::GREY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated host space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
         host_data = std::make_unique<T[]>( total_size );
         return *this;
     }

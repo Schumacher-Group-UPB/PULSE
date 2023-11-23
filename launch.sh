@@ -14,12 +14,13 @@ system_parameters=(
     "--pump 10 add 2.5 0 19 plus 1 0 gauss" # Narrow
     #"--loadFrom data/load2"
     #"--input all"
-    "--mask 5 add 4.5 0 7.5 plus 5 none gauss" # Soll
-    "--fftMask 1 add 0.4 0 0 plus 10 none gauss+local+noDivide" # FFT Mask
+    "--mask 5 add 4.5 0 7.5 plus 5 1 gauss" # Soll
+    #"--fftMask 1 add 0.4 0 0 plus 10 none gauss+local+noDivide" # FFT Mask
     "-masknorm"
     "--initRandom 0.5 53242423412"
-    "--outEvery 200"
-    "--tmax 3000" 
+    "--initialState 10 add 2.5 0 19 plus 1 0 gauss"
+    "--outEvery 2"
+    "--tmax 10" 
     "--N 500"
     "--gammaC 0.05"
     "--gammaR 0.07"
@@ -33,12 +34,13 @@ system_parameters=(
     #"-rk45"
     #"--tol 1E-2"
     #"--tstep 0.00001"
-    "--fftEvery 1" # FFT Every 1 ps
+    "--fftEvery 100" # FFT Every 1 ps
+    "--threads 1"
 )
 
 # Path to the program to launch
-#launch_program="./main_2.0_wr_fp64_cpu.exe"
-launch_program="./main_2.0_wr_fp32.exe"
+launch_program="./main_2.0_wr_fp32_cpu.exe"
+#launch_program="./main_2.0_wr_fp32.exe"
 
 # Construct the command to launch the program
 command=("$launch_program" "${system_parameters[@]}" "--path" "$output_path")

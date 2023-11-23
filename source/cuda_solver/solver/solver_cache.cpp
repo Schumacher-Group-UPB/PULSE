@@ -6,7 +6,7 @@
 
 void PC3::Solver::cacheValues() {
     // Min and Max
-    const auto [min_plus, max_plus] = minmax( device.wavefunction_plus.get(), system.s_N * system.s_N, true /*Device Pointer*/ );
+    const auto [min_plus, max_plus] = CUDA::minmax( device.wavefunction_plus.get(), system.s_N * system.s_N, true /*Device Pointer*/ );
     host.wavefunction_max_plus.emplace_back( max_plus );
     // Cut at Y = 0
     auto cut_p = device.wavefunction_plus.slice( system.s_N * system.s_N / 2, system.s_N );
@@ -17,7 +17,7 @@ void PC3::Solver::cacheValues() {
         return;
 
     // Same for _minus component if use_te_tm_splitting is true
-    const auto [min_minus, max_minus] = minmax( device.wavefunction_minus.get(), system.s_N * system.s_N, true /*Device Pointer*/ );
+    const auto [min_minus, max_minus] = CUDA::minmax( device.wavefunction_minus.get(), system.s_N * system.s_N, true /*Device Pointer*/ );
     host.wavefunction_max_minus.emplace_back( max_minus );
     auto cut_m = device.wavefunction_minus.slice( system.s_N * system.s_N / 2, system.s_N );
     host.wavefunction_minus_history.emplace_back( cut_m );
@@ -50,7 +50,7 @@ void PC3::Solver::cacheToFiles() {
         std::cout << "Writing history " << i << " of " << host.wavefunction_max_plus.size() << "\r";
         for ( int k = 0; k < host.wavefunction_plus_history.front().size(); k += interval_x ) {
             const auto current_plus = host.wavefunction_plus_history[i][k];
-            file_history_plus << i << " " << k << " " << real( current_plus ) << " " << imag( current_plus ) << "\n";
+            file_history_plus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
         }
         file_history_plus << "\n";
         
@@ -66,7 +66,7 @@ void PC3::Solver::cacheToFiles() {
         std::cout << "Writing history " << i << " of " << host.wavefunction_max_minus.size() << "\r";
         for ( int k = 0; k < host.wavefunction_minus_history.front().size(); k += interval_x ) {
             const auto current_plus = host.wavefunction_minus_history[i][k];
-            file_history_minus << i << " " << k << " " << real( current_plus ) << " " << imag( current_plus ) << "\n";
+            file_history_minus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
         }
         file_history_minus << "\n";
         

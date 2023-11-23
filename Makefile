@@ -21,11 +21,16 @@ FP32 ?= FALSE
 CPU ?= FALSE
 
 # Object files
+ifeq ($(SFML),FALSE)
+CPP_SRCS := $(shell find $(SRCDIR) -not -path "*sfml*" -name "*.cpp")
+else
 CPP_SRCS = $(shell find $(SRCDIR) -name "*.cpp")
+endif
 CU_SRCS = $(shell find $(SRCDIR) -name "*.cu")
 
 CPP_OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(CPP_SRCS))
 CU_OBJS = $(patsubst $(SRCDIR)/%.cu,$(OBJDIR)/%.o,$(CU_SRCS))
+
 
 ifeq ($(SFML),TRUE)
 	ADD_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-main $(SFMLLIBS) -DSFML_RENDER
@@ -39,7 +44,7 @@ endif
 ifeq ($(CPU),TRUE)
 	ADD_FLAGS += -DUSECPU
 endif
-ADD_FLAGS += -gencode arch=compute_86,code=sm_86 # A100: 80, 4090: 89
+#ADD_FLAGS += -gencode arch=compute_86,code=sm_86 # A100: 80, 4090: 89
 
 # Targets
 ifndef TARGET

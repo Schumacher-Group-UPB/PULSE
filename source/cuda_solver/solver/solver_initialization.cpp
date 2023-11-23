@@ -50,6 +50,7 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
         system.calculateEnvelope( host.initial_state_minus.get(), system.initial_state, PC3::Envelope::Polarization::Minus);
         std::ranges::for_each( host.initial_state_minus.get(), host.initial_state_minus.get() + system.s_N * system.s_N, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_minus[i]; i++; } );
     }
+    system.filehandler.outputMatrixToFile( host.initial_state_plus.get(), system.s_N, system.xmax, system.dx, "initial_condition_plus_kekw" );
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
     if (system.randomly_initialize_system) {
         // Fill the buffer with random values

@@ -10,22 +10,22 @@
 #include "cuda/cuda_complex.cuh"
 #include "misc/helperfunctions.hpp"
 
-std::tuple<real_number, real_number> minmax( complex_number* buffer, int size, bool device_pointer ) {
+std::tuple<real_number, real_number> PC3::CUDA::minmax( complex_number* buffer, int size, bool device_pointer ) {
     #ifndef USECPU
     if ( device_pointer ) {
         thrust::device_ptr<complex_number> dev_buffer = thrust::device_pointer_cast( buffer );
         auto mm = thrust::minmax_element( thrust::device, dev_buffer, dev_buffer + size, compare_complex_abs2() );
         complex_number min = *mm.first;
         complex_number max = *mm.second;
-        return std::make_tuple( sqrt(min.x * min.x + min.y * min.y), sqrt(max.x * max.x + max.y * max.y) );
+        return std::make_tuple( CUDA::sqrt(min.x * min.x + min.y * min.y), CUDA::sqrt(max.x * max.x + max.y * max.y) );
     }
     const auto [first, second] = thrust::minmax_element( buffer, buffer + size, compare_complex_abs2() );
     #else
     const auto [first, second] = std::ranges::minmax_element( buffer, buffer + size, compare_complex_abs2() );
     #endif
-    return std::make_tuple( sqrt(real( *first ) * real( *first ) + imag( *first ) * imag( *first )), sqrt(real( *second ) * real( *second ) + imag( *second ) * imag( *second )) );
+    return std::make_tuple( CUDA::sqrt(CUDA::real( *first ) * CUDA::real( *first ) + CUDA::imag( *first ) * CUDA::imag( *first )), CUDA::sqrt(CUDA::real( *second ) * CUDA::real( *second ) + CUDA::imag( *second ) * CUDA::imag( *second )) );
 }
-std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool device_pointer ) {
+std::tuple<real_number, real_number> PC3::CUDA::minmax( real_number* buffer, int size, bool device_pointer ) {
     #ifndef USECPU
     if (device_pointer) {
         thrust::device_ptr<real_number> dev_buffer = thrust::device_pointer_cast(buffer);

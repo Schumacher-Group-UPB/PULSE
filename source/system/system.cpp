@@ -66,6 +66,13 @@ PC3::System::System() {
 }
 
 PC3::System::System( int argc, char** argv ) : System() {
+    std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::BOLD << "================================ PC^3 Initialization ==============================" << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
+    std::cout << "PC^3 Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.1.0" << EscapeSequence::RESET << std::endl;
+    std::cout << "--> https://github.com/davidbauch/PC3" << std::endl;
+    std::cout << EscapeSequence::BOLD << "---------------------------- Inputting System Parameters --------------------------" << EscapeSequence::RESET << std::endl;
+
     // Initialize system
     int index = 0;
 
@@ -96,6 +103,7 @@ PC3::System::System( int argc, char** argv ) : System() {
     }
     if ( ( index = findInArgv( "--threads", argc, argv ) ) != -1 )
         omp_max_threads = (int)getNextInput( argv, "threads", ++index );
+    omp_set_num_threads( omp_max_threads );
     if ( ( index = findInArgv( "--output", argc, argv ) ) != -1 ) {
         output_keys.clear();
         auto output_string = getNextStringInput( argv, "output", ++index );

@@ -129,7 +129,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 bloc
 struct square_reduction
 {
     CUDA_HOST_DEVICE real_number operator()(const complex_number& x) const { 
-        const real_number res = abs2(x);
+        const real_number res = PC3::CUDA::abs2(x);
         return res; 
     }
 };
@@ -296,7 +296,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         final_error = final_error / sum_abs2;
         // Calculate dh
-        real_number dh = pow( system.tolerance / 2. / max( final_error, 1E-15 ), 0.25 );
+        real_number dh = CUDA::pow( system.tolerance / 2. / CUDA::max( final_error, 1E-15 ), 0.25 );
         // Check if dh is nan
         if ( std::isnan( dh ) ) {
             dh = 1.0;
@@ -307,10 +307,10 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
         //  Set new timestep
         // system.dt = min(system.dt * dh, system.dt_max);
         if ( dh < 1.0 )
-            system.dt = max( system.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
+            system.dt = CUDA::max( system.dt - system.dt_min * CUDA::floor( 1.0 / dh ), system.dt_min );
             //system.dt -= system.dt_min;
         else
-            system.dt = min( system.dt + system.dt_min * std::floor( dh ), system.dt_max );
+            system.dt = CUDA::min( system.dt + system.dt_min * CUDA::floor( dh ), system.dt_max );
             //system.dt += system.dt_min;
         
         // Make sure to also update dt from current_system_parameters

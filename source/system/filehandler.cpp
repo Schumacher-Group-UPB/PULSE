@@ -1,5 +1,6 @@
 #include <iomanip>
 
+#include <filesystem>
 #include "system/filehandler.hpp"
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
@@ -44,13 +45,13 @@ void PC3::FileHandler::init( int argc, char** argv ) {
     // We can also disable to SFML renderer by using the --nosfml flag.
     if ( findInArgv( "-nosfml", argc, argv ) != -1 )
         disableRender = true;
-
-    // Creating output directory
-    const int dir_err = std::system( ( "mkdir " + outputPath ).c_str() );
-    if ( -1 == dir_err ) {
-        std::cout << EscapeSequence::RED << "Error creating directory " << outputPath << EscapeSequence::RESET << std::endl;
-    } else {
-        std::cout << "Succesfully created directory " << outputPath << std::endl;
+        
+    // Creating output directory.
+    try {
+        std::filesystem::create_directories(outputPath);
+        std::cout << "Successfully created directory " << outputPath << std::endl;
+    } catch (std::filesystem::filesystem_error& e) {
+        std::cout << EscapeSequence::RED << "Error creating directory " << outputPath << ": " << e.what() << EscapeSequence::RESET << std::endl;
     }
 }
 
@@ -121,7 +122,7 @@ void PC3::FileHandler::outputMatrixToFile( const complex_number* buffer, int row
             auto index = j + i * N;
             auto x = -xmax + dx * i;
             auto y = -xmax + dx * j;
-            out << x << " " << y << " " << real( buffer[index] ) << " " << imag( buffer[index] ) << "\n";
+            out << x << " " << y << " " << CUDA::real( buffer[index] ) << " " << CUDA::imag( buffer[index] ) << "\n";
         }
         out << "\n";
     }

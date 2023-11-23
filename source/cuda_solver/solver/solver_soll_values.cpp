@@ -26,15 +26,15 @@ void PC3::Solver::calculateSollValues() {
     real_number min_psi_minus = 0.;
 
     if ( system.normalize_before_masking ) {
-        std::tie( min_mask_plus, max_mask_plus ) = minmax( host.soll_plus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
-        std::tie( min_psi_plus, max_psi_plus ) = minmax( host.wavefunction_plus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
+        std::tie( min_mask_plus, max_mask_plus ) = CUDA::minmax( host.soll_plus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
+        std::tie( min_psi_plus, max_psi_plus ) = CUDA::minmax( host.wavefunction_plus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
         std::cout << "The mask calculation will use normalizing constants:" << std::endl;
         std::cout << "min_mask_plus = " << min_mask_plus << " max_mask_plus = " << max_mask_plus << std::endl;
         std::cout << "min_psi_plus = " << min_psi_plus << " max_psi_plus = " << max_psi_plus << std::endl;
 
         if (use_te_tm_splitting) {
-            std::tie( min_mask_minus, max_mask_minus ) = minmax( host.soll_minus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
-            std::tie( min_psi_minus, max_psi_minus ) = minmax( host.wavefunction_minus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
+            std::tie( min_mask_minus, max_mask_minus ) = CUDA::minmax( host.soll_minus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
+            std::tie( min_psi_minus, max_psi_minus ) = CUDA::minmax( host.wavefunction_minus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
             std::cout << "min_mask_minus = " << min_mask_minus << " max_mask_minus = " << max_mask_minus << std::endl;
             std::cout << "min_psi_minus = " << min_psi_minus << " max_psi_minus = " << max_psi_minus << std::endl;
         }
@@ -54,7 +54,7 @@ void PC3::Solver::calculateSollValues() {
     // Calculate sum of all elements and check matching
 #pragma omp parallel for
     for ( int i = 0; i < system.s_N * system.s_N; i++ ) {
-        host.soll_plus[i] = abs( abs( host.wavefunction_plus[i] ) / max_psi_plus - host.soll_plus[i] / max_mask_plus );
+        host.soll_plus[i] = CUDA::abs( CUDA::abs( host.wavefunction_plus[i] ) / max_psi_plus - host.soll_plus[i] / max_mask_plus );
     }
     real_number sum_plus = 0;
     std::ranges::for_each( host.soll_plus.get(), host.soll_plus.get() + system.s_N * system.s_N, [&sum_plus]( real_number n ) { sum_plus += n; } );
@@ -63,7 +63,7 @@ void PC3::Solver::calculateSollValues() {
     if (use_te_tm_splitting) {
     #pragma omp parallel for
         for ( int i = 0; i < system.s_N * system.s_N; i++ ) {
-            host.soll_minus[i] = abs( abs( host.wavefunction_minus[i] ) / max_psi_minus - host.soll_minus[i] / max_mask_minus );
+            host.soll_minus[i] = CUDA::abs( CUDA::abs( host.wavefunction_minus[i] ) / max_psi_minus - host.soll_minus[i] / max_mask_minus );
         }
         real_number sum_minus = 0;
         std::ranges::for_each( host.soll_minus.get(), host.soll_minus.get() + system.s_N * system.s_N, [&sum_minus]( real_number n ) { sum_minus += n; } );

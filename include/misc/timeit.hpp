@@ -34,3 +34,4 @@ std::map<std::string, double>& getTimesTotal();
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>( end - start ).count() / 1E9; \
         PC3::TimeIt::addTime(name, duration);                                                              \
     }
+    

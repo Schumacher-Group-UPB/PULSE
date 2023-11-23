@@ -1,4 +1,5 @@
 #include "cuda/cuda_macro.cuh"
+#include "cuda/cuda_complex.cuh"
 #include "kernel/kernel_fft.cuh"
 #ifndef USECPU
 #include <cuda.h>
@@ -13,7 +14,7 @@ CUDA_GLOBAL void kernel_make_fft_visible( complex_number* input, complex_number*
     if ( index >= N * N )
         return;
     const auto val = input[index];
-    output[index] = { log( val.x * val.x + val.y * val.y ), 0 };
+    output[index] = { PC3::CUDA::log( val.x * val.x + val.y * val.y ), 0 };
 }
 
 CUDA_GLOBAL void fft_shift_2D( complex_number* data, const unsigned int N ) {
@@ -23,7 +24,7 @@ CUDA_GLOBAL void fft_shift_2D( complex_number* data, const unsigned int N ) {
         return;
     const auto N_half = N / 2;
     // Current indices of upper left quadrant
-    const int i = device_floor( index / N );
+    const int i = PC3::CUDA::floor( index / N );
     if ( i >= N_half )
         return;
     const int j = index % N;

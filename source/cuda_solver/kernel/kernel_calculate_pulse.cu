@@ -12,7 +12,7 @@
  */
 
 template <typename T>
-CUDA_HOST_DEVICE inline bool cmp_active( T a, T b ) {
+CUDA_HOST_DEVICE CUDA_INLINE bool cmp_active( T a, T b ) {
     return static_cast<unsigned int>( a ) & static_cast<unsigned int>( b );
 }
 
@@ -31,14 +31,14 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
         if ( pulse.pol[c] != PC3::Envelope::Polarization::Both and pulse.pol[c] != polarization and polarization != PC3::Envelope::Polarization::Both )
             continue;
         // Calculate ethe "r^2" distance to the center of the pump.
-        const real_number r_squared = abs2( x - pulse.x[c] ) + abs2( y - pulse.y[c] );
+        const real_number r_squared = CUDA::abs2( x - pulse.x[c] ) + CUDA::abs2( y - pulse.y[c] );
         // Calculate Content of Exponential function
         const auto exp_factor = 0.5 * r_squared / pulse.width[c] / pulse.width[c];
         // Calculate the exponential function
-        auto exp_function = exp( -std::pow( exp_factor, pulse.exponent[c] ) );
-        // If the type is a gaussian outer, we calculate exp(...)^N instead of exp((...)^N)
+        auto exp_function = CUDA::exp( -CUDA::pow( exp_factor, pulse.exponent[c] ) );
+        // If the type is a gaussian outer, we calculate CUDA::exp(...)^N instead of CUDA::exp((...)^N)
         if ( cmp_active( pulse.type[c], PC3::Envelope::Type::OuterExponent ) )
-            exp_function = std::pow( exp( -exp_factor ), pulse.exponent[c] );
+            exp_function = CUDA::pow( CUDA::exp( -exp_factor ), pulse.exponent[c] );
         // If the shape is a ring, we multiply the exp function with the exp_factor again.
         auto pre_fractor = 1.0;
         if ( cmp_active( pulse.type[c], PC3::Envelope::Type::Ring ) )
@@ -49,14 +49,14 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
             amplitude = amplitude / pulse.width[c] * sqrt( 2 * 3.1415 );
         // If the behaviour is adaptive, the amplitude is set to the current value of the buffer instead.
         if ( cmp_active( pulse.behavior[c], PC3::Envelope::Behavior::Adaptive ) )
-            amplitude = { pulse.amp[c] * ret.x, 0.0 };
+            amplitude = complex_number( pulse.amp[c] * CUDA::real(ret), 0.0 );
         if ( cmp_active( pulse.behavior[c], PC3::Envelope::Behavior::Complex ) )
-            amplitude = { 0.0, real( amplitude ) };
+            amplitude = complex_number( 0.0, CUDA::real( amplitude ) );
         complex_number contribution = amplitude * pre_fractor * exp_function;
         // Add Charge
-        complex_number combined = contribution * pow( ( ( x - pulse.x[c] ) / p.xmax + 1.0 * sign( pulse.m[c] ) * p.i * ( y - pulse.y[c] ) / p.xmax ), abs( pulse.m[c] ) );
+        complex_number combined = contribution * CUDA::pow( ( ( x - pulse.x[c] ) / p.xmax + 1.0 * CUDA::sign( pulse.m[c] ) * p.i * ( y - pulse.y[c] ) / p.xmax ), CUDA::abs( pulse.m[c] ) );
         const auto t0 = pulse.t0[c];
-        complex_number temp_shape = p.one_over_h_bar_s * exp( -( t - t0 ) * ( t - t0 ) / pulse.sigma[c] / pulse.sigma[c] - p.i * pulse.freq[c] * ( t - t0 ) );
+        complex_number temp_shape = p.one_over_h_bar_s * CUDA::exp( -( t - t0 ) * ( t - t0 ) / pulse.sigma[c] / pulse.sigma[c] - p.i * pulse.freq[c] * ( t - t0 ) );
         if ( not( cmp_active( pulse.type[c], PC3::Envelope::Type::NoDivide ) ) )
             temp_shape = temp_shape / pulse.sigma[c] * sqrt( 2 * 3.1415 );
         // Combine Spacial shape with temporal shape
