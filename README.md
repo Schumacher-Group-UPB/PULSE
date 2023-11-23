@@ -15,19 +15,7 @@ Build with SFML rendering
 
 Build without rendering
 - Clone the repositry using `git clone https://github.com/davidbauch/PC3`
-- Compile PC3 using `make [TETM=TRUE FP32=TRUE]`
-
-# TE/TM Splitting
-By default, the program is compiled without TE/TM splitting enabled.
-To manually enable TE/TM splitting, compile the program using the 
-
-`-DTETMSPLITTING` 
-
-compiler flag. Alternatively, use 
-
-`TETM=TRUE` 
-
-when using the makefile.
+- Compile PC3 using `make [FP32=TRUE]`
 
 # FP32 - Single Precision
 By default, the program is compiled using double precision 64b floats.
