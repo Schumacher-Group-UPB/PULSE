@@ -87,7 +87,7 @@ CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator*( const real_number
     return make_cuDoubleComplex( a, 0.0 ) * b;
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator/( const real_number& a, const cuDoubleComplex& b ) {
-    return make_cuDoubleComplex( a, 0 ) / b;
+    return make_cuDoubleComplex( a, 0.0 ) / b;
 }
 
 CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex square( const cuDoubleComplex& a ) {
@@ -242,9 +242,9 @@ CUDA_HOST_DEVICE static CUDA_INLINE complex_number pow( const complex_number& a,
     complex_number res = { 1.0, 0 };
     for ( int i = 0; i < abs( N ); i++ )
         res = res * a;
-    return N > 0 ? res : 1. / res;
+    return N > 0 ? res : 1. / res;    
 }
-CUDA_HOST_DEVICE static CUDA_INLINE real_number pow( const real_number& x, const int N ) {
+CUDA_HOST_DEVICE static CUDA_INLINE real_number pow( const real_number& x, const real_number N ) {
     return std::pow(x, N);
 }
 

@@ -23,11 +23,14 @@ struct Host {
     PC3::HostMatrix<complex_number> reservoir_minus;
     PC3::HostMatrix<complex_number> pump_plus;
     PC3::HostMatrix<complex_number> pump_minus;
+    PC3::HostMatrix<complex_number> potential_plus;
+    PC3::HostMatrix<complex_number> potential_minus;
     
     // Alias References to the plus components for easy access in a scalar child classes
     PC3::HostMatrix<complex_number>& wavefunction = wavefunction_plus;
     PC3::HostMatrix<complex_number>& reservoir = reservoir_plus;
     PC3::HostMatrix<complex_number>& pump = pump_plus;
+    PC3::HostMatrix<complex_number>& potential = potential_plus;
     
     // FFT Mask Matrices
     PC3::HostMatrix<real_number> fft_mask_plus;
@@ -57,6 +60,7 @@ struct Host {
         wavefunction_plus.construct( N, "host.wavefunction_plus" );
         reservoir_plus.construct( N, "host.reservoir_plus" );
         pump_plus.construct( N, "host.pump_plus" );
+        potential_plus.construct( N, "host.potential_plus" );
         fft_mask_plus.construct( N, "host.fft_mask_plus" );
         fft_plus.construct( N, "host.fft_plus" );
         soll_plus.construct( N, "host.soll_plus" );
@@ -65,6 +69,7 @@ struct Host {
             wavefunction_minus.construct( N, "host.wavefunction_minus" );
             reservoir_minus.construct( N, "host.reservoir_minus" );
             pump_minus.construct( N, "host.pump_minus" );
+            potential_minus.construct( N, "host.potential_minus" );
             fft_mask_minus.construct( N, "host.fft_mask_minus" );
             fft_minus.construct( N, "host.fft_minus" );
             soll_minus.construct( N, "host.soll_minus" );

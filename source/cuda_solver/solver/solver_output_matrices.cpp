@@ -16,7 +16,7 @@ void PC3::Solver::outputMatrices() {
         if ( system.fft_every < system.t_max and key == "fft_plus" and system.doOutput( "mat", "fft_plus", "plus", "fft" ) )
             filehandler.outputMatrixToFile( host.fft_plus.get(), system.s_N, -1.0, 2.0/system.s_N, key );
         // Guard when not useing TE/TM splitting
-        if (not use_te_tm_splitting)
+        if (not system.use_te_tm_splitting)
             continue;
         if ( key == "wavefunction_minus" and system.doOutput( "mat", "wavefunction_minus", "minus", "wf" ) )
             filehandler.outputMatrixToFile( host.wavefunction_minus.get(), system.s_N, system.xmax, system.dx, key );

@@ -33,13 +33,14 @@ void PC3::Solver::loadMatrices() {
         "reservoir_plus", "reservoir_minus", // Reservoir Matrices
         "fft_mask_plus", "fft_mask_minus", // FFT Masks
         "pump_plus", "pump_minus", // Pumps
+        "potential_plus", "potential_minus", // Potentials
         "initial_condition_plus", "initial_condition_minus" // Initial Conditions
     };
 
     // Load all matrices from fileinputkeys that overlap with system.input_keys
 #pragma omp parallel for
     for ( auto i = 0; i < fileinputkeys.size(); i++ ) {
-        if ( fileinputkeys[i] == "wavefunction_plus" and system.doInput( "wavefunction", "psi", "wavefunction_plus", "psi_plus", "plus", "wf", "mat", "all" ) ) {
+        if ( fileinputkeys[i] == "wavefunction_plus" and system.doInput( "wavefunction", "psi", "wavefunction_plus", "psi_plus", "plus", "wf", "mat", "all", "initial", "initial_plus" ) ) {
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.wavefunction_plus.get() );
             // The initial condition is the same as the wavefunction, so we can just copy it over
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.initial_state_plus.get() ); 
@@ -50,14 +51,16 @@ void PC3::Solver::loadMatrices() {
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.fft_mask_plus.get() );
         else if ( fileinputkeys[i] == "pump_plus" and system.doInput( "pump", "pump_plus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pump_plus.get() );
+        else if ( fileinputkeys[i] == "potential_plus" and system.doInput( "potential", "potential_plus", "plus", "mat", "all" ) )
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.potential_plus.get() );
         else if ( fileinputkeys[i] == "initial_condition_plus" and system.doInput( "init", "initial_condition", "init_plus", "initial_condition_plus", "plus", "mat", "all" ) ) 
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.initial_state_plus.get() );
         
         // Guard when not useing TE/TM splitting
-        if (not use_te_tm_splitting)
+        if (not system.use_te_tm_splitting)
             continue;
 
-        if ( fileinputkeys[i] == "wavefunction_minus" and system.doInput( "wavefunction", "psi", "wavefunction_minus", "psi_minus", "plus", "wf", "mat", "all" ) ){
+        if ( fileinputkeys[i] == "wavefunction_minus" and system.doInput( "wavefunction", "psi", "wavefunction_minus", "psi_minus", "plus", "wf", "mat", "all", "initial", "initial_minus" ) ){
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.wavefunction_minus.get() );
             // The initial condition is the same as the wavefunction, so we can just copy it over
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.initial_state_minus.get() ); 
@@ -68,6 +71,8 @@ void PC3::Solver::loadMatrices() {
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.fft_mask_minus.get() );
         else if ( fileinputkeys[i] == "pump_minus" and system.doInput( "pump", "pump_minus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pump_minus.get() );
+        else if ( fileinputkeys[i] == "potential_minus" and system.doInput( "potential", "potential_minus", "plus", "mat", "all" ) )
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.potential_minus.get() );
         else if ( fileinputkeys[i] == "initial_condition_minus" and system.doInput( "init", "initial_condition", "init_minus", "initial_condition_minus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.initial_state_minus.get() );
     }

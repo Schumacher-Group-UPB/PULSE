@@ -24,8 +24,8 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
         auto y = -p.xmax + p.dx * row;
         // If type contains "local", use local coordinates instead
         if ( cmp_active( pulse.type[c], PC3::Envelope::Type::Local ) ) {
-            x = -1.0 + 2.0 * col / p.N;
-            y = -1.0 + 2.0 * row / p.N;
+            x = -1.0 + 2.0 * col / (p.N - 1);
+            y = -1.0 + 2.0 * row / (p.N - 1);
         }
         // Check if the polarization matches or if the input polarization is both. If not, the envelope is skipped.
         if ( pulse.pol[c] != PC3::Envelope::Polarization::Both and pulse.pol[c] != polarization and polarization != PC3::Envelope::Polarization::Both )
@@ -46,7 +46,7 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
         // Default amplitude is A/sqrt(2pi)/w
         complex_number amplitude = { pulse.amp[c], 0.0 };
         if ( not( cmp_active( pulse.type[c], PC3::Envelope::Type::NoDivide ) ) )
-            amplitude = amplitude / pulse.width[c] * sqrt( 2 * 3.1415 );
+            amplitude = amplitude / pulse.width[c] / sqrt( 2 * 3.1415 );
         // If the behaviour is adaptive, the amplitude is set to the current value of the buffer instead.
         if ( cmp_active( pulse.behavior[c], PC3::Envelope::Behavior::Adaptive ) )
             amplitude = complex_number( pulse.amp[c] * CUDA::real(ret), 0.0 );
@@ -58,7 +58,7 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
         const auto t0 = pulse.t0[c];
         complex_number temp_shape = p.one_over_h_bar_s * CUDA::exp( -( t - t0 ) * ( t - t0 ) / pulse.sigma[c] / pulse.sigma[c] - p.i * pulse.freq[c] * ( t - t0 ) );
         if ( not( cmp_active( pulse.type[c], PC3::Envelope::Type::NoDivide ) ) )
-            temp_shape = temp_shape / pulse.sigma[c] * sqrt( 2 * 3.1415 );
+            temp_shape = temp_shape / pulse.sigma[c] / sqrt( 2 * 3.1415 );
         // Combine Spacial shape with temporal shape
         combined = combined * temp_shape;
 

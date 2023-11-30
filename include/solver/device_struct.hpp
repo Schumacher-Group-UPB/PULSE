@@ -18,6 +18,8 @@ struct Device {
     PC3::CUDAMatrix<complex_number> reservoir_minus;
     PC3::CUDAMatrix<complex_number> pump_plus;
     PC3::CUDAMatrix<complex_number> pump_minus;
+    PC3::CUDAMatrix<complex_number> potential_plus;
+    PC3::CUDAMatrix<complex_number> potential_minus;
     // "Next" versions of the above matrices. These are used to store the next iteration of the wavefunction.
     PC3::CUDAMatrix<complex_number> buffer_wavefunction_plus;
     PC3::CUDAMatrix<complex_number> buffer_wavefunction_minus;
@@ -28,6 +30,7 @@ struct Device {
     PC3::CUDAMatrix<complex_number>& wavefunction = wavefunction_plus;
     PC3::CUDAMatrix<complex_number>& reservoir = reservoir_plus;
     PC3::CUDAMatrix<complex_number>& pump = pump_plus;
+    PC3::CUDAMatrix<complex_number>& potential = potential_plus;
     // "Next" versions
     PC3::CUDAMatrix<complex_number>& buffer_wavefunction = buffer_wavefunction_plus;
     PC3::CUDAMatrix<complex_number>& buffer_reservoir = buffer_reservoir_plus;
@@ -87,6 +90,7 @@ struct Device {
         wavefunction_plus.construct( N, "device.wavefunction_plus" );
         reservoir_plus.construct( N, "device.reservoir_plus" );
         pump_plus.construct( N, "device.pump_plus" );
+        potential_plus.construct( N, "device.potential_plus" );
         buffer_wavefunction_plus.construct( N, "device.buffer_wavefunction_plus" );
         buffer_reservoir_plus.construct( N, "device.buffer_reservoir_plus" );
         fft_mask_plus.construct( N, "device.fft_mask_plus" );
@@ -113,17 +117,19 @@ struct Device {
             k7_reservoir_plus.construct( N, "device.k7_reservoir_plus" );
         }
 
+        // TE/TM Guard
+        if ( not use_te_tm_splitting )
+            return;
+
         wavefunction_minus.construct( N, "device.wavefunction_minus" );
         reservoir_minus.construct( N, "device.reservoir_minus" );
         pump_minus.construct( N, "device.pump_minus" );
+        potential_minus.construct( N, "device.potential_minus" );
         buffer_wavefunction_minus.construct( N, "device.buffer_wavefunction_minus" );
         buffer_reservoir_minus.construct( N, "device.buffer_reservoir_minus" );
         fft_mask_minus.construct( N, "device.fft_mask_minus" );
         fft_minus.construct( N, "device.fft_minus" );
 
-        // TE/TM Guard
-        if ( not use_te_tm_splitting )
-            return;
 
         k1_wavefunction_minus.construct( N, "device.k1_wavefunction_minus" );
         k1_reservoir_minus.construct( N, "device.k1_reservoir_minus" );
@@ -149,6 +155,7 @@ struct Device {
         complex_number* wavefunction_plus;
         complex_number* reservoir_plus;
         complex_number* pump_plus;
+        complex_number* potential_plus;
         complex_number* buffer_wavefunction_plus;
         complex_number* buffer_reservoir_plus;
         complex_number* k1_wavefunction_plus;
@@ -171,6 +178,7 @@ struct Device {
         complex_number* wavefunction_minus;
         complex_number* reservoir_minus;
         complex_number* pump_minus;
+        complex_number* potential_minus;
         complex_number* buffer_wavefunction_minus;
         complex_number* buffer_reservoir_minus;
         complex_number* k1_wavefunction_minus;
@@ -193,6 +201,7 @@ struct Device {
             wavefunction_plus.get(),
             reservoir_plus.get(),
             pump_plus.get(),
+            potential_plus.get(),
             buffer_wavefunction_plus.get(),
             buffer_reservoir_plus.get(),
             k1_wavefunction_plus.get(),
@@ -215,6 +224,7 @@ struct Device {
             wavefunction_minus.get(),
             reservoir_minus.get(),
             pump_minus.get(),
+            potential_minus.get(),
             buffer_wavefunction_minus.get(),
             buffer_reservoir_minus.get(),
             k1_wavefunction_minus.get(),

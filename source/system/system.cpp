@@ -12,12 +12,12 @@
 
 /**
  * @brief Default Constructor for the System Class
- * Defaul-initializes system parameters, which are 
+ * Defaul-initializes system parameters, which are
  * overwritten by the user cmd input.
- * 
+ *
  */
 PC3::System::System() {
-     // SI Rescaling Units
+    // SI Rescaling Units
     m_e = 9.10938356E-31;
     h_bar = 1.0545718E-34;
     e_e = 1.60217662E-19;
@@ -25,14 +25,14 @@ PC3::System::System() {
 
     // System Variables
     m_eff;
-    gamma_c = 0.15;             // ps^-1
-    gamma_r = 1.5 * gamma_c;    // ps^-1
-    g_c = 3.E-6;                // meV mum^2
-    g_r = 2. * g_c;             // meV mum^2
-    R = 0.01;                   // ps^-1 mum^2
-    xmax = 100.;                // mum
-    g_pm = -g_c / 5;            // meV mum^2
-    delta_LT = 0.025E-3;        // meV
+    gamma_c = 0.15;          // ps^-1
+    gamma_r = 1.5 * gamma_c; // ps^-1
+    g_c = 3.E-6;             // meV mum^2
+    g_r = 2. * g_c;          // meV mum^2
+    R = 0.01;                // ps^-1 mum^2
+    xmax = 100.;             // mum
+    g_pm = -g_c / 5;         // meV mum^2
+    delta_LT = 0.025E-3;     // meV
 
     // Numerics
     s_N = 400;
@@ -46,7 +46,7 @@ PC3::System::System() {
     dt_min = 0.0001; // also dt_delta
     tolerance = 1E-1;
 
-    // FFT Mask Parameter moved to mask syntax
+    // FFT Mask every x ps
     fft_every = 1; // ps
 
     // Kernel Block Size
@@ -57,7 +57,7 @@ PC3::System::System() {
     fixed_time_step = true;
 
     // Output of Variables
-    output_keys = {"mat","scalar"};
+    output_keys = { "mat", "scalar" };
 
     normalize_before_masking = false;
 
@@ -75,6 +75,12 @@ PC3::System::System( int argc, char** argv ) : System() {
 
     // Initialize system
     int index = 0;
+
+    // Structure
+    use_te_tm_splitting = false;
+    if ( ( index = findInArgv( "-tetm", argc, argv ) ) != -1 ) {
+        use_te_tm_splitting = true;
+    }
 
     // Systemparameter
     m_eff = 1E-4 * 5.6856;
@@ -128,7 +134,7 @@ PC3::System::System( int argc, char** argv ) : System() {
         std::cout << EscapeSequence::YELLOW << "Adjusted N from " << s_N << " to N = " << ( s_N + 1 ) << EscapeSequence::RESET << std::endl;
         s_N++;
     }
-    dx = 2.0 * xmax / s_N ; // x-range ist -xmax/2 bis xmax/2
+    dx = 2.0 * xmax / ( s_N - 1 ); // x-range ist -xmax bis xmax
     dt = 0.5 * dx * dx / dt_scaling_factor;
     std::cout << EscapeSequence::GREY << "Calculated dx = " << dx << "\nCalculated dt = " << dt << EscapeSequence::RESET << std::endl;
     if ( ( index = findInArgv( "--tmax", argc, argv ) ) != -1 )
@@ -171,6 +177,8 @@ PC3::System::System( int argc, char** argv ) : System() {
 
     // Pumps
     pump = PC3::Envelope::fromCommandlineArguments( argc, argv, "pump", false );
+    // Potential
+    potential = PC3::Envelope::fromCommandlineArguments( argc, argv, "potential", false );
     // Pulses
     pulse = PC3::Envelope::fromCommandlineArguments( argc, argv, "pulse", true );
     // Soll Mask.
@@ -186,11 +194,10 @@ PC3::System::System( int argc, char** argv ) : System() {
         exit( 0 );
     }
 
-    filehandler.init(argc, argv);
+    filehandler.init( argc, argv );
 }
 
-
-bool PC3::System::evaluatePulse( ) {
+bool PC3::System::evaluatePulse() {
     bool evaluate_pulse = false;
     for ( int c = 0; c < pulse.t0.size(); c++ ) {
         const auto t0 = pulse.t0[c];

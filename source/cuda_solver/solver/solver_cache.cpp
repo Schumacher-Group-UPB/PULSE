@@ -11,9 +11,9 @@ void PC3::Solver::cacheValues() {
     // Cut at Y = 0
     auto cut_p = device.wavefunction_plus.slice( system.s_N * system.s_N / 2, system.s_N );
     host.wavefunction_plus_history.emplace_back( cut_p );
-    
+
     // TE/TM Guard
-    if (not use_te_tm_splitting)
+    if ( not system.use_te_tm_splitting )
         return;
 
     // Same for _minus component if use_te_tm_splitting is true
@@ -27,11 +27,11 @@ void PC3::Solver::cacheToFiles() {
     if ( system.doOutput( "max", "scalar" ) ) {
         auto& file_max = filehandler.getFile( "max" );
         file_max << "t Psi_Plus";
-        if ( use_te_tm_splitting )
+        if ( system.use_te_tm_splitting )
             file_max << " Psi_Minus";
         file_max << "\n";
         for ( int i = 0; i < host.wavefunction_max_plus.size(); i++ ) {
-            if ( use_te_tm_splitting )
+            if ( system.use_te_tm_splitting )
                 file_max << i << " " << host.wavefunction_max_plus[i] << " " << host.wavefunction_max_minus[i] << "\n";
             else
                 file_max << i << " " << host.wavefunction_max_plus[i] << "\n";
@@ -42,10 +42,10 @@ void PC3::Solver::cacheToFiles() {
     // Guard when not outputting history
     if ( not system.doOutput( "mat", "history" ) )
         return;
-        
+
     auto& file_history_plus = filehandler.getFile( "history_plus" );
-    const auto interval_time = int( std::max( 1., host.wavefunction_plus_history.size() / 200. ) );
-    const auto interval_x = int( std::max( 1., host.wavefunction_plus_history.front().size() / 200. ) );
+    const auto interval_time = int( std::max( 1., host.wavefunction_plus_history.size() / 1000. ) );
+    const auto interval_x = int( std::max( 1., host.wavefunction_plus_history.front().size() / 1000. ) );
     for ( int i = 0; i < host.wavefunction_plus_history.size(); i += interval_time ) {
         std::cout << "Writing history " << i << " of " << host.wavefunction_max_plus.size() << "\r";
         for ( int k = 0; k < host.wavefunction_plus_history.front().size(); k += interval_x ) {
@@ -53,12 +53,11 @@ void PC3::Solver::cacheToFiles() {
             file_history_plus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
         }
         file_history_plus << "\n";
-        
     }
     file_history_plus.close();
 
     // TE/TM Guard
-    if (not use_te_tm_splitting)
+    if ( not system.use_te_tm_splitting )
         return;
 
     auto& file_history_minus = filehandler.getFile( "history_minus" );
@@ -69,7 +68,6 @@ void PC3::Solver::cacheToFiles() {
             file_history_minus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
         }
         file_history_minus << "\n";
-        
     }
     file_history_minus.close();
 }

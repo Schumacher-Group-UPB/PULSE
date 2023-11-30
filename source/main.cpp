@@ -43,7 +43,7 @@ int main( int argc, char* argv[] ) {
     auto system = PC3::System(argc, argv);
 
     // Create Solver Class
-    auto solver = PC3::Solver( system, PC3::Solver::Symmetry::Scalar );
+    auto solver = PC3::Solver( system );
 
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
     initSFMLWindow( solver );
@@ -53,11 +53,9 @@ int main( int argc, char* argv[] ) {
     // Main Loop
     while ( system.t < system.t_max and running ) {
         TimeThis(
-            // The CPU should briefly evaluate wether the pulses have to be evaluated
-            bool evaluate_pulse = system.evaluatePulse();
             // Iterate #output_every times
             for ( int i = 0; i < system.filehandler.output_every; i++ ) {
-                solver.iterateRungeKutta( evaluate_pulse );
+                solver.iterateRungeKutta( );
             }
             , "Main" );
 

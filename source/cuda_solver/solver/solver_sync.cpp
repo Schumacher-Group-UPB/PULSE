@@ -7,7 +7,7 @@ void PC3::Solver::syncDeviceArrays() {
     device.fft_plus.toHost( host.fft_plus );
     
     // TE/TM Guard
-    if (not use_te_tm_splitting)
+    if (not system.use_te_tm_splitting)
         return;
     
     device.wavefunction_minus.toHost( host.wavefunction_minus );

@@ -43,6 +43,7 @@ void PC3::System::printHelp() {
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
               << unifyLength( "--pump", "[double] [string] [double] [double] [double] [string] [double] [string]", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, type (gauss, ring)\n", 30, 80 )
               << unifyLength( "--mask", "[Same as Pump]", "\n", 30, 80 )
+              << unifyLength( "--potential", "[Same as Pump]", "\n", 30, 80 )
               << unifyLength( "--initialState", "[Same as Pump]", "\n", 30, 80 )
               << unifyLength( "--initRandom", "[double]", "Amplitude. Randomly initialize Psi\n", 30, 80 )
               << unifyLength( "--pulse", "[Same as Pump] [double] [double] [double] [int]", "t0, frequency, sigma, m\n", 30, 80 )

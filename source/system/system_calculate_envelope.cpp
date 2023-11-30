@@ -31,8 +31,8 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                 auto y = -xmax + dx * row;
                 // If type contains "local", use local coordinates instead
                 if ( mask.type[c] & PC3::Envelope::Type::Local ) {
-                    x = -1.0 + 2.0 * col / s_N;
-                    y = -1.0 + 2.0 * row / s_N;
+                    x = -1.0 + 2.0 * col / (s_N - 1);
+                    y = -1.0 + 2.0 * row / (s_N - 1);
                 }
                 // Check if the polarization matches or if the input polarization is both. If not, the envelope is skipped.
                 if ( mask.pol[c] != PC3::Envelope::Polarization::Both and mask.pol[c] != polarization and polarization != PC3::Envelope::Polarization::Both )
@@ -54,7 +54,7 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                 // Default amplitude is A/sqrt(2pi)/w
                 complex_number amplitude = { mask.amp[c], 0.0 };
                 if ( not( mask.type[c] & PC3::Envelope::Type::NoDivide ) )
-                    amplitude = amplitude / mask.width[c] * sqrt( 2 * 3.1415 );
+                    amplitude = amplitude / mask.width[c] / sqrt( 2 * 3.1415 );
                 // If the behaviour is adaptive, the amplitude is set to the current value of the buffer instead.
                 if ( mask.behavior[c] & PC3::Envelope::Behavior::Adaptive )
                     amplitude = mask.amp[c] * buffer[i];

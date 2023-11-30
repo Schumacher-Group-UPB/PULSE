@@ -32,7 +32,7 @@ void PC3::Solver::calculateSollValues() {
         std::cout << "min_mask_plus = " << min_mask_plus << " max_mask_plus = " << max_mask_plus << std::endl;
         std::cout << "min_psi_plus = " << min_psi_plus << " max_psi_plus = " << max_psi_plus << std::endl;
 
-        if (use_te_tm_splitting) {
+        if (system.use_te_tm_splitting) {
             std::tie( min_mask_minus, max_mask_minus ) = CUDA::minmax( host.soll_minus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
             std::tie( min_psi_minus, max_psi_minus ) = CUDA::minmax( host.wavefunction_minus.get(), system.s_N * system.s_N, false /*Device Pointer*/ );
             std::cout << "min_mask_minus = " << min_mask_minus << " max_mask_minus = " << max_mask_minus << std::endl;
@@ -48,7 +48,7 @@ void PC3::Solver::calculateSollValues() {
     // Output Mask
     if ( system.doOutput( "mat", "mask_plus", "mask" ) )
         system.filehandler.outputMatrixToFile( host.soll_plus.get(), system.s_N, system.xmax, system.dx, "mask_plus" );
-    if ( use_te_tm_splitting and system.doOutput( "mat", "mask_minus", "mask" ) )
+    if ( system.use_te_tm_splitting and system.doOutput( "mat", "mask_minus", "mask" ) )
         system.filehandler.outputMatrixToFile( host.soll_minus.get(), system.s_N, system.xmax, system.dx, "mask_minus" );
     
     // Calculate sum of all elements and check matching
@@ -60,7 +60,7 @@ void PC3::Solver::calculateSollValues() {
     std::ranges::for_each( host.soll_plus.get(), host.soll_plus.get() + system.s_N * system.s_N, [&sum_plus]( real_number n ) { sum_plus += n; } );
     std::cout << "Error in Psi_Plus: " << sum_plus << std::endl;
 
-    if (use_te_tm_splitting) {
+    if (system.use_te_tm_splitting) {
     #pragma omp parallel for
         for ( int i = 0; i < system.s_N * system.s_N; i++ ) {
             host.soll_minus[i] = CUDA::abs( CUDA::abs( host.wavefunction_minus[i] ) / max_psi_minus - host.soll_minus[i] / max_mask_minus );

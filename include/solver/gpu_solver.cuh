@@ -90,15 +90,9 @@ class Solver {
     // FFT Plan
     cuda_fft_plan plan;
 
-    // If true, we have a twin system. If false, we have a scalar system.
-    bool use_te_tm_splitting;
-
-    enum class Symmetry { Scalar, TETM };
-
-    Solver( PC3::System& system, Symmetry scalar_or_twin ) : system(system), filehandler(system.filehandler) {
-        use_te_tm_splitting = (scalar_or_twin == Symmetry::TETM);
+    Solver( PC3::System& system ) : system(system), filehandler(system.filehandler) {
         
-        std::cout << "Creating Solver with TE/TM Splitting: " << use_te_tm_splitting << std::endl;
+        std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>(system.use_te_tm_splitting) << std::endl;
 
         // Finally, initialize the FFT Plan
         CUDA_FFT_CREATE(&plan, system.s_N );
@@ -147,10 +141,11 @@ class Solver {
     void finalize();
 
     void iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 block_size, dim3 grid_size );
+    void dummy( bool evaluate_pulse, dim3 block_size, dim3 grid_size );
     void iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 block_size, dim3 grid_size );
-    void iterateRungeKutta( bool evaluate_pulse );
+    void iterateRungeKutta( );
 
-    void applyFFTFilter( dim3 block_size, dim3 grid_size );
+    void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );
 
     void cacheValues();
 
