@@ -44,9 +44,9 @@ void PC3::Solver::cacheToFiles() {
         return;
 
     auto& file_history_plus = filehandler.getFile( "history_plus" );
-    const auto interval_time = int( std::max( 1., host.wavefunction_plus_history.size() / 1000. ) );
-    const auto interval_x = int( std::max( 1., host.wavefunction_plus_history.front().size() / 1000. ) );
-    for ( int i = 0; i < host.wavefunction_plus_history.size(); i += interval_time ) {
+    const auto interval_time = std::max<unsigned int>( 1u, host.wavefunction_plus_history.size() / system.history_output_n );
+    const auto interval_x = std::max<unsigned int>( 1u, host.wavefunction_plus_history.front().size() / system.history_output_n );
+    for ( unsigned int i = 0; i < host.wavefunction_plus_history.size(); i += interval_time ) {
         std::cout << "Writing history " << i << " of " << host.wavefunction_max_plus.size() << "\r";
         for ( int k = 0; k < host.wavefunction_plus_history.front().size(); k += interval_x ) {
             const auto current_plus = host.wavefunction_plus_history[i][k];
@@ -61,7 +61,7 @@ void PC3::Solver::cacheToFiles() {
         return;
 
     auto& file_history_minus = filehandler.getFile( "history_minus" );
-    for ( int i = 0; i < host.wavefunction_minus_history.size(); i += interval_time ) {
+    for ( unsigned int i = 0; i < host.wavefunction_minus_history.size(); i += interval_time ) {
         std::cout << "Writing history " << i << " of " << host.wavefunction_max_minus.size() << "\r";
         for ( int k = 0; k < host.wavefunction_minus_history.front().size(); k += interval_x ) {
             const auto current_plus = host.wavefunction_minus_history[i][k];
@@ -70,4 +70,11 @@ void PC3::Solver::cacheToFiles() {
         file_history_minus << "\n";
     }
     file_history_minus.close();
+}
+
+void PC3::Solver::cacheMatrices(const real_number t) {
+    if (not system.do_output_history_matrix)
+        return;
+    std::string suffix = "_"+std::to_string(t);
+    outputMatrices( system.history_matrix_start, system.history_matrix_end, system.history_matrix_output_increment, suffix, "timeoutput/" );
 }

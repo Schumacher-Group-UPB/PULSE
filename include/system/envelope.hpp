@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <bit>
+
 #include "cuda/cuda_complex.cuh"
 
 namespace PC3 {

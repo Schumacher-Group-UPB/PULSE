@@ -66,11 +66,9 @@ PC3::System::System() {
 }
 
 PC3::System::System( int argc, char** argv ) : System() {
-    std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::BOLD << "================================ PC^3 Initialization ==============================" << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
-    std::cout << "PC^3 Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.1.0" << EscapeSequence::RESET << std::endl;
-    std::cout << "--> https://github.com/davidbauch/PC3" << std::endl;
+    //std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
+    //std::cout << EscapeSequence::BOLD << "================================ PC^3 Initialization ==============================" << EscapeSequence::RESET << std::endl;
+    //std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::BOLD << "---------------------------- Inputting System Parameters --------------------------" << EscapeSequence::RESET << std::endl;
 
     // Initialize system
@@ -110,6 +108,9 @@ PC3::System::System( int argc, char** argv ) : System() {
     if ( ( index = findInArgv( "--threads", argc, argv ) ) != -1 )
         omp_max_threads = (int)getNextInput( argv, "threads", ++index );
     omp_set_num_threads( omp_max_threads );
+    if ( ( index = findInArgv( "--blocksize", argc, argv ) ) != -1 )
+        block_size = (int)getNextInput( argv, "block_size", ++index );
+
     if ( ( index = findInArgv( "--output", argc, argv ) ) != -1 ) {
         output_keys.clear();
         auto output_string = getNextStringInput( argv, "output", ++index );
@@ -155,7 +156,27 @@ PC3::System::System( int argc, char** argv ) : System() {
     if ( ( index = findInArgv( "--initRandom", argc, argv ) ) != -1 ) {
         randomly_initialize_system = true;
         random_system_amplitude = getNextInput( argv, "random_system_amplitude", ++index );
-        random_seed = (unsigned int)getNextInput( argv, "random_seed", index );
+        random_seed = std::random_device{}();
+        auto str_seed = getNextStringInput( argv, "random_seed", index );
+        if (str_seed != "random") {
+            random_seed = (unsigned int)std::stod( str_seed );
+            std::cout << EscapeSequence::YELLOW << "Overwritten random seed to " << random_seed << EscapeSequence::RESET << std::endl;
+        }
+    }
+
+    history_output_n = 1000u;
+    if ( ( index = findInArgv( "--history", argc, argv ) ) != -1 ) {
+        history_output_n = (unsigned int)getNextInput( argv, "history_output_n", ++index );
+    }
+    history_matrix_output_increment = 1u;
+    history_matrix_start = 0;
+    history_matrix_end = s_N;
+    do_output_history_matrix = false;
+    if ( ( index = findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
+        history_matrix_start = (unsigned int)getNextInput( argv, "history_matrix_start", ++index );
+        history_matrix_end = (unsigned int)getNextInput( argv, "history_matrix_end", index );
+        history_matrix_output_increment = (unsigned int)getNextInput( argv, "history_matrix_output_increment", index );
+        do_output_history_matrix = true;
     }
 
     // If -masknorm is passed to the program, the mask and psi is normalized before the error calculation

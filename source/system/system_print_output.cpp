@@ -4,7 +4,27 @@
 #include "misc/timeit.hpp"
 #include "omp.h"
 
+// TODO: Create a few wrapper functions for formatting, make help screen and final screen fixed width
+
+void print_name() {
+    std::cout << "-----------------------------------------------------------------------------------\n\n";
+    std::cout << EscapeSequence::BLUE << EscapeSequence::BOLD;
+    std::cout << "                  _____    _     _            _______   _______\n";
+    std::cout << "                 |_____]   |     |   |        |______   |______\n";
+    std::cout << "                 |       . |_____| . |_____ . ______| . |______ .\n\n";
+    std::cout << "         " << EscapeSequence::RESET << EscapeSequence::UNDERLINE << EscapeSequence::BOLD;
+    std::cout << EscapeSequence::BLUE << "P" << EscapeSequence::GREY << "aderborn " << EscapeSequence::BLUE;
+    std::cout << "U" << EscapeSequence::GREY << "ltrafast So" << EscapeSequence::BLUE << "L" << EscapeSequence::GREY;
+    std::cout << "ver for the nonlinear " << EscapeSequence::BLUE << "S" << EscapeSequence::GREY << "roedinger ";
+    std::cout << EscapeSequence::BLUE << "E" << EscapeSequence::GREY << "quation";
+    std::cout << EscapeSequence::RESET << "                         \n" << std::endl;
+    std::cout << "                                Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.1.0" << EscapeSequence::RESET << std::endl;
+    std::cout << "                      https://github.com/davidbauch/PC3" << std::endl;
+    std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+}
+
 void PC3::System::printHelp() {
+    print_name();
 #ifdef USEFP64
     std::cout << "This program is compiled with " << EscapeSequence::UNDERLINE << EscapeSequence::YELLOW << "double precision" << EscapeSequence::RESET << " numbers.\n";
 #else
@@ -22,6 +42,8 @@ void PC3::System::printHelp() {
         << unifyLength( "--loadFrom", "[string] [files,...]", "Loads list of matrices from path.\n" )
         << unifyLength( "--outEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( filehandler.output_every ) + " iteration\n" )
         << unifyLength( "--output", "[list of str]", "Comma seperated list of things to output. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
+        << unifyLength( "--history", "[int]", "Outputs at most N points of the file history\n" )
+        << unifyLength( "--historyMatrix", "[int] [int] [int]", "Outputs the matrices specified in --output with specified start,end index and increment.\n" )
         << unifyLength( "--input", "[list of str]", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
         << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
     std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
@@ -56,11 +78,11 @@ void PC3::System::printHelp() {
 }
 
 void PC3::System::printSummary( std::map<std::string, std::vector<double>> timeit_times, std::map<std::string, double> timeit_times_total ) {
+    print_name();
     const int l = 15;
-    std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::BOLD << "============================== PC^3 Runtime Statistics ============================" << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::BOLD << "--------------------------------- System Parameters -------------------------------" << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::BOLD << "-------------------------------- Runtime Statistics -------------------------------" << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::BOLD << "-----------------------------------------------------------------------------------" << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::BOLD << "------------------------------------ Parameters -----------------------------------" << EscapeSequence::RESET << std::endl;
     std::cout << unifyLength( "N", std::to_string( s_N ), "", l, l ) << std::endl;
     std::cout << unifyLength( "N^2", std::to_string( s_N * s_N ), "", l, l ) << std::endl;
     std::cout << unifyLength( "dx", std::to_string( dx ), "mum", l, l ) << std::endl;
@@ -111,6 +133,7 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << "Output variables and plots every " << filehandler.output_every << " iterations" << std::endl;
     std::cout << "Total allocated space for Device Matrices: " << DeviceMatrixBase::global_total_mb_max << " MB." << std::endl;
     std::cout << "Total allocated space for Host Matrices: " << HostMatrixBase::global_total_mb_max << " MB." << std::endl;
+    std::cout << "Random Seed was: " << random_seed << std::endl;
 #ifdef USEFP32
     std::cout << "This program is compiled using " << EscapeSequence::UNDERLINE << EscapeSequence::BLUE << "single precision" << EscapeSequence::RESET << " numbers.\n";
 #else
