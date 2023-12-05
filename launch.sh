@@ -10,12 +10,23 @@ system_parameters=(
     ############################ Basic Configuration ###########################
 
     ##-------------------------- Loading Parameters --------------------------##
+    # To correctly load matrices, their filenames have to equal the output filenames
+    #   of the program. For example, if the program outputs "wavefunction_plus.txt", 
+    #   then the input file has to be named "wavefunction_plus.txt".
     #"--loadFrom data/load_jan" # Path to Load input matrices from
+    ## -- Input Keywords -- #
+    # The files to actually load can then be specified using keywords.
+    #   For example, if you want to load the pump, then pump_plus/minus.txt has to
+    #   exist in the load path, as well as the keyword "pump" (or "mat" or "all") 
+    #   has to be specified.
     #"--input pump,potential,initial,fft" # Keywords of input matrices to load
 
     ##-------------------------- Output Parameters ---------------------------##
     #"--output none" # Keywords of matrices to output to file
     "--outEvery 40" # Output everx x iterations (not ps)
+    #"--history [x]" # Output at most x history points. The history points are cached every outEvery iterations.
+    #"--historyMatrix [increment] [start] [end]" # Output the history matrix every outEvery iterations. 
+    #"--outMat Scaling" # Output all matrices every outEvery iterations, but scale their dimensions by the given factor
     #-nosfml # Disable SFML output
 
     ##------------------------- Numeric Configuration ------------------------##
@@ -76,7 +87,7 @@ system_parameters=(
     
     ##---------------------- Initial State Configuration ---------------------##
     #"--initialState [Amp] [Behaviour] [Width] [X] [Y] [Pol] [Exponent] [M] [Type]"
-    "--initRandom 0.5 53242423412" # Randomly initialize the system from -Amp to Amp with defined seed
+    "--initRandom 0.5 random" # Randomly initialize the system from -Amp to Amp with defined seed [random or number]
 
     ############################ System Parameters #############################
     

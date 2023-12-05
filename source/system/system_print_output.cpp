@@ -111,6 +111,7 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << "Output variables and plots every " << filehandler.output_every << " iterations" << std::endl;
     std::cout << "Total allocated space for Device Matrices: " << DeviceMatrixBase::global_total_mb_max << " MB." << std::endl;
     std::cout << "Total allocated space for Host Matrices: " << HostMatrixBase::global_total_mb_max << " MB." << std::endl;
+    std::cout << "Random Seed was: " << random_seed << std::endl;
 #ifdef USEFP32
     std::cout << "This program is compiled using " << EscapeSequence::UNDERLINE << EscapeSequence::BLUE << "single precision" << EscapeSequence::RESET << " numbers.\n";
 #else

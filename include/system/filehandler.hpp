@@ -28,13 +28,13 @@ class FileHandler {
     void loadMatrixFromFile( const std::string& filepath, complex_number* buffer );
     void loadMatrixFromFile( const std::string& filepath, real_number* buffer );
 
-    void outputMatrixToFile( const complex_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, const real_number xmax, const real_number dx, std::ofstream& out, const std::string& name );
-    void outputMatrixToFile( const complex_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, const real_number xmax, const real_number dx, const std::string& out );
+    void outputMatrixToFile( const complex_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, unsigned int increment, const real_number xmax, const real_number dx, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const complex_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, unsigned int increment, const real_number xmax, const real_number dx, const std::string& out );
     void outputMatrixToFile( const complex_number* buffer, const unsigned int N, const real_number xmax, const real_number dx, const std::string& out );
     void outputMatrixToFile( const complex_number* buffer, const unsigned int N, const real_number xmax, const real_number dx, std::ofstream& out, const std::string& name );
 
-    void outputMatrixToFile( const real_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, const real_number xmax, const real_number dx, std::ofstream& out, const std::string& name );
-    void outputMatrixToFile( const real_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, const real_number xmax, const real_number dx, const std::string& out );
+    void outputMatrixToFile( const real_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, unsigned int increment, const real_number xmax, const real_number dx, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const real_number* buffer, int row_start, int row_stop, int col_start, int col_stop, const unsigned int N, unsigned int increment, const real_number xmax, const real_number dx, const std::string& out );
     void outputMatrixToFile( const real_number* buffer, const unsigned int N, const real_number xmax, const real_number dx, const std::string& out );
     void outputMatrixToFile( const real_number* buffer, const unsigned int N, const real_number xmax, const real_number dx, std::ofstream& out, const std::string& name );
 

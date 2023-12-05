@@ -40,6 +40,10 @@ class System {
 
     bool fixed_time_step, normalize_before_masking, randomly_initialize_system, periodic_boundary_conditions;
     unsigned int random_seed;
+    
+    // History Output
+    unsigned int history_output_n, history_matrix_start, history_matrix_end, history_matrix_output_increment;
+    bool do_output_history_matrix;
 
     // Output of Variables
     std::vector<std::string> output_keys, input_keys;

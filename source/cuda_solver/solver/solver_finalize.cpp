@@ -2,12 +2,11 @@
 #include "misc/escape_sequences.hpp"
 
 void PC3::Solver::finalize() {
-    std::cout << EscapeSequence::CLEAR_LINE << "Finalizing Solver... " << std::endl;
+    std::cout << EscapeSequence::CLEAR_LINE << "--------------------------------- Finalizing Solver -------------------------------" << std::endl;
     // Sync all device arrays
     syncDeviceArrays();
     // Output Matrices
-    std::cout << "Outputting Matrices... " << std::endl;
-    outputMatrices();
+    outputMatrices( 0 /*start*/, system.s_N /*end*/, 1.0 /*increment*/);
     // Cache to files
     std::cout << "Caching to Files... " << std::endl;
     cacheToFiles();

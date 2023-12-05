@@ -1,23 +1,25 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=1
+#export CUDA_VISIBLE_DEVICES=1
 
-output_path="benchmark_4090/"
-N_list=(100 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500)
+output_path="b_benchmarks/benchmark_3070ti_fixed/"
+N_list=(100 200 300 400 500 600 700 800 1000 1200 1400 1600)
 makef=true
 
 system_parameters=(
-    "--pump 40 add 30 0 0 plus 1 gauss" # Center Pump
-    "--pump -1 add+adaptive 2.5 0 15 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -1 add+adaptive 2.5 0 7.5 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.975 add+adaptive 2.5 0 0 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.95 add+adaptive 2.5 0 -7.5 plus 5 gauss+outerExponent" # Potential Well
-    "--pump -0.93 add+adaptive 2.5 0 -15 plus 5 gauss+outerExponent" # Potential Well
-    "--pump 10 add 2.5 0 19 plus 1 gauss" # Narrow
+    "--pump 40 add 30 0 0 plus 1 none gauss" # Center Pump
+    "--pump -1 add+adaptive 2.5 0 15 plus 5 none gauss+outerExponent" # Potential Well
+    "--pump -1 add+adaptive 2.5 0 7.5 plus 5 none gauss+outerExponent" # Potential Well
+    "--pump -0.975 add+adaptive 2.5 0 0 plus 5 none gauss+outerExponent" # Potential Well
+    "--pump -0.95 add+adaptive 2.5 0 -7.5 plus 5 none gauss+outerExponent" # Potential Well
+    "--pump -0.93 add+adaptive 2.5 0 -15 plus 5 none gauss+outerExponent" # Potential Well
+    "--pump 10 add 2.5 0 19 plus 1 none gauss" # Narrow
     "--outEvery 200"
-    #"--pulse 10 add 2 0 19 plus 1 gauss 10 2 1e-2 2"
-    #"--pulse 40 add 2 0 19 plus 1 gauss 10 2 1e-2 2"
+    #"--pulse 10 add 2 0 19 plus 1 none gauss 10 1e-2 2"
+    #"--pulse 40 add 2 0 19 plus 1 none gauss 30 1e-2 2"
     "--tmax 50"
     "-nosfml"
+    "--output max"
+    "--initRandom 0.5 random"
 )
 
 
