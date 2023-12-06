@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+
 #include "misc/helperfunctions.hpp"
 #include "solver/gpu_solver.cuh"
 #include "cuda/cuda_macro.cuh"

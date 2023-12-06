@@ -12,10 +12,10 @@ void print_name() {
     std::cout << "                  _____    _     _            _______   _______\n";
     std::cout << "                 |_____]   |     |   |        |______   |______\n";
     std::cout << "                 |       . |_____| . |_____ . ______| . |______ .\n\n";
-    std::cout << "         " << EscapeSequence::RESET << EscapeSequence::UNDERLINE << EscapeSequence::BOLD;
+    std::cout << "        " << EscapeSequence::RESET << EscapeSequence::UNDERLINE << EscapeSequence::BOLD;
     std::cout << EscapeSequence::BLUE << "P" << EscapeSequence::GREY << "aderborn " << EscapeSequence::BLUE;
     std::cout << "U" << EscapeSequence::GREY << "ltrafast So" << EscapeSequence::BLUE << "L" << EscapeSequence::GREY;
-    std::cout << "ver for the nonlinear " << EscapeSequence::BLUE << "S" << EscapeSequence::GREY << "roedinger ";
+    std::cout << "ver for the nonlinear " << EscapeSequence::BLUE << "S" << EscapeSequence::GREY << "chroedinger ";
     std::cout << EscapeSequence::BLUE << "E" << EscapeSequence::GREY << "quation";
     std::cout << EscapeSequence::RESET << "                         \n" << std::endl;
     std::cout << "                                Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.1.0" << EscapeSequence::RESET << std::endl;

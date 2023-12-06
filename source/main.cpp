@@ -29,7 +29,6 @@
 #include <cstdlib>
 #include <omp.h>
 #include <chrono>
-
 #include "cuda/cuda_complex.cuh"
 #include "system/system.hpp"
 #include "system/filehandler.hpp"
@@ -65,7 +64,7 @@ int main( int argc, char* argv[] ) {
             // Cache the history and max values
             solver.cacheValues();
             // Output Matrices if enabled
-            solver.cacheMatrices( system.t );
+            solver.cacheMatrices( solver.system.t );
             // Plot
             running = plotSFMLWindow( solver, 1. / (complete_duration)*system.dt * system.filehandler.output_every );
             , "Plotting" );
