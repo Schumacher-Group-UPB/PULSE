@@ -1,9 +1,9 @@
 #!/bin/bash
 
 ## Output Path ##
-output_path="data/test/"
+output_path="data/results/"
 # Path to the program to launch
-launch_program="./main_2.0_wr_fp32.exe"
+launch_program="./main.exe"
 
 system_parameters=(
 

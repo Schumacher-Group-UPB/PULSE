@@ -28,10 +28,10 @@ std::map<std::string, double>& getTimesTotal();
 // build a macro that takes a function as an argument, calls the function and then returns the runtime of said function
 #define TimeThis( func, name )                                                                             \
     {                                                                                                      \
-        auto start = std::chrono::high_resolution_clock::now();                                            \
+        auto _timethis_start = std::chrono::high_resolution_clock::now();                                            \
         func;                                                                                              \
-        auto end = std::chrono::high_resolution_clock::now();                                              \
-        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>( end - start ).count() / 1E9; \
-        PC3::TimeIt::addTime(name, duration);                                                              \
+        auto _timethis_end = std::chrono::high_resolution_clock::now();                                              \
+        auto _timethis_duration = std::chrono::duration_cast<std::chrono::nanoseconds>( _timethis_end - _timethis_start ).count() / 1E9; \
+        PC3::TimeIt::addTime(name, _timethis_duration);                                                              \
     }
     

@@ -33,6 +33,8 @@ void PC3::TimeIt::toFile( std::ofstream& file ) {
 }
 
 void PC3::TimeIt::addTime(const std::string& name, double duration) {
+    if ( not times.contains(name) )
+        times_total[name] = 0;
     times[name].emplace_back( duration );
     times_total[name] += duration;
 }

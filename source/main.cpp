@@ -56,7 +56,7 @@ int main( int argc, char* argv[] ) {
             for ( int i = 0; i < system.filehandler.output_every; i++ ) {
                 solver.iterateRungeKutta();
             },
-            "Main" );
+            "Runge-Kutta" );
 
         TimeThis(
             // Sync the current device arrays to their host array equivalents
@@ -68,7 +68,7 @@ int main( int argc, char* argv[] ) {
             // Plot
             running = plotSFMLWindow( solver, 1. / (complete_duration)*system.dt * system.filehandler.output_every );
             , "Plotting" );
-        complete_duration = PC3::TimeIt::get( "Main" ) + PC3::TimeIt::get( "Plotting" );
+        complete_duration = PC3::TimeIt::get( "Runge-Kutta" ) + PC3::TimeIt::get( "Plotting" );
         std::cout << "T = " << int( system.t ) << ", Time per " << system.filehandler.output_every << " iterations: " << complete_duration << "s -> " << 1. / (complete_duration)*system.dt * system.filehandler.output_every << "ps/s, current dt = " << system.dt << "                \r" << std::flush;
     }
 

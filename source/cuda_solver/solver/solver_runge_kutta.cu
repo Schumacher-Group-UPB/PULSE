@@ -471,6 +471,11 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
  * @param s_N Number of grid points in one dimension
  */
 void PC3::Solver::iterateRungeKutta( ) {
+
+    // First, check if the maximum time has been reached
+    if ( system.t >= system.t_max )
+        return;
+
     dim3 block_size( system.block_size, system.block_size );
     int gs = ceil( system.s_N/block_size.x );
     dim3 grid_size( ( system.s_N + block_size.x - 1 ) / block_size.x, ( system.s_N + block_size.y - 1 ) / block_size.y );
