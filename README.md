@@ -1,7 +1,7 @@
 ![resources/banner.png](resources/banner.png)
 
 P.U.L.S.E. is a CUDA-accelerated Solver for the nonlinear two-dimensional Schrödinger Equation. Primarily developped to simulate Polariton Condensates, PULSE is able to do much more than that!
-We use cache-friendly grid division to achieve the maximum possible performance while minimizing code pollution through agressive optimizations.
+We use cache-friendly grid division to achieve the maximum possible performance while avoiding code pollution through agressive optimizations.
 P.U.L.S.E. can also solve ...
 
 # Requirements
@@ -42,7 +42,25 @@ P.U.L.S.E. uses single and double hyphen commandline arguments with multiple par
 to get an overview of the available arguments. Also, look into [the shell launchscript](/launch.sh) for a detailed commented parameterset.
 
 # Current Stats
-P.U.L.S.E. is currently benchmarked as:
+P.U.L.S.E. is currently benchmarked against common Matlab Solvers for the nonlinear Schrödinger Equation as well as against itself as a CPU version.
+
+We reproduce recent research results using P.U.L.S.E. and compare the runtimes. 
+
+All benchmarks are evaluated with minimal output overhead. Hence, we set 
+
+`--outEvery = 1e10` 
+
+and
+
+ `--output max`
+ 
+  to only output the final maximum value.
+
+## Example 1: 
+- Gif of result
+- Runtime Matlab, PULSE, PULSE_CPU
+
+...
 
 Settings: 800 Grid, RK4, 3070Ti
 |  | FP32  | FP64 |
@@ -53,3 +71,4 @@ Settings: 800 Grid, RK4, 3070Ti
 # TODO
 - Better Benchmarking
 - Display Examples with Videos / Gifs
+
