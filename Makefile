@@ -44,7 +44,7 @@ endif
 ifeq ($(CPU),TRUE)
 	ADD_FLAGS += -DUSECPU
 endif
-ADD_FLAGS += -gencode arch=compute_86,code=sm_86 # A100: 80, 4090: 89
+#ADD_FLAGS += -gencode arch=compute_86,code=sm_86 # A100: 80, 4090: 89
 
 # Targets
 ifndef TARGET
@@ -73,7 +73,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cu
 	$(COMPILER) $(COMPILER_FLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
 
 $(OBJDIR):
-	@mkdir $(OBJDIR)
+	@mkdir -p $(OBJDIR)
 
 clean:
 	@rm -f $(OBJDIR)/*.o $(TARGET)
