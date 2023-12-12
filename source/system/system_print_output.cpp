@@ -37,43 +37,43 @@ void PC3::System::printHelp() {
     std::cout
         << unifyLength( "General parameters:", "", "\n" )
         << unifyLength( "Flag", "Inputs", "Description\n" )
-        << unifyLength( "--path", "[string]", "Workingfolder. Standard is '" + filehandler.outputPath + "'\n" )
-        << unifyLength( "--name", "[string]", "File prefix. Standard is '" + filehandler.outputName + "'\n" )
-        << unifyLength( "--loadFrom", "[string] [files,...]", "Loads list of matrices from path.\n" )
-        << unifyLength( "--outEvery", "[int]", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( filehandler.output_every ) + " iteration\n" )
-        << unifyLength( "--output", "[list of str]", "Comma seperated list of things to output. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
-        << unifyLength( "--history", "[int]", "Outputs at most N points of the file history\n" )
-        << unifyLength( "--historyMatrix", "[int] [int] [int]", "Outputs the matrices specified in --output with specified start,end index and increment.\n" )
-        << unifyLength( "--input", "[list of str]", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
+        << unifyLength( "--path", "<string>", "Workingfolder. Standard is '" + filehandler.outputPath + "'\n" )
+        << unifyLength( "--name", "<string>", "File prefix. Standard is '" + filehandler.outputName + "'\n" )
+        << unifyLength( "--loadFrom", "<string> <string...>", "Loads list of matrices from path.\n" )
+        << unifyLength( "--outEvery", "<int>", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( filehandler.output_every ) + " iteration\n" )
+        << unifyLength( "--output", "<string...>", "Comma seperated list of things to output. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
+        << unifyLength( "--history", "<int>", "Outputs at most N points of the file history\n" )
+        << unifyLength( "--historyMatrix", "<int> <int> <int>", "Outputs the matrices specified in --output with specified start,end index and increment.\n" )
+        << unifyLength( "--input", "<string...>", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
         << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
     std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--N", "[int]", "Grid Dimensions (N x N). Standard is " + std::to_string( s_N ) + " x " + std::to_string( s_N ) + "\n" )
-              << unifyLength( "--tstep", "[double]", "Timestep, standard is magic-timestep\n" )
-              << unifyLength( "--tmax", "[double]", "Timelimit, standard is " + std::to_string( t_max ) + " ps\n" );
+              << unifyLength( "--N", "<int>", "Grid Dimensions (N x N). Standard is " + std::to_string( s_N ) + " x " + std::to_string( s_N ) + "\n" )
+              << unifyLength( "--tstep", "<double>", "Timestep, standard is magic-timestep\n" )
+              << unifyLength( "--tmax", "<double>", "Timelimit, standard is " + std::to_string( t_max ) + " ps\n" );
     std::cout << unifyLength( "PC3::System parameters", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--gammaC", "[double]", "Standard is " + std::to_string( gamma_c ) + " ps^-1\n" )
-              << unifyLength( "--gammaR", "[double]", "Standard is " + std::to_string( gamma_r / gamma_c ) + "*gammaC\n" )
-              << unifyLength( "--gc", "[double]", "Standard is " + std::to_string( g_c ) + " meV mum^2\n" )
-              << unifyLength( "--gr", "[double]", "Standard is " + std::to_string( g_r / g_c ) + "*gc\n" )
-              << unifyLength( "--meff", "[double]", "Standard is " + std::to_string( m_eff ) + "\n" )
-              << unifyLength( "--R", "[double]", "Standard is " + std::to_string( R ) + " ps^-1 mum^2\n" )
-              << unifyLength( "--g_pm", "[double]", "Standard is " + std::to_string( g_pm / g_c ) + "*gc. Only effective in a system with TE/TM splitting.\n" )
-              << unifyLength( "--deltaLT", "[double]", "Standard is " + std::to_string( delta_LT ) + " meV. Only effective in a system with TE/TM splitting.\n" )
-              << unifyLength( "--xmax", "[double]", "Standard is " + std::to_string( xmax ) + " mum\n" ) << std::endl;
+              << unifyLength( "--gammaC", "<double>", "Standard is " + std::to_string( gamma_c ) + " ps^-1\n" )
+              << unifyLength( "--gammaR", "<double>", "Standard is " + std::to_string( gamma_r / gamma_c ) + "*gammaC\n" )
+              << unifyLength( "--gc", "<double>", "Standard is " + std::to_string( g_c ) + " meV mum^2\n" )
+              << unifyLength( "--gr", "<double>", "Standard is " + std::to_string( g_r / g_c ) + "*gc\n" )
+              << unifyLength( "--meff", "<double>", "Standard is " + std::to_string( m_eff ) + "\n" )
+              << unifyLength( "--R", "<double>", "Standard is " + std::to_string( R ) + " ps^-1 mum^2\n" )
+              << unifyLength( "--g_pm", "<double>", "Standard is " + std::to_string( g_pm / g_c ) + "*gc. Only effective in a system with TE/TM splitting.\n" )
+              << unifyLength( "--deltaLT", "<double>", "Standard is " + std::to_string( delta_LT ) + " meV. Only effective in a system with TE/TM splitting.\n" )
+              << unifyLength( "--xmax", "<double>", "Standard is " + std::to_string( xmax ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
-              << unifyLength( "--pump", "[double] [string] [double] [double] [double] [string] [double] [string]", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, type (gauss, ring)\n", 30, 80 )
-              << unifyLength( "--mask", "[Same as Pump]", "\n", 30, 80 )
-              << unifyLength( "--potential", "[Same as Pump]", "\n", 30, 80 )
-              << unifyLength( "--initialState", "[Same as Pump]", "\n", 30, 80 )
-              << unifyLength( "--initRandom", "[double]", "Amplitude. Randomly initialize Psi\n", 30, 80 )
-              << unifyLength( "--pulse", "[Same as Pump] [double] [double] [double] [int]", "t0, frequency, sigma, m\n", 30, 80 )
-              << unifyLength( "--fftMask", "[Same as Pump]", "\n", 30, 80 )
-              << unifyLength( "--fftEvery", "[int]", "Apply FFT Filter every x ps\n", 30, 80 )
+              << unifyLength( "--pump", "<double> <string> <double> <double> <double> <string> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, type (gauss, ring)\n", 30, 80 )
+              << unifyLength( "--mask", "Same as Pump", "\n", 30, 80 )
+              << unifyLength( "--potential", "Same as Pump", "\n", 30, 80 )
+              << unifyLength( "--initialState", "Same as Pump", "\n", 30, 80 )
+              << unifyLength( "--initRandom", "<double>", "Amplitude. Randomly initialize Psi\n", 30, 80 )
+              << unifyLength( "--pulse", "Same as Pump <double> <double> <double> <int>", "t0, frequency, sigma, m\n", 30, 80 )
+              << unifyLength( "--fftMask", "Same as Pump", "\n", 30, 80 )
+              << unifyLength( "--fftEvery", "<int>", "Apply FFT Filter every x ps\n", 30, 80 )
               << unifyLength( "-masknorm", "no arguments", "If passed, both the mask and Psi will be normalized before calculating the error.\n", 30, 80 ) << std::endl;
 #ifdef USECPU
-    std::cout << unifyLength( "--threads", "[int]", "Standard is " + std::to_string( omp_max_threads ) + " Threads\n" ) << std::endl;
+    std::cout << unifyLength( "--threads", "<int>", "Standard is " + std::to_string( omp_max_threads ) + " Threads\n" ) << std::endl;
 #endif
 }
 

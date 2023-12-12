@@ -14,9 +14,18 @@ int findInArgv( std::string toFind, int argc, char** argv, int start ) {
 }
 
 real_number getNextInput( char** argv, const std::string name, int& index ) {
-    if ( global_log_inputs )
+    if ( global_log_inputs ) {
         std::cout << EscapeSequence::GREY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
-    return std::stod( argv[ index++ ] );
+    }
+    real_number result = 0.0;
+    try {
+        result = std::stod( argv[ index++ ] );
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Error: Invalid argument for " << name << std::endl;
+        std::cout << EscapeSequence::RED << "Error: parsing envelope " << name << " as " << argv[ index ] << " cannot be converted to a numerical value! Exitting!" << EscapeSequence::RESET << std::endl;
+        exit( EXIT_FAILURE );
+    }
+    return result;
 }
 
 std::string getNextStringInput( char** argv, const std::string name, int& index ) {

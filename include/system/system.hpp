@@ -30,10 +30,10 @@ class System {
     real_number m_eff, gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
 
     // Numerics
-    unsigned int s_N, iteration;
+    unsigned int s_N, s_sub_N, iteration;
 
     // RK Solver Variables
-    real_number xmax, dx, t_max, dt, t, dt_max, dt_min, tolerance, fft_every, random_system_amplitude;
+    real_number xmax, dx, t_max, dt, t, dt_max, dt_min, tolerance, fft_every, random_system_amplitude, magic_timestep;
 
     // Kernel Block Size
     unsigned int block_size, omp_max_threads;
@@ -44,6 +44,10 @@ class System {
     // History Output
     unsigned int history_output_n, history_matrix_start, history_matrix_end, history_matrix_output_increment;
     bool do_output_history_matrix;
+
+    // Helper variable to scale dt
+    real_number dt_scaling_factor;
+    bool do_overwrite_dt;
 
     // Output of Variables
     std::vector<std::string> output_keys, input_keys;
@@ -91,6 +95,10 @@ class System {
     void calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
 
     bool evaluatePulse();
+
+    void init( int argc, char** argv );
+    void calculateAuto();
+    void validateInputs();
 
     void printHelp();
     void printSummary( std::map<std::string, std::vector<double>> timeit_times, std::map<std::string, double> timeit_times_total );
