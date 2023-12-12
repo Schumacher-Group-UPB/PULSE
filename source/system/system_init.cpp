@@ -69,7 +69,7 @@ void PC3::System::init( int argc, char** argv ) {
     // Numerik
     if ( ( index = findInArgv( "--N", argc, argv ) ) != -1 ) {
         s_N = (int)getNextInput( argv, "s_N", ++index );
-        s_sub_N = (int)getNextInput( argv, "s_sub_N", index );
+        //s_sub_N = (int)getNextInput( argv, "s_sub_N", index );
     }        
 
     //std::cout << EscapeSequence::GREY << "Calculated dx = " << dx << "\nCalculated dt = " << dt << EscapeSequence::RESET << std::endl;
