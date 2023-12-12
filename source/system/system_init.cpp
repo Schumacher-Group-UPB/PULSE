@@ -83,6 +83,11 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--tol", argc, argv ) ) != -1 ) {
         tolerance = getNextInput( argv, "tol", ++index );
     }
+    if ( ( index = findInArgv( "--rk45dt", argc, argv ) ) != -1 ) {
+        dt_min = getNextInput( argv, "dt_min", ++index );
+        dt_max = getNextInput( argv, "dt_max", index );
+    }
+
     if ( ( index = findInArgv( "--fftEvery", argc, argv ) ) != -1 ) {
         fft_every = getNextInput( argv, "fft_every", ++index );
     }

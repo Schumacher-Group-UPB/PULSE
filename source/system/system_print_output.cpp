@@ -49,6 +49,8 @@ void PC3::System::printHelp() {
     std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
               << unifyLength( "--N", "<int>", "Grid Dimensions (N x N). Standard is " + std::to_string( s_N ) + " x " + std::to_string( s_N ) + "\n" )
               << unifyLength( "--tstep", "<double>", "Timestep, standard is magic-timestep\n" )
+              << unifyLength( "-rk45", "no arguments", "Use RK45\n" )
+              << unifyLength( "--tol", "<double>", "RK45 Tolerance, standard is " + std::to_string( tolerance ) + " ps\n" )
               << unifyLength( "--tmax", "<double>", "Timelimit, standard is " + std::to_string( t_max ) + " ps\n" );
     std::cout << unifyLength( "PC3::System parameters", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n" )
@@ -63,7 +65,7 @@ void PC3::System::printHelp() {
               << unifyLength( "--xmax", "<double>", "Standard is " + std::to_string( xmax ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
-              << unifyLength( "--pump", "<double> <string> <double> <double> <double> <string> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, type (gauss, ring)\n", 30, 80 )
+              << unifyLength( "--pump", "<double> <string> <double> <double> <double> <string> <double> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring)\n", 30, 80 )
               << unifyLength( "--mask", "Same as Pump", "\n", 30, 80 )
               << unifyLength( "--potential", "Same as Pump", "\n", 30, 80 )
               << unifyLength( "--initialState", "Same as Pump", "\n", 30, 80 )

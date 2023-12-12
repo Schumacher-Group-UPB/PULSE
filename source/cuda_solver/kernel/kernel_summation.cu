@@ -78,11 +78,11 @@ CUDA_GLOBAL void PC3::Kernel::RK45::runge_sum_final_error( int i, Device::Pointe
     if ( i >= p.N2 )
         return;
     dev_ptrs.rk_error[i] = CUDA::abs2( p.dt * ( RKCoefficients::e1 * dev_ptrs.k1_wavefunction_plus[i] + RKCoefficients::e3 * dev_ptrs.k3_wavefunction_plus[i] + RKCoefficients::e4 * dev_ptrs.k4_wavefunction_plus[i] + RKCoefficients::e5 * dev_ptrs.k5_wavefunction_plus[i] + RKCoefficients::e6 * dev_ptrs.k6_wavefunction_plus[i] + RKCoefficients::e7 * dev_ptrs.k7_wavefunction_plus[i] ) );
-    dev_ptrs.rk_error[i] += CUDA::abs2( p.dt * ( RKCoefficients::e1 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::e3 * dev_ptrs.k3_reservoir_plus[i] + RKCoefficients::e4 * dev_ptrs.k4_reservoir_plus[i] + RKCoefficients::e5 * dev_ptrs.k5_reservoir_plus[i] + RKCoefficients::e6 * dev_ptrs.k6_reservoir_plus[i] + RKCoefficients::e7 * dev_ptrs.k7_reservoir_plus[i] ) );
+    //dev_ptrs.rk_error[i] += CUDA::abs2( p.dt * ( RKCoefficients::e1 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::e3 * dev_ptrs.k3_reservoir_plus[i] + RKCoefficients::e4 * dev_ptrs.k4_reservoir_plus[i] + RKCoefficients::e5 * dev_ptrs.k5_reservoir_plus[i] + RKCoefficients::e6 * dev_ptrs.k6_reservoir_plus[i] + RKCoefficients::e7 * dev_ptrs.k7_reservoir_plus[i] ) );
     if ( not use_te_tm_splitting ) 
         return;
     dev_ptrs.rk_error[i] += CUDA::abs2( p.dt * ( RKCoefficients::e1 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::e3 * dev_ptrs.k3_wavefunction_minus[i] + RKCoefficients::e4 * dev_ptrs.k4_wavefunction_minus[i] + RKCoefficients::e5 * dev_ptrs.k5_wavefunction_minus[i] + RKCoefficients::e6 * dev_ptrs.k6_wavefunction_minus[i] + RKCoefficients::e7 * dev_ptrs.k7_wavefunction_minus[i] ) );
-    dev_ptrs.rk_error[i] += CUDA::abs2( p.dt * ( RKCoefficients::e1 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::e3 * dev_ptrs.k3_reservoir_minus[i] + RKCoefficients::e4 * dev_ptrs.k4_reservoir_minus[i] + RKCoefficients::e5 * dev_ptrs.k5_reservoir_minus[i] + RKCoefficients::e6 * dev_ptrs.k6_reservoir_minus[i] + RKCoefficients::e7 * dev_ptrs.k7_reservoir_minus[i] ) );
+    //dev_ptrs.rk_error[i] += CUDA::abs2( p.dt * ( RKCoefficients::e1 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::e3 * dev_ptrs.k3_reservoir_minus[i] + RKCoefficients::e4 * dev_ptrs.k4_reservoir_minus[i] + RKCoefficients::e5 * dev_ptrs.k5_reservoir_minus[i] + RKCoefficients::e6 * dev_ptrs.k6_reservoir_minus[i] + RKCoefficients::e7 * dev_ptrs.k7_reservoir_minus[i] ) );
 }
 
 CUDA_GLOBAL void PC3::Kernel::RK4::runge_sum_to_input_k2( int i, Device::Pointers dev_ptrs, System::Parameters p, bool use_te_tm_splitting ) {

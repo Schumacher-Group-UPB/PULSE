@@ -367,7 +367,6 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
 
         // Calculate dh
         real_number dh = std::pow( system.tolerance / 2. / CUDA::max( final_error, 1E-15 ), 0.25 );
-
         // Check if dh is nan
         if ( std::isnan( dh ) ) {
             dh = 1.0;
