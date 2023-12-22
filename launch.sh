@@ -23,31 +23,31 @@ system_parameters=(
     #"--input pump,potential,initial,fft" # Keywords of input matrices to load
 
     ##-------------------------- Output Parameters ---------------------------##
-    #"--output <strings>"                           # Keywords of matrices to output to file
-    #                                               # You can also specify "none" to disable all output, or "max" or "scalar" to not output matrices
-    #"--outEvery <iterations>"                      # Output everx x iterations (not ps)
-    #"--history <x>"                                # Output at most x history points. The history points are cached every outEvery iterations.
-    #"--historyMatrix <start> <end> <increment>"    # Output the history matrix every outEvery iterations. 
-    #"--outMat Scaling"                             # Output all matrices every outEvery iterations, but scale their dimensions by the given factor
-    #-nosfml                                        # Disable SFML output
+    #"--output <strings>"                                                   # Keywords of matrices to output to file
+    #                                                                       # You can also specify "none" to disable all output, or "max" or "scalar" to not output matrices
+    #"--outEvery <iterations>"                                              # Output everx x ps
+    #"--history <ps>"                                                       # Output at most x history points. The history points are cached every outEvery iterations.
+    #"--historyMatrix <start x> <end x> <start y> <end y>  <increment>"     # Output the history matrix every outEvery iterations. 
+    #"--outMat Scaling"                                                     # Output all matrices every outEvery iterations, but scale their dimensions by the given factor
+    #-nosfml                                                                # Disable SFML output
 
     ##------------------------- Numeric Configuration ------------------------##
     # -- Grid Configuration -- #
-    #"--N <gridresolution>"     # Single Direction Grid Resolution
-    #"--xmax <mum>"             # X-Range in mum. The grid is calculated from -xmax to xmax
-    #"-periodic"                # Periodic Boundary Conditions
+    #"--N <X> <Y>"                      # Single Direction Grid Resolution
+    #"--L <mum> <mum>"                  # X-Range in mum. The grid is calculated from -xmax to xmax
+    #"--boundary <string> <string> "    # Periodic Boundary Conditions for x and y, can be either "periodic" or "zero"
     # -- Temporal Configuration -- #
-    #"--tmax <ps>"              # Evaluated Time in ps
-    #"--tstep <ps>"             # Time step. If omitted, the magic time step is used
-    #"-rk45"                    # Use the RK45 solver
-    #"--tol <value>"            # Tolerance for the RK45 Solver
+    #"--tmax <ps>"                      # Evaluated Time in ps
+    #"--tstep <ps>"                     # Time step. If omitted, the magic time step is used
+    #"-rk45"                            # Use the RK45 solver
+    #"--tol <value>"                    # Tolerance for the RK45 Solver
     # -- Structure -- #
-    #"-tetm"                    # Use TE/TM Splitting
+    #"-tetm"                            # Use TE/TM Splitting
     
     ############################## Mask Inputs #################################
 
     ##---------------------------- Mask Syntax -------------------------------##
-    #"--(mask) <Amplitude> <behaviour:add,multiply,replace,adaptive,complex> <Width> <X> <Y> 
+    #"--(mask) <Amplitude> <behaviour:add,multiply,replace,adaptive,complex> <Width X> <Width Y> <X> <Y> 
     #          <polarization:plus,minus,both> <Exponent> <Charge or none> <gauss,outerExponent,ring,noDivide,local> # FFT Mask
     # Amplitude: float
     # Behaviour: add, multiply, replace, adaptive, complex
@@ -73,22 +73,22 @@ system_parameters=(
     #   noDivide: Do not divide by the mask by width*sqrt(2pi)
 
     ##-------------------------- FFT Configuration ---------------------------##
-    #"--fftMask <Amp> <Behaviour> <Width> <X> <Y> <Pol> <Exponent> <M> <Type>"
+    #"--fftMask <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type>"
     #"--fftEvery <ps>"  # FFT Every x ps
 
     ##-------------------------- Pump Configuration --------------------------##
-    #"--pump <Amp> <Behaviour> <Width> <X> <Y> <Pol> <Exponent> <M> <Type>"
+    #"--pump <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type>"
 
     ##----------------------- Potential Configuration ------------------------##
-    #"--potential <Amp> <Behaviour> <Width> <X> <Y> <Pol> <Exponent> <M> <Type>"
+    #"--potential <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type>"
 
     ##------------------------- Pulse Configuration --------------------------##
     # The pulses follow the same syntax as the masks. Additionally, they also take
     # a T0, Frequency and TWidth parameter.
-    #"--pulse <Amp> <Behaviour> <Width> <X> <Y> <Pol> <Exponent> <M> <Type> <T0> <Frequency> <TWidth>"
+    #"--pulse <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type> <T0> <Frequency> <TWidth>"
     
     ##---------------------- Initial State Configuration ---------------------##
-    #"--initialState <Amp> <Behaviour> <Width> <X> <Y> <Pol> <Exponent> <M> <Type>"
+    #"--initialState <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type>"
     #"--initRandom <amp> <seed>" # Randomly initialize the system from -Amp to Amp with defined seed ["random" or number]
 
     ############################ System Parameters #############################
@@ -162,10 +162,10 @@ if [ ! -f "${output_path}wavefunction_minus.txt" ]; then
     set yrange[STATS_min_x:STATS_max_x]; 
     set output '${output_path}initial_condition.png'; 
     set multiplot layout 1,3; 
-    splot '${output_path}initial_condition_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Initial Condition';
+    splot '${output_path}initial_condition_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Initial Condition';
     splot '${output_path}initial_condition_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Initial Condition';
     set view 50,30;
-    splot '${output_path}initial_condition_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Initial Condition';"
+    splot '${output_path}initial_condition_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Initial Condition';"
     
     # Pump
     gnuplot "-e" "set size square; 
@@ -176,10 +176,10 @@ if [ ! -f "${output_path}wavefunction_minus.txt" ]; then
     set yrange[STATS_min_x:STATS_max_x]; 
     set output '${output_path}pump.png'; 
     set multiplot layout 1,3; 
-    splot '${output_path}pump_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Pump'; 
+    splot '${output_path}pump_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Pump'; 
     splot '${output_path}pump_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Pump';
     set view 50,30;
-    splot '${output_path}pump_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Pump';"
+    splot '${output_path}pump_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Pump';"
 
     # Wavefunction
     gnuplot "-e" "set size square; 
@@ -190,10 +190,10 @@ if [ ! -f "${output_path}wavefunction_minus.txt" ]; then
     set yrange[STATS_min_x:STATS_max_x]; 
     set output '${output_path}wavefunction.png'; 
     set multiplot layout 1,3; 
-    splot '${output_path}wavefunction_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Wavefunction';
+    splot '${output_path}wavefunction_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Wavefunction';
     splot '${output_path}wavefunction_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Wavefunction';
     set view 50,30;
-    splot '${output_path}wavefunction_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Wavefunction';"
+    splot '${output_path}wavefunction_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Wavefunction';"
 
     # Reservoir
     gnuplot "-e" "set size square; 
@@ -204,10 +204,10 @@ if [ ! -f "${output_path}wavefunction_minus.txt" ]; then
     set yrange[STATS_min_x:STATS_max_x]; 
     set output '${output_path}reservoir.png'; 
     set multiplot layout 1,3; 
-    splot '${output_path}reservoir_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Reservoir';
+    splot '${output_path}reservoir_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Reservoir';
     splot '${output_path}reservoir_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Reservoir';
     set view 50,30;
-    splot '${output_path}reservoir_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Reservoir';"
+    splot '${output_path}reservoir_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Reservoir';"
 
 
     # Potential
@@ -290,18 +290,18 @@ set multiplot layout 2,3;
 stats '${output_path}initial_condition_plus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}initial_condition_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Initial Condition+';
+splot '${output_path}initial_condition_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Initial Condition+';
 splot '${output_path}initial_condition_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Initial Condition+';
 set view 50,30;
 set view map;
-splot '${output_path}initial_condition_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Initial Condition+';
+splot '${output_path}initial_condition_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Initial Condition+';
 stats '${output_path}initial_condition_minus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}initial_condition_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Initial Condition-';
+splot '${output_path}initial_condition_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Initial Condition-';
 splot '${output_path}initial_condition_minus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Initial Condition-';
 set view 50,30;
-splot '${output_path}initial_condition_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Initial Condition-';"
+splot '${output_path}initial_condition_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Initial Condition-';"
 
 # Pump
 gnuplot "-e" "set size square; 
@@ -312,18 +312,18 @@ set multiplot layout 2,3;
 stats '${output_path}pump_plus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}pump_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Pump+'; 
+splot '${output_path}pump_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Pump+'; 
 splot '${output_path}pump_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Pump+';
 set view 50,30;
-splot '${output_path}pump_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Pump+';
+splot '${output_path}pump_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Pump+';
 set view map;
 stats '${output_path}pump_minus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}pump_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Pump-'; 
+splot '${output_path}pump_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Pump-'; 
 splot '${output_path}pump_minus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Pump-';
 set view 50,30;
-splot '${output_path}pump_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Pump-';"
+splot '${output_path}pump_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Pump-';"
 
 # Wavefunction
 gnuplot "-e" "set size square; 
@@ -334,18 +334,18 @@ set multiplot layout 2,3;
 stats '${output_path}wavefunction_plus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}wavefunction_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Wavefunction+';
+splot '${output_path}wavefunction_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Wavefunction+';
 splot '${output_path}wavefunction_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Wavefunction+';
 set view 50,30;
-splot '${output_path}wavefunction_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Wavefunction+';
+splot '${output_path}wavefunction_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Wavefunction+';
 set view map;
 stats '${output_path}wavefunction_minus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}wavefunction_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Wavefunction-';
+splot '${output_path}wavefunction_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Wavefunction-';
 splot '${output_path}wavefunction_minus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Wavefunction-';
 set view 50,30;
-splot '${output_path}wavefunction_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Wavefunction-';"
+splot '${output_path}wavefunction_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Wavefunction-';"
 
 # Reservoir
 gnuplot "-e" "set size square; 
@@ -356,17 +356,17 @@ set multiplot layout 1,3;
 stats '${output_path}reservoir_plus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}reservoir_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Reservoir+';
+splot '${output_path}reservoir_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Reservoir+';
 splot '${output_path}reservoir_plus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Reservoir+';
 set view 50,30;
-splot '${output_path}reservoir_plus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Reservoir+';
+splot '${output_path}reservoir_plus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Reservoir+';
 stats '${output_path}reservoir_minus.txt' nooutput; 
 set xrange[STATS_min_x:STATS_max_x]; 
 set yrange[STATS_min_x:STATS_max_x]; 
-splot '${output_path}reservoir_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Reservoir-';
+splot '${output_path}reservoir_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Reservoir-';
 splot '${output_path}reservoir_minus.txt' u 1:2:(arg(\$3*\$3+{0,1}*\$4*\$4)) w pm3d t 'Phase of Reservoir-';
 set view 50,30;
-splot '${output_path}reservoir_minus.txt' u 1:2:(\$3*\$3 + \$4*\$4) w pm3d t 'Reservoir-';"
+splot '${output_path}reservoir_minus.txt' u 1:2:(sqrt(\$3*\$3 + \$4*\$4)) w pm3d t 'Reservoir-';"
 
 
 # Potential

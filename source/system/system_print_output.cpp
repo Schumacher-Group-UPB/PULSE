@@ -40,19 +40,20 @@ void PC3::System::printHelp() {
         << unifyLength( "--path", "<string>", "Workingfolder. Standard is '" + filehandler.outputPath + "'\n" )
         << unifyLength( "--name", "<string>", "File prefix. Standard is '" + filehandler.outputName + "'\n" )
         << unifyLength( "--loadFrom", "<string> <string...>", "Loads list of matrices from path.\n" )
-        << unifyLength( "--outEvery", "<int>", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( filehandler.output_every ) + " iteration\n" )
+        << unifyLength( "--outEvery", "<int>", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( output_every ) + " ps\n" )
         << unifyLength( "--output", "<string...>", "Comma seperated list of things to output. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
         << unifyLength( "--history", "<int>", "Outputs at most N points of the file history\n" )
         << unifyLength( "--historyMatrix", "<int> <int> <int>", "Outputs the matrices specified in --output with specified start,end index and increment.\n" )
         << unifyLength( "--input", "<string...>", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus.\n" )
         << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. \n" );
     std::cout << unifyLength( "Numerical parameters", "", "\n" ) << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--N", "<int>", "Grid Dimensions (N x N). Standard is " + std::to_string( s_N ) + " x " + std::to_string( s_N ) + "\n" )
+              << unifyLength( "--N", "<int> <int>", "Grid Dimensions (N x N). Standard is " + std::to_string( s_N_x ) + " x " + std::to_string( s_N_y ) + "\n" )
               << unifyLength( "--tstep", "<double>", "Timestep, standard is magic-timestep\n" )
               << unifyLength( "-rk45", "no arguments", "Use RK45\n" )
               << unifyLength( "--tol", "<double>", "RK45 Tolerance, standard is " + std::to_string( tolerance ) + " ps\n" )
-              << unifyLength( "--tmax", "<double>", "Timelimit, standard is " + std::to_string( t_max ) + " ps\n" );
-    std::cout << unifyLength( "PC3::System parameters", "", "\n" )
+              << unifyLength( "--tmax", "<double>", "Timelimit, standard is " + std::to_string( t_max ) + " ps\n" )
+              << unifyLength( "--boundary", "<string> <string>", "Boundary conditions for x and y. Is either 'periodic' or 'zero'.\n" );
+    std::cout << unifyLength( "Parameters", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n" )
               << unifyLength( "--gammaC", "<double>", "Standard is " + std::to_string( gamma_c ) + " ps^-1\n" )
               << unifyLength( "--gammaR", "<double>", "Standard is " + std::to_string( gamma_r / gamma_c ) + "*gammaC\n" )
@@ -62,7 +63,7 @@ void PC3::System::printHelp() {
               << unifyLength( "--R", "<double>", "Standard is " + std::to_string( R ) + " ps^-1 mum^2\n" )
               << unifyLength( "--g_pm", "<double>", "Standard is " + std::to_string( g_pm / g_c ) + "*gc. Only effective in a system with TE/TM splitting.\n" )
               << unifyLength( "--deltaLT", "<double>", "Standard is " + std::to_string( delta_LT ) + " meV. Only effective in a system with TE/TM splitting.\n" )
-              << unifyLength( "--xmax", "<double>", "Standard is " + std::to_string( xmax ) + " mum\n" ) << std::endl;
+              << unifyLength( "--L", "<double> <double>", "Standard is " + std::to_string( s_L_x ) + ", " + std::to_string( s_L_y ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
               << unifyLength( "--pump", "<double> <string> <double> <double> <double> <string> <double> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring)\n", 30, 80 )
@@ -85,9 +86,13 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << EscapeSequence::BOLD << "-------------------------------- Runtime Statistics -------------------------------" << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::BOLD << "-----------------------------------------------------------------------------------" << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::BOLD << "------------------------------------ Parameters -----------------------------------" << EscapeSequence::RESET << std::endl;
-    std::cout << unifyLength( "N", std::to_string( s_N ), "", l, l ) << std::endl;
-    std::cout << unifyLength( "N^2", std::to_string( s_N * s_N ), "", l, l ) << std::endl;
+    std::cout << unifyLength( "N", std::to_string( s_N_x ) + ", " + std::to_string( s_N_y ), "", l, l ) << std::endl;
+    std::cout << unifyLength( "N^2", std::to_string( s_N_x * s_N_y ), "", l, l ) << std::endl;
+    std::cout << unifyLength( "Lx", std::to_string( s_L_x ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "Ly", std::to_string( s_L_y ), "mum", l, l ) << std::endl;
     std::cout << unifyLength( "dx", std::to_string( dx ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "dy", std::to_string( dx ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "tmax", std::to_string( t_max ), "ps", l, l ) << std::endl;
     std::cout << unifyLength( "dt", std::to_string( dt ), "ps", l, l ) << std::endl;
     std::cout << unifyLength( "gamma_c", std::to_string( gamma_c ), "ps^-1", l, l ) << std::endl;
     std::cout << unifyLength( "gamma_r", std::to_string( gamma_r ), "ps^-1", l, l ) << std::endl;
@@ -97,29 +102,26 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << unifyLength( "R", std::to_string( R ), "ps^-1 mum^-2", l, l ) << std::endl;
     std::cout << unifyLength( "delta_LT", std::to_string( delta_LT ), "meV", l, l ) << std::endl;
     std::cout << unifyLength( "m_eff", std::to_string( m_eff ), "", l, l ) << std::endl;
-    std::cout << unifyLength( "xmax", std::to_string( xmax ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "h_bar_s", std::to_string( h_bar_s ), "", l, l ) << std::endl;
     std::cout << "--------------------------------- Envelope Functions ------------------------------" << std::endl;
     // TODO: overwrite << operator of the Envelope Class
     for ( int i = 0; i < pulse.amp.size(); i++ ) {
-        std::cout << "Pulse at t0 = " << pulse.t0[i] << ", amp = " << pulse.amp[i] << ", freq = " << pulse.freq[i] << ", sigma = " << pulse.sigma[i] << "\n         m = " << pulse.m[i] << ", pol = " << pulse.s_pol[i] << ", width = " << pulse.width[i] << ", X = " << pulse.x[i] << ", Y = " << pulse.y[i] << std::endl;
+        std::cout << "Pulse at t0 = " << pulse.t0[i] << ", amp = " << pulse.amp[i] << ", freq = " << pulse.freq[i] << ", sigma = " << pulse.sigma[i] << "\n         m = " << pulse.m[i] << ", pol = " << pulse.s_pol[i] << ", width X = " << pulse.width_x[i] << ", width Y = " << pulse.width_y[i] << ", X = " << pulse.x[i] << ", Y = " << pulse.y[i] << std::endl;
     }
     for ( int i = 0; i < pump.amp.size(); i++ ) {
-        std::cout << "Pump at amp = " << pump.amp[i] << ", width = " << pump.width[i] << ", X = " << pump.x[i] << ", Y = " << pump.y[i] << ", pol = " << pump.s_pol[i] << ", type = " << pump.s_type[i] << std::endl;
+        std::cout << "Pump at amp = " << pump.amp[i] << ", width X = " << pump.width_x[i] << ", width Y = " << pump.width_y[i] << ", X = " << pump.x[i] << ", Y = " << pump.y[i] << ", pol = " << pump.s_pol[i] << ", type = " << pump.s_type[i] << std::endl;
     }
     for ( int i = 0; i < mask.amp.size(); i++ ) {
-        std::cout << "Soll Mask at amp = " << mask.amp[i] << ", width = " << mask.width[i] << ", X = " << mask.x[i] << ", Y = " << mask.y[i] << ", pol = " << mask.s_pol[i] << ", type = " << mask.s_type[i] << std::endl;
+        std::cout << "Soll Mask at amp = " << mask.amp[i] << ", width X = " << mask.width_x[i] << ", width Y = " << mask.width_y[i] << ", X = " << mask.x[i] << ", Y = " << mask.y[i] << ", pol = " << mask.s_pol[i] << ", type = " << mask.s_type[i] << std::endl;
     }
     for ( int i = 0; i < fft_mask.amp.size(); i++ ) {
-        std::cout << "FFT Mask at amp = " << fft_mask.amp[i] << ", width = " << fft_mask.width[i] << ", X = " << fft_mask.x[i] << ", Y = " << fft_mask.y[i] << ", pol = " << fft_mask.s_pol[i] << ", type = " << fft_mask.s_type[i] << std::endl;
+        std::cout << "FFT Mask at amp = " << fft_mask.amp[i] << ", width X = " << fft_mask.width_x[i] << ", width Y = " << fft_mask.width_y[i] << ", X = " << fft_mask.x[i] << ", Y = " << fft_mask.y[i] << ", pol = " << fft_mask.s_pol[i] << ", type = " << fft_mask.s_type[i] << std::endl;
     }
     if ( fft_mask.size() > 0 )
         std::cout << "Applying FFT every " << fft_every << " ps" << std::endl;
     std::cout << EscapeSequence::BOLD << "--------------------------------- Runtime Statistics ------------------------------" << EscapeSequence::RESET << std::endl;
     double total = PC3::TimeIt::totalRuntime();
-    for ( const auto& [key, value] : timeit_times_total ) {
-        std::cout << unifyLength( key + ":", std::to_string( value ) + "s", std::to_string( value / t_max * 1E3 ) + "ms/ps", l, l ) << std::endl;
-    }
-    std::cout << unifyLength( "Total Runtime:", std::to_string( total ) + "s", std::to_string( total / t_max * 1E3 ) + "ms/ps", l, l ) << " --> " << std::to_string( total / iteration ) << "s/it" << std::endl;
+    std::cout << unifyLength( "Total Runtime:", std::to_string( total ) + "s", std::to_string( total / t * 1E3 ) + "ms/ps", l, l ) << " --> " << std::to_string( total / iteration ) << "s/it" << std::endl;
     std::cout << EscapeSequence::BOLD << "---------------------------------------- Infos ------------------------------------" << EscapeSequence::RESET << std::endl;
     if ( filehandler.loadPath.size() > 0 and not input_keys.empty() )
         std::cout << "Loaded Initial Matrices from " << filehandler.loadPath << std::endl;
@@ -132,7 +134,7 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
         std::cout << " = dt_min used: " << dt_min << std::endl;
     }
     std::cout << "Calculated until t = " << t << "ps" << std::endl;
-    std::cout << "Output variables and plots every " << filehandler.output_every << " iterations" << std::endl;
+    std::cout << "Output variables and plots every " << output_every << " ps" << std::endl;
     std::cout << "Total allocated space for Device Matrices: " << DeviceMatrixBase::global_total_mb_max << " MB." << std::endl;
     std::cout << "Total allocated space for Host Matrices: " << HostMatrixBase::global_total_mb_max << " MB." << std::endl;
     std::cout << "Random Seed was: " << random_seed << std::endl;

@@ -1,4 +1,4 @@
-#include "solver/gpu_solver.cuh"
+#include "solver/gpu_solver.hpp"
 
 // TODO: selector to choose which matrices to sync
 void PC3::Solver::syncDeviceArrays() {

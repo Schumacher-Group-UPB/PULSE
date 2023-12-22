@@ -7,13 +7,15 @@ INCDIR = include
 OBJDIR = obj
 
 # Compiler flags
-GCCFLAGS = -std=c++20 -fopenmp -O3 -x c++
+GCCFLAGS = -std=c++20 -fopenmp -x c++
 ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true -O3
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true 
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -rdc=true -diag-suppress 177 -O3
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -rdc=true -diag-suppress 177
 endif
 SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
+
+OPTIMIZATION = -O3
 
 SFML ?= FALSE
 TETM ?= FALSE
@@ -56,9 +58,9 @@ ifndef TARGET
 endif
 
 ifeq ($(COMPILER),nvcc)
-	COMPILER_FLAGS = $(NVCCFLAGS)
+	COMPILER_FLAGS = $(NVCCFLAGS) $(OPTIMIZATION)
 else
-	COMPILER_FLAGS = $(GCCFLAGS)
+	COMPILER_FLAGS = $(GCCFLAGS) $(OPTIMIZATION)
 endif
 
 all: $(OBJDIR) $(CPP_OBJS) $(CU_OBJS)

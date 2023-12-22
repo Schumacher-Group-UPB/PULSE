@@ -35,8 +35,10 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--R", argc, argv ) ) != -1 ) {
         R = getNextInput( argv, "R", ++index );
     }
-    if ( ( index = findInArgv( "--xmax", argc, argv ) ) != -1 )
-        xmax = getNextInput( argv, "xmax", ++index );
+    if ( ( index = findInArgv( "--L", argc, argv ) ) != -1 ) {
+        s_L_x = getNextInput( argv, "L", ++index );
+        s_L_y = getNextInput( argv, "L", index );
+    }
     if ( ( index = findInArgv( "--g_pm", argc, argv ) ) != -1 ) {
         g_pm = getNextInput( argv, "gm", ++index );
     }
@@ -68,8 +70,8 @@ void PC3::System::init( int argc, char** argv ) {
 
     // Numerik
     if ( ( index = findInArgv( "--N", argc, argv ) ) != -1 ) {
-        s_N = (int)getNextInput( argv, "s_N", ++index );
-        s_sub_N = 1;//(int)getNextInput( argv, "s_sub_N", index );
+        s_N_x = (int)getNextInput( argv, "s_N_x", ++index );
+        s_N_y = (int)getNextInput( argv, "s_N_y", index );
     }        
 
     //std::cout << EscapeSequence::GREY << "Calculated dx = " << dx << "\nCalculated dt = " << dt << EscapeSequence::RESET << std::endl;
@@ -110,24 +112,39 @@ void PC3::System::init( int argc, char** argv ) {
         history_output_n = (unsigned int)getNextInput( argv, "history_output_n", ++index );
     }
     history_matrix_output_increment = 1u;
-    history_matrix_start = 0;
-    history_matrix_end = s_N;
+    history_matrix_start_x = 0;
+    history_matrix_start_y = 0;
+    history_matrix_end_x = s_N_x;
+    history_matrix_end_y = s_N_y;
     do_output_history_matrix = false;
     if ( ( index = findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
-        history_matrix_start = (unsigned int)getNextInput( argv, "history_matrix_start", ++index );
-        history_matrix_end = (unsigned int)getNextInput( argv, "history_matrix_end", index );
+        history_matrix_start_x = (unsigned int)getNextInput( argv, "history_matrix_start_x", ++index );
+        history_matrix_end_x = (unsigned int)getNextInput( argv, "history_matrix_end_x", index );
+        history_matrix_start_y = (unsigned int)getNextInput( argv, "history_matrix_start_y", index );
+        history_matrix_end_y = (unsigned int)getNextInput( argv, "history_matrix_end_y", index );
         history_matrix_output_increment = (unsigned int)getNextInput( argv, "history_matrix_output_increment", index );
         do_output_history_matrix = true;
     }
+
+    if ( ( index = findInArgv( "--outEvery", argc, argv ) ) != -1 )
+        output_every = getNextInput( argv, "output_every", ++index );
 
     // If -masknorm is passed to the program, the mask and psi is normalized before the error calculation
     if ( ( index = findInArgv( "-masknorm", argc, argv ) ) != -1 ) {
         normalize_before_masking = true;
     }
 
-    periodic_boundary_conditions = false;
-    if ( ( index = findInArgv( "-periodic", argc, argv ) ) != -1 ) {
-        periodic_boundary_conditions = true;
+    periodic_boundary_x = false;
+    periodic_boundary_y = false;
+    if ( ( index = findInArgv( "--boundary", argc, argv ) ) != -1 ) {
+        auto boundary_x = getNextStringInput( argv, "boundary_x", ++index );
+        auto boundary_y = getNextStringInput( argv, "boundary_y", index );
+        if ( boundary_x == "periodic" ) {
+            periodic_boundary_x = true;
+        }
+        if ( boundary_y == "periodic" ) {
+            periodic_boundary_y = true;
+        }
     }
 
     // Initialize t_0 as 0.

@@ -1,4 +1,5 @@
 #include "cuda/cuda_matrix.cuh"
+#include "kernel/kernel_index_overwrite.cuh"
 #include "kernel/kernel_runge_function.cuh"
 #include "system/envelope.hpp"
 
@@ -20,20 +21,18 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
     complex_number ret = { 0.0, 0.0 };
     for ( int c = 0; c < pulse.n; c++ ) {
         // Calculate X,Y in the grid space
-        auto x = -p.xmax + p.dx * col;
-        auto y = -p.xmax + p.dx * row;
+        auto x = -p.s_L_x + p.dx * col;
+        auto y = -p.s_L_y + p.dy * row;
         // If type contains "local", use local coordinates instead
         if ( cmp_active( pulse.type[c], PC3::Envelope::Type::Local ) ) {
-            x = -1.0 + 2.0 * col / (p.N - 1);
-            y = -1.0 + 2.0 * row / (p.N - 1);
+            x = -1.0 + 2.0 * col / (p.N_x - 1);
+            y = -1.0 + 2.0 * row / (p.N_y - 1);
         }
         // Check if the polarization matches or if the input polarization is both. If not, the envelope is skipped.
         if ( pulse.pol[c] != PC3::Envelope::Polarization::Both and pulse.pol[c] != polarization and polarization != PC3::Envelope::Polarization::Both )
             continue;
-        // Calculate ethe "r^2" distance to the center of the pump.
-        const real_number r_squared = CUDA::abs2( x - pulse.x[c] ) + CUDA::abs2( y - pulse.y[c] );
         // Calculate Content of Exponential function
-        const auto exp_factor = 0.5 * r_squared / pulse.width[c] / pulse.width[c];
+        const auto exp_factor = 0.5 * ( CUDA::abs2( x - pulse.x[c] )/ pulse.width_x[c] / pulse.width_x[c] + CUDA::abs2( y - pulse.y[c] )/ pulse.width_y[c] / pulse.width_y[c] );
         // Calculate the exponential function
         auto exp_function = CUDA::exp( -CUDA::pow( exp_factor, pulse.exponent[c] ) );
         // If the type is a gaussian outer, we calculate CUDA::exp(...)^N instead of CUDA::exp((...)^N)
@@ -46,7 +45,7 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
         // Default amplitude is A/sqrt(2pi)/w
         complex_number amplitude = { pulse.amp[c], 0.0 };
         if ( not( cmp_active( pulse.type[c], PC3::Envelope::Type::NoDivide ) ) )
-            amplitude = amplitude / pulse.width[c] / sqrt( 2 * 3.1415 );
+            amplitude = amplitude / sqrt( 2 * 3.1415 * pulse.width_x[c] * pulse.width_y[c] );
         // If the behaviour is adaptive, the amplitude is set to the current value of the buffer instead.
         if ( cmp_active( pulse.behavior[c], PC3::Envelope::Behavior::Adaptive ) )
             amplitude = complex_number( pulse.amp[c] * CUDA::real(ret), 0.0 );
@@ -54,7 +53,7 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
             amplitude = complex_number( 0.0, CUDA::real( amplitude ) );
         complex_number contribution = amplitude * pre_fractor * exp_function;
         // Add Charge
-        complex_number combined = contribution * CUDA::pow( ( ( x - pulse.x[c] ) / p.xmax + 1.0 * CUDA::sign( pulse.m[c] ) * p.i * ( y - pulse.y[c] ) / p.xmax ), CUDA::abs( pulse.m[c] ) );
+        complex_number combined = contribution * CUDA::pow( ( ( x - pulse.x[c] ) / p.s_L_x + 1.0 * CUDA::sign( pulse.m[c] ) * p.i * ( y - pulse.y[c] ) / p.s_L_y ), CUDA::abs( pulse.m[c] ) );
         const auto t0 = pulse.t0[c];
         complex_number temp_shape = p.one_over_h_bar_s * CUDA::exp( -( t - t0 ) * ( t - t0 ) / pulse.sigma[c] / pulse.sigma[c] - p.i * pulse.freq[c] * ( t - t0 ) );
         if ( not( cmp_active( pulse.type[c], PC3::Envelope::Type::NoDivide ) ) )
@@ -72,4 +71,19 @@ CUDA_DEVICE complex_number PC3::Kernel::kernel_inline_calculate_pulse( const int
     }
     // Return complete pulse
     return ret;
+}
+
+CUDA_GLOBAL void PC3::Kernel::runge_func_kernel_pulse( int i, real_number t, System::Parameters p,
+                                        Solver::PulseParameters::Pointers pulse, bool use_te_tm_splitting,
+                                        InputOutput io  ) {
+    OVERWRITE_THREAD_INDEX( i );
+
+    const int row = i / p.N_x;
+    const int col = i % p.N_x;
+
+    io.out_wf_plus[i] += kernel_inline_calculate_pulse( row, col, PC3::Envelope::Polarization::Plus, t, p, pulse );
+
+    if ( not use_te_tm_splitting )
+        return;
+    io.out_wf_minus[i] += kernel_inline_calculate_pulse( row, col, PC3::Envelope::Polarization::Minus, t, p, pulse );
 }

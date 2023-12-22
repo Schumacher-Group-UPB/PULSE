@@ -25,22 +25,26 @@ PC3::System::System() {
 
     // System Variables
     m_eff = 1E-4 * 5.6856;
+    m_eff_scaled = 0;
     dt_scaling_factor = m_eff;
     gamma_c = 0.15;          // ps^-1
     gamma_r = 1.5 * gamma_c; // ps^-1
     g_c = 3.E-6;             // meV mum^2
     g_r = 2. * g_c;          // meV mum^2
     R = 0.01;                // ps^-1 mum^2
-    xmax = 100.;             // mum
+    s_L_x = 100.;             // mum
+    s_L_y = 100.;             // mum
     g_pm = -g_c / 5;         // meV mum^2
     delta_LT = 0.025E-3;     // meV
 
     // Numerics
-    s_N = 400;
+    s_N_x = 400;
+    s_N_y = 400;
     t_max = 1000;
     iteration = 0;
     // RK Solver Variables
-    t = 0;
+    t = 1000;
+    output_every = 1;
     dt_max = 3;
     dt_min = 0.0001; // also dt_delta
     tolerance = 1E-1;
@@ -50,7 +54,7 @@ PC3::System::System() {
     fft_every = 1; // ps
 
     // Kernel Block Size
-    block_size = 16;
+    block_size = 256;
     omp_max_threads = omp_get_max_threads();
 
     // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
@@ -69,8 +73,10 @@ void PC3::System::calculateAuto() {
     // dt_scaling_factor is again divided by m_eff, meaning smaller input m_eff result in smaller dt
     dt_scaling_factor /= m_eff;
     // Calculate dx and dt
-    dx = 2.0 * xmax / ( s_N - 1 ); 
-    magic_timestep = 0.5 * dx * dx / dt_scaling_factor;
+    dx = 2.0 * s_L_x / ( s_N_x - 1 ); 
+    dy = 2.0 * s_L_y / ( s_N_y - 1 ); 
+    m_eff_scaled = -0.5 * h_bar_s * h_bar_s / ( m_eff * dx * dy );
+    magic_timestep = 0.5 * dx * dy / dt_scaling_factor;
     if ( do_overwrite_dt ) {
         dt = magic_timestep;
     }

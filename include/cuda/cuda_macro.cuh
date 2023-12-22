@@ -39,13 +39,18 @@
         {                                      \
             CHECK_CUDA_ERROR( cufftDestroy( plan ), "FFT Plan Destroy" ); \
         }
-#    define CUDA_FFT_CREATE( plan, N ) \
+#    define CUDA_FFT_CREATE( plan, Nx, Ny ) \
         {                                      \
-            CHECK_CUDA_ERROR( cufftPlan2d( plan, N, N, FFTPLAN ), "FFT Plan" ); \
+            CHECK_CUDA_ERROR( cufftPlan2d( plan, Ny, Nx, FFTPLAN ), "FFT Plan" ); \
         }
 #    define CALL_KERNEL( func, name, grid, block, ... ) \
         {                                                         \
             func<<<grid, block>>>( 0, __VA_ARGS__ ); \
+            CHECK_CUDA_ERROR( {}, name );\
+        }
+#    define CALL_PARTIAL_KERNEL( func, name, grid, block, start, stream, ... ) \
+        {                                                         \
+            func<<<grid, block, 0, stream>>>( start, __VA_ARGS__ ); \
             CHECK_CUDA_ERROR( {}, name );\
         }
         
@@ -77,13 +82,13 @@
             std::free( ptr );            \
         }
 #define CUDA_FFT_DESTROY( plan )
-#define CUDA_FFT_CREATE( plan, N )
+#define CUDA_FFT_CREATE( plan, Nx, Ny )
 #define CALL_KERNEL( func, name, grid, block, ... ) \
         {                                                         \
         _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) \
-            for ( int i = 0; i < system.s_N; ++i ) { \
-            for ( int j = 0; j < system.s_N; ++j ) { \
-                const auto index = i * system.s_N + j; \
+            for ( int i = 0; i < system.s_N_x; ++i ) { \
+            for ( int j = 0; j < system.s_N_y; ++j ) { \
+                const auto index = i * system.s_N_x + j; \
                 func( index, __VA_ARGS__ ); \
             } \
             } \
@@ -102,6 +107,7 @@
 #    define CUDA_DEVICE
 #    define CUDA_HOST
 #    define CUDA_GLOBAL
+#    define CUDA_RESTRICT
 #    define THRUST_DEVICE thrust::host
 #    define cuda_fft_plan int
 class dim3 {
@@ -114,9 +120,7 @@ class dim3 {
 #    define CUDA_DEVICE __device__
 #    define CUDA_HOST __host__
 #    define CUDA_GLOBAL __global__
+#    define CUDA_RESTRICT __restrict__
 #    define THRUST_DEVICE thrust::device
 #    define cuda_fft_plan cufftHandle
 #endif
-
-// TODO: macros für CALL_CUDA_KERNEL, dass dann die dims übergibt, oder wenn cpu
-// gewählt ist die funktion mittels loop und system.s_N über openmp aufruft.

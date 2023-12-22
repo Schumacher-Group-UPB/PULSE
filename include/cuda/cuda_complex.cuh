@@ -62,7 +62,7 @@ CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator+( const cuDoubleCom
     return make_cuDoubleComplex( b, 0.0 ) + a;
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator-( const cuDoubleComplex& a, const real_number& b ) {
-    return make_cuDoubleComplex( b, 0.0 ) - a;
+    return a - make_cuDoubleComplex( b, 0.0 );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator+( const real_number& a, const cuDoubleComplex& b ) {
     return make_cuDoubleComplex( a, 0.0 ) + b;
@@ -75,7 +75,7 @@ CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator*( const cuDoubleCom
     return cuCmul( a, b );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator*( const cuDoubleComplex& a, const real_number& b ) {
-    return make_cuDoubleComplex( b, 0.0 ) * a;
+    return a * make_cuDoubleComplex( b, 0.0 );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator/( const cuDoubleComplex& a, const cuDoubleComplex& b ) {
     return cuCdiv( a, b );
@@ -91,13 +91,22 @@ CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator/( const real_number
 }
 
 CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex square( const cuDoubleComplex& a ) {
-    return make_cuDoubleComplex( a.x * a.x, a.y * a.y );
+    return make_cuDoubleComplex( a.x * a.x - a.y * a.y, 2.0 * a.x * a.y );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE void operator+=( cuDoubleComplex& a, const cuDoubleComplex& b ) {
     a = a + b;
 }
 CUDA_HOST_DEVICE static CUDA_INLINE void operator+=( cuDoubleComplex& a, const real_number& b ) {
     a.x = a.x + b;
+}
+CUDA_HOST_DEVICE static CUDA_INLINE void operator-=( cuDoubleComplex& a, const cuDoubleComplex& b ) {
+    a = a - b;
+}
+CUDA_HOST_DEVICE static CUDA_INLINE void operator-=( cuDoubleComplex& a, const real_number& b ) {
+    a.x = a.x - b;
+}
+CUDA_HOST_DEVICE static CUDA_INLINE cuDoubleComplex operator-( const cuDoubleComplex& a ) {
+    return make_cuDoubleComplex( -a.x, -a.y );
 }
 
 // Same for floating point precision
@@ -112,7 +121,7 @@ CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator+( const cuComplex& a, con
     return make_cuComplex( b, 0.0 ) + a;
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator-( const cuComplex& a, const real_number& b ) {
-    return make_cuComplex( b, 0.0 ) - a;
+    return a - make_cuComplex( b, 0.0 );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator+( const real_number& a, const cuComplex& b ) {
     return make_cuComplex( a, 0.0 ) + b;
@@ -125,7 +134,7 @@ CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator*( const cuComplex& a, con
     return cuCmulf( a, b );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator*( const cuComplex& a, const real_number& b ) {
-    return make_cuComplex( b, 0.0 ) * a;
+    return a * make_cuComplex( b, 0.0 );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator/( const cuComplex& a, const cuComplex& b ) {
     return cuCdivf( a, b );
@@ -141,13 +150,22 @@ CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator/( const real_number& a, c
 }
 
 CUDA_HOST_DEVICE static CUDA_INLINE cuComplex square( const cuComplex& a ) {
-    return make_cuComplex( a.x * a.x, a.y * a.y );
+    return make_cuComplex( a.x * a.x - a.y * a.y, 2.0 * a.x * a.y );
 }
 CUDA_HOST_DEVICE static CUDA_INLINE void operator+=( cuComplex& a, const cuComplex& b ) {
     a = a + b;
 }
 CUDA_HOST_DEVICE static CUDA_INLINE void operator+=( cuComplex& a, const real_number& b ) {
     a.x = a.x + b;
+}
+CUDA_HOST_DEVICE static CUDA_INLINE void operator-=( cuComplex& a, const cuComplex& b ) {
+    a = a - b;
+}
+CUDA_HOST_DEVICE static CUDA_INLINE void operator-=( cuComplex& a, const real_number& b ) {
+    a.x = a.x - b;
+}
+CUDA_HOST_DEVICE static CUDA_INLINE cuComplex operator-( const cuComplex& a ) {
+    return make_cuComplex( -a.x, -a.y );
 }
 #endif
 

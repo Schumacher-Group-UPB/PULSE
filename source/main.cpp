@@ -35,7 +35,7 @@
 #include "misc/helperfunctions.hpp"
 #include "misc/timeit.hpp"
 #include "misc/sfml_helper.hpp"
-#include "solver/gpu_solver.cuh"
+#include "solver/gpu_solver.hpp"
 
 int main( int argc, char* argv[] ) {
     // Convert input arguments to system and handler variables
@@ -52,13 +52,10 @@ int main( int argc, char* argv[] ) {
     // Main Loop
     while ( system.t < system.t_max and running ) {
         TimeThis(
-            // Iterate #output_every times
-            for ( int i = 0; i < system.filehandler.output_every; i++ ) {
-                solver.iterateRungeKutta();
-            },
-            "Runge-Kutta" );
+            // Iterate #output_every ps
+            auto start = system.t;
+            while ( system.t <= start + system.output_every and solver.iterateRungeKutta()){ }
 
-        TimeThis(
             // Sync the current device arrays to their host array equivalents
             solver.syncDeviceArrays();
             // Cache the history and max values
@@ -66,11 +63,29 @@ int main( int argc, char* argv[] ) {
             // Output Matrices if enabled
             solver.cacheMatrices( solver.system.t );
             // Plot
-            running = plotSFMLWindow( solver, 1. / (complete_duration)*system.dt * system.filehandler.output_every );
-            , "Plotting" );
-        complete_duration = PC3::TimeIt::get( "Runge-Kutta" ) + PC3::TimeIt::get( "Plotting" );
-        std::cout << "T = " << int( system.t ) << ", Time per " << system.filehandler.output_every << " iterations: " << complete_duration << "s -> " << 1. / (complete_duration)*system.dt * system.filehandler.output_every << "ps/s, current dt = " << system.dt << "                \r" << std::flush;
+            running = plotSFMLWindow( solver, system.t/complete_duration );
+            , "Main-Loop" );
+        complete_duration = PC3::TimeIt::totalRuntime();
+
+        // Print Runtime
+        std::cout << EscapeSequence::HIDE_CURSOR;
+        std::cout << "-----------------------------------------------------------------------------------\n";
+        std::cout << "    T = " << int( system.t ) << "ps - dt = " << std::setprecision( 2 ) << system.dt << "ps    \n";
+        // Progressbar for system.t/system.t_max
+        std::cout << "    Progress:  [";
+        for ( int i = 0; i < 50.*system.t/system.t_max; i++ ) {
+                std::cout << EscapeSequence::BLUE << "#" << EscapeSequence::RESET; //█
+        }
+        for ( int i = 0; i < 50.*(1.-system.t/system.t_max); i++ ) {
+                std::cout << EscapeSequence::GREY << "#" << EscapeSequence::RESET;
+        }
+        std::cout << "]  " << int( 100.*system.t/system.t_max ) << "%  \n";
+        std::cout << "    Runtime: " << int(complete_duration) << "s, remaining: " << int( complete_duration*(system.t_max-system.t)/system.t ) << "s    \n";
+        std::cout << "    Time per ps: " << complete_duration/system.t << "s  -  " << std::setprecision( 3 ) << system.t/complete_duration << "ps/s    \n";
+        std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+        std::cout << EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP;
     }
+    std::cout <<"\n\n\n\n\n\n" << EscapeSequence::SHOW_CURSOR;
 
     // Fileoutput
     solver.finalize();

@@ -1,6 +1,6 @@
 #include <vector>
 #include <string>
-#include "solver/gpu_solver.cuh"
+#include "solver/gpu_solver.hpp"
 #include "cuda/cuda_macro.cuh"
 
 std::vector<std::string> _split_string_at(const std::string& input, std::string split_at) {

@@ -6,8 +6,8 @@ BasicWindow::BasicWindow( int w, int h, std::string n ) {
 }
 
 void BasicWindow::construct( int window_w, int window_h, int tx_w, int tx_h, std::string n ) {
-    // window_w = tx_w;
-    // window_h = tx_h;
+    //window_w = tx_w;
+    //window_h = tx_h;
     width = window_w;
     height = window_h;
     texture_w = tx_w;
@@ -27,7 +27,7 @@ void BasicWindow::construct( int window_w, int window_h, int tx_w, int tx_h, std
             pixMat.push_back( sf::Vertex( sf::Vector2f( i + .5f, j + .5f ), sf::Color( 0, 0, 0 ) ) );
         }
     }
-    //std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size() << " pixels." << std::endl;
+    std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size() << " pixels." << std::endl;
 }
 
 void BasicWindow::init() {
@@ -70,10 +70,11 @@ void BasicWindow::flipscreen() {
 void BasicWindow::blitMatrixPtr( const real_number* vector, ColorPalette& cp, int cols, int rows, int posX, int posY, int border, int skip ) {
     const int cols_over_skip = cols / skip;
     const int rows_over_skip = rows / skip;
+    //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
 #pragma omp parallel for schedule( dynamic )
     for ( int i = 0; i < cols_over_skip; i++ ) {
         for ( int j = 0; j < rows_over_skip; j++ ) {
-            auto c = cp.getColor( vector[( i * skip ) * rows + j * skip] );
+            auto c = cp.getColor( vector[( j * skip ) * cols + i * skip] );
             const auto index = ( i + 1 + posX ) * texture_h - 1 - ( j + posY );
             pixMat.at( index ).color.r = c.r;
             pixMat.at( index ).color.g = c.g;

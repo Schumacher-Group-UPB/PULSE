@@ -12,4 +12,8 @@ namespace EscapeSequence {
     static inline auto UNDERLINE = "\033[4m";
 
     static inline auto CLEAR_LINE = "\033[2K";
+    static inline auto LINE_UP = "\033[A";
+
+    static inline auto HIDE_CURSOR = "\033[?25l";
+    static inline auto SHOW_CURSOR = "\033[?25h";
 }

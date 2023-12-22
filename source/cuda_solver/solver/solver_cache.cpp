@@ -2,15 +2,15 @@
 #include <string>
 
 #include "misc/helperfunctions.hpp"
-#include "solver/gpu_solver.cuh"
+#include "solver/gpu_solver.hpp"
 #include "cuda/cuda_macro.cuh"
 
 void PC3::Solver::cacheValues() {
     // Min and Max
-    const auto [min_plus, max_plus] = CUDA::minmax( device.wavefunction_plus.get(), system.s_N * system.s_N, true /*Device Pointer*/ );
+    const auto [min_plus, max_plus] = CUDA::minmax( device.wavefunction_plus.get(), system.s_N_x * system.s_N_y, true /*Device Pointer*/ );
     host.wavefunction_max_plus.emplace_back( max_plus );
     // Cut at Y = 0
-    auto cut_p = device.wavefunction_plus.slice( system.s_N * system.s_N / 2, system.s_N );
+    auto cut_p = device.wavefunction_plus.slice( system.s_N_x * system.s_N_y / 2, system.s_N_x );
     host.wavefunction_plus_history.emplace_back( cut_p );
 
     // TE/TM Guard
@@ -18,9 +18,9 @@ void PC3::Solver::cacheValues() {
         return;
 
     // Same for _minus component if use_te_tm_splitting is true
-    const auto [min_minus, max_minus] = CUDA::minmax( device.wavefunction_minus.get(), system.s_N * system.s_N, true /*Device Pointer*/ );
+    const auto [min_minus, max_minus] = CUDA::minmax( device.wavefunction_minus.get(), system.s_N_x * system.s_N_y, true /*Device Pointer*/ );
     host.wavefunction_max_minus.emplace_back( max_minus );
-    auto cut_m = device.wavefunction_minus.slice( system.s_N * system.s_N / 2, system.s_N );
+    auto cut_m = device.wavefunction_minus.slice( system.s_N_x * system.s_N_y / 2, system.s_N_x );
     host.wavefunction_minus_history.emplace_back( cut_m );
 }
 
@@ -77,5 +77,5 @@ void PC3::Solver::cacheMatrices(const real_number t) {
     if (not system.do_output_history_matrix)
         return;
     std::string suffix = "_"+std::to_string(t);
-    outputMatrices( system.history_matrix_start, system.history_matrix_end, system.history_matrix_output_increment, suffix, "timeoutput/" );
+    outputMatrices( system.history_matrix_start_x, system.history_matrix_end_x, system.history_matrix_start_y, system.history_matrix_end_y, system.history_matrix_output_increment, suffix, "timeoutput/" );
 }

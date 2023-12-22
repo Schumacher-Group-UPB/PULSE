@@ -11,7 +11,7 @@ namespace PC3 {
 
 class Envelope {
     public:
-    std::vector<real_number> amp, width, x, y, exponent;
+    std::vector<real_number> amp, width_x, width_y, x, y, exponent;
     std::vector<int> m;
     std::vector<real_number> freq, sigma, t0;
     std::vector<std::string> s_type, s_pol, s_behavior;
@@ -61,7 +61,7 @@ class Envelope {
         { "local", Type::Local },
     };
 
-    void addSpacial(real_number amp, real_number width, real_number x, real_number y, real_number exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
+    void addSpacial(real_number amp, real_number width_x, real_number width_y, real_number x, real_number y, real_number exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
     void addTemporal(real_number t0, real_number sigma, real_number freq);
     int size();
 

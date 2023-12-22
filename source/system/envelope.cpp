@@ -29,11 +29,12 @@ eval_enum _cast_string_list_to_enum( const std::string& input, std::string split
     return ret;
 }
 
-void PC3::Envelope::addSpacial( real_number amp, real_number width, real_number x, real_number y,
+void PC3::Envelope::addSpacial( real_number amp, real_number width_x, real_number width_y, real_number x, real_number y,
                                 real_number exponent, const std::string& s_type, const std::string& s_pol,
                                 const std::string& s_behavior, const std::string& s_m ) {
     this->amp.push_back( amp );
-    this->width.push_back( width );
+    this->width_x.push_back( width_x );
+    this->width_y.push_back( width_y );
     this->x.push_back( x );
     this->y.push_back( y );
     this->exponent.push_back( exponent );
@@ -74,11 +75,12 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         // Behaviour
         auto sbehavior = getNextStringInput( argv, key + "_behaviour", index );
         // Width
-        real_number width = getNextInput( argv, key + "_width", index );
+        real_number width_x = getNextInput( argv, key + "_width_x", index );
+        real_number width_y = getNextInput( argv, key + "_width_y", index );
         // X Position
-        real_number posX = getNextInput( argv, key + "_X", index );
+        real_number pos_x = getNextInput( argv, key + "_X", index );
         // Y Position
-        real_number posY = getNextInput( argv, key + "_Y", index );
+        real_number pos_y = getNextInput( argv, key + "_Y", index );
 
         // Polarization
         auto spol = getNextStringInput( argv, key + "_pol", index );
@@ -92,7 +94,7 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         // Type
         auto stype = getNextStringInput( argv, key + "_type", index );
 
-        ret.addSpacial( amp, width, posX, posY, exponent, stype, spol, sbehavior, sm );
+        ret.addSpacial( amp, width_x, width_y, pos_x, pos_y, exponent, stype, spol, sbehavior, sm );
 
         if ( not time )
             continue;

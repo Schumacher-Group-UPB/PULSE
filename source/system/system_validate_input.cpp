@@ -14,13 +14,13 @@ void PC3::System::validateInputs() {
     // Give warnings if any variables appear to be too large or too small
     bool valid = true;
 
-    if ( s_N <= 0 ) {
-        std::cout << EscapeSequence::YELLOW << "N = " << s_N << " cannot be negative!" << EscapeSequence::RESET << std::endl;
+    if ( s_N_x <= 0 or s_N_y <= 0 ) {
+        std::cout << EscapeSequence::YELLOW << "N = " << s_N_x << ", " << s_N_y << " cannot be negative!" << EscapeSequence::RESET << std::endl;
         valid = false;
     }
 
-    if ( s_N % 2 != 0 ) {
-        std::cout << EscapeSequence::YELLOW << "Adjusted N from " << s_N << " to N = " << ( s_N + 1 ) << EscapeSequence::RESET << std::endl;
+    if ( s_N_x % 2 != 0 or s_N_y % 2) {
+        std::cout << EscapeSequence::YELLOW << "Input Dimensions have to be even!" << EscapeSequence::RESET << std::endl;
         valid = false;    
     }
 
@@ -44,23 +44,9 @@ void PC3::System::validateInputs() {
         std::cout << EscapeSequence::YELLOW << "dt_min = " << dt_min << " cannot be negative!" << EscapeSequence::RESET << std::endl;
         valid = false;
     }
-    if (abs( dt > 2.0*magic_timestep )) {
+    if (abs( dt > 1.1*magic_timestep )) {
         std::cout << EscapeSequence::YELLOW << "dt = " << dt << " is very large! Is this intended?" << EscapeSequence::RESET << std::endl;
     }
-
-    if ( s_sub_N <= 0 ) {
-        std::cout << EscapeSequence::YELLOW << "Subgrid N = " << s_sub_N << " cannot be negative or zero!" << EscapeSequence::RESET << std::endl;
-        valid = false;
-    }
-    if ( s_N <= 0 ) {
-        std::cout << EscapeSequence::YELLOW << "Grid N = " << s_sub_N << " cannot be negative or zero!" << EscapeSequence::RESET << std::endl;
-        valid = false;
-    }
-    
-    if ( s_N % s_sub_N != 0 ) {
-        std::cout << EscapeSequence::YELLOW << "Subgrid N has to be an integer divisor of main grid N! N = " << s_N << " with subgrid N = " << s_sub_N << EscapeSequence::RESET << std::endl;
-        valid = false;
-    } 
 
     if (not valid) {
         std::cout << EscapeSequence::RED << "Invalid input! Exitting!" << EscapeSequence::RESET << std::endl;
