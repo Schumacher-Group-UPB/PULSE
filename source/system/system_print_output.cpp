@@ -121,7 +121,7 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
         std::cout << "Applying FFT every " << fft_every << " ps" << std::endl;
     std::cout << EscapeSequence::BOLD << "--------------------------------- Runtime Statistics ------------------------------" << EscapeSequence::RESET << std::endl;
     double total = PC3::TimeIt::totalRuntime();
-    std::cout << unifyLength( "Total Runtime:", std::to_string( total ) + "s", std::to_string( total / t * 1E3 ) + "ms/ps", l, l ) << " --> " << std::to_string( total / iteration ) << "s/it" << std::endl;
+    std::cout << unifyLength( "Total Runtime:", std::to_string( total ) + "s", std::to_string( total / t * 1E3 ) + "ms/ps", l, l ) << " --> " << std::to_string( t/total ) << "ps/s" << " --> " << std::to_string( total / iteration ) << "s/it" << std::endl;
     std::cout << EscapeSequence::BOLD << "---------------------------------------- Infos ------------------------------------" << EscapeSequence::RESET << std::endl;
     if ( filehandler.loadPath.size() > 0 and not input_keys.empty() )
         std::cout << "Loaded Initial Matrices from " << filehandler.loadPath << std::endl;
@@ -144,7 +144,21 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << "This program is compiled using " << EscapeSequence::UNDERLINE << EscapeSequence::BLUE << "double precision" << EscapeSequence::RESET << " numbers.\n";
 #endif
 #ifdef USECPU
-    std::cout << "This program is compiled using " << EscapeSequence::UNDERLINE << EscapeSequence::YELLOW << "CPU Resources only." << EscapeSequence::RESET << EscapeSequence::GREEN << EscapeSequence::BOLD << " CUDA" << EscapeSequence::RESET << " is disabled.\n";
+    std::cout << "Device Used: " << EscapeSequence::BOLD << EscapeSequence::YELLOW << "CPU" << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::GREY << "  Cores utilized " << omp_max_threads << " of " << omp_get_max_threads() << " total cores." << EscapeSequence::RESET << std::endl;
+#else
+    int nDevices;
+    cudaGetDeviceCount(&nDevices);
+    int device;
+    cudaGetDevice(&device);
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, device);
+std::cout << "Device Used: " << EscapeSequence::GREEN << EscapeSequence::BOLD << prop.name << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::GREY << "  Memory Clock Rate (MHz): " << prop.memoryClockRate/1024 << std::endl;
+    std::cout << "  Memory Bus Width (bits): " << prop.memoryBusWidth << std::endl;
+    std::cout << "  Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << std::endl;
+    std::cout << "  Total global memory (Gbytes): " <<(float)(prop.totalGlobalMem)/1024.0/1024.0/1024.0 << std::endl;
+    std::cout << "  Warp-size: " << prop.warpSize << EscapeSequence::RESET << std::endl;
 #endif
     std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
 }
