@@ -11,6 +11,7 @@
 #    include <SFML/Window.hpp>
 #    include "sfml_window.hpp"
 #    include "colormap.hpp"
+#endif
 
 namespace PC3 {
 
@@ -19,6 +20,8 @@ std::string toScientific( const real_number in ) {
     ss << std::scientific << std::setprecision( 2 ) << in;
     return ss.str();
 }
+
+#ifdef SFML_RENDER
 
 BasicWindow& getWindow() {
     static BasicWindow window;
