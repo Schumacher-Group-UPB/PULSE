@@ -18,5 +18,5 @@ namespace PC3::Kernel {
 
 }
 
-//int blockId = ( gridDim.x * blockIdx.y ) + blockIdx.x; \
+//int blockId = ( gridDim.x * blockIdx.y ) + blockIdx.x;
 //i += ( blockId * ( blockDim.x * blockDim.y ) ) + ( threadIdx.y * blockDim.x ) + threadIdx.x;

@@ -6,17 +6,19 @@
 #include "solver/gpu_solver.hpp"
 #include "misc/helperfunctions.hpp"
 
-std::string toScientific( const real_number in ) {
-    std::stringstream ss;
-    ss << std::scientific << std::setprecision( 2 ) << in;
-    return ss.str();
-}
-
 #ifdef SFML_RENDER
 #    include <SFML/Graphics.hpp>
 #    include <SFML/Window.hpp>
 #    include "sfml_window.hpp"
 #    include "colormap.hpp"
+
+namespace PC3 {
+
+std::string toScientific( const real_number in ) {
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision( 2 ) << in;
+    return ss.str();
+}
 
 BasicWindow& getWindow() {
     static BasicWindow window;
@@ -105,3 +107,5 @@ bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second ) {
     return true;
 };
 #endif
+
+} // namespace PC3

@@ -155,7 +155,6 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     cudaGetDeviceProperties(&prop, device);
 std::cout << "Device Used: " << EscapeSequence::GREEN << EscapeSequence::BOLD << prop.name << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::GREY << "  Memory Clock Rate (MHz): " << prop.memoryClockRate/1024 << std::endl;
-    std::cout << "  Memory Bus Width (bits): " << prop.memoryBusWidth << std::endl;
     std::cout << "  Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << std::endl;
     std::cout << "  Total global memory (Gbytes): " <<(float)(prop.totalGlobalMem)/1024.0/1024.0/1024.0 << std::endl;
     std::cout << "  Warp-size: " << prop.warpSize << EscapeSequence::RESET << std::endl;
