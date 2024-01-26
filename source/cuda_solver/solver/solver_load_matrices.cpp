@@ -38,7 +38,7 @@ void PC3::Solver::loadMatrices() {
     };
 
     // Load all matrices from fileinputkeys that overlap with system.input_keys
-#pragma omp parallel for
+//#pragma omp parallel for
     for ( auto i = 0; i < fileinputkeys.size(); i++ ) {
         if ( fileinputkeys[i] == "wavefunction_plus" and system.doInput( "wavefunction", "psi", "wavefunction_plus", "psi_plus", "plus", "wf", "mat", "all", "initial", "initial_plus" ) ) {
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.wavefunction_plus.get() );

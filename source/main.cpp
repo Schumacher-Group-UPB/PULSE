@@ -61,7 +61,7 @@ int main( int argc, char* argv[] ) {
             // Cache the history and max values
             solver.cacheValues();
             // Output Matrices if enabled
-            solver.cacheMatrices( solver.system.t );
+            solver.cacheMatrices();
             // Plot
             running = plotSFMLWindow( solver, system.t/complete_duration );
             , "Main-Loop" );

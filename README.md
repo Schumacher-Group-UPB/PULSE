@@ -41,6 +41,9 @@ P.U.L.S.E. uses single and double hyphen commandline arguments with multiple par
 
 to get an overview of the available arguments. Also, look into [the shell launchscript](/launch.sh) for a detailed commented parameterset.
 
+## Examples
+We provide multiple examples for using PULSE in scientific work. See the [examples folder](/examples/) for an overview.
+
 # Current Stats
 P.U.L.S.E. is currently benchmarked against common Matlab Solvers for the nonlinear Schrödinger Equation as well as against itself as a CPU version.
 

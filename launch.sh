@@ -26,7 +26,7 @@ system_parameters=(
     #"--output <strings>"                                                   # Keywords of matrices to output to file
     #                                                                       # You can also specify "none" to disable all output, or "max" or "scalar" to not output matrices
     #"--outEvery <iterations>"                                              # Output everx x ps
-    #"--history <ps>"                                                       # Output at most x history points. The history points are cached every outEvery iterations.
+    #"--history <y> <points>"                                               # Output at most x history points. The history points are cached every outEvery iterations.
     #"--historyMatrix <start x> <end x> <start y> <end y>  <increment>"     # Output the history matrix every outEvery iterations. 
     #"--outMat Scaling"                                                     # Output all matrices every outEvery iterations, but scale their dimensions by the given factor
     #-nosfml                                                                # Disable SFML output

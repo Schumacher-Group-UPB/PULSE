@@ -42,7 +42,7 @@ class System {
     unsigned int random_seed;
     
     // History Output
-    unsigned int history_output_n, history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
+    unsigned int history_output_n, history_y, history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
     bool do_output_history_matrix;
     real_number output_every;
 

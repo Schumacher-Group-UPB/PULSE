@@ -108,8 +108,10 @@ void PC3::System::init( int argc, char** argv ) {
     }
 
     history_output_n = 1000u;
+    history_y = 0;
     if ( ( index = findInArgv( "--history", argc, argv ) ) != -1 ) {
-        history_output_n = (unsigned int)getNextInput( argv, "history_output_n", ++index );
+        history_y = (unsigned int)getNextInput( argv, "history_output_x", ++index );
+        history_output_n = (unsigned int)getNextInput( argv, "history_output_n", index );
     }
     history_matrix_output_increment = 1u;
     history_matrix_start_x = 0;

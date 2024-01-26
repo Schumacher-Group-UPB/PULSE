@@ -67,5 +67,11 @@ if __name__ == "__main__":
         for i in range(N):
             for j in range(N):
                 index = i*N+j if not args.rotate else j*N+i
-                f.write(f"{x[i]} {y[j]} {z[index].real} {z[index].imag}\n" if args.complex else f"{x[i]} {y[j]} {z[index]}\n")
+                f.write(f"{z[index].real} " if args.complex else f"{z[index]} ")
+            f.write("\n")
+        if args.complex:
+            for i in range(N):
+                for j in range(N):
+                    index = i*N+j if not args.rotate else j*N+i
+                    f.write(f"{z[index].complex} "
             f.write("\n")

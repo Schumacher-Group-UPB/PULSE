@@ -6,6 +6,9 @@
 #include "cuda/cuda_macro.cuh"
 
 void PC3::Solver::cacheValues() {
+    // System Time
+    host.times.emplace_back( system.t );
+
     // Min and Max
     const auto [min_plus, max_plus] = CUDA::minmax( device.wavefunction_plus.get(), system.s_N_x * system.s_N_y, true /*Device Pointer*/ );
     host.wavefunction_max_plus.emplace_back( max_plus );
@@ -27,15 +30,15 @@ void PC3::Solver::cacheValues() {
 void PC3::Solver::cacheToFiles() {
     if ( system.doOutput( "max", "scalar" ) ) {
         auto& file_max = filehandler.getFile( "max" );
-        file_max << "t Psi_Plus";
+        file_max << "index time Psi_Plus";
         if ( system.use_te_tm_splitting )
             file_max << " Psi_Minus";
         file_max << "\n";
         for ( int i = 0; i < host.wavefunction_max_plus.size(); i++ ) {
             if ( system.use_te_tm_splitting )
-                file_max << i << " " << host.wavefunction_max_plus[i] << " " << host.wavefunction_max_minus[i] << "\n";
+                file_max << i << " " << host.times[i] << " " << host.wavefunction_max_plus[i] << " " << host.wavefunction_max_minus[i] << "\n";
             else
-                file_max << i << " " << host.wavefunction_max_plus[i] << "\n";
+                file_max << i << " " << host.times[i] << " " << host.wavefunction_max_plus[i] << "\n";
         }
         file_max.close();
     }
@@ -73,9 +76,10 @@ void PC3::Solver::cacheToFiles() {
     file_history_minus.close();
 }
 
-void PC3::Solver::cacheMatrices(const real_number t) {
+void PC3::Solver::cacheMatrices() {
     if (not system.do_output_history_matrix)
         return;
+    const auto t = system.t;
     std::string suffix = "_"+std::to_string(t);
     outputMatrices( system.history_matrix_start_x, system.history_matrix_end_x, system.history_matrix_start_y, system.history_matrix_end_y, system.history_matrix_output_increment, suffix, "timeoutput/" );
 }

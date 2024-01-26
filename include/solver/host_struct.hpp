@@ -46,9 +46,10 @@ struct Host {
     PC3::HostMatrix<real_number> soll_plus;
     PC3::HostMatrix<real_number> soll_minus;
 
-    // "History" vectors
+    // "History" vectors; TODO: move to map
     std::vector<std::vector<complex_number>> wavefunction_plus_history, wavefunction_minus_history;
     std::vector<real_number> wavefunction_max_plus, wavefunction_max_minus;
+    std::vector<real_number> times;
 
     // Empty Constructor
     Host() = default;

@@ -143,7 +143,7 @@ class Solver {
     void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );
 
     void cacheValues();
-    void cacheMatrices(const real_number t);
+    void cacheMatrices();
 };
 
 } // namespace PC3

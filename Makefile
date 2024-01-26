@@ -6,21 +6,26 @@ SRCDIR = source
 INCDIR = include
 OBJDIR = obj
 
-# Compiler flags
-GCCFLAGS = -std=c++20 -fopenmp -x c++
-ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true
-else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -rdc=true -diag-suppress 177 -lstdc++
-endif
-SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
-
-OPTIMIZATION = -O3
-
 SFML ?= FALSE
 TETM ?= FALSE
 FP32 ?= FALSE
 CPU ?= FALSE
+
+# Compiler flags
+GCCFLAGS = -std=c++20 -fopenmp -x c++
+ifeq ($(OS),Windows_NT)
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true
+	ifeq ($(COMPILER),nvcc)
+		SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
+	else
+		SFMLLIBS = -I'external/SFML/include' -L'SFML-2.6.1/lib'
+	endif
+else
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -rdc=true -diag-suppress 177 -lstdc++
+	SFMLLIBS = -I'external/SFML/include'
+endif
+
+OPTIMIZATION = -O3
 
 # Object files
 ifeq ($(SFML),FALSE)
