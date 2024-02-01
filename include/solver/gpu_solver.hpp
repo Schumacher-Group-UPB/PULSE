@@ -120,7 +120,7 @@ class Solver {
     void initializeDeviceMatricesFromHost();               // Transfers the host matrices to their device equivalents
 
     // Output (Final) Host Matrices to files
-    void outputMatrices( const unsigned int start_x, const unsigned int end_x, const unsigned int start_y, const unsigned int end_y, real_number increment, const std::string& suffix = "", const std::string& prefix = "" );
+    void outputMatrices( const unsigned int start_x, const unsigned int end_x, const unsigned int start_y, const unsigned int end_y, const unsigned int increment, const std::string& suffix = "", const std::string& prefix = "" );
     // Load Host Matrices from files
     void loadMatrices();
     // Output Initial Host Matrices to files
@@ -128,8 +128,6 @@ class Solver {
 
     // Output the history and max caches to files. should be called from finalize()
     void cacheToFiles();
-
-    void calculateSollValues();
 
     // "Syncs" or copies the device arrays to host.
     void syncDeviceArrays();

@@ -76,10 +76,11 @@ void PC3::Solver::cacheToFiles() {
     file_history_minus.close();
 }
 
+size_t _local_file_out_counter = 0;
 void PC3::Solver::cacheMatrices() {
     if (not system.do_output_history_matrix)
         return;
-    const auto t = system.t;
-    std::string suffix = "_"+std::to_string(t);
+    std::string suffix = "_"+std::to_string(_local_file_out_counter);
+    _local_file_out_counter++;
     outputMatrices( system.history_matrix_start_x, system.history_matrix_end_x, system.history_matrix_start_y, system.history_matrix_end_y, system.history_matrix_output_increment, suffix, "timeoutput/" );
 }

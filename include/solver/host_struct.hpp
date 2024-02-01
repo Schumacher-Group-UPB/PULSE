@@ -42,10 +42,6 @@ struct Host {
     PC3::HostMatrix<real_number>& fft_mask = fft_mask_plus;
     PC3::HostMatrix<complex_number>& fft = fft_plus;
 
-    // Soll Matrices
-    PC3::HostMatrix<real_number> soll_plus;
-    PC3::HostMatrix<real_number> soll_minus;
-
     // "History" vectors; TODO: move to map
     std::vector<std::vector<complex_number>> wavefunction_plus_history, wavefunction_minus_history;
     std::vector<real_number> wavefunction_max_plus, wavefunction_max_minus;
@@ -64,7 +60,6 @@ struct Host {
         potential_plus.construct( N_x, N_y, "host.potential_plus" );
         fft_mask_plus.construct( N_x, N_y, "host.fft_mask_plus" );
         fft_plus.construct( N_x, N_y, "host.fft_plus" );
-        soll_plus.construct( N_x, N_y, "host.soll_plus" );
         if ( use_te_tm_splitting ) {
             initial_state_minus.construct( N_x, N_y, "host.initial_state_minus" );
             wavefunction_minus.construct( N_x, N_y, "host.wavefunction_minus" );
@@ -73,7 +68,6 @@ struct Host {
             potential_minus.construct( N_x, N_y, "host.potential_minus" );
             fft_mask_minus.construct( N_x, N_y, "host.fft_mask_minus" );
             fft_minus.construct( N_x, N_y, "host.fft_minus" );
-            soll_minus.construct( N_x, N_y, "host.soll_minus" );
         }
     }
 };

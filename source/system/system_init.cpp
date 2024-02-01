@@ -162,8 +162,6 @@ void PC3::System::init( int argc, char** argv ) {
     potential = PC3::Envelope::fromCommandlineArguments( argc, argv, "potential", false );
     // Pulses
     pulse = PC3::Envelope::fromCommandlineArguments( argc, argv, "pulse", true );
-    // Soll Mask.
-    mask = PC3::Envelope::fromCommandlineArguments( argc, argv, "mask", false );
     // FFT Mask
     fft_mask = PC3::Envelope::fromCommandlineArguments( argc, argv, "fftMask", false );
     // Initial State

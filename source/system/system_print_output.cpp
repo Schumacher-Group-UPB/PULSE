@@ -67,7 +67,6 @@ void PC3::System::printHelp() {
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
               << unifyLength( "--pump", "<double> <string> <double> <double> <double> <string> <double> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring)\n", 30, 80 )
-              << unifyLength( "--mask", "Same as Pump", "\n", 30, 80 )
               << unifyLength( "--potential", "Same as Pump", "\n", 30, 80 )
               << unifyLength( "--initialState", "Same as Pump", "\n", 30, 80 )
               << unifyLength( "--initRandom", "<double>", "Amplitude. Randomly initialize Psi\n", 30, 80 )
@@ -110,9 +109,6 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     }
     for ( int i = 0; i < pump.amp.size(); i++ ) {
         std::cout << "Pump at amp = " << pump.amp[i] << ", width X = " << pump.width_x[i] << ", width Y = " << pump.width_y[i] << ", X = " << pump.x[i] << ", Y = " << pump.y[i] << ", pol = " << pump.s_pol[i] << ", type = " << pump.s_type[i] << std::endl;
-    }
-    for ( int i = 0; i < mask.amp.size(); i++ ) {
-        std::cout << "Soll Mask at amp = " << mask.amp[i] << ", width X = " << mask.width_x[i] << ", width Y = " << mask.width_y[i] << ", X = " << mask.x[i] << ", Y = " << mask.y[i] << ", pol = " << mask.s_pol[i] << ", type = " << mask.s_type[i] << std::endl;
     }
     for ( int i = 0; i < fft_mask.amp.size(); i++ ) {
         std::cout << "FFT Mask at amp = " << fft_mask.amp[i] << ", width X = " << fft_mask.width_x[i] << ", width Y = " << fft_mask.width_y[i] << ", X = " << fft_mask.x[i] << ", Y = " << fft_mask.y[i] << ", pol = " << fft_mask.s_pol[i] << ", type = " << fft_mask.s_type[i] << std::endl;

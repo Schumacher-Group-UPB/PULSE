@@ -10,31 +10,28 @@
 
 void PC3::Solver::outputInitialMatrices() {
     std::cout << "--------------------------- Outputting Initial Matrices ---------------------------" << std::endl;
+    auto header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t);
     // Output Matrices to file
     if ( system.doOutput( "mat", "initial_plus", "initial" ) )
-        system.filehandler.outputMatrixToFile( host.initial_state_plus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "initial_condition_plus" );
+        system.filehandler.outputMatrixToFile( host.initial_state_plus.get(), system.s_N_x, system.s_N_y, header_information, "initial_condition_plus" );
     if ( system.doOutput( "mat", "pump_plus", "pump" ) )
-        system.filehandler.outputMatrixToFile( host.pump_plus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "pump_plus" );
+        system.filehandler.outputMatrixToFile( host.pump_plus.get(), system.s_N_x, system.s_N_y, header_information, "pump_plus" );
     if ( system.doOutput( "mat", "potential_plus", "potential" ) )
-        system.filehandler.outputMatrixToFile( host.potential_plus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "potential_plus" );
+        system.filehandler.outputMatrixToFile( host.potential_plus.get(), system.s_N_x, system.s_N_y, header_information, "potential_plus" );
     if ( system.doOutput( "mat", "fftplus", "fft" ) )
-        system.filehandler.outputMatrixToFile( host.fft_mask_plus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "fft_mask_plus" );
-    if ( system.doOutput( "mat", "mask_plus", "mask" ) )
-        system.filehandler.outputMatrixToFile( host.soll_plus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "mask_plus" );
+        system.filehandler.outputMatrixToFile( host.fft_mask_plus.get(), system.s_N_x, system.s_N_y, header_information, "fft_mask_plus" );
     
     if (not system.use_te_tm_splitting )
         return;
 
     if ( system.doOutput( "mat", "initial_minus", "initial" ) )
-        system.filehandler.outputMatrixToFile( host.initial_state_minus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "initial_condition_minus" );
+        system.filehandler.outputMatrixToFile( host.initial_state_minus.get(), system.s_N_x, system.s_N_y, header_information, "initial_condition_minus" );
     if ( system.doOutput( "mat", "pump_minus", "pump" ) )
-        system.filehandler.outputMatrixToFile( host.pump_minus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "pump_minus" );
+        system.filehandler.outputMatrixToFile( host.pump_minus.get(), system.s_N_x, system.s_N_y, header_information, "pump_minus" );
     if ( system.doOutput( "mat", "potential_minus", "potential" ) )
-        system.filehandler.outputMatrixToFile( host.potential_minus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "potential_minus" );
+        system.filehandler.outputMatrixToFile( host.potential_minus.get(), system.s_N_x, system.s_N_y, header_information, "potential_minus" );
     if ( system.doOutput( "mat", "fftminus", "fft" ) )
-        system.filehandler.outputMatrixToFile( host.fft_mask_minus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "fft_mask_minus" );
-    if ( system.doOutput( "mat", "mask_minus", "mask" ) )
-        system.filehandler.outputMatrixToFile( host.soll_minus.get(), system.s_N_x, system.s_N_y, system.s_L_x, system.s_L_y, system.dx, system.dy, "mask_minus" );
+        system.filehandler.outputMatrixToFile( host.fft_mask_minus.get(), system.s_N_x, system.s_N_y, header_information, "fft_mask_minus" );
 }
 
 void PC3::Solver::initializeHostMatricesFromSystem( ) {
@@ -93,17 +90,6 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
         system.calculateEnvelope( host.fft_mask_plus.get(), system.fft_mask, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
         if (system.use_te_tm_splitting ) {
             system.calculateEnvelope( host.fft_mask_minus.get(), system.fft_mask, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
-        }
-    }
-
-    // ==================================================
-    // =.............. Soll Mask Envelopes .............=
-    // ==================================================
-    std::cout << "Initializing Soll Mask Envelopes..." << std::endl;
-    if ( system.mask.x.size() > 0 ) {
-        system.calculateEnvelope( host.soll_plus.get(), system.mask, PC3::Envelope::Polarization::Plus );
-        if ( system.use_te_tm_splitting ) {
-            system.calculateEnvelope( host.soll_minus.get(), system.mask, PC3::Envelope::Polarization::Minus );
         }
     }
 }
