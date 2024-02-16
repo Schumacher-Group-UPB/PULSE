@@ -45,6 +45,7 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--deltaLT", argc, argv ) ) != -1 ) {
         delta_LT = getNextInput( argv, "deltaLT", ++index );
     }
+    omp_max_threads = 4;
     if ( ( index = findInArgv( "--threads", argc, argv ) ) != -1 )
         omp_max_threads = (int)getNextInput( argv, "threads", ++index );
     omp_set_num_threads( omp_max_threads );
