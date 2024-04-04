@@ -7,28 +7,30 @@
 
 namespace PC3::Kernel {
 
-    // Helper Struct to pass input-target data pointers to the kernel
-    struct InputOutput {
-        complex_number* CUDA_RESTRICT in_wf_plus;
-        complex_number* CUDA_RESTRICT in_wf_minus;
-        complex_number* CUDA_RESTRICT in_rv_plus;
-        complex_number* CUDA_RESTRICT in_rv_minus;
-        complex_number* CUDA_RESTRICT out_wf_plus;
-        complex_number* CUDA_RESTRICT out_wf_minus;
-        complex_number* CUDA_RESTRICT out_rv_plus;
-        complex_number* CUDA_RESTRICT out_rv_minus;
-    };
+// Helper Struct to pass input-target data pointers to the kernel
+struct InputOutput {
+    complex_number* CUDA_RESTRICT in_wf_plus;
+    complex_number* CUDA_RESTRICT in_wf_minus;
+    complex_number* CUDA_RESTRICT in_rv_plus;
+    complex_number* CUDA_RESTRICT in_rv_minus;
+    complex_number* CUDA_RESTRICT out_wf_plus;
+    complex_number* CUDA_RESTRICT out_wf_minus;
+    complex_number* CUDA_RESTRICT out_rv_plus;
+    complex_number* CUDA_RESTRICT out_rv_minus;
+};
 
-    CUDA_GLOBAL void runge_func_kernel_tetm( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p,
-                                        InputOutput io  );
-    
-    CUDA_GLOBAL void runge_func_kernel_scalar( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p,
-                                        InputOutput io );
+namespace Compute {
 
-    CUDA_DEVICE complex_number kernel_inline_calculate_pulse( const int row, const int col, PC3::Envelope::Polarization polarization, real_number t, const System::Parameters& p, Solver::PulseParameters::Pointers& pulse );
+CUDA_GLOBAL void gp_tetm( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
+CUDA_GLOBAL void gp_scalar( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
 
-    CUDA_GLOBAL void runge_func_kernel_pulse( int i, real_number t, System::Parameters p,
-                                        Solver::PulseParameters::Pointers pulse, bool use_te_tm_splitting,
-                                        InputOutput io  );
+CUDA_GLOBAL void scalar_pulse( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void scalar_reservoir( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
+CUDA_GLOBAL void scalar_stochastic( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
+CUDA_GLOBAL void tetm_pulse( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void tetm_reservoir( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
+CUDA_GLOBAL void tetm_stochastic( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
+
+} // namespace Compute
 
 } // namespace PC3::Kernel

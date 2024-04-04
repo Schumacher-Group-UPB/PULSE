@@ -57,6 +57,8 @@ void PC3::Envelope::addTemporal( real_number t0, real_number sigma, real_number 
     this->t0.push_back( t0 );
     this->sigma.push_back( sigma );
     this->freq.push_back( freq );
+    // Cache the index of the spacial shape that belongs to this temporal shape
+    time_to_index.push_back( amp.size() - 1);
 }
 
 int PC3::Envelope::size() {
@@ -71,38 +73,41 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         // Spacial Component
 
         // Ampltitude.
-        real_number amp = getNextInput( argv, key + "_amp", ++index );
+        real_number amp = getNextInput( argv, argc, key + "_amp", ++index );
         // Behaviour
-        auto sbehavior = getNextStringInput( argv, key + "_behaviour", index );
+        auto sbehavior = getNextStringInput( argv, argc, key + "_behaviour", index );
         // Width
-        real_number width_x = getNextInput( argv, key + "_width_x", index );
-        real_number width_y = getNextInput( argv, key + "_width_y", index );
+        real_number width_x = getNextInput( argv, argc, key + "_width_x", index );
+        real_number width_y = getNextInput( argv, argc, key + "_width_y", index );
         // X Position
-        real_number pos_x = getNextInput( argv, key + "_X", index );
+        real_number pos_x = getNextInput( argv, argc, key + "_X", index );
         // Y Position
-        real_number pos_y = getNextInput( argv, key + "_Y", index );
+        real_number pos_y = getNextInput( argv, argc, key + "_Y", index );
 
         // Polarization
-        auto spol = getNextStringInput( argv, key + "_pol", index );
+        auto spol = getNextStringInput( argv, argc, key + "_pol", index );
 
         // Exponent
-        real_number exponent = getNextInput( argv, key + "_exponent", index );
+        real_number exponent = getNextInput( argv, argc, key + "_exponent", index );
 
         // Charge
-        auto sm = getNextStringInput( argv, key + "_m", index );
+        auto sm = getNextStringInput( argv, argc, key + "_m", index );
 
         // Type
-        auto stype = getNextStringInput( argv, key + "_type", index );
+        auto stype = getNextStringInput( argv, argc, key + "_type", index );
 
         ret.addSpacial( amp, width_x, width_y, pos_x, pos_y, exponent, stype, spol, sbehavior, sm );
 
-        if ( not time )
+        // If the next argument is "osc", then we read the temporal component if time is not false
+        auto next = getNextStringInput( argv, argc, key + "_next", index );
+
+        if ( not time or next != "osc")
             continue;
 
         // Temporal Component
-        real_number t0 = getNextInput( argv, key + "_t0", index );
-        real_number freq = getNextInput( argv, key + "_freq", index );
-        real_number sigma = getNextInput( argv, key + "_sigma", index );
+        real_number t0 = getNextInput( argv, argc, key + "_t0", index );
+        real_number freq = getNextInput( argv, argc, key + "_freq", index );
+        real_number sigma = getNextInput( argv, argc, key + "_sigma", index );
         ret.addTemporal( t0, sigma, freq );
     }
     return ret;

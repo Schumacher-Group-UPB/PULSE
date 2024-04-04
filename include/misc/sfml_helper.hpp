@@ -13,6 +13,17 @@
 #    include "colormap.hpp"
 #endif
 
+/*
+ * The solver can be rendered using the SFML library, which is a very simple and easy to use library,
+ * which we use to implement different methods to plot the solver in real time.
+ * 
+ * The Plus and Minus Components are always plotted seperately in different rows.
+ * Default: Plot Psi and Reservoir with inset
+ * The inset can be switched by pressing 'i' in the SFML window.
+ * The inset then cycles between the FFT, logscale FFT, Quantum Noise
+ * 
+*/
+
 namespace PC3 {
 
 std::string toScientific( const real_number in ) {
@@ -28,51 +39,56 @@ BasicWindow& getWindow() {
     return window;
 }
 
-std::unique_ptr<real_number[]> plotarray;
+std::unique_ptr<real_number[]> __plotarray;
 template <typename T>
 void plotMatrix( T* buffer, int NX, int NY, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "" ) {
-    PC3::CUDA::cwiseAbs2( buffer, plotarray.get(), NX * NY );
-    auto [min, max] = PC3::CUDA::minmax( plotarray.get(), NX * NY );
-    PC3::CUDA::normalize( plotarray.get(), NX * NY, min, max );
-    getWindow().blitMatrixPtr( plotarray.get(), cp, NX, NY, posX, posY, 1 /*border*/, skip );
+    if (buffer == nullptr)
+        return;
+    PC3::CUDA::cwiseAbs2( buffer, __plotarray.get(), NX * NY );
+    auto [min, max] = PC3::CUDA::minmax( __plotarray.get(), NX * NY );
+    PC3::CUDA::normalize( __plotarray.get(), NX * NY, min, max );
+    getWindow().blitMatrixPtr( __plotarray.get(), cp, NX, NY, posX, posY, 1 /*border*/, skip );
     NX = NX / skip;
     NY = NY / skip;
     auto text_height = NY * 0.05;
     getWindow().print( posX + 5, posY + NY - text_height - 5, text_height, title + "Min: " + toScientific( sqrt(min) ) + " Max: " + toScientific( sqrt(max) ), sf::Color::White );
 }
 
-// Very bad practice, as this header can only be imported once without redefinitions
-ColorPalette colorpalette_phase;
-ColorPalette colorpalette;
+// Very bad practice, as this header can only be imported once without redefinitions.
+// TODO: make this into a class like a normal friggin programmer.
+ColorPalette __local_colorpalette_phase;
+ColorPalette __local_colorpalette;
 
 void initSFMLWindow( PC3::Solver& solver ) {
     if ( solver.system.filehandler.disableRender ) {
         std::cout << "Manually disabled SFML Renderer!" << std::endl;
         return;
     }
-    if ( solver.system.use_te_tm_splitting )
+    if ( solver.system.use_twin_mode )
         getWindow().construct( 1920, 1080, solver.system.s_N_x * 3, solver.system.s_N_y * 2, "PULSE - TE/TM" );
     else
         getWindow().construct( 1920, 540, solver.system.s_N_x * 3, solver.system.s_N_y, "PULSE - Scalar" );
 
-    // if .pal in colorpalette, read gnuplot colorpalette, else read as .txt
+    // if .pal in __local_colorpalette, read gnuplot __local_colorpalette, else read as .txt
     if ( solver.system.filehandler.color_palette.find( ".pal" ) != std::string::npos ) {
-        colorpalette.readColorPaletteFromGnuplotDOTPAL( solver.system.filehandler.color_palette );
-        colorpalette_phase.readColorPaletteFromGnuplotDOTPAL( solver.system.filehandler.color_palette_phase );
+        __local_colorpalette.readColorPaletteFromGnuplotDOTPAL( solver.system.filehandler.color_palette );
+        __local_colorpalette_phase.readColorPaletteFromGnuplotDOTPAL( solver.system.filehandler.color_palette_phase );
     } else if ( solver.system.filehandler.color_palette.find( ".txt" ) != std::string::npos ) {
-        colorpalette.readColorPaletteFromTXT( solver.system.filehandler.color_palette );
-        colorpalette_phase.readColorPaletteFromTXT( solver.system.filehandler.color_palette_phase );
+        __local_colorpalette.readColorPaletteFromTXT( solver.system.filehandler.color_palette );
+        __local_colorpalette_phase.readColorPaletteFromTXT( solver.system.filehandler.color_palette_phase );
     } else {
-        colorpalette.readColorPaletteFromTXT( "resources/"+solver.system.filehandler.color_palette+".txt" );
-        colorpalette_phase.readColorPaletteFromTXT( "resources/"+solver.system.filehandler.color_palette_phase+".txt" );
+        __local_colorpalette.readColorPaletteFromTXT( "resources/"+solver.system.filehandler.color_palette+".txt" );
+        __local_colorpalette_phase.readColorPaletteFromTXT( "resources/"+solver.system.filehandler.color_palette_phase+".txt" );
     }
-    colorpalette.initColors();
-    colorpalette_phase.initColors();
+    __local_colorpalette.initColors();
+    __local_colorpalette_phase.initColors();
     getWindow().init();
-    plotarray = std::make_unique<real_number[]>( solver.system.s_N_x * solver.system.s_N_y );
+    __plotarray = std::make_unique<real_number[]>( solver.system.s_N_x * solver.system.s_N_y );
 }
 
-bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second ) {
+int __local_inset = 0;
+
+bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed_time, size_t iterations ) {
     if ( solver.system.filehandler.disableRender )
         return true;
     bool running = getWindow().run();
@@ -80,24 +96,38 @@ bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second ) {
     // Get Device arrays
     solver.syncDeviceArrays();
 
-    // Plot Plus
-    plotMatrix( solver.host.wavefunction_plus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, 0, 1, colorpalette, "Psi+ " );
-    plotMatrix( solver.host.fft_plus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, 0, 3, colorpalette, "FFT+ " );
-    plotMatrix( solver.host.reservoir_plus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, 2 * solver.system.s_N_x, 0, 1, colorpalette, "n+ " );
-    PC3::CUDA::angle( solver.host.wavefunction_plus.get(), plotarray.get(), solver.system.s_N_x * solver.system.s_N_y );
-    plotMatrix( plotarray.get(), solver.system.s_N_x, solver.system.s_N_y, 0, 0, 1, colorpalette_phase, "ang(Psi+) " );
-
-    // Plot Minus
-    if ( solver.system.use_te_tm_splitting ) {
-        plotMatrix( solver.host.wavefunction_minus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, solver.system.s_N_y, 1, colorpalette, "Psi- " );
-        plotMatrix( solver.host.fft_minus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, solver.system.s_N_y, 3, colorpalette, "FFT- " );
-        plotMatrix( solver.host.reservoir_minus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, 2 * solver.system.s_N_x, solver.system.s_N_y, 1, colorpalette, "n- " );
-        PC3::CUDA::angle( solver.host.wavefunction_minus.get(), plotarray.get(), solver.system.s_N_x * solver.system.s_N_y );
-        plotMatrix( plotarray.get(), solver.system.s_N_x, solver.system.s_N_y, 0, solver.system.s_N_y, 1, colorpalette_phase, "ang(Psi-) " );
+    complex_number* inset_plot_array_plus = nullptr, *inset_plot_array_minus = nullptr;
+    if ( __local_inset == 1 ) {
+        inset_plot_array_plus = solver.host.fft_plus.get();
+        if ( solver.system.use_twin_mode )
+            inset_plot_array_minus = solver.host.fft_minus.get();
+    }
+    if ( getWindow().keyPressed( BasicWindow::KEY_i ) ) {
+        __local_inset = ( __local_inset + 1 ) % 2;
     }
 
+
+    // Plot Plus
+    plotMatrix( solver.host.wavefunction_plus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, 0, 1, __local_colorpalette, "Psi+ " );
+    plotMatrix( inset_plot_array_plus, solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, 0, 3, __local_colorpalette, "FFT+ " );
+    plotMatrix( solver.host.reservoir_plus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, 2 * solver.system.s_N_x, 0, 1, __local_colorpalette, "n+ " );
+    PC3::CUDA::angle( solver.host.wavefunction_plus.get(), __plotarray.get(), solver.system.s_N_x * solver.system.s_N_y );
+    plotMatrix( __plotarray.get(), solver.system.s_N_x, solver.system.s_N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) " );
+
+    // Plot Minus
+    if ( solver.system.use_twin_mode ) {
+        plotMatrix( solver.host.wavefunction_minus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, solver.system.s_N_y, 1, __local_colorpalette, "Psi- " );
+        plotMatrix( inset_plot_array_minus, solver.system.s_N_x, solver.system.s_N_y /*size*/, solver.system.s_N_x, solver.system.s_N_y, 3, __local_colorpalette, "FFT- " );
+        plotMatrix( solver.host.reservoir_minus.get(), solver.system.s_N_x, solver.system.s_N_y /*size*/, 2 * solver.system.s_N_x, solver.system.s_N_y, 1, __local_colorpalette, "n- " );
+        PC3::CUDA::angle( solver.host.wavefunction_minus.get(), __plotarray.get(), solver.system.s_N_x * solver.system.s_N_y );
+        plotMatrix( __plotarray.get(), solver.system.s_N_x, solver.system.s_N_y, 0, solver.system.s_N_y, 1, __local_colorpalette_phase, "ang(Psi-) " );
+    }
+
+    const auto ps_per_second = simulation_time / elapsed_time;
+    const auto iterations_per_second = iterations / elapsed_time;
+
     // FPS and ps/s
-    getWindow().print( 5, 5, 0.05, "t = " + std::to_string( int( solver.system.t ) ) + ", FPS: " + std::to_string( int( getWindow().fps ) ) + ", ps/s: " + std::to_string( int( ps_per_second ) ), sf::Color::White );
+    getWindow().print( 5, 5, 0.05, "t = " + std::to_string( int( solver.system.t ) ) + ", FPS: " + std::to_string( int( getWindow().fps ) ) + ", ps/s: " + std::to_string( int( ps_per_second ) ) + ", it/s: " + std::to_string( int( iterations_per_second ) ), sf::Color::White );
 
     // Blit
     getWindow().flipscreen();
@@ -106,7 +136,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second ) {
 
 #else
 void initSFMLWindow( PC3::Solver& solver ){};
-bool plotSFMLWindow( PC3::Solver& solver, double ps_per_second ) {
+bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed_time, size_t iterationsd ) {
     return true;
 };
 #endif

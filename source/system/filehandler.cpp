@@ -20,22 +20,22 @@ PC3::FileHandler::FileHandler( int argc, char** argv ) : FileHandler() {
 void PC3::FileHandler::init( int argc, char** argv ) {
     int index = 0;
     if ( ( index = findInArgv( "--path", argc, argv ) ) != -1 )
-        outputPath = getNextStringInput( argv, "path", ++index );
+        outputPath = getNextStringInput( argv, argc, "path", ++index );
     if ( outputPath.back() != '/' )
         outputPath += "/";
 
     if ( ( index = findInArgv( "--name", argc, argv ) ) != -1 )
-        outputName = getNextStringInput( argv, "name", ++index );
+        outputName = getNextStringInput( argv, argc, "name", ++index );
 
     // Save Load Path if passed, else use output path as laod path
     loadPath = outputPath;
     if ( ( index = findInArgv( "--loadFrom", argc, argv ) ) != -1 )
-        loadPath = getNextStringInput( argv, "loadFrom", ++index );
+        loadPath = getNextStringInput( argv, argc, "loadFrom", ++index );
 
     // Colormap
     if ( ( index = findInArgv( "--cmap", argc, argv ) ) != -1 ) {
-        color_palette = getNextStringInput( argv, "cmap", ++index );
-        color_palette_phase = getNextStringInput( argv, "cmap", index );
+        color_palette = getNextStringInput( argv, argc, "cmap", ++index );
+        color_palette_phase = getNextStringInput( argv, argc, "cmap", index );
     }
 
     // We can also disable to SFML renderer by using the --nosfml flag.
@@ -82,7 +82,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
     double re, im;
     if ( not filein.is_open() ) {
 #pragma omp critical
-        std::cout << EscapeSequence::YELLOW << "Warning: Couldn't load " << filepath << EscapeSequence::RESET << std::endl;
+        std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;
         return;
     }
     // Header
@@ -109,7 +109,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
             }
     }
     filein.close();
-    std::cout << "Loaded " << i << " elements from " << filepath << std::endl;
+    std::cout << "Loaded " << i << " elements from '" << filepath << "'" << std::endl;
 }
 
 void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_number* buffer ) {
@@ -121,7 +121,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
     double val;
     if ( not filein.is_open() ) {
 #pragma omp critical
-        std::cout << EscapeSequence::YELLOW << "Warning: Couldn't load " << filepath << EscapeSequence::RESET << std::endl;
+        std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;
         return;
     }
 
@@ -133,7 +133,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
     real_number header;
     inputstring >> line >> line >> n_x >> n_y;
     size_t N = n_x * n_y;
-    std::cout << "Loading " << N << " elements from " << filepath << std::endl;
+    std::cout << "Loading " << N << " elements from '" << filepath << "'" << std::endl;
     while ( getline( filein, line ) ) {
         if ( line.size() < 2 )
             continue;
@@ -148,7 +148,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
 
 void PC3::FileHandler::outputMatrixToFile( const complex_number* buffer,unsigned  int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name ) {
     if ( !out.is_open() ) {
-        std::cout << "File " << name << " is not open!" << std::endl;
+        std::cout << "File '" << name << "' is not open!" << std::endl;
         return;
     }
     // Header
@@ -210,7 +210,7 @@ void PC3::FileHandler::outputMatrixToFile( const real_number* buffer,unsigned  i
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) / increment << " elements to " << toPath( name ) << "." << std::endl;
+    std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) / increment << " elements to '" << toPath( name ) << "'." << std::endl;
 }
 void PC3::FileHandler::outputMatrixToFile( const real_number* buffer,unsigned  int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );

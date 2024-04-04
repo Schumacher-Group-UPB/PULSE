@@ -1,8 +1,8 @@
 #pragma once
 
 #ifndef USECPU
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#    include <cuda.h>
+#    include <cuda_runtime_api.h>
 #    define CHECK_CUDA_ERROR( func, msg )                             \
         {                                                             \
             func;                                                     \
@@ -15,84 +15,83 @@
         {                                                               \
             CHECK_CUDA_ERROR( cudaMalloc( (void**)&ptr, size ), name ); \
         }
-#    define MEMCOPY_TO_DEVICE( dst, src, size, name )                                        \
+#    define MEMCOPY_TO_DEVICE( dst, src, size, name )                                       \
         {                                                                                   \
             CHECK_CUDA_ERROR( cudaMemcpy( dst, src, size, cudaMemcpyHostToDevice ), name ); \
         }
-#    define MEMCOPY_FROM_DEVICE( dst, src, size, name )                                        \
+#    define MEMCOPY_FROM_DEVICE( dst, src, size, name )                                     \
         {                                                                                   \
             CHECK_CUDA_ERROR( cudaMemcpy( dst, src, size, cudaMemcpyDeviceToHost ), name ); \
         }
-#    define SYMBOL_TO_DEVICE( dest, source, size, name )                             \
-        {                                                               \
+#    define SYMBOL_TO_DEVICE( dest, source, size, name )                        \
+        {                                                                       \
             CHECK_CUDA_ERROR( cudaMemcpyToSymbol( dest, source, size ), name ); \
         }
-#    define SYMBOL_TO_HOST( dest, source, size, name )                             \
-        {                                                               \
+#    define SYMBOL_TO_HOST( dest, source, size, name )                            \
+        {                                                                         \
             CHECK_CUDA_ERROR( cudaMemcpyFromSymbol( dest, source, size ), name ); \
         }
-#    define DEVICE_FREE( ptr, name ) \
-        {                             \
+#    define DEVICE_FREE( ptr, name )                   \
+        {                                              \
             CHECK_CUDA_ERROR( cudaFree( ptr ), name ); \
         }
-#    define CUDA_FFT_DESTROY( plan ) \
-        {                                      \
+#    define CUDA_FFT_DESTROY( plan )                                      \
+        {                                                                 \
             CHECK_CUDA_ERROR( cufftDestroy( plan ), "FFT Plan Destroy" ); \
         }
-#    define CUDA_FFT_CREATE( plan, Nx, Ny ) \
-        {                                      \
+#    define CUDA_FFT_CREATE( plan, Nx, Ny )                                       \
+        {                                                                         \
             CHECK_CUDA_ERROR( cufftPlan2d( plan, Ny, Nx, FFTPLAN ), "FFT Plan" ); \
         }
 #    define CALL_KERNEL( func, name, grid, block, ... ) \
-        {                                                         \
-            func<<<grid, block>>>( 0, __VA_ARGS__ ); \
-            CHECK_CUDA_ERROR( {}, name );\
+        {                                               \
+            func<<<grid, block>>>( 0, __VA_ARGS__ );    \
+            CHECK_CUDA_ERROR( {}, name );               \
         }
 #    define CALL_PARTIAL_KERNEL( func, name, grid, block, start, stream, ... ) \
-        {                                                         \
-            func<<<grid, block, 0, stream>>>( start, __VA_ARGS__ ); \
-            CHECK_CUDA_ERROR( {}, name );\
+        {                                                                      \
+            func<<<grid, block, 0, stream>>>( start, __VA_ARGS__ );            \
+            CHECK_CUDA_ERROR( {}, name );                                      \
         }
-        
+
 #else
-#include <cstring>
+#    include <cstring>
 #    define CHECK_CUDA_ERROR( func, msg )
-#define DEVICE_ALLOC( ptr, size, name ) \
-        {                                   \
-            ptr = (decltype(ptr))std::malloc(size); \
+#    define DEVICE_ALLOC( ptr, size, name )             \
+        {                                               \
+            ptr = (decltype( ptr ))std::malloc( size ); \
         }
-#define MEMCOPY_TO_DEVICE( dst, src, size, name ) \
-        {                                         \
-            std::memcpy( dst, src, size );             \
+#    define MEMCOPY_TO_DEVICE( dst, src, size, name ) \
+        {                                             \
+            std::memcpy( dst, src, size );            \
         }
-#define MEMCOPY_FROM_DEVICE( dst, src, size, name ) \
-        {                                         \
-            std::memcpy( dst, src, size );             \
+#    define MEMCOPY_FROM_DEVICE( dst, src, size, name ) \
+        {                                               \
+            std::memcpy( dst, src, size );              \
         }
-#define SYMBOL_TO_DEVICE( dest, source, size, name ) \
-        {                                         \
-            dest = *(source);\
+#    define SYMBOL_TO_DEVICE( dest, source, size, name ) \
+        {                                                \
+            dest = *( source );                          \
         }
-#define SYMBOL_TO_HOST( dest, source, size, name ) \
-        {                                         \
-            dest = *(source);\
+#    define SYMBOL_TO_HOST( dest, source, size, name ) \
+        {                                              \
+            dest = *( source );                        \
         }
-#define DEVICE_FREE( ptr, name ) \
-        {                           \
-            std::free( ptr );            \
+#    define DEVICE_FREE( ptr, name ) \
+        {                            \
+            std::free( ptr );        \
         }
-#define CUDA_FFT_DESTROY( plan )
-#define CUDA_FFT_CREATE( plan, Nx, Ny )
-#define CALL_KERNEL( func, name, grid, block, ... ) \
-        {                                                         \
-        std::cout << "Running CPU Kernel with " << system.s_N_x << " x " << system.s_N_y << " threads" << std::endl; \
-        _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) \
-            for ( int i = 0; i < system.s_N_x; ++i ) { \
-            for ( int j = 0; j < system.s_N_y; ++j ) { \
-                const auto index = i * system.s_N_x + j; \
-                func( index, __VA_ARGS__ ); \
-            } \
-            } \
+#    define CUDA_FFT_DESTROY( plan )
+#    define CUDA_FFT_CREATE( plan, Nx, Ny )
+#    define CALL_KERNEL( func, name, grid, block, ... )                                                                                    \
+        {                                                                                                                                  \
+            std::cout << "Running CPU Kernel with " << system.s_N_x << " x " << system.s_N_y << " threads" << std::endl;                   \
+            _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( int i = 0; i < system.s_N_x; ++i ) { \
+                for ( int j = 0; j < system.s_N_y; ++j ) {                                                                                 \
+                    const auto index = i * system.s_N_x + j;                                                                               \
+                    func( index, __VA_ARGS__ );                                                                                            \
+                }                                                                                                                          \
+            }                                                                                                                              \
         }
 #endif
 
@@ -111,12 +110,15 @@
 #    define CUDA_RESTRICT
 #    define THRUST_DEVICE thrust::host
 #    define cuda_fft_plan int
+#    include <random>
+#    define cuda_random_state std::mt19937
 class dim3 {
-    public:
-    int x,y;
+   public:
+    int x, y;
 };
 #else
-#include "cufft.h"
+#    include "cufft.h"
+#    include <curand_kernel.h>
 #    define CUDA_HOST_DEVICE __host__ __device__
 #    define CUDA_DEVICE __device__
 #    define CUDA_HOST __host__
@@ -124,4 +126,5 @@ class dim3 {
 #    define CUDA_RESTRICT __restrict__
 #    define THRUST_DEVICE thrust::device
 #    define cuda_fft_plan cufftHandle
+#    define cuda_random_state curandState
 #endif

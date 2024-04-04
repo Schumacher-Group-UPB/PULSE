@@ -7,49 +7,6 @@
 #include "misc/colormap.hpp"
 #include "cuda/cuda_complex.cuh"
 
-/* Most basic colors */
-#define COLOR_WHITE sf::Color( 255, 255, 255 )
-#define COLOR_BLACK sf::Color( 0, 0, 0 )
-#define COLOR_GREEN sf::Color( 0, 255, 0 )
-#define COLOR_RED sf::Color( 255, 0, 0 )
-#define COLOR_BLUE sf::Color( 0, 0, 255 )
-
-/* Keys */
-#define KEY_a sf::Keyboard::A
-#define KEY_b sf::Keyboard::B
-#define KEY_c sf::Keyboard::C
-#define KEY_d sf::Keyboard::D
-#define KEY_e sf::Keyboard::E
-#define KEY_f sf::Keyboard::F
-#define KEY_g sf::Keyboard::G
-#define KEY_h sf::Keyboard::H
-#define KEY_i sf::Keyboard::I
-#define KEY_j sf::Keyboard::J
-#define KEY_k sf::Keyboard::K
-#define KEY_l sf::Keyboard::L
-#define KEY_m sf::Keyboard::M
-#define KEY_n sf::Keyboard::N
-#define KEY_o sf::Keyboard::O
-#define KEY_p sf::Keyboard::P
-#define KEY_q sf::Keyboard::Q
-#define KEY_r sf::Keyboard::R
-#define KEY_s sf::Keyboard::S
-#define KEY_t sf::Keyboard::T
-#define KEY_u sf::Keyboard::U
-#define KEY_v sf::Keyboard::V
-#define KEY_w sf::Keyboard::W
-#define KEY_x sf::Keyboard::X
-#define KEY_y sf::Keyboard::Y
-#define KEY_z sf::Keyboard::Z
-#define KEY_UP sf::Keyboard::Up
-#define KEY_DOWN sf::Keyboard::Down
-#define KEY_LEFT sf::Keyboard::Left
-#define KEY_RIGHT sf::Keyboard::Right
-#define KEY_SPACE sf::Keyboard::Space
-#define KEY_LSHIFT sf::Keyboard::LShift
-#define KEY_RSHIFT sf::Keyboard::RShift
-#define KEY_ESCAPE sf::Keyboard::Escape
-
 class BasicWindow {
    protected:
     int mouseX, mouseY;
@@ -57,6 +14,50 @@ class BasicWindow {
     int texture_w, texture_h;
 
    public:
+
+    // Most basic colors
+    static inline auto COLOR_WHITE = sf::Color( 255, 255, 255 );
+    static inline auto COLOR_BLACK = sf::Color( 0, 0, 0 );
+    static inline auto COLOR_GREEN = sf::Color( 0, 255, 0 );
+    static inline auto COLOR_RED = sf::Color( 255, 0, 0 );
+    static inline auto COLOR_BLUE = sf::Color( 0, 0, 255 );
+
+    // Keys
+    static inline auto KEY_a = sf::Keyboard::A;
+    static inline auto KEY_b = sf::Keyboard::B;
+    static inline auto KEY_c = sf::Keyboard::C;
+    static inline auto KEY_d = sf::Keyboard::D;
+    static inline auto KEY_e = sf::Keyboard::E;
+    static inline auto KEY_f = sf::Keyboard::F;
+    static inline auto KEY_g = sf::Keyboard::G;
+    static inline auto KEY_h = sf::Keyboard::H;
+    static inline auto KEY_i = sf::Keyboard::I;
+    static inline auto KEY_j = sf::Keyboard::J;
+    static inline auto KEY_k = sf::Keyboard::K;
+    static inline auto KEY_l = sf::Keyboard::L;
+    static inline auto KEY_m = sf::Keyboard::M;
+    static inline auto KEY_n = sf::Keyboard::N;
+    static inline auto KEY_o = sf::Keyboard::O;
+    static inline auto KEY_p = sf::Keyboard::P;
+    static inline auto KEY_q = sf::Keyboard::Q;
+    static inline auto KEY_r = sf::Keyboard::R;
+    static inline auto KEY_s = sf::Keyboard::S;
+    static inline auto KEY_t = sf::Keyboard::T;
+    static inline auto KEY_u = sf::Keyboard::U;
+    static inline auto KEY_v = sf::Keyboard::V;
+    static inline auto KEY_w = sf::Keyboard::W;
+    static inline auto KEY_x = sf::Keyboard::X;
+    static inline auto KEY_y = sf::Keyboard::Y;
+    static inline auto KEY_z = sf::Keyboard::Z;
+    static inline auto KEY_UP = sf::Keyboard::Up;
+    static inline auto KEY_DOWN = sf::Keyboard::Down;
+    static inline auto KEY_LEFT = sf::Keyboard::Left;
+    static inline auto KEY_RIGHT = sf::Keyboard::Right;
+    static inline auto KEY_SPACE = sf::Keyboard::Space;
+    static inline auto KEY_LSHIFT = sf::Keyboard::LShift;
+    static inline auto KEY_RSHIFT = sf::Keyboard::RShift;
+    static inline auto KEY_ESCAPE = sf::Keyboard::Escape;
+
     int width;
     int height;
     double frametime = 0;

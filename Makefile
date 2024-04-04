@@ -21,7 +21,7 @@ ifeq ($(OS),Windows_NT)
 		SFMLLIBS = -I'external/SFML/include' -L'SFML-2.6.1/lib'
 	endif
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -rdc=true -diag-suppress 177 -lstdc++
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -rdc=true -diag-suppress 177 -lstdc++
 	SFMLLIBS = -I'external/SFML/include'
 endif
 

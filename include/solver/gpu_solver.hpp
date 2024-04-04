@@ -31,53 +31,25 @@ class Solver {
     PC3::System& system;
     PC3::FileHandler& filehandler;
 
-    // Pulse Parameters. For now, we just cache the pulse parameters on the device.
-    // Later, we want to also cache the pulse shapes. This is harder to do than
-    // with the pump, since the user can provide arbitrary amounts of different
-    // pulses. My current idea on how to handle this is to just limit the number
-    // of pulses to e.g. 10, and then construct and cache the pulse shapes only when
-    // needed. This is not a problem for the pump, since we only have one pump.
-    struct PulseParameters {
-        PC3::CUDAMatrix<real_number> amp;
-        PC3::CUDAMatrix<real_number> width_x;
-        PC3::CUDAMatrix<real_number> width_y;
-        PC3::CUDAMatrix<real_number> x;
-        PC3::CUDAMatrix<real_number> y;
-        PC3::CUDAMatrix<int> m;
-
-        PC3::CUDAMatrix<PC3::Envelope::Polarization> pol;
-        PC3::CUDAMatrix<PC3::Envelope::Type> type;
-        PC3::CUDAMatrix<PC3::Envelope::Behavior> behavior;
-        PC3::CUDAMatrix<real_number> exponent;
-
+    struct Oscillation {
+        PC3::CUDAMatrix<unsigned int> pol;
         PC3::CUDAMatrix<real_number> t0;
         PC3::CUDAMatrix<real_number> freq;
         PC3::CUDAMatrix<real_number> sigma;
         unsigned int n;
 
         struct Pointers {
-            real_number* amp;
-            real_number* width_x;
-            real_number* width_y;
-            real_number* x;
-            real_number* y;
-            int* m;
-            real_number* exponent;
             real_number* t0;
             real_number* freq;
             real_number* sigma;
-            PC3::Envelope::Polarization* pol;
-            PC3::Envelope::Type* type;
-            PC3::Envelope::Behavior* behavior;
+            unsigned int* pol;
             unsigned int n;
         };
 
         Pointers pointers() {
-            return Pointers{
-                amp.get(), width_x.get(), width_y.get(), x.get(), y.get(), m.get(), exponent.get(), t0.get(), freq.get(), sigma.get(),
-                pol.get(), type.get(), behavior.get(), n };
+            return Pointers{ t0.get(), freq.get(), sigma.get(), pol.get(), n };
         }
-    } dev_pulse_parameters;
+    } dev_pulse_oscillation;
 
     // Device Variables
     Device device;
@@ -88,7 +60,7 @@ class Solver {
     cuda_fft_plan plan;
 
     Solver( PC3::System& system ) : system( system ), filehandler( system.filehandler ) {
-        std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.use_te_tm_splitting ) << std::endl;
+        std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.use_twin_mode ) << std::endl;
 
         // Finally, initialize the FFT Plan
         CUDA_FFT_CREATE( &plan, system.s_N_x, system.s_N_y );
@@ -134,8 +106,8 @@ class Solver {
 
     void finalize();
 
-    void iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 block_size, dim3 grid_size );
-    void iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 block_size, dim3 grid_size );
+    void iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_size );
+    void iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size );
     bool iterateRungeKutta();
 
     void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );

@@ -13,7 +13,9 @@ int findInArgv( std::string toFind, int argc, char** argv, int start ) {
     return -1;
 }
 
-real_number getNextInput( char** argv, const std::string name, int& index ) {
+real_number getNextInput( char** argv, const int argc, const std::string name, int& index ) {
+    if (index >= argc) 
+        return 0.0;
     if ( global_log_inputs ) {
         std::cout << EscapeSequence::GREY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
     }
@@ -28,10 +30,18 @@ real_number getNextInput( char** argv, const std::string name, int& index ) {
     return result;
 }
 
-std::string getNextStringInput( char** argv, const std::string name, int& index ) {
+std::string getNextStringInput( char** argv, const int argc, const std::string name, int& index ) {
+    if (index >= argc) 
+        return "";
     if ( global_log_inputs )
         std::cout << EscapeSequence::GREY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
-    return argv[ index++ ];
+    try {
+        return std::string( argv[ index++ ] );
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Error: Invalid argument for " << name << std::endl;
+        std::cout << EscapeSequence::RED << "Error: parsing envelope. Maybe you missed some arguments?" << EscapeSequence::RESET << std::endl;
+        exit( EXIT_FAILURE );
+    }
 }
 
 std::string unifyLength( std::string indicator, std::string unit, std::string description, int L1, int L2 ) {

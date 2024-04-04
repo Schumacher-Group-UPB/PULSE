@@ -65,6 +65,9 @@ PC3::System::System() {
 
     normalize_before_masking = false;
 
+    // By Default, no stochstic noise is added
+    stochastic_amplitude = 0.0;
+
     randomly_initialize_system = false;
     random_system_amplitude = 1.0;
 }
@@ -116,4 +119,17 @@ bool PC3::System::evaluatePulse() {
         }
     }
     return evaluate_pulse;
+}
+
+bool PC3::System::evaluateReservoir() {
+    bool evaluate_reservoir = reservoir_is_nonzero;
+    // If we pass a pump, we also calculate the reservoir
+    if (not pump.amp.empty())
+        evaluate_reservoir = true;
+
+    return evaluate_reservoir;
+}
+
+bool PC3::System::evaluateStochastic() {
+    return stochastic_amplitude != 0.0;
 }

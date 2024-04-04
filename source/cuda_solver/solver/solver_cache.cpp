@@ -17,10 +17,10 @@ void PC3::Solver::cacheValues() {
     host.wavefunction_plus_history.emplace_back( cut_p );
 
     // TE/TM Guard
-    if ( not system.use_te_tm_splitting )
+    if ( not system.use_twin_mode )
         return;
 
-    // Same for _minus component if use_te_tm_splitting is true
+    // Same for _minus component if use_twin_mode is true
     const auto [min_minus, max_minus] = CUDA::minmax( device.wavefunction_minus.get(), system.s_N_x * system.s_N_y, true /*Device Pointer*/ );
     host.wavefunction_max_minus.emplace_back( max_minus );
     auto cut_m = device.wavefunction_minus.slice( system.s_N_x * system.s_N_y / 2, system.s_N_x );
@@ -28,14 +28,14 @@ void PC3::Solver::cacheValues() {
 }
 
 void PC3::Solver::cacheToFiles() {
-    if ( system.doOutput( "max", "scalar" ) ) {
+    if ( system.doOutput( "all", "max", "scalar" ) ) {
         auto& file_max = filehandler.getFile( "max" );
         file_max << "index time Psi_Plus";
-        if ( system.use_te_tm_splitting )
+        if ( system.use_twin_mode )
             file_max << " Psi_Minus";
         file_max << "\n";
         for ( int i = 0; i < host.wavefunction_max_plus.size(); i++ ) {
-            if ( system.use_te_tm_splitting )
+            if ( system.use_twin_mode )
                 file_max << i << " " << host.times[i] << " " << host.wavefunction_max_plus[i] << " " << host.wavefunction_max_minus[i] << "\n";
             else
                 file_max << i << " " << host.times[i] << " " << host.wavefunction_max_plus[i] << "\n";
@@ -44,7 +44,7 @@ void PC3::Solver::cacheToFiles() {
     }
 
     // Guard when not outputting history
-    if ( not system.doOutput( "mat", "history" ) )
+    if ( not system.doOutput( "all", "mat", "history" ) )
         return;
 
     auto& file_history_plus = filehandler.getFile( "history_plus" );
@@ -61,7 +61,7 @@ void PC3::Solver::cacheToFiles() {
     file_history_plus.close();
 
     // TE/TM Guard
-    if ( not system.use_te_tm_splitting )
+    if ( not system.use_twin_mode )
         return;
 
     auto& file_history_minus = filehandler.getFile( "history_minus" );

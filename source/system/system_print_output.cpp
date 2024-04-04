@@ -66,7 +66,7 @@ void PC3::System::printHelp() {
               << unifyLength( "--L", "<double> <double>", "Standard is " + std::to_string( s_L_x ) + ", " + std::to_string( s_L_y ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
-              << unifyLength( "--pump", "<double> <string> <double> <double> <double> <string> <double> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), width, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring)\n", 30, 80 )
+              << unifyLength( "--pump", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring)\n", 30, 80 )
               << unifyLength( "--potential", "Same as Pump", "\n", 30, 80 )
               << unifyLength( "--initialState", "Same as Pump", "\n", 30, 80 )
               << unifyLength( "--initRandom", "<double>", "Amplitude. Randomly initialize Psi\n", 30, 80 )

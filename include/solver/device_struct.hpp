@@ -18,6 +18,8 @@ struct Device {
     PC3::CUDAMatrix<complex_number> reservoir_minus;
     PC3::CUDAMatrix<complex_number> pump_plus;
     PC3::CUDAMatrix<complex_number> pump_minus;
+    PC3::CUDAMatrix<complex_number> pulse_plus;
+    PC3::CUDAMatrix<complex_number> pulse_minus;
     PC3::CUDAMatrix<complex_number> potential_plus;
     PC3::CUDAMatrix<complex_number> potential_minus;
     // "Next" versions of the above matrices. These are used to store the next iteration of the wavefunction.
@@ -81,15 +83,24 @@ struct Device {
     // RK45 Error Matrix
     PC3::CUDAMatrix<real_number> rk_error;
 
+    // Random Number Cache
+    PC3::CUDAMatrix<complex_number> random_number;
+    PC3::CUDAMatrix<cuda_random_state> random_state;
+
     // Empty Constructor
     Device() = default;
 
     // Construction Chain
-    void constructAll( const int N_x, const int N_y, bool use_te_tm_splitting, bool use_rk_45 ) {
+    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_rk_45 ) {
+        // Construct Random Number Cache
+        random_number.construct( N_x, N_y, "device.random_number" );
+        random_state.construct( N_x, N_y, "device.random_state" );
+
         // Wavefunction, Reservoir, Pump and FFT Matrices
         wavefunction_plus.construct( N_x, N_y, "device.wavefunction_plus" );
         reservoir_plus.construct( N_x, N_y, "device.reservoir_plus" );
         pump_plus.construct( N_x, N_y, "device.pump_plus" );
+        pulse_plus.construct( N_x, N_y, "device.pulse_plus" );
         potential_plus.construct( N_x, N_y, "device.potential_plus" );
         buffer_wavefunction_plus.construct( N_x, N_y, "device.buffer_wavefunction_plus" );
         buffer_reservoir_plus.construct( N_x, N_y, "device.buffer_reservoir_plus" );
@@ -118,12 +129,13 @@ struct Device {
         }
 
         // TE/TM Guard
-        if ( not use_te_tm_splitting )
+        if ( not use_twin_mode )
             return;
 
         wavefunction_minus.construct( N_x, N_y, "device.wavefunction_minus" );
         reservoir_minus.construct( N_x, N_y, "device.reservoir_minus" );
         pump_minus.construct( N_x, N_y, "device.pump_minus" );
+        pulse_minus.construct( N_x, N_y, "device.pulse_minus" );
         potential_minus.construct( N_x, N_y, "device.potential_minus" );
         buffer_wavefunction_minus.construct( N_x, N_y, "device.buffer_wavefunction_minus" );
         buffer_reservoir_minus.construct( N_x, N_y, "device.buffer_reservoir_minus" );
@@ -155,6 +167,7 @@ struct Device {
         complex_number* wavefunction_plus;
         complex_number* reservoir_plus;
         complex_number* pump_plus;
+        complex_number* pulse_plus;
         complex_number* potential_plus;
         complex_number* buffer_wavefunction_plus;
         complex_number* buffer_reservoir_plus;
@@ -178,6 +191,7 @@ struct Device {
         complex_number* wavefunction_minus;
         complex_number* reservoir_minus;
         complex_number* pump_minus;
+        complex_number* pulse_minus;
         complex_number* potential_minus;
         complex_number* buffer_wavefunction_minus;
         complex_number* buffer_reservoir_minus;
@@ -195,12 +209,16 @@ struct Device {
         complex_number* k6_reservoir_minus;
         complex_number* k7_wavefunction_minus;
         complex_number* k7_reservoir_minus;
+
+        complex_number* random_number;
+        cuda_random_state* random_state;
     };
     Pointers pointers(){
         return Pointers{
             wavefunction_plus.get(),
             reservoir_plus.get(),
             pump_plus.get(),
+            pulse_plus.get(),
             potential_plus.get(),
             buffer_wavefunction_plus.get(),
             buffer_reservoir_plus.get(),
@@ -224,6 +242,7 @@ struct Device {
             wavefunction_minus.get(),
             reservoir_minus.get(),
             pump_minus.get(),
+            pulse_minus.get(),
             potential_minus.get(),
             buffer_wavefunction_minus.get(),
             buffer_reservoir_minus.get(),
@@ -241,6 +260,9 @@ struct Device {
             k6_reservoir_minus.get(),
             k7_wavefunction_minus.get(),
             k7_reservoir_minus.get(),
+
+            random_number.get(),
+            random_state.get()
         };
     } 
 };

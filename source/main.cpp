@@ -47,14 +47,19 @@ int main( int argc, char* argv[] ) {
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
     initSFMLWindow( solver );
 
+    // Some Helper Variables
     bool running = true;
     double complete_duration = 0.;
+    size_t complete_iterations = 0;
+
     // Main Loop
     while ( system.t < system.t_max and running ) {
         TimeThis(
             // Iterate #output_every ps
             auto start = system.t;
-            while ( system.t <= start + system.output_every and solver.iterateRungeKutta()){ }
+            while ( system.t <= start + system.output_every and solver.iterateRungeKutta() ) {
+                complete_iterations++;
+            }
 
             // Sync the current device arrays to their host array equivalents
             solver.syncDeviceArrays();
@@ -63,7 +68,7 @@ int main( int argc, char* argv[] ) {
             // Output Matrices if enabled
             solver.cacheMatrices();
             // Plot
-            running = plotSFMLWindow( solver, system.t/complete_duration );
+            running = plotSFMLWindow( solver, system.t, complete_duration, complete_iterations );
             , "Main-Loop" );
         complete_duration = PC3::TimeIt::totalRuntime();
 
@@ -73,19 +78,24 @@ int main( int argc, char* argv[] ) {
         std::cout << "    T = " << int( system.t ) << "ps - dt = " << std::setprecision( 2 ) << system.dt << "ps    \n";
         // Progressbar for system.t/system.t_max
         std::cout << "    Progress:  [";
-        for ( int i = 0; i < 50.*system.t/system.t_max; i++ ) {
-                std::cout << EscapeSequence::BLUE << "#" << EscapeSequence::RESET; //█
+        for ( int i = 0; i < 50. * system.t / system.t_max; i++ ) {
+            std::cout << EscapeSequence::BLUE << "#" << EscapeSequence::RESET; // █
         }
-        for ( int i = 0; i < 50.*(1.-system.t/system.t_max); i++ ) {
-                std::cout << EscapeSequence::GREY << "#" << EscapeSequence::RESET;
+        for ( int i = 0; i < 50. * ( 1. - system.t / system.t_max ); i++ ) {
+            std::cout << EscapeSequence::GREY << "#" << EscapeSequence::RESET;
         }
-        std::cout << "]  " << int( 100.*system.t/system.t_max ) << "%  \n";
-        std::cout << "    Runtime: " << int(complete_duration) << "s, remaining: " << int( complete_duration*(system.t_max-system.t)/system.t ) << "s    \n";
-        std::cout << "    Time per ps: " << complete_duration/system.t << "s  -  " << std::setprecision( 3 ) << system.t/complete_duration << "ps/s    \n";
+        std::cout << "]  " << int( 100. * system.t / system.t_max ) << "%  \n";
+        bool evaluate_pulse = system.evaluatePulse();
+        bool evaluate_reservoir = system.evaluateReservoir();
+        bool evaluate_stochastic = system.evaluateStochastic();
+        std::cout << "    Current System: " << ( system.use_twin_mode ? "TE/TM" : "Scalar" ) << " - " << ( evaluate_reservoir ? "With Reservoir" : "No Reservoir" ) << " - " << ( evaluate_pulse ? "With Pulse" : "No Pulse" ) << " - " << ( evaluate_stochastic ? "With Stochastic" : "No Stochastic" ) << "    \n";
+        std::cout << "    Runtime: " << int( complete_duration ) << "s, remaining: " << int( complete_duration * ( system.t_max - system.t ) / system.t ) << "s    \n";
+        std::cout << "    Time per ps: " << complete_duration / system.t << "s/ps  -  " << std::setprecision( 3 ) << system.t / complete_duration << "ps/s  -  " << complete_iterations/complete_duration << "it/s    \n";
         std::cout << "-----------------------------------------------------------------------------------" << std::endl;
-        std::cout << EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP<< EscapeSequence::LINE_UP;
+        std::cout << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP;
     }
-    std::cout <<"\n\n\n\n\n\n" << EscapeSequence::SHOW_CURSOR;
+    std::cout << "\n\n\n\n\n\n\n"
+              << EscapeSequence::SHOW_CURSOR;
 
     // Fileoutput
     solver.finalize();

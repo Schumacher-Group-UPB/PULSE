@@ -25,6 +25,7 @@
 #include "misc/helperfunctions.hpp"
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
+#include "kernel/kernel_random_numbers.cuh"
 
 /*
  * Helper variable for caching the current time for FFT evaluations.
@@ -34,7 +35,49 @@
 real_number cached_t = 0.0;
 
 // Helper macro to choose the correct runge function
-#define RUNGE_FUNCTION (system.use_te_tm_splitting ? PC3::Kernel::runge_func_kernel_tetm : PC3::Kernel::runge_func_kernel_scalar)
+#define RUNGE_FUNCTION_GP (system.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
+#define RUNGE_FUNCTION_RE (system.use_twin_mode ? PC3::Kernel::Compute::tetm_reservoir : PC3::Kernel::Compute::scalar_reservoir)
+#define RUNGE_FUNCTION_PULSE (system.use_twin_mode ? PC3::Kernel::Compute::tetm_pulse : PC3::Kernel::Compute::scalar_pulse)
+#define RUNGE_FUNCTION_STOCHASTIC (system.use_twin_mode ? PC3::Kernel::Compute::tetm_stochastic : PC3::Kernel::Compute::scalar_stochastic)
+
+// Helper Macro to iterate a specific RK K
+#define CALCULATE_K( index, time, variable ) \
+CALL_KERNEL( \
+    RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size,  \
+    time, device_pointers, p, \
+    {  \
+        device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+        device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
+    } \
+); \
+if (evaluate_reservoir) \
+    CALL_KERNEL( \
+        RUNGE_FUNCTION_RE, "K"#index"_Reservoir", grid_size, block_size, \
+        time, device_pointers, p, \
+        {  \
+            device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+            device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
+        } \
+    ); \
+if (evaluate_pulse) \
+    CALL_KERNEL( \
+        RUNGE_FUNCTION_PULSE, "K"#index"_Pulse", grid_size, block_size, \
+        time, device_pointers, p, pulse_pointers, \
+        {  \
+            device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+            device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
+        } \
+    ); \
+if (evaluate_stochastic) \
+    CALL_KERNEL( \
+        RUNGE_FUNCTION_STOCHASTIC, "K"#index"_Stochastic", grid_size, block_size, \
+        time, device_pointers, p, \
+        {  \
+            device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+            device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
+        } \
+    ); \
+
 
 /*
  * This function iterates the Runge Kutta Kernel using a fixed time step.
@@ -59,112 +102,60 @@ real_number cached_t = 0.0;
  * Then, we iterate all of the remaining rows after each other, incrementing the buffer for the next iteration.
  */
 
-void PC3::Solver::iterateFixedTimestepRungeKutta( bool evaluate_pulse, dim3 block_size, dim3 grid_size ) {
+void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_size ) {
     // This variable contains all the system parameters the kernel could need
     auto p = system.snapshotParameters();
     
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = device.pointers();
-    
-    // Pointers to Pulse Variables. This is subject to change
-    auto pulse_pointers = dev_pulse_parameters.pointers();
-    CALL_KERNEL(
-        RUNGE_FUNCTION, "K1", grid_size, block_size, 
-        system.t, device_pointers, p,
-        { 
-            device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
-            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus
-        }
-    );
-    if (evaluate_pulse)
-        CALL_KERNEL(
-            PC3::Kernel::runge_func_kernel_pulse, "K1_Pulse", grid_size, block_size,
-            system.t, p, pulse_pointers, system.use_te_tm_splitting,
-            { 
-                device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
-                device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus
-            }
-        );
 
+    // The CPU should briefly evaluate wether the pulse and the reservoir have to be evaluated
+    bool evaluate_pulse = system.evaluatePulse();
+    bool evaluate_reservoir = system.evaluateReservoir();
+    bool evaluate_stochastic = system.evaluateStochastic();
+
+    // Pointers to Pulse Variables. This is subject to change
+    auto pulse_pointers = dev_pulse_oscillation.pointers();
+
+    // If required, calculate new set of random numbers.
+    if (evaluate_stochastic)
+    CALL_KERNEL(
+        PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
+        device_pointers.random_state, device_pointers.random_number, system.s_N_x*system.s_N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt)
+    );
+
+    CALCULATE_K( 1, system.t, wavefunction );
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k2, "Sum for K2", grid_size, block_size,
-        device_pointers, p, system.use_te_tm_splitting
+        device_pointers, p, system.use_twin_mode
     );
 
-    CALL_KERNEL(
-        RUNGE_FUNCTION, "K2", grid_size, block_size,
-        system.t + 0.5*system.dt, device_pointers, p,
-        { 
-            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-            device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
-        }
-    );
-    if (evaluate_pulse)
-        CALL_KERNEL(
-            PC3::Kernel::runge_func_kernel_pulse, "K2_Pulse", grid_size, block_size,
-            system.t + 0.5*system.dt, p, pulse_pointers, system.use_te_tm_splitting,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
-            }
-        );
+    CALCULATE_K( 2, system.t + 0.5 * system.dt, buffer_wavefunction );
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k3, "Sum for K3", grid_size, block_size,
-        device_pointers, p, system.use_te_tm_splitting
+        device_pointers, p, system.use_twin_mode
     );
 
-    CALL_KERNEL(
-        RUNGE_FUNCTION, "K3", grid_size, block_size,
-        system.t + 0.5*system.dt, device_pointers, p,
-        { 
-            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-            device_pointers.k3_wavefunction_plus, device_pointers.k3_wavefunction_minus, device_pointers.k3_reservoir_plus, device_pointers.k3_reservoir_minus
-        }
-    );
-    if (evaluate_pulse)
-        CALL_KERNEL(
-            PC3::Kernel::runge_func_kernel_pulse, "K3_Pulse", grid_size, block_size,
-            system.t + 0.5*system.dt, p, pulse_pointers, system.use_te_tm_splitting,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k3_wavefunction_plus, device_pointers.k3_wavefunction_minus, device_pointers.k3_reservoir_plus, device_pointers.k3_reservoir_minus
-            }
-        );
+    CALCULATE_K( 3, system.t + 0.5 * system.dt, buffer_wavefunction);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k4, "Sum for K4", grid_size, block_size,
-        device_pointers, p, system.use_te_tm_splitting
+        device_pointers, p, system.use_twin_mode
     );
 
-    CALL_KERNEL(
-        RUNGE_FUNCTION, "K4", grid_size, block_size,
-        system.t + system.dt, device_pointers, p,
-        { 
-            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-            device_pointers.k4_wavefunction_plus, device_pointers.k4_wavefunction_minus, device_pointers.k4_reservoir_plus, device_pointers.k4_reservoir_minus
-        }
-    );
-    if (evaluate_pulse)
-        CALL_KERNEL(
-            PC3::Kernel::runge_func_kernel_pulse, "K4_Pulse", grid_size, block_size,
-            system.t + system.dt, p, pulse_pointers, system.use_te_tm_splitting,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k4_wavefunction_plus, device_pointers.k4_wavefunction_minus, device_pointers.k4_reservoir_plus, device_pointers.k4_reservoir_minus
-            }
-        );
+    CALCULATE_K( 4, system.t + system.dt, buffer_wavefunction);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_final, "Final Sum", grid_size, block_size,
-        device_pointers, p, system.use_te_tm_splitting
+        device_pointers, p, system.use_twin_mode
     );
 
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
     device.wavefunction_plus.swap( device.buffer_wavefunction_plus );
     device.reservoir_plus.swap( device.buffer_reservoir_plus );
-    if ( system.use_te_tm_splitting ) {
+    if ( system.use_twin_mode ) {
         device.wavefunction_minus.swap( device.buffer_wavefunction_minus );
         device.reservoir_minus.swap( device.buffer_reservoir_minus );
     }
@@ -217,179 +208,79 @@ struct square_reduction
 * @param system The system to iterate
 * @param evaluate_pulse If true, the pulse is evaluated at the current time step
 */
-void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 block_size, dim3 grid_size ) {
+void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size ) {
     // Accept current step?
     bool accept = false;
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = device.pointers();
     // This variable contains all the system parameters the kernel could need
-    auto p = system.snapshotParameters();
     // Pointers to Pulse Variables. This is subject to change
-    auto pulse_pointers = dev_pulse_parameters.pointers();
-    
-    do {
+    auto pulse_pointers = dev_pulse_oscillation.pointers();
+    // The CPU should briefly evaluate wether the pulse and the reservoir have to be evaluated
+    bool evaluate_pulse = system.evaluatePulse();
+    bool evaluate_reservoir = system.evaluateReservoir();
+    bool evaluate_stochastic = system.evaluateStochastic();
 
-        CALL_KERNEL(
-            RUNGE_FUNCTION, "K1", grid_size, block_size, 
-            system.t, device_pointers, p,
-            { 
-                device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
-                device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus
-            }
-        );
-        if (evaluate_pulse)
-            CALL_KERNEL(
-                PC3::Kernel::runge_func_kernel_pulse, "K1_Pulse", grid_size, block_size,
-                system.t, p, pulse_pointers, system.use_te_tm_splitting,
-                { 
-                    device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
-                    device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus
-                }
-            );
+    // If required, calculate new set of random numbers.
+    if (evaluate_stochastic)
+    CALL_KERNEL(
+        PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
+        device_pointers.random_state, device_pointers.random_number, system.s_N_x*system.s_N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt)
+    );
+
+    do {
+        // We snapshot here to make sure that the dt is updated
+        auto p = system.snapshotParameters();
+
+        CALCULATE_K( 1, system.t, wavefunction );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k2, "Sum for K2", grid_size, block_size, 
-            device_pointers, p, system.use_te_tm_splitting
+            device_pointers, p, system.use_twin_mode
         );
 
-        CALL_KERNEL(
-            RUNGE_FUNCTION, "K2", grid_size, block_size, 
-            system.t + RKCoefficients::a2 * system.dt, device_pointers, p,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
-            }
-        );
-        if (evaluate_pulse)
-            CALL_KERNEL(
-                PC3::Kernel::runge_func_kernel_pulse, "K2_Pulse", grid_size, block_size,
-                system.t, p, pulse_pointers, system.use_te_tm_splitting,
-                { 
-                    device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                    device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
-                }
-            );
+        CALCULATE_K( 2, system.t + RKCoefficients::a2 * system.dt, buffer_wavefunction );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k3, "Sum for K3", grid_size, block_size, 
-            device_pointers, p, system.use_te_tm_splitting
+            device_pointers, p, system.use_twin_mode
         );
 
 
-        CALL_KERNEL(
-            RUNGE_FUNCTION, "K3", grid_size, block_size, 
-            system.t + RKCoefficients::a3 * system.dt, device_pointers, p,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k3_wavefunction_plus, device_pointers.k3_wavefunction_minus, device_pointers.k3_reservoir_plus, device_pointers.k3_reservoir_minus
-            }
-        );
-        if (evaluate_pulse)
-            CALL_KERNEL(
-                PC3::Kernel::runge_func_kernel_pulse, "K3_Pulse", grid_size, block_size,
-                system.t, p, pulse_pointers, system.use_te_tm_splitting,
-                { 
-                    device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                    device_pointers.k3_wavefunction_plus, device_pointers.k3_wavefunction_minus, device_pointers.k3_reservoir_plus, device_pointers.k3_reservoir_minus
-                }
-            );
+        CALCULATE_K( 3, system.t + RKCoefficients::a3 * system.dt, buffer_wavefunction );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k4, "Sum for K4", grid_size, block_size, 
-            device_pointers, p, system.use_te_tm_splitting
+            device_pointers, p, system.use_twin_mode
         );
 
-        CALL_KERNEL(
-            RUNGE_FUNCTION, "K4", grid_size, block_size, 
-            system.t + RKCoefficients::a4 * system.dt, device_pointers, p,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k4_wavefunction_plus, device_pointers.k4_wavefunction_minus, device_pointers.k4_reservoir_plus, device_pointers.k4_reservoir_minus
-            }
-        );
-        if (evaluate_pulse)
-            CALL_KERNEL(
-                PC3::Kernel::runge_func_kernel_pulse, "K4_Pulse", grid_size, block_size,
-                system.t, p, pulse_pointers, system.use_te_tm_splitting,
-                { 
-                    device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                    device_pointers.k4_wavefunction_plus, device_pointers.k4_wavefunction_minus, device_pointers.k4_reservoir_plus, device_pointers.k4_reservoir_minus
-                }
-            );
+        CALCULATE_K( 4, system.t + RKCoefficients::a4 * system.dt, buffer_wavefunction );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k5, "Sum for K5", grid_size, block_size, 
-            device_pointers, p, system.use_te_tm_splitting
+            device_pointers, p, system.use_twin_mode
         );
 
-        CALL_KERNEL(
-            RUNGE_FUNCTION, "K5", grid_size, block_size, 
-            system.t + RKCoefficients::a5 * system.dt, device_pointers, p,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k5_wavefunction_plus, device_pointers.k5_wavefunction_minus, device_pointers.k5_reservoir_plus, device_pointers.k5_reservoir_minus
-            }
-        );
-        if (evaluate_pulse)
-            CALL_KERNEL(
-                PC3::Kernel::runge_func_kernel_pulse, "K5_Pulse", grid_size, block_size,
-                system.t, p, pulse_pointers, system.use_te_tm_splitting,
-                { 
-                    device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                    device_pointers.k5_wavefunction_plus, device_pointers.k5_wavefunction_minus, device_pointers.k5_reservoir_plus, device_pointers.k5_reservoir_minus
-                }
-            );
+        CALCULATE_K( 5, system.t + RKCoefficients::a5 * system.dt, buffer_wavefunction );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k6, "Sum for K6", grid_size, block_size, 
-            device_pointers, p, system.use_te_tm_splitting
+            device_pointers, p, system.use_twin_mode
         );
 
-        CALL_KERNEL(
-            RUNGE_FUNCTION, "K6", grid_size, block_size, 
-            system.t + RKCoefficients::a6 * system.dt, device_pointers, p,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k6_wavefunction_plus, device_pointers.k6_wavefunction_minus, device_pointers.k6_reservoir_plus, device_pointers.k6_reservoir_minus
-            }
-        );
-        if (evaluate_pulse)
-            CALL_KERNEL(
-                PC3::Kernel::runge_func_kernel_pulse, "K6_Pulse", grid_size, block_size,
-                system.t, p, pulse_pointers, system.use_te_tm_splitting,
-                { 
-                    device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                    device_pointers.k6_wavefunction_plus, device_pointers.k6_wavefunction_minus, device_pointers.k6_reservoir_plus, device_pointers.k6_reservoir_minus
-                }
-            );
+        CALCULATE_K( 6, system.t + RKCoefficients::a6 * system.dt, buffer_wavefunction );
 
         // Final Result is in the buffer_ arrays
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_final, "Final Sum", grid_size, block_size, 
-            device_pointers, p, system.use_te_tm_splitting
+            device_pointers, p, system.use_twin_mode
         );
 
-        CALL_KERNEL(
-            RUNGE_FUNCTION, "K7", grid_size, block_size, 
-            system.t + RKCoefficients::a7 * system.dt, device_pointers, p,
-            { 
-                device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                device_pointers.k7_wavefunction_plus, device_pointers.k7_wavefunction_minus, device_pointers.k7_reservoir_plus, device_pointers.k7_reservoir_minus
-            }
-        );
-        if (evaluate_pulse)
-            CALL_KERNEL(
-                PC3::Kernel::runge_func_kernel_pulse, "K7_Pulse", grid_size, block_size,
-                system.t, p, pulse_pointers, system.use_te_tm_splitting,
-                { 
-                    device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus,
-                    device_pointers.k7_wavefunction_plus, device_pointers.k7_wavefunction_minus, device_pointers.k7_reservoir_plus, device_pointers.k7_reservoir_minus
-                }
-            );
+        CALCULATE_K( 7, system.t + RKCoefficients::a7 * system.dt, buffer_wavefunction );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_final_error, "Final Sum Error", grid_size, block_size, 
-            device_pointers, p, system.use_te_tm_splitting
+            device_pointers, p, system.use_twin_mode
         );
 
         #ifndef USECPU
@@ -432,7 +323,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( bool evaluate_pulse, dim3 b
             // This is fast, because we just swap pointers instead of copying data.
             device.wavefunction_plus.swap( device.buffer_wavefunction_plus );
             device.reservoir_plus.swap( device.buffer_reservoir_plus );
-            if ( system.use_te_tm_splitting ) {
+            if ( system.use_twin_mode ) {
                 device.wavefunction_minus.swap( device.buffer_wavefunction_minus );
                 device.reservoir_minus.swap( device.buffer_reservoir_minus );
             }
@@ -464,7 +355,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     CHECK_CUDA_ERROR( {}, "FFT Shift Plus" );
 
     // Do the FFT and the shifting here already for visualization only
-    if ( system.use_te_tm_splitting ) {
+    if ( system.use_twin_mode ) {
         CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device.wavefunction_minus.get(), (fft_complex_number*)device.fft_minus.get(), CUFFT_FORWARD ), "FFT Exec" );
         fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N_x, system.s_N_y );
         CHECK_CUDA_ERROR( {}, "FFT Shift Minus" );
@@ -489,7 +380,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     
     // Do the same for the minus component
-    if (not system.use_te_tm_splitting)
+    if (not system.use_twin_mode)
         return;
     kernel_mask_fft<<<grid_size, block_size>>>( device.fft_minus.get(), device.fft_mask_minus.get(), system.s_N_x*system.s_N_y );
     CHECK_CUDA_ERROR( {}, "FFT Filter" )
@@ -501,6 +392,8 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     #endif
 }
 
+bool first_time = true;
+
 /**
  * Iterates the Runge-Kutta-Method on the GPU
  * Note, that all device arrays and variables have to be initialized at this point
@@ -511,19 +404,28 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
  */
 bool PC3::Solver::iterateRungeKutta( ) {
 
+
     // First, check if the maximum time has been reached
     if ( system.t >= system.t_max )
         return false;
 
     dim3 block_size( system.block_size, 1 );
-    dim3 grid_size( (system.s_N_x*system.s_N_y + block_size.x ) / block_size.x, 1 );
+    dim3 grid_size( ( system.s_N_x*system.s_N_y + block_size.x ) / block_size.x, 1 );
     
-    // The CPU should briefly evaluate wether the pulses have to be evaluated
-    bool evaluate_pulse = system.evaluatePulse();
+    if (first_time and system.evaluateStochastic()) {
+        first_time = false;
+        auto device_pointers = device.pointers();
+        CALL_KERNEL(
+                PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size,
+                system.random_seed, device_pointers.random_state, system.s_N_x*system.s_N_y
+            );
+        std::cout << "Initialized Random Number Generator" << std::endl;
+    }
+    
     if ( system.fixed_time_step )
-        iterateFixedTimestepRungeKutta( evaluate_pulse, block_size, grid_size );
+        iterateFixedTimestepRungeKutta( block_size, grid_size );
     else
-        iterateVariableTimestepRungeKutta( evaluate_pulse, block_size, grid_size );
+        iterateVariableTimestepRungeKutta( block_size, grid_size );
 
     // Syncronize
     //CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );

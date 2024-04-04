@@ -23,6 +23,8 @@ struct Host {
     PC3::HostMatrix<complex_number> reservoir_minus;
     PC3::HostMatrix<complex_number> pump_plus;
     PC3::HostMatrix<complex_number> pump_minus;
+    PC3::HostMatrix<complex_number> pulse_plus;
+    PC3::HostMatrix<complex_number> pulse_minus;
     PC3::HostMatrix<complex_number> potential_plus;
     PC3::HostMatrix<complex_number> potential_minus;
     
@@ -51,24 +53,28 @@ struct Host {
     Host() = default;
 
     // Construction Chain
-    void constructAll( const int N_x, const int N_y, bool use_te_tm_splitting, bool use_rk_45 ) {
+    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_rk_45 ) {
         // Wavefunction, Reservoir, Pump and FFT Matrices
         initial_state_plus.construct( N_x, N_y, "host.initial_state_plus" );
         wavefunction_plus.construct( N_x, N_y, "host.wavefunction_plus" );
         reservoir_plus.construct( N_x, N_y, "host.reservoir_plus" );
         pump_plus.construct( N_x, N_y, "host.pump_plus" );
+        pulse_plus.construct( N_x, N_y, "host.pulse_plus" );
         potential_plus.construct( N_x, N_y, "host.potential_plus" );
         fft_mask_plus.construct( N_x, N_y, "host.fft_mask_plus" );
         fft_plus.construct( N_x, N_y, "host.fft_plus" );
-        if ( use_te_tm_splitting ) {
-            initial_state_minus.construct( N_x, N_y, "host.initial_state_minus" );
-            wavefunction_minus.construct( N_x, N_y, "host.wavefunction_minus" );
-            reservoir_minus.construct( N_x, N_y, "host.reservoir_minus" );
-            pump_minus.construct( N_x, N_y, "host.pump_minus" );
-            potential_minus.construct( N_x, N_y, "host.potential_minus" );
-            fft_mask_minus.construct( N_x, N_y, "host.fft_mask_minus" );
-            fft_minus.construct( N_x, N_y, "host.fft_minus" );
-        }
+
+        if ( not use_twin_mode )
+            return;
+            
+        initial_state_minus.construct( N_x, N_y, "host.initial_state_minus" );
+        wavefunction_minus.construct( N_x, N_y, "host.wavefunction_minus" );
+        reservoir_minus.construct( N_x, N_y, "host.reservoir_minus" );
+        pump_minus.construct( N_x, N_y, "host.pump_minus" );
+        pulse_minus.construct( N_x, N_y, "host.pulse_minus" );
+        potential_minus.construct( N_x, N_y, "host.potential_minus" );
+        fft_mask_minus.construct( N_x, N_y, "host.fft_mask_minus" );
+        fft_minus.construct( N_x, N_y, "host.fft_minus" );
     }
 };
 

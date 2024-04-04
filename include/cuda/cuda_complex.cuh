@@ -215,6 +215,18 @@ CUDA_HOST_DEVICE static CUDA_INLINE real_number sqrt( const real_number x ) {
     return std::sqrt( x );
 }
 
+template <typename T>
+CUDA_HOST_DEVICE static CUDA_INLINE T sign( const T x ) {
+    return x > 0 ? 1 : -1;
+}
+
+CUDA_HOST_DEVICE static CUDA_INLINE complex_number sqrt( const complex_number& x ) {
+    const auto x_real = real( x );
+    const auto x_imag = imag( x );
+    const auto r = sqrt( x_real * x_real + x_imag * x_imag );
+    return { sqrt( ( r + x_real ) / 2.0 ), sign( x_imag ) * sqrt( ( r - x_real ) / 2.0 ) };
+}
+
 CUDA_HOST_DEVICE static CUDA_INLINE real_number exp( const real_number x ) {
     return std::exp( x );
 }

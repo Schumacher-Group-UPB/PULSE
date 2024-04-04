@@ -55,6 +55,9 @@ class System {
 
     // Envelope ReadIns
     PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;
+    bool reservoir_is_nonzero = false;
+
+    real_number stochastic_amplitude;
 
     FileHandler filehandler;
 
@@ -80,8 +83,8 @@ class System {
     //    // TODO:
     //    // Resonant = 1 << 2, // via +
     //} structure;
-    // For now, save structure as bool use_te_tm_splitting
-    bool use_te_tm_splitting;
+    // For now, save structure as bool use_twin_mode
+    bool use_twin_mode;
 
     /**
      * @brief Calculates a mask for the given system and saves it to the mask buffer.
@@ -96,6 +99,8 @@ class System {
     void calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
 
     bool evaluatePulse();
+    bool evaluateReservoir();
+    bool evaluateStochastic();
 
     void init( int argc, char** argv );
     void calculateAuto();
@@ -112,10 +117,11 @@ class System {
         complex_number minus_i_over_h_bar_s, i_h_bar_s, half_i, i, minus_half_i, minus_i;
         real_number m_eff_scaled, delta_LT_scaled;
         bool periodic_boundary_x, periodic_boundary_y;
+        real_number dV;
         Parameters( unsigned int N_x, unsigned int N_y, real_number t, real_number dt, real_number s_L_x, real_number s_L_y, real_number dx, real_number dy,
                     real_number m_e, real_number h_bar_s, real_number m_eff, real_number m_eff_scaled, 
                     real_number gamma_c, real_number gamma_r, real_number g_c, real_number g_r, real_number R, 
-                    real_number g_pm, real_number delta_LT, bool periodic_boundary_x, bool periodic_boundary_y ) : 
+                    real_number g_pm, real_number delta_LT, bool periodic_boundary_x, bool periodic_boundary_y) : 
                     N_x( N_x ), N_y(N_y), N2( N_x * N_y ), t( t ), dt( dt ), dt_half( dt / real_number( 2.0 ) ), s_L_x( s_L_x ), s_L_y(s_L_y), dx( dx ), dy(dy), 
                     m_e( m_e ), m_eff( m_eff ), m_eff_scaled(m_eff_scaled), 
                     gamma_c( gamma_c ), gamma_r( gamma_r ), g_c( g_c ), g_r( g_r ), R( R ), 
@@ -125,7 +131,8 @@ class System {
                     i( complex_number( 0.0, 1.0 ) ), minus_half_i( complex_number( 0.0, real_number( -0.5 ) ) ), 
                     minus_i( complex_number( 0.0, real_number( -1.0 ) ) ), periodic_boundary_x( periodic_boundary_x ), periodic_boundary_y( periodic_boundary_y ) {
             //m_eff_scaled = ;//real_number( -0.5 ) * h_bar_s * h_bar_s / ( m_eff * dx * dx );
-            delta_LT_scaled = delta_LT / dx / dx;
+            delta_LT_scaled = delta_LT / dx / dy;
+            dV = dx * dy;
         }
     };
 

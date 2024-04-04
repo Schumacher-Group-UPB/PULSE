@@ -111,8 +111,6 @@ void BasicWindow::print( int x, int y, int h, std::string text, sf::Color textco
 }
 
 bool BasicWindow::keyPressed( int key ) {
-    if ( keyDown == key )
-        std::cout << "Key down? " << std::to_string( keyDown == key ) << " and key is " << std::to_string( key ) << std::endl;
     return keyDown == key;
 }
 
