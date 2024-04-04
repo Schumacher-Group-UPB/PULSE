@@ -143,9 +143,13 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     device.fft_mask_plus.fromHost( host.fft_mask_plus );
     // Check once of the reservoir is zero.
     // If yes, then the reservoir may not be avaluated.
+    #pragma omp parallel for
     for (int i = 0; i < system.s_N_x * system.s_N_y; i++) {
-        if (CUDA::abs2(host.reservoir_plus[i]) != 0.0) {
-            system.reservoir_is_nonzero = true;
+        if (CUDA::abs2(host.reservoir_plus[i]) != 0.0 or CUDA::abs2(host.pump_plus[i]) != 0.0) {
+            system.evaluate_reservoir_kernel = true;
+        }
+        if (CUDA::abs2(host.pulse_plus[i]) != 0.0) {
+            system.evaluate_pulse_kernel = true;
         }
     }
 
@@ -161,9 +165,13 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     device.fft_mask_minus.fromHost( host.fft_mask_minus );
     // Check once of the reservoir is zero.
     // If yes, then the reservoir may not be avaluated.
+    #pragma omp parallel for
     for (int i = 0; i < system.s_N_x * system.s_N_y; i++) {
-        if (CUDA::abs2(host.reservoir_minus[i]) != 0.0) {
-            system.reservoir_is_nonzero = true;
+        if (CUDA::abs2(host.reservoir_minus[i]) != 0.0 or CUDA::abs2(host.pump_minus[i]) != 0.0){
+            system.evaluate_reservoir_kernel = true;
+        }
+        if (CUDA::abs2(host.pulse_minus[i]) != 0.0) {
+            system.evaluate_pulse_kernel = true;
         }
     }
 }

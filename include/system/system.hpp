@@ -55,7 +55,8 @@ class System {
 
     // Envelope ReadIns
     PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;
-    bool reservoir_is_nonzero = false;
+    bool evaluate_reservoir_kernel = false;
+    bool evaluate_pulse_kernel = false;
 
     real_number stochastic_amplitude;
 
