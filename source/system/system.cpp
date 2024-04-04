@@ -110,7 +110,7 @@ PC3::System::System( int argc, char** argv ) : System() {
 
 bool PC3::System::evaluatePulse() {
     if (not evaluate_pulse_kernel)
-        return;
+        return false;
     bool evaluate_pulse = false;
     for ( int c = 0; c < pulse.t0.size(); c++ ) {
         const auto t0 = pulse.t0[c];
