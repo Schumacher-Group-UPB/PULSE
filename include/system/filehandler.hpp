@@ -54,8 +54,10 @@ class FileHandler {
     void outputMatrixToFile( const real_number* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out );
     void outputMatrixToFile( const real_number* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out );
     void outputMatrixToFile( const real_number* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name );
-    
+
     void init( int argc, char** argv );
 };
+
+std::vector<char*> readConfigFromFile(int argc, char** argv);
 
 } // namespace PC3

@@ -38,8 +38,11 @@
 #include "solver/gpu_solver.hpp"
 
 int main( int argc, char* argv[] ) {
+    // Try and read-in any config file
+    auto config = PC3::readConfigFromFile( argc, argv );
+
     // Convert input arguments to system and handler variables
-    auto system = PC3::System( argc, argv );
+    auto system = PC3::System( config.size(), config.data() );
 
     // Create Solver Class
     auto solver = PC3::Solver( system );

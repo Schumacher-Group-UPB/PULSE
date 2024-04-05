@@ -101,8 +101,10 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         // If the next argument is "osc", then we read the temporal component if time is not false
         auto next = getNextStringInput( argv, argc, key + "_next", index );
 
-        if ( not time or next != "osc")
+        if ( not time or next != "osc") {
+            index--;
             continue;
+        }
 
         // Temporal Component
         real_number t0 = getNextInput( argv, argc, key + "_t0", index );
