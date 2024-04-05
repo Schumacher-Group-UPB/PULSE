@@ -46,7 +46,7 @@ CALL_KERNEL( \
     RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size,  \
     time, device_pointers, p, \
     {  \
-        device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+        device_pointers.variable##_plus, device_pointers.variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
         device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
     } \
 ); \
@@ -55,7 +55,7 @@ if (evaluate_reservoir) \
         RUNGE_FUNCTION_RE, "K"#index"_Reservoir", grid_size, block_size, \
         time, device_pointers, p, \
         {  \
-            device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+            device_pointers.variable##_plus, device_pointers.variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
             device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
         } \
     ); \
@@ -64,7 +64,7 @@ if (evaluate_pulse) \
         RUNGE_FUNCTION_PULSE, "K"#index"_Pulse", grid_size, block_size, \
         time, device_pointers, p, pulse_pointers, \
         {  \
-            device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+            device_pointers.variable##_plus, device_pointers.variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
             device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
         } \
     ); \
@@ -73,7 +73,7 @@ if (evaluate_stochastic) \
         RUNGE_FUNCTION_STOCHASTIC, "K"#index"_Stochastic", grid_size, block_size, \
         time, device_pointers, p, \
         {  \
-            device_pointers.##variable##_plus, device_pointers.##variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
+            device_pointers.variable##_plus, device_pointers.variable##_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus, \
             device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
         } \
     ); \

@@ -1,8 +1,9 @@
+#ifndef USECPU
 #include <curand_kernel.h>
+#endif
 #include "kernel/kernel_runge_function.cuh"
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
-
 
 CUDA_GLOBAL void PC3::Kernel::Compute::scalar_stochastic( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p,
                                                         InputOutput io ) {

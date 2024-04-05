@@ -1,4 +1,6 @@
+#ifndef USECPU
 #include <curand_kernel.h>
+#endif
 #include "kernel/kernel_runge_function.cuh"
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"

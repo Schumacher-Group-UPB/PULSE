@@ -1,4 +1,3 @@
-#pragma once
 #include "misc/sfml_window.hpp"
 
 BasicWindow::BasicWindow( int w, int h, std::string n ) {
