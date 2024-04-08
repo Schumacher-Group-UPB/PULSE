@@ -12,7 +12,7 @@ CUDA_GLOBAL void PC3::Kernel::Compute::tetm_pulse( int i, real_number t, Device:
         if (oscillation.pol[k] == 1 or oscillation.pol[k] == 3)
             osc += CUDA::exp(- (t - oscillation.t0[k])*(t-oscillation.t0[k]) / (2.0*oscillation.sigma[k]*oscillation.sigma[k]) - p.i*oscillation.freq[k]*(t-oscillation.t0[k]));
     }
-    io.out_wf_plus[i] += pulse * osc;
+    io.out_wf_plus[i] += p.minus_i_over_h_bar_s *pulse * osc;
     
     pulse = dev_ptrs.pulse_minus[i];
     osc = {0,0};
@@ -20,5 +20,5 @@ CUDA_GLOBAL void PC3::Kernel::Compute::tetm_pulse( int i, real_number t, Device:
         if (oscillation.pol[k] == 2 or oscillation.pol[k] == 3)
             osc += CUDA::exp(- (t - oscillation.t0[k])*(t-oscillation.t0[k]) / (2.0*oscillation.sigma[k]*oscillation.sigma[k]) - p.i*oscillation.freq[k]*(t-oscillation.t0[k]));
     }
-    io.out_wf_minus[i] += pulse * osc; 
+    io.out_wf_minus[i] += p.minus_i_over_h_bar_s *pulse * osc; 
 }
