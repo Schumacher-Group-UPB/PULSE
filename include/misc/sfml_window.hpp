@@ -7,6 +7,21 @@
 #include "misc/colormap.hpp"
 #include "cuda/cuda_complex.cuh"
 
+class BasicWindow;
+
+class WindowObject {
+    public:
+     int x, y;
+     bool visible = true;
+    
+     WindowObject( int x, int y, bool visible = true ) : x( x ), y( y ), visible( visible ) {}
+    
+     virtual bool draw( BasicWindow* basicwindow ) = 0;
+     virtual void update() = 0;
+     virtual void onClick( int x, int y ) = 0;
+     virtual void onHover( int x, int y, bool mouseDown ) = 0;
+};
+
 class BasicWindow {
    protected:
     int mouseX, mouseY;
@@ -57,6 +72,8 @@ class BasicWindow {
     static inline auto KEY_LSHIFT = sf::Keyboard::LShift;
     static inline auto KEY_RSHIFT = sf::Keyboard::RShift;
     static inline auto KEY_ESCAPE = sf::Keyboard::Escape;
+    static inline auto KEY_PLUS = sf::Keyboard::Add;
+    static inline auto KEY_MINUS = sf::Keyboard::Subtract;
 
     int width;
     int height;
@@ -71,9 +88,13 @@ class BasicWindow {
     std::vector<sf::Vertex> pixMat;
     sf::Text printtext;
     sf::Clock clock;
-    int textheight;
+    float textheight;
     int keyDown = -1;
     bool maintexture_has_changed = true;
+    bool mouseLB_old = false;
+    bool mouseRB_old = false;
+
+    std::vector<WindowObject*> objects;
 
     BasicWindow( int w = 300, int h = 300, std::string n = "Unnamed" );
 
@@ -90,8 +111,9 @@ class BasicWindow {
     sf::Color convertColorToSFML( int r, int g, int b );
 
     void print( int x, int y, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
-
-    void print( int x, int y, int h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
+    void print( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
+    void scaledPrint( int x, int y, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
+    void scaledPrint( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
 
     bool keyPressed( int key );
 
@@ -102,13 +124,108 @@ class BasicWindow {
     int MouseY();
 
     bool leftMouseDown();
-
     bool rightMouseDown();
+    bool leftMouseClicked();
+    bool rightMouseClicked();
 
     void horLine( int y0, int x0, int x1, sf::Color color = COLOR_WHITE );
 
     void verLine( int x0, int y0, int y1, sf::Color color = COLOR_WHITE );
 
-    void drawRect( int x0, int x1, int y0, int y1, sf::Color color = COLOR_WHITE );
+    void drawRect( int x0, int x1, int y0, int y1, sf::Color color = COLOR_WHITE, bool filled = false );
+
+    void addObject( WindowObject* object );
+    void drawObjects();
 
 };
+
+class CheckBox : public WindowObject {
+    public:
+     bool checked = false;
+     std::string text;
+     int w,h;
+     CheckBox( int x, int y, std::string text, bool checked = false ) : WindowObject( x, y ), text( text ), checked( checked ) {
+        w = 20;
+        h = 20;
+     }
+    
+     bool isChecked() {
+        return checked;
+     }
+
+     bool draw( BasicWindow* basicwindow ) override {
+        if ( !visible )
+            return false;
+        sf::RectangleShape rect_outer( sf::Vector2f( w, h ) );
+        sf::RectangleShape rect_inner( sf::Vector2f( w-4, h-4 ) );
+        sf::RectangleShape rect( sf::Vector2f( w-8, h-8 ) );
+        rect_outer.setPosition( x, y );
+        rect_inner.setPosition( x+2, y+2 );
+        rect.setPosition( x+4, y+4 );
+
+        rect_outer.setFillColor( sf::Color::White );
+        rect_inner.setFillColor( sf::Color::Black );
+        rect.setFillColor( checked ? sf::Color( 50, 50, 50 ) : sf::Color::White );
+        basicwindow->window.draw( rect_outer );
+        basicwindow->window.draw( rect_inner );
+        basicwindow->window.draw( rect );
+        basicwindow->print( x + w+5, y, text );
+        return true;
+    }
+
+    void update() override {}
+
+    void onClick( int x, int y ) override {
+        if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h ) {
+            checked = !checked;
+        }
+    }
+    void onHover( int x, int y, bool mouseDown ) override {
+        //if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h )
+    }
+};  
+
+class Button : public WindowObject {
+    public:
+     std::string text;
+     bool toggled;
+     int w,h;
+     Button( int x, int y, std::string text, bool toggled = false ) : WindowObject( x, y ), text( text ), toggled( toggled ){
+        w = 100;
+        h = 25;
+     }
+
+     bool draw( BasicWindow* basicwindow ) override {
+        if ( !visible )
+            return false;
+        sf::RectangleShape rect_outer( sf::Vector2f( w, h ) );
+        sf::RectangleShape rect_inner( sf::Vector2f( w-4, h-4 ) );
+        rect_outer.setPosition( x, y );
+        rect_inner.setPosition( x+2, y+2 );
+
+        rect_outer.setFillColor( sf::Color::Black );
+        rect_inner.setFillColor( sf::Color( 50, 50, 50 ) );
+        basicwindow->window.draw( rect_outer );
+        basicwindow->window.draw( rect_inner );
+        basicwindow->print( x +5, y-2, text );
+        return true;
+    }
+
+    void update() override {}
+
+    void onClick( int x, int y ) override {
+        if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h ) {
+            toggled = true;        
+        }
+    }
+    void onHover( int x, int y, bool mouseDown ) override {
+        //if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h )
+    }
+    bool isToggled() {
+        if (toggled) {
+            toggled = false;
+            return true;
+        }
+        return false;
+    }
+};  
