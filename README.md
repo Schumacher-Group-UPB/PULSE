@@ -11,6 +11,7 @@ P.U.L.S.E. can also solve ...
 - Optional: [Gnuplot](http://www.gnuplot.info/) for fast plotting
 
 If you are on Windows it is required to install some kind of UNIX based software distribution like [msys2](https://www.msys2.org/) or any wsl UNIX distribution for the makefile to work.
+You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path.
 
 # Build
 Build with SFML rendering
