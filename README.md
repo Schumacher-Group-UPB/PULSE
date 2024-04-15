@@ -10,6 +10,8 @@ P.U.L.S.E. can also solve ...
 - Optional: [SFML](https://www.sfml-dev.org/download.php) v 2.6.x
 - Optional: [Gnuplot](http://www.gnuplot.info/) for fast plotting
 
+If you are on Windows it is required to install some kind of UNIX based software distribution like [msys2](https://www.msys2.org/) or any wsl UNIX distribution for the makefile to work.
+
 # Build
 Build with SFML rendering
 - Clone the repositry using `git clone --recursive https://github.com/davidbauch/PC3`
