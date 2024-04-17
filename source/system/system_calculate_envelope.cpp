@@ -45,10 +45,11 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                 // If the type is a gaussian outer, we calculate CUDA::exp(...)^N instead of CUDA::exp((...)^N)
                 if ( mask.type[c] & PC3::Envelope::Type::OuterExponent )
                     exp_function = CUDA::pow( CUDA::exp( -exp_factor ), mask.exponent[c] );
-                // If the shape is a ring, we multiply the exp function with the exp_factor again.
+                // If the shape is a ring, we multiply the exp function with r^2/w^2 again.
                 real_number pre_fractor = 1.0;
                 if ( mask.type[c] & PC3::Envelope::Type::Ring )
-                    pre_fractor = exp_factor;
+                    pre_fractor = CUDA::abs2( x - mask.x[c] ) / mask.width_x[c] / mask.width_x[c] + CUDA::abs2( y - mask.y[c] ) / mask.width_y[c] / mask.width_y[c];
+                    // pre_fractor = exp_factor; just wrong lol
                 // Default amplitude is A/sqrt(2pi)/w
                 complex_number amplitude = { mask.amp[c], 0.0 };
                 if ( not( mask.type[c] & PC3::Envelope::Type::NoDivide ) )
