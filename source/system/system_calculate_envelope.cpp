@@ -48,8 +48,7 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                 // If the shape is a ring, we multiply the exp function with r^2/w^2 again.
                 real_number pre_fractor = 1.0;
                 if ( mask.type[c] & PC3::Envelope::Type::Ring )
-                    pre_fractor = CUDA::abs2( x - mask.x[c] ) / mask.width_x[c] / mask.width_x[c] + CUDA::abs2( y - mask.y[c] ) / mask.width_y[c] / mask.width_y[c];
-                    // pre_fractor = exp_factor; just wrong lol
+                    pre_fractor = exp_factor;
                 // Default amplitude is A/sqrt(2pi)/w
                 complex_number amplitude = { mask.amp[c], 0.0 };
                 if ( not( mask.type[c] & PC3::Envelope::Type::NoDivide ) )
@@ -59,7 +58,9 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                     amplitude = mask.amp[c] * buffer[i];
                 if ( mask.behavior[c] & PC3::Envelope::Behavior::Complex )
                     amplitude = complex_number( 0.0, CUDA::real( amplitude ) );
-                complex_number charge = CUDA::pow( complex_number( ( x - mask.x[c] ) / s_L_x, 1.0 * CUDA::sign( mask.m[c] ) * ( y - mask.y[c] ) / s_L_y ), CUDA::abs( mask.m[c] ) );
+                //complex_number charge = CUDA::pow( complex_number( ( x - mask.x[c] ) / s_L_x, 1.0 * CUDA::sign( mask.m[c] ) * ( y - mask.y[c] ) / s_L_y ), CUDA::abs( mask.m[c] ) );
+                // Charge is e^(i*m*phi) where phi is the angle or r = [x,y]
+                complex_number charge = CUDA::exp( complex_number( 0.0, mask.m[c] * atan2( x - mask.x[c], y - mask.y[c] ) ) );
                 complex_number contribution = amplitude * pre_fractor * exp_function * charge;
                 // Add, multiply or replace the contribution to the buffer.
                 if ( mask.behavior[c] & PC3::Envelope::Behavior::Add )
