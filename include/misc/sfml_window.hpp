@@ -10,16 +10,16 @@
 class BasicWindow;
 
 class WindowObject {
-    public:
-     int x, y;
-     bool visible = true;
-    
-     WindowObject( int x, int y, bool visible = true ) : x( x ), y( y ), visible( visible ) {}
-    
-     virtual bool draw( BasicWindow* basicwindow ) = 0;
-     virtual void update() = 0;
-     virtual void onClick( int x, int y ) = 0;
-     virtual void onHover( int x, int y, bool mouseDown ) = 0;
+   public:
+    int x, y;
+    bool visible = true;
+
+    WindowObject( int x, int y, bool visible = true ) : x( x ), y( y ), visible( visible ) {}
+
+    virtual bool draw( BasicWindow* basicwindow ) = 0;
+    virtual void update() = 0;
+    virtual void onClick( int x, int y ) = 0;
+    virtual void onHover( int x, int y, bool mouseDown ) = 0;
 };
 
 class BasicWindow {
@@ -29,7 +29,6 @@ class BasicWindow {
     int texture_w, texture_h;
 
    public:
-
     // Most basic colors
     static inline auto COLOR_WHITE = sf::Color( 255, 255, 255 );
     static inline auto COLOR_BLACK = sf::Color( 0, 0, 0 );
@@ -96,72 +95,260 @@ class BasicWindow {
 
     std::vector<WindowObject*> objects;
 
-    BasicWindow( int w = 300, int h = 300, std::string n = "Unnamed" );
+    BasicWindow( int w = 300, int h = 300, std::string n = "Unnamed" ) {
+        construct( w, h, w, h, n );
+    }
 
-    void construct( int window_w, int window_h, int tx_w, int tx_h, std::string n );
+    void construct( int window_w, int window_h, int tx_w, int tx_h, std::string n ) {
+        width = window_w;
+        height = window_h;
+        texture_w = tx_w;
+        texture_h = tx_h;
+        name = n;
+        mainTexture.create( tx_w, tx_h );
+        pixMat.clear();
+        pixMat.reserve( ( tx_w + 1 ) * ( tx_h + 1 ) );
+        font.loadFromFile( "resources/font.ttf" );
+        textheight = 25;
+        printtext.setFont( font );
+        printtext.setCharacterSize( textheight );
+        printtext.setOutlineColor( COLOR_BLACK );
+        printtext.setOutlineThickness( 1.0f );
+        for ( int i = 0; i < tx_w; i++ ) {
+            for ( int j = 0; j < tx_h; j++ ) {
+                pixMat.push_back( sf::Vertex( sf::Vector2f( i + .5f, j + .5f ), sf::Color( 0, 0, 0 ) ) );
+            }
+        }
+        std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size() << " pixels." << std::endl;
+    }
 
-    void init();
+    void init() {
+        window.create( sf::VideoMode( width, height, 32 ), name, sf::Style::Default, sf::ContextSettings( 0, 0, 1, 2, 0 ) );
+        window.setVerticalSyncEnabled( true );
+        mainTexture.setSmooth( true );
+    }
 
-    bool run();
+    bool run() {
+        keyDown = -1;
+        window.clear();
+        updateMouseState();
+        if ( maintexture_has_changed ) {
+            mainTexture.draw( pixMat.data(), texture_w * texture_h, sf::Points );
+            maintexture_has_changed = false;
+        }
+        sf::Sprite mainSprite( mainTexture.getTexture() );
+        mainSprite.setScale( (float)width / texture_w, (float)height / texture_h );
+        window.draw( mainSprite );
 
-    void flipscreen();
+        // Time, FPS
+        frametime = clock.restart().asMilliseconds();
+        fps = (int)( 1000.0 / frametime );
 
-    void blitMatrixPtr( const real_number* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 );
+        sf::Event event;
+        while ( window.pollEvent( event ) ) {
+            if ( event.type == sf::Event::Closed )
+                window.close();
+            if ( event.type == sf::Event::KeyPressed )
+                keyDown = event.key.code;
+        }
 
-    sf::Color convertColorToSFML( int r, int g, int b );
+        return window.isOpen();
+    }
 
-    void print( int x, int y, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
-    void print( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
-    void scaledPrint( int x, int y, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
-    void scaledPrint( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK );
+    void flipscreen() {
+        window.display();
+    }
 
-    bool keyPressed( int key );
+    void blitMatrixPtr( const real_number* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
+            const int cols_over_skip = cols / skip;
+    const int rows_over_skip = rows / skip;
+    //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
+#pragma omp parallel for schedule( dynamic )
+    for ( int i = 0; i < cols_over_skip; i++ ) {
+        for ( int j = 0; j < rows_over_skip; j++ ) {
+            auto c = cp.getColor( vector[( j * skip ) * cols + i * skip] );
+            const auto index = ( i + 1 + posX ) * texture_h - 1 - ( j + posY );
+            pixMat.at( index ).color.r = c.r;
+            pixMat.at( index ).color.g = c.g;
+            pixMat.at( index ).color.b = c.b;
+            if ( border != 0 && ( i < border || i >= cols_over_skip - border || j < border || j >= rows_over_skip - border ) ) {
+                pixMat.at( index ).color.r = 0;
+                pixMat.at( index ).color.g = 0;
+                pixMat.at( index ).color.b = 0;
+            }
+        }
+    }
+    maintexture_has_changed = true;
+    }
 
-    void updateMouseState();
+    sf::Color convertColorToSFML( int r, int g, int b ) {
+        return sf::Color( r, g, b );
+    }
 
-    int MouseX();
+    void print( int x, int y, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ) {
+        print( x, y, textheight, text, textcolor, background, backgroundcolor );
+    }
 
-    int MouseY();
+    void print( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ){
+        printtext.setFillColor( textcolor );
+        printtext.setPosition( (float)x, (float)y );
+        printtext.setString( text );
+        if ( h > 0 )
+            printtext.setCharacterSize( h );
+        window.draw( printtext );
+    }
 
-    bool leftMouseDown();
-    bool rightMouseDown();
-    bool leftMouseClicked();
-    bool rightMouseClicked();
+    void scaledPrint( int x, int y, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ) {
+        scaledPrint( x, y, textheight, text, textcolor, background, backgroundcolor );
+    }
 
-    void horLine( int y0, int x0, int x1, sf::Color color = COLOR_WHITE );
+    void scaledPrint( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ) {
+        float x_scale = (float)width / texture_w;
+        float y_scale = (float)height / texture_h;
+        x = x * x_scale;
+        y = y * y_scale;
+        printtext.setFillColor( textcolor );
+        printtext.setPosition( (float)x, (float)y );
+        printtext.setString( text );
+        if ( h > 0 )
+            printtext.setCharacterSize( h ); 
+        window.draw( printtext ); // std::cout << "Test " << text << std::endl;
+    }
 
-    void verLine( int x0, int y0, int y1, sf::Color color = COLOR_WHITE );
+    bool keyPressed( int key ) {
+        return keyDown == key;
+    }
 
-    void drawRect( int x0, int x1, int y0, int y1, sf::Color color = COLOR_WHITE, bool filled = false );
+    void updateMouseState() {
+        mouseLB = sf::Mouse::isButtonPressed( sf::Mouse::Left );
+        mouseRB = sf::Mouse::isButtonPressed( sf::Mouse::Right );
+        sf::Vector2i position = sf::Mouse::getPosition( window );
+        mouseX = position.x;
+        mouseY = position.y;
+    }
 
-    void addObject( WindowObject* object );
-    void drawObjects();
+    int MouseX() {
+        return mouseX;
+    }
 
+    int MouseY() {
+        return mouseY;
+    }
+
+    bool leftMouseDown() {
+        return mouseLB;
+    }
+    bool rightMouseDown() {
+        return mouseRB;
+    }
+    bool leftMouseClicked() {
+        if ( mouseLB && !mouseLB_old ) {
+            mouseLB_old = true;
+            return true;
+        }
+        if ( !mouseLB && mouseLB_old ) {
+            mouseLB_old = false;
+        }
+        return false;
+    }
+    bool rightMouseClicked() {
+        if ( mouseRB && !mouseRB_old ) {
+            mouseRB_old = true;
+            return true;
+        }
+        if ( !mouseRB && mouseRB_old ) {
+            mouseRB_old = false;
+        }
+        return false;
+    }
+
+    void horLine( int y0, int x0, int x1, sf::Color color = COLOR_WHITE ) {
+        float x_scale = (float)width / texture_w;
+        float y_scale = (float)height / texture_h;
+        x0 = x0 * x_scale;
+        y0 = y0 * y_scale;
+        sf::RectangleShape line( sf::Vector2f( x1 - x0, 1.0f ) );
+        line.setPosition( sf::Vector2f( x0, y0 ) );
+        line.setFillColor( color );
+        window.draw( line );
+    }
+
+    void verLine( int x0, int y0, int y1, sf::Color color = COLOR_WHITE ) {
+        float x_scale = (float)width / texture_w;
+        float y_scale = (float)height / texture_h;
+        x0 = x0 * x_scale;
+        y0 = y0 * y_scale; 
+        sf::RectangleShape line( sf::Vector2f( y1 - y0, 1.0f ) );
+        line.setPosition( sf::Vector2f( x0, y0 ) );
+        line.setFillColor( color );
+        line.rotate( 90 );
+        window.draw( line );
+    }
+
+    void drawRect( int x0, int x1, int y0, int y1, sf::Color color = COLOR_WHITE, bool filled = false ) {
+        if ( x0 <= 0 ) x0 = 0;
+        if ( x1 >= width ) x1 = width;
+        if ( y0 <= 0 ) y0 = 0;
+        if ( y1 >= height ) y1 = height; 
+        if (filled) {
+            sf::RectangleShape rect( sf::Vector2f( x1 - x0, y1 - y0 ) );
+            rect.setPosition( x0, y0 );
+            rect.setFillColor( color );
+            window.draw( rect );
+            return;
+        }
+        horLine( y0, x0, x1, color );
+        horLine( y1, x0, x1, color );
+        verLine( x0, y0, y1, color );
+        verLine( x1, y0, y1, color );
+    }
+
+    void addObject( WindowObject* object ) {
+        objects.push_back( object );
+    }
+
+    void drawObjects() {
+        // Draw Objects
+        bool mouse_clicked = leftMouseClicked();
+        auto mx = MouseX();
+        auto my = MouseY();
+        for ( auto obj : objects ) {
+            bool has_been_drawn = obj->draw( this );
+
+            if ( !has_been_drawn )
+                continue;
+
+            if ( mouse_clicked ) {
+                obj->onClick( mx, my );
+            }
+            obj->onHover( mx, my, leftMouseDown() );
+        }
+    }
 };
 
 class CheckBox : public WindowObject {
-    public:
-     bool checked = false;
-     std::string text;
-     int w,h;
-     CheckBox( int x, int y, std::string text, bool checked = false ) : WindowObject( x, y ), text( text ), checked( checked ) {
+   public:
+    bool checked = false;
+    std::string text;
+    int w, h;
+    CheckBox( int x, int y, std::string text, bool checked = false ) : WindowObject( x, y ), text( text ), checked( checked ) {
         w = 20;
         h = 20;
-     }
-    
-     bool isChecked() {
-        return checked;
-     }
+    }
 
-     bool draw( BasicWindow* basicwindow ) override {
+    bool isChecked() {
+        return checked;
+    }
+
+    bool draw( BasicWindow* basicwindow ) override {
         if ( !visible )
             return false;
         sf::RectangleShape rect_outer( sf::Vector2f( w, h ) );
-        sf::RectangleShape rect_inner( sf::Vector2f( w-4, h-4 ) );
-        sf::RectangleShape rect( sf::Vector2f( w-8, h-8 ) );
+        sf::RectangleShape rect_inner( sf::Vector2f( w - 4, h - 4 ) );
+        sf::RectangleShape rect( sf::Vector2f( w - 8, h - 8 ) );
         rect_outer.setPosition( x, y );
-        rect_inner.setPosition( x+2, y+2 );
-        rect.setPosition( x+4, y+4 );
+        rect_inner.setPosition( x + 2, y + 2 );
+        rect.setPosition( x + 4, y + 4 );
 
         rect_outer.setFillColor( sf::Color::White );
         rect_inner.setFillColor( sf::Color::Black );
@@ -169,7 +356,7 @@ class CheckBox : public WindowObject {
         basicwindow->window.draw( rect_outer );
         basicwindow->window.draw( rect_inner );
         basicwindow->window.draw( rect );
-        basicwindow->print( x + w+5, y, text );
+        basicwindow->print( x + w + 5, y, 16, text );
         return true;
     }
 
@@ -181,33 +368,33 @@ class CheckBox : public WindowObject {
         }
     }
     void onHover( int x, int y, bool mouseDown ) override {
-        //if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h )
+        // if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h )
     }
-};  
+};
 
 class Button : public WindowObject {
-    public:
-     std::string text;
-     bool toggled;
-     int w,h;
-     Button( int x, int y, std::string text, bool toggled = false ) : WindowObject( x, y ), text( text ), toggled( toggled ){
-        w = 100;
+   public:
+    std::string text;
+    bool toggled;
+    int w, h;
+    Button( int x, int y, std::string text, bool toggled = false ) : WindowObject( x, y ), text( text ), toggled( toggled ) {
+        w = 170;
         h = 25;
-     }
+    }
 
-     bool draw( BasicWindow* basicwindow ) override {
+    bool draw( BasicWindow* basicwindow ) override {
         if ( !visible )
             return false;
         sf::RectangleShape rect_outer( sf::Vector2f( w, h ) );
-        sf::RectangleShape rect_inner( sf::Vector2f( w-4, h-4 ) );
+        sf::RectangleShape rect_inner( sf::Vector2f( w - 4, h - 4 ) );
         rect_outer.setPosition( x, y );
-        rect_inner.setPosition( x+2, y+2 );
+        rect_inner.setPosition( x + 2, y + 2 );
 
         rect_outer.setFillColor( sf::Color::Black );
         rect_inner.setFillColor( sf::Color( 50, 50, 50 ) );
         basicwindow->window.draw( rect_outer );
         basicwindow->window.draw( rect_inner );
-        basicwindow->print( x +5, y-2, text );
+        basicwindow->print( x + 7, y, 16, text );
         return true;
     }
 
@@ -215,17 +402,17 @@ class Button : public WindowObject {
 
     void onClick( int x, int y ) override {
         if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h ) {
-            toggled = true;        
+            toggled = true;
         }
     }
     void onHover( int x, int y, bool mouseDown ) override {
-        //if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h )
+        // if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h )
     }
     bool isToggled() {
-        if (toggled) {
+        if ( toggled ) {
             toggled = false;
             return true;
         }
         return false;
     }
-};  
+};

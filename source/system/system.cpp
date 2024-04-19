@@ -78,7 +78,7 @@ void PC3::System::calculateAuto() {
     // Calculate dx and dt
     dx = 2.0 * s_L_x / ( s_N_x - 1 ); 
     dy = 2.0 * s_L_y / ( s_N_y - 1 ); 
-    m_eff_scaled = -0.5 * h_bar_s * h_bar_s / ( m_eff * dx * dy );
+    m_eff_scaled = -0.5 * h_bar_s * h_bar_s / m_eff;
     magic_timestep = 0.5 * dx * dy / dt_scaling_factor;
     if ( do_overwrite_dt ) {
         dt = magic_timestep;

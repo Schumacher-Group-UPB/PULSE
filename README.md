@@ -15,14 +15,16 @@ You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path.
 
 # Build
 Build with SFML rendering
-- Clone the repositry using `git clone --recursive https://github.com/davidbauch/PC3`
-- Build SFML using CMake and MSVC
-- Alternatively, download SFML for MSVC 2023
-- Compile P.U.L.S.E. using `make SFML=TRUE [TETM=TRUE FP32=TRUE]`
+- Clone the repositry using `git clone --recursive https://github.com/davidbauch/PC3`. This will also donwload the SFML repository.
+- Build SFML using CMake and/or MSVC
+- Alternatively, download SFML 2.6.1 or higher for MSVC if you are on Windows or for gcc if you are on linux.
+- Compile P.U.L.S.E. using `make SFML=TRUE/FALSE [TETM=TRUE/FALSE FP32=TRUE/FALSE]`. Note, that arguments in `[]` are optional and default to `FALSE` if omitted. Pass *either* `TRUE` *or* `FALSE` to the arguments.
+
+When using SFML rendering, you need to either install all SFML libraries correctly, or copy the .dll files that come either with building SFML yourself or with the download of precompiled versions to the main folder of your PULSE executable. If you do not do this and still compile with SFML support, PULSE will crash on launch. For the compilation, you also *need* to provide the path to your SFML installation if it's not already in your systems path. You can do this by setting the `SFML_PATH=...` variable when compiling, similar to passing `SFML=TRUE`. The SFML path needs to contain the SFML `include/...` as well as the `lib/...` folder. These are NOT contained directly in the recursively cloned SFML repository, but rather get created when building SFML yourself. They are also contained in any precompiled version of SFML.
 
 Build without rendering
 - Clone the repositry using `git clone https://github.com/davidbauch/PC3`
-- Compile P.U.L.S.E. using `make [FP32=TRUE]`
+- Compile P.U.L.S.E. using `make [TETM=TRUE/FALSE FP32=TRUE/FALSE]`
 
 ## FP32 - Single Precision
 By default, the program is compiled using double precision 64b floats.

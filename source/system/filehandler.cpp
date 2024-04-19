@@ -174,7 +174,7 @@ void PC3::FileHandler::outputMatrixToFile( const complex_number* buffer,unsigned
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) / increment << " elements to " << toPath( name ) << "."
+    std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) / increment << " elements to '" << toPath( name ) << "'."
               << "\n";
 }
 

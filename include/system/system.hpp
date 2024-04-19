@@ -116,7 +116,7 @@ class System {
         real_number t, dt, dt_half, s_L_x, s_L_y, dx, dy, m_e, h_bar_s, m_eff, gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
         real_number one_over_h_bar_s;
         complex_number minus_i_over_h_bar_s, i_h_bar_s, half_i, i, minus_half_i, minus_i;
-        real_number m_eff_scaled, delta_LT_scaled;
+        real_number m_eff_scaled;
         bool periodic_boundary_x, periodic_boundary_y;
         real_number dV;
         Parameters( unsigned int N_x, unsigned int N_y, real_number t, real_number dt, real_number s_L_x, real_number s_L_y, real_number dx, real_number dy,
@@ -131,9 +131,6 @@ class System {
                     i_h_bar_s( complex_number( 0.0, h_bar_s ) ), half_i( complex_number( 0.0, 0.5 ) ), 
                     i( complex_number( 0.0, 1.0 ) ), minus_half_i( complex_number( 0.0, real_number( -0.5 ) ) ), 
                     minus_i( complex_number( 0.0, real_number( -1.0 ) ) ), periodic_boundary_x( periodic_boundary_x ), periodic_boundary_y( periodic_boundary_y ) {
-            //m_eff_scaled = ;//real_number( -0.5 ) * h_bar_s * h_bar_s / ( m_eff * dx * dx );
-            delta_LT_scaled = delta_LT / dx / dy;
-            dV = dx * dy;
         }
     };
 

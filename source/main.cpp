@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */ 
-
+ 
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -38,11 +38,6 @@
 #include "solver/gpu_solver.hpp"
 
 int main( int argc, char* argv[] ) {
-
-    //if gui:
-    //    argc,argv = parseGui();
-    //else:
-    //    argc,argv = PC3::readConfigFromFile( argc, argv );
 
     // Try and read-in any config file
     auto config = PC3::readConfigFromFile( argc, argv );
@@ -104,17 +99,6 @@ int main( int argc, char* argv[] ) {
         std::cout << "-----------------------------------------------------------------------------------" << std::endl;
         std::cout << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP;
 
-        // TODO: move this input listener to a seperate function and or thread
-        #ifdef SFML_RENDER
-        if (PC3::getWindow().keyPressed(BasicWindow::KEY_m)){
-            if (system.output_every == 0.0) 
-                system.output_every = system.dt;
-            system.output_every *= 2;
-        }
-        if (PC3::getWindow().keyPressed(BasicWindow::KEY_n)){
-            system.output_every /= 2;
-        }
-        #endif
     }
     std::cout << "\n\n\n\n\n\n\n"
               << EscapeSequence::SHOW_CURSOR;

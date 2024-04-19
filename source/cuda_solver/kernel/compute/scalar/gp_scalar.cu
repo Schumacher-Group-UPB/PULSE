@@ -15,7 +15,7 @@ CUDA_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, real_number t, Device::
     const int col = i % p.N_x;
 
     complex_number hamilton;
-    PC3::Hamilton::scalar( hamilton, io.in_wf_plus, i, row, col, p.N_x, p.N_y, p.periodic_boundary_x, p.periodic_boundary_y );
+    PC3::Hamilton::scalar( hamilton, io.in_wf_plus, i, row, col, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
     
     const complex_number in_wf = io.in_wf_plus[i];
     const complex_number in_rv = io.in_rv_plus[i];

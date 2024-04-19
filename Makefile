@@ -14,15 +14,14 @@ CPU ?= FALSE
 # Compiler flags
 GCCFLAGS = -std=c++20 -fopenmp -x c++
 ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -rdc=true
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -rdc=true
 	ifeq ($(COMPILER),nvcc)
-		SFMLLIBS = -I'external/SFML/include' -L'external/SFML/build/lib/Release'
+		SFMLLIBS = -I'SFML_msvc/include/' -L'SFML_msvc/lib'
 	else
-		SFMLLIBS = -I'external/SFML/include' -L'SFML-2.6.1/lib'
+		SFMLLIBS = -I'SFML_gcc/include/' -L'SFML_gcc/lib'
 	endif
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -rdc=true -diag-suppress 177 -lstdc++
-	SFMLLIBS = -I'external/SFML/include'
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -rdc=true -diag-suppress 177 -lstdc++ 
 endif
 
 OPTIMIZATION = -O3
@@ -40,7 +39,8 @@ CU_OBJS = $(patsubst $(SRCDIR)/%.cu,$(OBJDIR)/%.o,$(CU_SRCS))
 
 
 ifeq ($(SFML),TRUE)
-	ADD_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-main $(SFMLLIBS) -DSFML_RENDER
+	ADD_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system $(SFMLLIBS) -DSFML_RENDER
+	ADD_FLAGS += 
 endif
 ifeq ($(TETM),TRUE)
 	ADD_FLAGS += -DTETMSPLITTING

@@ -23,6 +23,18 @@ void print_name() {
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
 }
 
+template <typename T> 
+std::string to_str(T t) {
+    auto numeric_precision = std::numeric_limits<T>::max_digits10;
+    std::stringstream ss;
+    if (t < std::pow(10, -numeric_precision) or t > std::pow(10, numeric_precision) and t != 0.0)
+        ss << std::scientific;
+    else
+        ss << std::fixed;
+    ss << t;
+    return ss.str();
+}
+
 void PC3::System::printHelp() {
     print_name();
 #ifdef USEFP64
@@ -50,20 +62,20 @@ void PC3::System::printHelp() {
               << unifyLength( "--N", "<int> <int>", "Grid Dimensions (N x N). Standard is " + std::to_string( s_N_x ) + " x " + std::to_string( s_N_y ) + "\n" )
               << unifyLength( "--tstep", "<double>", "Timestep, standard is magic-timestep\n" )
               << unifyLength( "-rk45", "no arguments", "Use RK45\n" )
-              << unifyLength( "--tol", "<double>", "RK45 Tolerance, standard is " + std::to_string( tolerance ) + " ps\n" )
-              << unifyLength( "--tmax", "<double>", "Timelimit, standard is " + std::to_string( t_max ) + " ps\n" )
+              << unifyLength( "--tol", "<double>", "RK45 Tolerance, standard is " + to_str( tolerance ) + " ps\n" )
+              << unifyLength( "--tmax", "<double>", "Timelimit, standard is " + to_str( t_max ) + " ps\n" )
               << unifyLength( "--boundary", "<string> <string>", "Boundary conditions for x and y. Is either 'periodic' or 'zero'.\n" );
     std::cout << unifyLength( "Parameters", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n" )
-              << unifyLength( "--gammaC", "<double>", "Standard is " + std::to_string( gamma_c ) + " ps^-1\n" )
-              << unifyLength( "--gammaR", "<double>", "Standard is " + std::to_string( gamma_r / gamma_c ) + "*gammaC\n" )
-              << unifyLength( "--gc", "<double>", "Standard is " + std::to_string( g_c ) + " meV mum^2\n" )
-              << unifyLength( "--gr", "<double>", "Standard is " + std::to_string( g_r / g_c ) + "*gc\n" )
-              << unifyLength( "--meff", "<double>", "Standard is " + std::to_string( m_eff ) + "\n" )
-              << unifyLength( "--R", "<double>", "Standard is " + std::to_string( R ) + " ps^-1 mum^2\n" )
-              << unifyLength( "--g_pm", "<double>", "Standard is " + std::to_string( g_pm / g_c ) + "*gc. Only effective in a system with TE/TM splitting.\n" )
-              << unifyLength( "--deltaLT", "<double>", "Standard is " + std::to_string( delta_LT ) + " meV. Only effective in a system with TE/TM splitting.\n" )
-              << unifyLength( "--L", "<double> <double>", "Standard is " + std::to_string( s_L_x ) + ", " + std::to_string( s_L_y ) + " mum\n" ) << std::endl;
+              << unifyLength( "--gammaC", "<double>", "Standard is " + to_str( gamma_c ) + " ps^-1\n" )
+              << unifyLength( "--gammaR", "<double>", "Standard is " + to_str( gamma_r / gamma_c ) + "*gammaC\n" )
+              << unifyLength( "--gc", "<double>", "Standard is " + to_str( g_c ) + " eV mum^2\n" )
+              << unifyLength( "--gr", "<double>", "Standard is " + to_str( g_r / g_c ) + "*gc\n" )
+              << unifyLength( "--meff", "<double>", "Standard is " + to_str( m_eff ) + "\n" )
+              << unifyLength( "--R", "<double>", "Standard is " + to_str( R ) + " ps^-1 mum^2\n" )
+              << unifyLength( "--g_pm", "<double>", "Standard is " + to_str( g_pm / g_c ) + "*gc. Only effective in a system with TE/TM splitting.\n" )
+              << unifyLength( "--deltaLT", "<double>", "Standard is " + to_str( delta_LT ) + " eV. Only effective in a system with TE/TM splitting.\n" )
+              << unifyLength( "--L", "<double> <double>", "Standard is " + to_str( s_L_x ) + ", " + to_str( s_L_y ) + " mum\n" ) << std::endl;
     std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
               << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
               << unifyLength( "--pump", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring)\n", 30, 80 )
@@ -87,21 +99,22 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << EscapeSequence::BOLD << "------------------------------------ Parameters -----------------------------------" << EscapeSequence::RESET << std::endl;
     std::cout << unifyLength( "N", std::to_string( s_N_x ) + ", " + std::to_string( s_N_y ), "", l, l ) << std::endl;
     std::cout << unifyLength( "N^2", std::to_string( s_N_x * s_N_y ), "", l, l ) << std::endl;
-    std::cout << unifyLength( "Lx", std::to_string( s_L_x ), "mum", l, l ) << std::endl;
-    std::cout << unifyLength( "Ly", std::to_string( s_L_y ), "mum", l, l ) << std::endl;
-    std::cout << unifyLength( "dx", std::to_string( dx ), "mum", l, l ) << std::endl;
-    std::cout << unifyLength( "dy", std::to_string( dx ), "mum", l, l ) << std::endl;
-    std::cout << unifyLength( "tmax", std::to_string( t_max ), "ps", l, l ) << std::endl;
-    std::cout << unifyLength( "dt", std::to_string( dt ), "ps", l, l ) << std::endl;
-    std::cout << unifyLength( "gamma_c", std::to_string( gamma_c ), "ps^-1", l, l ) << std::endl;
-    std::cout << unifyLength( "gamma_r", std::to_string( gamma_r ), "ps^-1", l, l ) << std::endl;
-    std::cout << unifyLength( "g_c", std::to_string( g_c ), "meV mum^2", l, l ) << std::endl;
-    std::cout << unifyLength( "g_r", std::to_string( g_r ), "meV mum^2", l, l ) << std::endl;
-    std::cout << unifyLength( "g_pm", std::to_string( g_pm ), "meV mum^2", l, l ) << std::endl;
-    std::cout << unifyLength( "R", std::to_string( R ), "ps^-1 mum^-2", l, l ) << std::endl;
-    std::cout << unifyLength( "delta_LT", std::to_string( delta_LT ), "meV", l, l ) << std::endl;
-    std::cout << unifyLength( "m_eff", std::to_string( m_eff ), "", l, l ) << std::endl;
-    std::cout << unifyLength( "h_bar_s", std::to_string( h_bar_s ), "", l, l ) << std::endl;
+    std::cout << unifyLength( "Lx", to_str( s_L_x ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "Ly", to_str( s_L_y ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "dx", to_str( dx ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "dy", to_str( dx ), "mum", l, l ) << std::endl;
+    std::cout << unifyLength( "tmax", to_str( t_max ), "ps", l, l ) << std::endl;
+    std::cout << unifyLength( "dt", to_str( dt ), "ps", l, l ) << std::endl;
+    std::cout << unifyLength( "gamma_c", to_str( gamma_c ), "ps^-1", l, l ) << std::endl;
+    std::cout << unifyLength( "gamma_r", to_str( gamma_r ), "ps^-1", l, l ) << std::endl;
+    std::cout << unifyLength( "g_c", to_str( g_c ), "eV mum^2", l, l ) << std::endl;
+    std::cout << unifyLength( "g_r", to_str( g_r ), "eV mum^2", l, l ) << std::endl;
+    std::cout << unifyLength( "g_pm", to_str( g_pm ), "eV mum^2", l, l ) << std::endl;
+    std::cout << unifyLength( "R", to_str( R ), "ps^-1 mum^-2", l, l ) << std::endl;
+    std::cout << unifyLength( "delta_LT", to_str( delta_LT ), "eV", l, l ) << std::endl;
+    std::cout << unifyLength( "m_eff", to_str( m_eff ), "", l, l ) << std::endl;
+    std::cout << unifyLength( "h_bar_s", to_str( h_bar_s ), "", l, l ) << std::endl;
+    std::cout << "Boundary Condition: " << (periodic_boundary_x ? "Periodic" : "Zero" ) << "(x):" << (periodic_boundary_y ? "Periodic" : "Zero" ) << "(y)" << std::endl;
     std::cout << "--------------------------------- Envelope Functions ------------------------------" << std::endl;
     // TODO: overwrite << operator of the Envelope Class
     for ( int i = 0; i < pulse.amp.size(); i++ ) {

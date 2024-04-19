@@ -27,6 +27,12 @@ struct Host {
     PC3::HostMatrix<complex_number> pulse_minus;
     PC3::HostMatrix<complex_number> potential_plus;
     PC3::HostMatrix<complex_number> potential_minus;
+
+    // Snapshot Matrices (GUI only)
+    PC3::HostMatrix<complex_number> snapshot_wavefunction_plus;
+    PC3::HostMatrix<complex_number> snapshot_wavefunction_minus;
+    PC3::HostMatrix<complex_number> snapshot_reservoir_plus;
+    PC3::HostMatrix<complex_number> snapshot_reservoir_minus;
     
     // Alias References to the plus components for easy access in a scalar child classes
     PC3::HostMatrix<complex_number>& wavefunction = wavefunction_plus;
@@ -64,6 +70,9 @@ struct Host {
         fft_mask_plus.construct( N_x, N_y, "host.fft_mask_plus" );
         fft_plus.construct( N_x, N_y, "host.fft_plus" );
 
+        snapshot_wavefunction_plus.construct( N_x, N_y, "host.snapshot_wavefunction_plus" );
+        snapshot_reservoir_plus.construct( N_x, N_y, "host.snapshot_reservoir_plus" );
+
         if ( not use_twin_mode )
             return;
             
@@ -75,6 +84,9 @@ struct Host {
         potential_minus.construct( N_x, N_y, "host.potential_minus" );
         fft_mask_minus.construct( N_x, N_y, "host.fft_mask_minus" );
         fft_minus.construct( N_x, N_y, "host.fft_minus" );
+
+        snapshot_wavefunction_minus.construct( N_x, N_y, "host.snapshot_wavefunction_minus" );
+        snapshot_reservoir_minus.construct( N_x, N_y, "host.snapshot_reservoir_minus" );
     }
 };
 

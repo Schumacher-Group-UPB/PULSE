@@ -78,10 +78,60 @@ CUDA_DEVICE CUDA_INLINE complex_number right_neighbour_periodic( complex_number*
     return vector[index + distance];
 }
 
-CUDA_DEVICE void scalar(complex_number& regular, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const bool periodic_x = false, const bool periodic_y = false);
+// Special top-right, top-left, bottom-right and bottom-left periodic boundary conditions that honour the periodicity of the grid
+CUDA_DEVICE CUDA_INLINE complex_number upper_right_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+    if ( is_valid_index( row - distance, col + distance, N_x, N_y ) )
+        // Valid upper neighbour
+        return vector[index - N_x * distance + distance];
+    // Check if we need to wrap around the rows
+    if ( is_valid_index( row - distance, col, N_x, N_y ) )
+        index += N_x*N_y - N_x * distance;
+    // Check if we need to wrap around the columns
+    if ( is_valid_index( row, col + distance, N_x, N_y ) )
+        index += distance - N_x;
+    return vector[index];
+}
+CUDA_DEVICE CUDA_INLINE complex_number upper_left_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+    if ( is_valid_index( row - distance, col - distance, N_x, N_y ) )
+        // Valid upper neighbour
+        return vector[index - N_x * distance - distance];
+    // Check if we need to wrap around the rows
+    if ( is_valid_index( row - distance, col, N_x, N_y ) )
+        index += N_x*N_y - N_x * distance;
+    // Check if we need to wrap around the columns
+    if ( is_valid_index( row, col - distance, N_x, N_y ) )
+        index -= distance + N_x;
+    return vector[index];
+}
+CUDA_DEVICE CUDA_INLINE complex_number lower_right_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+    if ( is_valid_index( row + distance, col + distance, N_x, N_y ) )
+        // Valid upper neighbour
+        return vector[index + N_x * distance + distance];
+    // Check if we need to wrap around the rows
+    if ( is_valid_index( row + distance, col, N_x, N_y ) )
+        index += N_x * distance - N_x*N_y;
+    // Check if we need to wrap around the columns
+    if ( is_valid_index( row, col + distance, N_x, N_y ) )
+        index += distance + N_x;
+    return vector[index];
+}
+CUDA_DEVICE CUDA_INLINE complex_number lower_left_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+    if ( is_valid_index( row + distance, col - distance, N_x, N_y ) )
+        // Valid upper neighbour
+        return vector[index + N_x * distance - distance];
+    // Check if we need to wrap around the rows
+    if ( is_valid_index( row + distance, col, N_x, N_y ) )
+        index += N_x * distance - N_x*N_y;
+    // Check if we need to wrap around the columns
+    if ( is_valid_index( row, col - distance, N_x, N_y ) )
+        index -= distance + N_x;
+    return vector[index];
+}
 
-CUDA_DEVICE void tetm_plus( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const bool periodic_x = false, const bool periodic_y = false );
+CUDA_DEVICE void scalar(complex_number& regular, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const real_number dx, const real_number dy, const bool periodic_x = false, const bool periodic_y = false);
 
-CUDA_DEVICE void tetm_minus( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const bool periodic_x = false, const bool periodic_y = false );
+CUDA_DEVICE void tetm_plus( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const real_number dx, const real_number dy, const bool periodic_x = false, const bool periodic_y = false );
+
+CUDA_DEVICE void tetm_minus( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const real_number dx, const real_number dy, const bool periodic_x = false, const bool periodic_y = false );
 
 } // namespace PC3::Hamilton
