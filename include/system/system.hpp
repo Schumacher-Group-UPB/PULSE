@@ -49,6 +49,7 @@ class System {
     // Helper variable to scale dt
     real_number dt_scaling_factor;
     bool do_overwrite_dt;
+    bool imaginary_time;
 
     // Output of Variables
     std::vector<std::string> output_keys, input_keys;

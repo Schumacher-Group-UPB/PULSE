@@ -66,6 +66,10 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
             std::ranges::for_each(host.initial_state_minus.get(), host.initial_state_minus.get() + system.s_N_x * system.s_N_y, [&dist,&gen](complex_number& z) { z += complex_number{dist(gen),dist(gen)}; });
     }
     
+    //TODO: Hier: Übergebene pumps (system.pump, .pulse, .potential) nach osc parametern sortieren und gruppieren! 
+    // Matrix host.pump_plus -> std::vector<Matrix>
+    // für jeden gruppe envelope ausrechnen und in host.pump_plus pushen
+
     // ==================================================
     // =................ Pump Envelopes ................=
     // ==================================================
@@ -107,8 +111,11 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
     }
 }
 
-#include <iostream>
 void PC3::Solver::initializeDeviceMatricesFromHost() {
+
+    // TODO: Die sortierten und gruppierten dinger aus den host matritzen aufs device schieben. osc informationen übertragen auf
+    // device_pulse_oscillation, device_pump_oscillation, etc.
+
     std::cout << "Initializing Device Matrices..." << std::endl;
     // Construct all Device Matrices
     device.constructAll( system.s_N_x, system.s_N_y, system.use_twin_mode, not system.fixed_time_step /* Use RK45 */ );

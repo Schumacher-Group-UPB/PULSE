@@ -117,6 +117,9 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     // Pointers to Pulse Variables. This is subject to change
     auto pulse_pointers = dev_pulse_oscillation.pointers();
 
+    // The delta time is either real or imaginary, depending on the system configuration
+    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -system.dt) : complex_number(system.dt, 0.0);
+
     // If required, calculate new set of random numbers.
     if (evaluate_stochastic)
     CALL_KERNEL(
@@ -128,28 +131,28 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k2, "Sum for K2", grid_size, block_size,
-        device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p, system.use_twin_mode
     );
 
     CALCULATE_K( 2, system.t + 0.5 * system.dt, buffer_wavefunction, buffer_reservoir );
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k3, "Sum for K3", grid_size, block_size,
-        device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p, system.use_twin_mode
     );
 
     CALCULATE_K( 3, system.t + 0.5 * system.dt, buffer_wavefunction, buffer_reservoir);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k4, "Sum for K4", grid_size, block_size,
-        device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p, system.use_twin_mode
     );
 
     CALCULATE_K( 4, system.t + system.dt, buffer_wavefunction, buffer_reservoir);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_final, "Final Sum", grid_size, block_size,
-        device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p, system.use_twin_mode
     );
 
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
@@ -221,6 +224,9 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     bool evaluate_reservoir = system.evaluateReservoir();
     bool evaluate_stochastic = system.evaluateStochastic();
 
+    // The delta time is either real or imaginary, depending on the system configuration
+    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -system.dt) : complex_number(system.dt, 0.0);
+
     // If required, calculate new set of random numbers.
     if (evaluate_stochastic)
     CALL_KERNEL(
@@ -236,14 +242,14 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k2, "Sum for K2", grid_size, block_size, 
-            device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p, system.use_twin_mode
         );
 
         CALCULATE_K( 2, system.t + RKCoefficients::a2 * system.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k3, "Sum for K3", grid_size, block_size, 
-            device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p, system.use_twin_mode
         );
 
 
@@ -251,21 +257,21 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k4, "Sum for K4", grid_size, block_size, 
-            device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p, system.use_twin_mode
         );
 
         CALCULATE_K( 4, system.t + RKCoefficients::a4 * system.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k5, "Sum for K5", grid_size, block_size, 
-            device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p, system.use_twin_mode
         );
 
         CALCULATE_K( 5, system.t + RKCoefficients::a5 * system.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k6, "Sum for K6", grid_size, block_size, 
-            device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p, system.use_twin_mode
         );
 
         CALCULATE_K( 6, system.t + RKCoefficients::a6 * system.dt, buffer_wavefunction, buffer_reservoir );
@@ -273,14 +279,14 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         // Final Result is in the buffer_ arrays
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_final, "Final Sum", grid_size, block_size, 
-            device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p, system.use_twin_mode
         );
 
         CALCULATE_K( 7, system.t + RKCoefficients::a7 * system.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_final_error, "Final Sum Error", grid_size, block_size, 
-            device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p, system.use_twin_mode
         );
 
         #ifndef USECPU

@@ -96,6 +96,13 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "-rk45", argc, argv ) ) != -1 ) {
         fixed_time_step = false;
     }
+
+    // Imaginary Time Propagation
+    imaginary_time = false;
+    if ( ( index = findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
+        imaginary_time = true;
+    }
+    
     if ( ( index = findInArgv( "--initRandom", argc, argv ) ) != -1 ) {
         randomly_initialize_system = true;
         random_system_amplitude = getNextInput( argv, argc, "random_system_amplitude", ++index );
