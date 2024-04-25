@@ -124,7 +124,7 @@ class System {
                     minus_i_over_h_bar_s( complex_number( 0.0, real_number( -1.0 ) / h_bar_s ) ), 
                     i_h_bar_s( complex_number( 0.0, h_bar_s ) ), half_i( complex_number( 0.0, 0.5 ) ), 
                     i( complex_number( 0.0, 1.0 ) ), minus_half_i( complex_number( 0.0, real_number( -0.5 ) ) ), 
-                    minus_i( complex_number( 0.0, real_number( -1.0 ) ) ), periodic_boundary_x( periodic_boundary_x ), periodic_boundary_y( periodic_boundary_y ) {
+                    minus_i( complex_number( 0.0, real_number( -1.0 ) ) ), periodic_boundary_x( periodic_boundary_x ), periodic_boundary_y( periodic_boundary_y ), dV( dx * dy ){
         }
     };
 
