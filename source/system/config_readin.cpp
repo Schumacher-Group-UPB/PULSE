@@ -34,6 +34,7 @@ std::vector<char*> PC3::readConfigFromFile(int argc, char** argv) {
                 if ( word[0] == '#' ) break;
                 buffer.push_back( strdup(word.c_str()) );
             }
+            buffer.push_back(strdup(" "));
         }
 
     }

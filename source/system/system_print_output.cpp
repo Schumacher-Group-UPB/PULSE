@@ -13,10 +13,10 @@ void print_name() {
     std::cout << "                 |_____]   |     |   |        |______   |______\n";
     std::cout << "                 |       . |_____| . |_____ . ______| . |______ .\n\n";
     std::cout << "        " << EscapeSequence::RESET << EscapeSequence::UNDERLINE << EscapeSequence::BOLD;
-    std::cout << EscapeSequence::BLUE << "P" << EscapeSequence::GREY << "aderborn " << EscapeSequence::BLUE;
-    std::cout << "U" << EscapeSequence::GREY << "ltrafast So" << EscapeSequence::BLUE << "L" << EscapeSequence::GREY;
-    std::cout << "ver for the nonlinear " << EscapeSequence::BLUE << "S" << EscapeSequence::GREY << "chroedinger ";
-    std::cout << EscapeSequence::BLUE << "E" << EscapeSequence::GREY << "quation";
+    std::cout << EscapeSequence::BLUE << "P" << EscapeSequence::GRAY << "aderborn " << EscapeSequence::BLUE;
+    std::cout << "U" << EscapeSequence::GRAY << "ltrafast So" << EscapeSequence::BLUE << "L" << EscapeSequence::GRAY;
+    std::cout << "ver for the nonlinear " << EscapeSequence::BLUE << "S" << EscapeSequence::GRAY << "chroedinger ";
+    std::cout << EscapeSequence::BLUE << "E" << EscapeSequence::GRAY << "quation";
     std::cout << EscapeSequence::RESET << "                         \n" << std::endl;
     std::cout << "                                Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.1.0" << EscapeSequence::RESET << std::endl;
     std::cout << "                      https://github.com/davidbauch/PC3" << std::endl;
@@ -94,7 +94,6 @@ void PC3::System::printHelp() {
 void PC3::System::printSummary( std::map<std::string, std::vector<double>> timeit_times, std::map<std::string, double> timeit_times_total ) {
     print_name();
     const int l = 15;
-    std::cout << EscapeSequence::BOLD << "-------------------------------- Runtime Statistics -------------------------------" << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::BOLD << "-----------------------------------------------------------------------------------" << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::BOLD << "------------------------------------ Parameters -----------------------------------" << EscapeSequence::RESET << std::endl;
     std::cout << unifyLength( "N", std::to_string( s_N_x ) + ", " + std::to_string( s_N_y ), "", l, l ) << std::endl;
@@ -118,10 +117,16 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << "--------------------------------- Envelope Functions ------------------------------" << std::endl;
     // TODO: overwrite << operator of the Envelope Class
     for ( int i = 0; i < pulse.amp.size(); i++ ) {
-        std::cout << "Pulse at t0 = " << pulse.t0[i] << ", amp = " << pulse.amp[i] << ", freq = " << pulse.freq[i] << ", sigma = " << pulse.sigma[i] << "\n         m = " << pulse.m[i] << ", pol = " << pulse.s_pol[i] << ", width X = " << pulse.width_x[i] << ", width Y = " << pulse.width_y[i] << ", X = " << pulse.x[i] << ", Y = " << pulse.y[i] << std::endl;
+        auto g = pulse.group_identifier[i];
+        std::cout << "Pulse (G" << g << ") at t0 = " << pulse.t0[g] << ", amp = " << pulse.amp[i] << ", freq = " << pulse.freq[g] << ", sigma = " << pulse.sigma[g] << "\n         m = " << pulse.m[i] << ", pol = " << pulse.s_pol[i] << ", width X = " << pulse.width_x[i] << ", width Y = " << pulse.width_y[i] << ", X = " << pulse.x[i] << ", Y = " << pulse.y[i] << std::endl;
     }
     for ( int i = 0; i < pump.amp.size(); i++ ) {
-        std::cout << "Pump at amp = " << pump.amp[i] << ", width X = " << pump.width_x[i] << ", width Y = " << pump.width_y[i] << ", X = " << pump.x[i] << ", Y = " << pump.y[i] << ", pol = " << pump.s_pol[i] << ", type = " << pump.s_type[i] << std::endl;
+        auto g = pump.group_identifier[i];
+        std::cout << "Pump (G" << g << ") at t0 = " << pump.t0[g] << ", freq = " << pump.freq[g] << ", sigma = " << pump.sigma[g] << "\n          at amp = " << pump.amp[i] << ", width X = " << pump.width_x[i] << ", width Y = " << pump.width_y[i] << ", X = " << pump.x[i] << ", Y = " << pump.y[i] << ", pol = " << pump.s_pol[i] << ", type = " << pump.s_type[i] << std::endl;
+    }
+    for ( int i = 0; i < potential.amp.size(); i++ ) {
+        auto g = potential.group_identifier[i];
+        std::cout << "Potential (G" << g << ") at t0 = " << potential.t0[g] << ", freq = " << potential.freq[g] << ", sigma = " << potential.sigma[g] << "\n          at amp = " << potential.amp[i] << ", width X = " << potential.width_x[i] << ", width Y = " << potential.width_y[i] << ", X = " << potential.x[i] << ", Y = " << potential.y[i] << ", pol = " << potential.s_pol[i] << ", type = " << potential.s_type[i] << std::endl;
     }
     for ( int i = 0; i < fft_mask.amp.size(); i++ ) {
         std::cout << "FFT Mask at amp = " << fft_mask.amp[i] << ", width X = " << fft_mask.width_x[i] << ", width Y = " << fft_mask.width_y[i] << ", X = " << fft_mask.x[i] << ", Y = " << fft_mask.y[i] << ", pol = " << fft_mask.s_pol[i] << ", type = " << fft_mask.s_type[i] << std::endl;
@@ -154,7 +159,7 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
 #endif
 #ifdef USECPU
     std::cout << "Device Used: " << EscapeSequence::BOLD << EscapeSequence::YELLOW << "CPU" << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::GREY << "  Cores utilized " << omp_max_threads << " of " << omp_get_max_threads() << " total cores." << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::GRAY << "  Cores utilized " << omp_max_threads << " of " << omp_get_max_threads() << " total cores." << EscapeSequence::RESET << std::endl;
 #else
     int nDevices;
     cudaGetDeviceCount(&nDevices);
@@ -163,7 +168,7 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device);
 std::cout << "Device Used: " << EscapeSequence::GREEN << EscapeSequence::BOLD << prop.name << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::GREY << "  Memory Clock Rate (MHz): " << prop.memoryClockRate/1024 << std::endl;
+    std::cout << EscapeSequence::GRAY << "  Memory Clock Rate (MHz): " << prop.memoryClockRate/1024 << std::endl;
     std::cout << "  Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << std::endl;
     std::cout << "  Total global memory (Gbytes): " <<(float)(prop.totalGlobalMem)/1024.0/1024.0/1024.0 << std::endl;
     std::cout << "  Warp-size: " << prop.warpSize << EscapeSequence::RESET << std::endl;

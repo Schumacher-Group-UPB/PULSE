@@ -31,8 +31,8 @@ class Solver {
     PC3::System& system;
     PC3::FileHandler& filehandler;
 
+    // TODO: Move these into one single float buffer.
     struct Oscillation {
-        PC3::CUDAMatrix<unsigned int> pol;
         PC3::CUDAMatrix<real_number> t0;
         PC3::CUDAMatrix<real_number> freq;
         PC3::CUDAMatrix<real_number> sigma;
@@ -42,14 +42,21 @@ class Solver {
             real_number* t0;
             real_number* freq;
             real_number* sigma;
-            unsigned int* pol;
             unsigned int n;
         };
 
-        Pointers pointers() {
-            return Pointers{ t0.get(), freq.get(), sigma.get(), pol.get(), n };
+        void construct( Envelope& envelope) {
+            const auto n = envelope.groupSize();
+            t0.construct( n, 1, "oscillation_t0" ).setTo( envelope.t0.data() );
+            freq.construct( n, 1, "oscillation_freq" ).setTo( envelope.freq.data() );
+            sigma.construct( n, 1, "oscillation_sigma" ).setTo( envelope.sigma.data() );
+            this->n = n;
         }
-    } dev_pulse_oscillation;
+
+        Pointers pointers() {
+            return Pointers{ t0.get(), freq.get(), sigma.get(), n };
+        }
+    } dev_pulse_oscillation, dev_pump_oscillation, dev_potential_oscillation;
 
     // Device Variables
     Device device;

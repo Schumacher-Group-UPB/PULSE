@@ -203,7 +203,6 @@ CUDA_HOST_DEVICE static CUDA_INLINE real_number imag( const real_number& x ) {
 
 /**
  * Host and Device Functions for abs, sqrt, floor, etc.
- * We seperate FP32 and FP64 code here.
 */
 
 
@@ -307,6 +306,14 @@ static CUDA_INLINE real_number max( real_number x, real_number y ) {
 }
 static CUDA_INLINE real_number min( real_number x, real_number y ) {
     return x < y ? x : y;
+}
+
+CUDA_HOST_DEVICE static CUDA_INLINE complex_number gaussian_complex_oscillator( real_number t, real_number t0, real_number sigma, real_number freq ) {
+    return exp( -complex_number(( t - t0 )*( t - t0 ) / ( real_number(2.0)*sigma*sigma ), freq * ( t - t0 )) );
+}
+CUDA_HOST_DEVICE static CUDA_INLINE real_number gaussian_oscillator( real_number t, real_number t0, real_number sigma, real_number freq ) {
+    const auto p = ( t - t0 )/sigma;
+    return exp( -0.5*p*p ) * cos( freq * ( t - t0 ) );
 }
 
 } // namespace PC3::CUDA

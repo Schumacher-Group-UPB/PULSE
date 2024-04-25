@@ -28,15 +28,6 @@ struct Device {
     PC3::CUDAMatrix<complex_number> buffer_reservoir_plus;
     PC3::CUDAMatrix<complex_number> buffer_reservoir_minus;
 
-    // Alias References to the plus components for easy access in a scalar child classes
-    PC3::CUDAMatrix<complex_number>& wavefunction = wavefunction_plus;
-    PC3::CUDAMatrix<complex_number>& reservoir = reservoir_plus;
-    PC3::CUDAMatrix<complex_number>& pump = pump_plus;
-    PC3::CUDAMatrix<complex_number>& potential = potential_plus;
-    // "Next" versions
-    PC3::CUDAMatrix<complex_number>& buffer_wavefunction = buffer_wavefunction_plus;
-    PC3::CUDAMatrix<complex_number>& buffer_reservoir = buffer_reservoir_plus;
-
     // FFT Mask Matrices
     PC3::CUDAMatrix<real_number> fft_mask_plus;
     PC3::CUDAMatrix<real_number> fft_mask_minus;
@@ -87,11 +78,19 @@ struct Device {
     PC3::CUDAMatrix<complex_number> random_number;
     PC3::CUDAMatrix<cuda_random_state> random_state;
 
+    std::vector<complex_number*> pump_plus_array;
+    std::vector<complex_number*> pulse_plus_array;
+    std::vector<complex_number*> potential_plus_array;
+    std::vector<complex_number*> pump_minus_array;
+    std::vector<complex_number*> pulse_minus_array;
+    std::vector<complex_number*> potential_minus_array;
+
     // Empty Constructor
     Device() = default;
 
     // Construction Chain
-    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_rk_45 ) {
+    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_rk_45, const int n_pulses, const int n_pumps, const int n_potentials ) {
+
         // Construct Random Number Cache
         random_number.construct( N_x, N_y, "device.random_number" );
         random_state.construct( N_x, N_y, "device.random_state" );
@@ -99,9 +98,9 @@ struct Device {
         // Wavefunction, Reservoir, Pump and FFT Matrices
         wavefunction_plus.construct( N_x, N_y, "device.wavefunction_plus" );
         reservoir_plus.construct( N_x, N_y, "device.reservoir_plus" );
-        pump_plus.construct( N_x, N_y, "device.pump_plus" );
-        pulse_plus.construct( N_x, N_y, "device.pulse_plus" );
-        potential_plus.construct( N_x, N_y, "device.potential_plus" );
+        pump_plus.construct( N_x, N_y*n_pumps, "device.pump_plus" );
+        pulse_plus.construct( N_x, N_y*n_pulses, "device.pulse_plus" );
+        potential_plus.construct( N_x, N_y*n_potentials, "device.potential_plus" );
         buffer_wavefunction_plus.construct( N_x, N_y, "device.buffer_wavefunction_plus" );
         buffer_reservoir_plus.construct( N_x, N_y, "device.buffer_reservoir_plus" );
         fft_mask_plus.construct( N_x, N_y, "device.fft_mask_plus" );
@@ -134,9 +133,9 @@ struct Device {
 
         wavefunction_minus.construct( N_x, N_y, "device.wavefunction_minus" );
         reservoir_minus.construct( N_x, N_y, "device.reservoir_minus" );
-        pump_minus.construct( N_x, N_y, "device.pump_minus" );
-        pulse_minus.construct( N_x, N_y, "device.pulse_minus" );
-        potential_minus.construct( N_x, N_y, "device.potential_minus" );
+        pump_minus.construct( N_x, N_y*n_pumps, "device.pump_minus" );
+        pulse_minus.construct( N_x, N_y*n_pulses, "device.pulse_minus" );
+        potential_minus.construct( N_x, N_y*n_potentials, "device.potential_minus" );
         buffer_wavefunction_minus.construct( N_x, N_y, "device.buffer_wavefunction_minus" );
         buffer_reservoir_minus.construct( N_x, N_y, "device.buffer_reservoir_minus" );
         fft_mask_minus.construct( N_x, N_y, "device.fft_mask_minus" );
@@ -213,7 +212,8 @@ struct Device {
         complex_number* random_number;
         cuda_random_state* random_state;
     };
-    Pointers pointers(){
+
+    Pointers pointers(){                    
         return Pointers{
             wavefunction_plus.get(),
             reservoir_plus.get(),

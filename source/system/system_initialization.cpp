@@ -170,7 +170,7 @@ void PC3::System::init( int argc, char** argv ) {
     // Pumps
     pump = PC3::Envelope::fromCommandlineArguments( argc, argv, "pump", true /* Can have oscillation component */ );
     // Potential
-    potential = PC3::Envelope::fromCommandlineArguments( argc, argv, "potential", false );
+    potential = PC3::Envelope::fromCommandlineArguments( argc, argv, "potential", true /* Can have oscillation component */ );
     // Pulses
     pulse = PC3::Envelope::fromCommandlineArguments( argc, argv, "pulse", true /* Can have oscillation component */ );
     // FFT Mask

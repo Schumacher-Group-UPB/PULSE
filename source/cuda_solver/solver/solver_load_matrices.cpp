@@ -51,11 +51,11 @@ void PC3::Solver::loadMatrices() {
         else if ( fileinputkeys[i] == "fft_mask_plus" and system.doInput( "fft_mask", "fft", "fft_plus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.fft_mask_plus.get() );
         else if ( fileinputkeys[i] == "pump_plus" and system.doInput( "pump", "pump_plus", "plus", "mat", "all" ) )
-            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pump_plus.get() );
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pump_plus.front().get() );
         else if ( fileinputkeys[i] == "pulse_plus" and system.doInput( "pulse", "pulse_plus", "plus", "mat", "all" ) )
-            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pulse_plus.get() );
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pulse_plus.front().get() );
         else if ( fileinputkeys[i] == "potential_plus" and system.doInput( "potential", "potential_plus", "plus", "mat", "all" ) )
-            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.potential_plus.get() );
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.potential_plus.front().get() );
         else if ( fileinputkeys[i] == "initial_condition_plus" and system.doInput( "init", "initial_condition", "init_plus", "initial_condition_plus", "plus", "mat", "all" ) ) 
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.initial_state_plus.get() );
         
@@ -73,11 +73,11 @@ void PC3::Solver::loadMatrices() {
         else if ( fileinputkeys[i] == "fft_mask_minus" and system.doInput( "fft_mask", "fft", "fft_minus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.fft_mask_minus.get() );
         else if ( fileinputkeys[i] == "pump_minus" and system.doInput( "pump", "pump_minus", "plus", "mat", "all" ) )
-            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pump_minus.get() );
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pump_minus.front().get() );
         else if ( fileinputkeys[i] == "pulse_minus" and system.doInput( "pulse", "pulse_minus", "plus", "mat", "all" ) )
-            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pulse_minus.get() );
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pulse_minus.front().get() );
         else if ( fileinputkeys[i] == "potential_minus" and system.doInput( "potential", "potential_minus", "plus", "mat", "all" ) )
-            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.potential_minus.get() );
+            filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.potential_minus.front().get() );
         else if ( fileinputkeys[i] == "initial_condition_minus" and system.doInput( "init", "initial_condition", "init_minus", "initial_condition_minus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.initial_state_minus.get() );
     }

@@ -53,16 +53,32 @@ void PC3::Envelope::addSpacial( real_number amp, real_number width_x, real_numbe
         this->m.emplace_back( std::stoi( s_m ) );
 }
 
+#include <iostream>
 void PC3::Envelope::addTemporal( real_number t0, real_number sigma, real_number freq ) {
-    this->t0.push_back( t0 );
-    this->sigma.push_back( sigma );
-    this->freq.push_back( freq );
-    // Cache the index of the spacial shape that belongs to this temporal shape
-    time_to_index.push_back( amp.size() - 1);
+    // Create the temporal grouping identifier
+    std::string group_identifier = std::to_string( t0 ) + std::to_string( sigma ) + std::to_string( freq );
+    
+    // If the group identifier is not present in the map, add it and the temporal components
+    if (not str_to_group_identifier.contains( group_identifier )) {
+        str_to_group_identifier[group_identifier] = str_to_group_identifier.size();
+        this->t0.push_back( t0 );
+        this->sigma.push_back( sigma );
+        this->freq.push_back( freq );
+    }
+
+    // Add the group identifier to the group_identifier vector
+    this->group_identifier.push_back( str_to_group_identifier[group_identifier] );
 }
 
 int PC3::Envelope::size() {
     return amp.size();
+}
+
+// Returns the group size, which is the number of unique temporal components
+// that are present in the envelope. The return value is at least 1 to ensure at
+// least one matrix is generated. Maybe this will change later.
+int PC3::Envelope::groupSize() {
+    return std::max<int>(1,str_to_group_identifier.size());
 }
 
 PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, const std::string& key, const bool time ) {
@@ -102,6 +118,7 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         auto next = getNextStringInput( argv, argc, key + "_next", index );
 
         if ( not time or next != "osc") {
+            ret.addTemporal( 0, 1E20, 0 );
             index--;
             continue;
         }
@@ -112,5 +129,12 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         real_number sigma = getNextInput( argv, argc, key + "_sigma", index );
         ret.addTemporal( t0, sigma, freq );
     }
+
+    // If no envelope was passed, we add a default time envelope. This ensures the constructor of the solver's
+    // oscillation struct does not fail and can copy at least one temporal component, even if its not used.
+    if ( ret.size() == 0 ) {
+        ret.addTemporal( 0, 1E20, 0 );
+    }
+
     return ret;
 }

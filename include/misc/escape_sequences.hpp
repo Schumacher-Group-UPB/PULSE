@@ -1,7 +1,7 @@
 #pragma once
 
 namespace EscapeSequence {
-    static inline auto GREY = "\033[90m";
+    static inline auto GRAY = "\033[90m";
     static inline auto RED = "\033[91m";
     static inline auto GREEN = "\033[92m";
     static inline auto YELLOW = "\033[93m";

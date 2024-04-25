@@ -44,7 +44,7 @@ real_number cached_t = 0.0;
 #define CALCULATE_K( index, time, input_wavefunction, input_reservoir ) \
 CALL_KERNEL( \
     RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size,  \
-    time, device_pointers, p, \
+    time, device_pointers, p, potential_pointers, \
     {  \
         device_pointers.input_wavefunction##_plus, device_pointers.input_wavefunction##_minus, device_pointers.input_reservoir##_plus, device_pointers.input_reservoir##_minus, \
         device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
@@ -53,7 +53,7 @@ CALL_KERNEL( \
 if (evaluate_reservoir) \
     CALL_KERNEL( \
         RUNGE_FUNCTION_RE, "K"#index"_Reservoir", grid_size, block_size, \
-        time, device_pointers, p, \
+        time, device_pointers, p, pump_pointers, \
         {  \
             device_pointers.input_wavefunction##_plus, device_pointers.input_wavefunction##_minus, device_pointers.input_reservoir##_plus, device_pointers.input_reservoir##_minus, \
             device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
@@ -114,8 +114,10 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     bool evaluate_reservoir = system.evaluateReservoir();
     bool evaluate_stochastic = system.evaluateStochastic();
 
-    // Pointers to Pulse Variables. This is subject to change
+    // Pointers to Oscillation Parameters
     auto pulse_pointers = dev_pulse_oscillation.pointers();
+    auto pump_pointers = dev_pump_oscillation.pointers();
+    auto potential_pointers = dev_potential_oscillation.pointers();
 
     // The delta time is either real or imaginary, depending on the system configuration
     complex_number delta_time = system.imaginary_time ? complex_number(0.0, -system.dt) : complex_number(system.dt, 0.0);
@@ -216,9 +218,10 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     bool accept = false;
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = device.pointers();
-    // This variable contains all the system parameters the kernel could need
-    // Pointers to Pulse Variables. This is subject to change
+    // Pointers to Oscillation Parameters
     auto pulse_pointers = dev_pulse_oscillation.pointers();
+    auto pump_pointers = dev_pump_oscillation.pointers();
+    auto potential_pointers = dev_potential_oscillation.pointers();
     // The CPU should briefly evaluate wether the pulse and the reservoir have to be evaluated
     bool evaluate_pulse = system.evaluatePulse();
     bool evaluate_reservoir = system.evaluateReservoir();

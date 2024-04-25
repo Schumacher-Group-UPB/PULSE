@@ -87,7 +87,7 @@ int main( int argc, char* argv[] ) {
             std::cout << EscapeSequence::BLUE << "#" << EscapeSequence::RESET; // █
         }
         for ( int i = 0; i < 50. * ( 1. - system.t / system.t_max ); i++ ) {
-            std::cout << EscapeSequence::GREY << "#" << EscapeSequence::RESET;
+            std::cout << EscapeSequence::GRAY << "#" << EscapeSequence::RESET;
         }
         std::cout << "]  " << int( 100. * system.t / system.t_max ) << "%  \n";
         bool evaluate_pulse = system.evaluatePulse();

@@ -8,9 +8,9 @@
  * This is only done at the beginning of the program and on the CPU.
  * Temporarily copying the results is probably fine.
  */
-void PC3::System::calculateEnvelope( real_number* buffer, const PC3::Envelope& mask, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask ) {
+void PC3::System::calculateEnvelope( real_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask ) {
     std::unique_ptr<complex_number[]> tmp_buffer = std::make_unique<complex_number[]>( s_N_x * s_N_y );
-    calculateEnvelope( tmp_buffer.get(), mask, polarization, default_value_if_no_mask );
+    calculateEnvelope( tmp_buffer.get(), mask, group, polarization, default_value_if_no_mask );
 // Transfer tmp_buffer to buffer as complex numbers
 #pragma omp parallel for
     for ( int i = 0; i < s_N_x * s_N_y; i++ ) {
@@ -18,7 +18,7 @@ void PC3::System::calculateEnvelope( real_number* buffer, const PC3::Envelope& m
     }
 }
 
-void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask ) {
+void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask ) {
 #pragma omp parallel for
     for ( int row = 0; row < s_N_y; row++ ) {
         for ( int col = 0; col < s_N_x; col++ ) {
@@ -26,6 +26,9 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
             buffer[i] = complex_number(0.0,0.0);
             bool has_been_set = false;
             for ( int c = 0; c < mask.amp.size(); c++ ) {
+                // If the group identifier does not match, skip the mask
+                if ( group >= 0 and mask.group_identifier[c] != group )
+                    continue;
                 // Calculate X,Y in the grid space
                 auto x = -s_L_x + dx * col;
                 auto y = -s_L_y + dy * row;
@@ -52,7 +55,7 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                 // Default amplitude is A/sqrt(2pi)/w
                 complex_number amplitude = { mask.amp[c], 0.0 };
                 if ( not( mask.type[c] & PC3::Envelope::Type::NoDivide ) )
-                    amplitude = amplitude / sqrt( 2 * 3.1415 * mask.width_x[c] * mask.width_y[c] );
+                    amplitude = amplitude / CUDA::sqrt( 2 * 3.1415 * mask.width_x[c] * mask.width_y[c] );
                 // If the behaviour is adaptive, the amplitude is set to the current value of the buffer instead.
                 if ( mask.behavior[c] & PC3::Envelope::Behavior::Adaptive )
                     amplitude = mask.amp[c] * buffer[i];

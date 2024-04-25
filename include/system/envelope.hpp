@@ -14,8 +14,12 @@ class Envelope {
     std::vector<real_number> amp, width_x, width_y, x, y, exponent;
     std::vector<int> m;
     std::vector<real_number> freq, sigma, t0;
-    std::vector<int> time_to_index;
     std::vector<std::string> s_type, s_pol, s_behavior;
+    // Identifier for temporal grouping
+    // Same length as amp, width, ... and maps the spatial envelope to the temporal envelopes
+    std::vector<int> group_identifier;
+    // Helper map to map the temporal group identifier to an index in group_identifier
+    std::map<std::string, int> str_to_group_identifier;
 
     enum class Type : unsigned int {
         Gauss = 1, // Gaussian Envelope
@@ -62,9 +66,12 @@ class Envelope {
         { "local", Type::Local },
     };
 
+    static inline int AllGroups = -1;
+
     void addSpacial(real_number amp, real_number width_x, real_number width_y, real_number x, real_number y, real_number exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
     void addTemporal(real_number t0, real_number sigma, real_number freq);
     int size();
+    int groupSize();
 
     static Envelope fromCommandlineArguments( int argc, char** argv, const std::string& key, const bool time );
 };

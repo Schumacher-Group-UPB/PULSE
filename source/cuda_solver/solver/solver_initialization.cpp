@@ -15,11 +15,20 @@ void PC3::Solver::outputInitialMatrices() {
     if ( system.doOutput( "all", "mat", "initial_plus", "initial" ) )
         system.filehandler.outputMatrixToFile( host.initial_state_plus.get(), system.s_N_x, system.s_N_y, header_information, "initial_condition_plus" );
     if ( system.doOutput( "all", "mat", "pump_plus", "pump" ) )
-        system.filehandler.outputMatrixToFile( host.pump_plus.get(), system.s_N_x, system.s_N_y, header_information, "pump_plus" );
+        //system.filehandler.outputMatrixToFile( host.pump_plus.get(), system.s_N_x, system.s_N_y, header_information, "pump_plus" );
+        for (int i = 0; i < system.pump.groupSize(); i++) {
+            system.filehandler.outputMatrixToFile( host.pump_plus[i].get(), system.s_N_x, system.s_N_y, header_information, "pump_plus_" + std::to_string(i) );
+        }
     if ( system.doOutput( "all", "mat", "pulse_plus", "pulse" ) )
-        system.filehandler.outputMatrixToFile( host.pulse_plus.get(), system.s_N_x, system.s_N_y, header_information, "pulse_plus" );
+        //system.filehandler.outputMatrixToFile( host.pulse_plus.get(), system.s_N_x, system.s_N_y, header_information, "pulse_plus" );
+        for (int i = 0; i < system.pulse.groupSize(); i++) {
+            system.filehandler.outputMatrixToFile( host.pulse_plus[i].get(), system.s_N_x, system.s_N_y, header_information, "pulse_plus_" + std::to_string(i) );
+        }
     if ( system.doOutput( "all", "mat", "potential_plus", "potential" ) )
-        system.filehandler.outputMatrixToFile( host.potential_plus.get(), system.s_N_x, system.s_N_y, header_information, "potential_plus" );
+        //system.filehandler.outputMatrixToFile( host.potential_plus.get(), system.s_N_x, system.s_N_y, header_information, "potential_plus" );
+        for (int i = 0; i < system.potential.groupSize(); i++) {
+            system.filehandler.outputMatrixToFile( host.potential_plus[i].get(), system.s_N_x, system.s_N_y, header_information, "potential_plus_" + std::to_string(i) );
+        }
     if ( system.doOutput( "all", "mat", "fftplus", "fft" ) )
         system.filehandler.outputMatrixToFile( host.fft_mask_plus.get(), system.s_N_x, system.s_N_y, header_information, "fft_mask_plus" );
     
@@ -29,11 +38,20 @@ void PC3::Solver::outputInitialMatrices() {
     if ( system.doOutput( "all", "mat", "initial_minus", "initial" ) )
         system.filehandler.outputMatrixToFile( host.initial_state_minus.get(), system.s_N_x, system.s_N_y, header_information, "initial_condition_minus" );
     if ( system.doOutput( "all", "mat", "pump_minus", "pump" ) )
-        system.filehandler.outputMatrixToFile( host.pump_minus.get(), system.s_N_x, system.s_N_y, header_information, "pump_minus" );
+        //system.filehandler.outputMatrixToFile( host.pump_minus.get(), system.s_N_x, system.s_N_y, header_information, "pump_minus" );
+        for (int i = 0; i < system.pump.groupSize(); i++) {
+            system.filehandler.outputMatrixToFile( host.pump_minus[i].get(), system.s_N_x, system.s_N_y, header_information, "pump_minus_" + std::to_string(i) );
+        }
     if ( system.doOutput( "all", "mat", "pulse_minus", "pulse" ) )
-        system.filehandler.outputMatrixToFile( host.pulse_minus.get(), system.s_N_x, system.s_N_y, header_information, "pulse_minus" );
+        //system.filehandler.outputMatrixToFile( host.pulse_minus.get(), system.s_N_x, system.s_N_y, header_information, "pulse_minus" );
+        for (int i = 0; i < system.pulse.groupSize(); i++) {
+            system.filehandler.outputMatrixToFile( host.pulse_minus[i].get(), system.s_N_x, system.s_N_y, header_information, "pulse_minus_" + std::to_string(i) );
+        }
     if ( system.doOutput( "all", "mat", "potential_minus", "potential" ) )
-        system.filehandler.outputMatrixToFile( host.potential_minus.get(), system.s_N_x, system.s_N_y, header_information, "potential_minus" );
+        //system.filehandler.outputMatrixToFile( host.potential_minus.get(), system.s_N_x, system.s_N_y, header_information, "potential_minus" );
+        for (int i = 0; i < system.potential.groupSize(); i++) {
+            system.filehandler.outputMatrixToFile( host.potential_minus[i].get(), system.s_N_x, system.s_N_y, header_information, "potential_minus_" + std::to_string(i) );
+        }
     if ( system.doOutput( "all", "mat", "fftminus", "fft" ) )
         system.filehandler.outputMatrixToFile( host.fft_mask_minus.get(), system.s_N_x, system.s_N_y, header_information, "fft_mask_minus" );
 }
@@ -41,7 +59,7 @@ void PC3::Solver::outputInitialMatrices() {
 void PC3::Solver::initializeHostMatricesFromSystem( ) {
     std::cout << EscapeSequence::BOLD << "--------------------------- Initializing Host Matrices ----------------------------" << EscapeSequence::RESET << std::endl;
     // First, construct all required host matrices
-    host.constructAll( system.s_N_x, system.s_N_y, system.use_twin_mode, not system.fixed_time_step  /* Use RK45 */ );
+    host.constructAll( system.s_N_x, system.s_N_y, system.use_twin_mode, not system.fixed_time_step  /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // ==================================================
     // =................ Initial States ................=
@@ -49,10 +67,10 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
     std::cout << "Initializing Host Matrices..." << std::endl;
 
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
-    system.calculateEnvelope( host.initial_state_plus.get(), system.initial_state, PC3::Envelope::Polarization::Plus);
+    system.calculateEnvelope( host.initial_state_plus.get(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus);
     std::ranges::for_each( host.initial_state_plus.get(), host.initial_state_plus.get() + system.s_N_x * system.s_N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_plus[i]; i++; } );
     if ( system.use_twin_mode ) {
-        system.calculateEnvelope( host.initial_state_minus.get(), system.initial_state, PC3::Envelope::Polarization::Minus);
+        system.calculateEnvelope( host.initial_state_minus.get(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus);
         std::ranges::for_each( host.initial_state_minus.get(), host.initial_state_minus.get() + system.s_N_x * system.s_N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_minus[i]; i++; } );
     }
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
@@ -74,89 +92,93 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
     // =................ Pump Envelopes ................=
     // ==================================================
     std::cout << "Initializing Pump Envelopes..." << std::endl;
-    system.calculateEnvelope( host.pump_plus.get(), system.pump, PC3::Envelope::Polarization::Plus );
-    if ( system.use_twin_mode ) {
-        system.calculateEnvelope( host.pump_minus.get(), system.pump, PC3::Envelope::Polarization::Minus );
+    for (int i = 0; i < system.pump.groupSize(); i++) {
+        system.calculateEnvelope( host.pump_plus[i].get(), system.pump, i, PC3::Envelope::Polarization::Plus );
+        if ( system.use_twin_mode ) {
+            system.calculateEnvelope( host.pump_minus[i].get(), system.pump, i, PC3::Envelope::Polarization::Minus );
+        }
     }
-    
+    std::cout << EscapeSequence::GRAY << "Pump Groups: " << system.pump.groupSize() << EscapeSequence::RESET << std::endl;
+
     // ==================================================
     // =............. Potential Envelopes ..............=
     // ==================================================
     std::cout << "Initializing Potential Envelopes..." << std::endl;
-    system.calculateEnvelope( host.potential_plus.get(), system.potential, PC3::Envelope::Polarization::Plus );
-    if ( system.use_twin_mode ) {
-        system.calculateEnvelope( host.potential_minus.get(), system.potential, PC3::Envelope::Polarization::Minus );
+    for (int i = 0; i < system.potential.groupSize(); i++) {
+        system.calculateEnvelope( host.potential_plus[i].get(), system.potential, i, PC3::Envelope::Polarization::Plus );
+        if ( system.use_twin_mode ) {
+            system.calculateEnvelope( host.potential_minus[i].get(), system.potential, i, PC3::Envelope::Polarization::Minus );
+        }
     }
-
+    std::cout << EscapeSequence::GRAY << "Potential Groups: " << system.potential.groupSize() << EscapeSequence::RESET << std::endl;
+    
     // ==================================================
     // =............... Pulse Envelopes ................=
     // ==================================================
     std::cout << "Initializing Pulse Envelopes..." << std::endl;
-    system.calculateEnvelope( host.pulse_plus.get(), system.pulse, PC3::Envelope::Polarization::Plus );
-    if ( system.use_twin_mode ) {
-        system.calculateEnvelope( host.pulse_minus.get(), system.pulse, PC3::Envelope::Polarization::Minus );
+    for (int i = 0; i < system.pulse.groupSize(); i++) {
+        system.calculateEnvelope( host.pulse_plus[i].get(), system.pulse, i, PC3::Envelope::Polarization::Plus );
+        if ( system.use_twin_mode ) {
+            system.calculateEnvelope( host.pulse_minus[i].get(), system.pulse, i, PC3::Envelope::Polarization::Minus );
+        }
     }
+    std::cout << EscapeSequence::GRAY << "Pulse Groups: " << system.pulse.groupSize() << EscapeSequence::RESET << std::endl;
 
     // ==================================================
     // =................. FFT Envelopes ................=
     // ==================================================
     std::cout << "Initializing FFT Envelopes..." << std::endl;
     if (system.fft_mask.size() == 0) {
-        std::cout << "No fft mask provided. No fft will be calculated." << std::endl;
+        std::cout << "No fft mask provided." << std::endl;
     } else {
-        system.calculateEnvelope( host.fft_mask_plus.get(), system.fft_mask, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
+        system.calculateEnvelope( host.fft_mask_plus.get(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
         if (system.use_twin_mode ) {
-            system.calculateEnvelope( host.fft_mask_minus.get(), system.fft_mask, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
+            system.calculateEnvelope( host.fft_mask_minus.get(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
         }
     }
 }
 
 void PC3::Solver::initializeDeviceMatricesFromHost() {
 
-    // TODO: Die sortierten und gruppierten dinger aus den host matritzen aufs device schieben. osc informationen übertragen auf
-    // device_pulse_oscillation, device_pump_oscillation, etc.
-
     std::cout << "Initializing Device Matrices..." << std::endl;
     // Construct all Device Matrices
-    device.constructAll( system.s_N_x, system.s_N_y, system.use_twin_mode, not system.fixed_time_step /* Use RK45 */ );
+    device.constructAll( system.s_N_x, system.s_N_y, system.use_twin_mode, not system.fixed_time_step /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // Initialize the Oscillation Parameters
-    const auto n = system.pulse.t0.size();
-    dev_pulse_oscillation.t0.construct(n, "dev.pulse_t0").setTo( system.pulse.t0.data() );
-    dev_pulse_oscillation.freq.construct(n, "dev.pulse_freq").setTo( system.pulse.freq.data() );
-    dev_pulse_oscillation.sigma.construct(n, "dev.pulse_sigma").setTo( system.pulse.sigma.data() );
-    std::vector<unsigned int> time_pol;
-    for (int i = 0; i < n; i++) {
-        unsigned int pol;
-        if (system.pulse.pol[i] == PC3::Envelope::Polarization::Plus) {
-            pol = 1; // Plus
-        } else if (system.pulse.pol[i] == PC3::Envelope::Polarization::Minus) {
-            pol = 2; // Minus
-        } else {
-            pol = 3; // Both
-        }
-        time_pol.push_back( pol );
-    }
-    dev_pulse_oscillation.pol.construct(n, "dev.pulse_pol").setTo( time_pol.data() );
-    dev_pulse_oscillation.n = n;
+    dev_pulse_oscillation.construct( system.pulse );
+    dev_pump_oscillation.construct( system.pump );
+    dev_potential_oscillation.construct( system.potential );
 
     // Copy Buffer matrices to device equivalents
     device.wavefunction_plus.fromHost( host.initial_state_plus );
     device.reservoir_plus.fromHost( host.reservoir_plus );
-    device.pump_plus.fromHost( host.pump_plus );
-    device.pulse_plus.fromHost( host.pulse_plus );
-    device.potential_plus.fromHost( host.potential_plus );
+    for (int i = 0; i < system.pump.groupSize(); i++) {
+        device.pump_plus.fromHost( host.pump_plus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+    }
+    for (int i = 0; i < system.pulse.groupSize(); i++) {
+        device.pulse_plus.fromHost( host.pulse_plus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+    }
+    for (int i = 0; i < system.potential.groupSize(); i++) {
+        device.potential_plus.fromHost( host.potential_plus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+    }
     // Set FFT Masks
     device.fft_mask_plus.fromHost( host.fft_mask_plus );
     // Check once of the reservoir is zero.
     // If yes, then the reservoir may not be avaluated.
     #pragma omp parallel for
     for (int i = 0; i < system.s_N_x * system.s_N_y; i++) {
-        if (CUDA::abs2(host.reservoir_plus[i]) != 0.0 or CUDA::abs2(host.pump_plus[i]) != 0.0) {
+        if (CUDA::abs2(host.reservoir_plus[i]) != 0.0) {
             system.evaluate_reservoir_kernel = true;
         }
-        if (CUDA::abs2(host.pulse_plus[i]) != 0.0) {
-            system.evaluate_pulse_kernel = true;
+        for (int g = 0; g < system.pump.groupSize(); g++) {
+            if (CUDA::abs2(host.pump_plus[g][i]) != 0.0) {
+                system.evaluate_reservoir_kernel = true;
+            }
+        }
+        for (int g = 0; g < system.pulse.groupSize(); g++) {
+            if (CUDA::abs2(host.pulse_plus[g][i]) != 0.0) {
+                system.evaluate_pulse_kernel = true;
+            }
         }
     }
 
@@ -166,19 +188,32 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
 
     device.wavefunction_minus.fromHost( host.initial_state_minus );
     device.reservoir_minus.fromHost( host.reservoir_minus );
-    device.pump_minus.fromHost( host.pump_minus );
-    device.pulse_minus.fromHost( host.pulse_minus );
-    device.potential_minus.fromHost( host.potential_minus );
+    for (int i = 0; i < system.pump.groupSize(); i++) {
+        device.pump_minus.fromHost( host.pump_minus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+    }
+    for (int i = 0; i < system.pulse.groupSize(); i++) {
+        device.pulse_minus.fromHost( host.pulse_minus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+    }
+    for (int i = 0; i < system.potential.groupSize(); i++) {
+        device.potential_minus.fromHost( host.potential_minus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+    }
     device.fft_mask_minus.fromHost( host.fft_mask_minus );
     // Check once of the reservoir is zero.
     // If yes, then the reservoir may not be avaluated.
     #pragma omp parallel for
     for (int i = 0; i < system.s_N_x * system.s_N_y; i++) {
-        if (CUDA::abs2(host.reservoir_minus[i]) != 0.0 or CUDA::abs2(host.pump_minus[i]) != 0.0){
+        if (CUDA::abs2(host.reservoir_minus[i]) != 0.0) {
             system.evaluate_reservoir_kernel = true;
         }
-        if (CUDA::abs2(host.pulse_minus[i]) != 0.0) {
-            system.evaluate_pulse_kernel = true;
+        for (int g = 0; g < system.pump.groupSize(); g++) {
+            if (CUDA::abs2(host.pump_minus[g][i]) != 0.0) {
+                system.evaluate_reservoir_kernel = true;
+            }
+        }
+        for (int g = 0; g < system.pulse.groupSize(); g++) {
+            if (CUDA::abs2(host.pulse_minus[g][i]) != 0.0) {
+                system.evaluate_pulse_kernel = true;
+            }
         }
     }
 }

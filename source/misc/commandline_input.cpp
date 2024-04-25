@@ -17,7 +17,7 @@ real_number getNextInput( char** argv, const int argc, const std::string name, i
     if (index >= argc) 
         return 0.0;
     if ( global_log_inputs ) {
-        std::cout << EscapeSequence::GREY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
+        std::cout << EscapeSequence::GRAY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
     }
     real_number result = 0.0;
     try {
@@ -34,7 +34,7 @@ std::string getNextStringInput( char** argv, const int argc, const std::string n
     if (index >= argc) 
         return "";
     if ( global_log_inputs )
-        std::cout << EscapeSequence::GREY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
+        std::cout << EscapeSequence::GRAY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
     try {
         return std::string( argv[ index++ ] );
     } catch (const std::invalid_argument& e) {

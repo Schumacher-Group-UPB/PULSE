@@ -78,14 +78,7 @@ class System {
         return ( ( std::find( input_keys.begin(), input_keys.end(), args ) != input_keys.end() ) || ... );
     }
 
-    // Different System structures implemented
-    //enum class Structure : unsigned int {
-    //    Scalar = 1,
-    //    TETM = 1 << 1,
-    //    // TODO:
-    //    // Resonant = 1 << 2, // via +
-    //} structure;
-    // For now, save structure as bool use_twin_mode
+    // Save structure as bool use_twin_mode
     bool use_twin_mode;
 
     /**
@@ -97,8 +90,8 @@ class System {
      * be applied to the plus polarization. If set to -1, the mask will only be
      * applied to the minus polarization.
      */
-    void calculateEnvelope( real_number* buffer, const PC3::Envelope& mask, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
-    void calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
+    void calculateEnvelope( real_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
+    void calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
 
     bool evaluatePulse();
     bool evaluateReservoir();
