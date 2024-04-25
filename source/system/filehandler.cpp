@@ -73,7 +73,7 @@ std::ofstream& PC3::FileHandler::getFile( const std::string& name ) {
     return files[name];
 }
 
-void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_number* buffer ) {
+bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_number* buffer ) {
     std::ifstream filein;
     filein.open( filepath, std::ios::in );
     std::istringstream inputstring;
@@ -83,7 +83,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
     if ( not filein.is_open() ) {
 #pragma omp critical
         std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;
-        return;
+        return false;
     }
     // Header
     getline( filein, line );
@@ -95,7 +95,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
     size_t N = n_x * n_y;
     while ( getline( filein, line ) ) {
         inputstring = std::istringstream( line );
-        if ( line.size() < 2 )
+        if ( line.size() < 1 )
             continue;
         if (i < N)
             while ( inputstring >> re ) {
@@ -110,9 +110,10 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
     }
     filein.close();
     std::cout << "Loaded " << i << " elements from '" << filepath << "'" << std::endl;
+    return true;
 }
 
-void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_number* buffer ) {
+bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_number* buffer ) {
     std::ifstream filein;
     filein.open( filepath, std::ios::in );
     std::istringstream inputstring;
@@ -122,7 +123,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
     if ( not filein.is_open() ) {
 #pragma omp critical
         std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;
-        return;
+        return false;
     }
 
     // Header
@@ -133,9 +134,8 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
     real_number header;
     inputstring >> line >> line >> n_x >> n_y;
     size_t N = n_x * n_y;
-    std::cout << "Loading " << N << " elements from '" << filepath << "'" << std::endl;
     while ( getline( filein, line ) ) {
-        if ( line.size() < 2 )
+        if ( line.size() < 1 )
             continue;
         while ( inputstring >> val ) {
             buffer[i] = real_number(val);
@@ -144,6 +144,7 @@ void PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
     }
     filein.close();
     std::cout << "Loaded " << i << " elements from " << filepath << std::endl;
+    return true;
 }
 
 void PC3::FileHandler::outputMatrixToFile( const complex_number* buffer,unsigned  int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name ) {

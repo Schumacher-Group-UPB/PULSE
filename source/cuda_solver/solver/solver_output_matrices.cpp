@@ -37,3 +37,57 @@ void PC3::Solver::outputMatrices( const unsigned int start_x, const unsigned int
         }
     } );
 }
+
+void PC3::Solver::outputInitialMatrices() {
+    std::cout << "--------------------------- Outputting Initial Matrices ---------------------------" << std::endl;
+    auto header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t);
+    // Output Matrices to file
+    if ( system.doOutput( "all", "mat", "initial_plus", "initial" ) )
+        system.filehandler.outputMatrixToFile( host.initial_state_plus.get(), system.s_N_x, system.s_N_y, header_information, "initial_condition_plus" );
+    if ( system.doOutput( "all", "mat", "pump_plus", "pump" ) )
+        for (int i = 0; i < system.pump.groupSize(); i++) {
+            auto osc_header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);
+            std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
+            system.filehandler.outputMatrixToFile( host.pump_plus[i].get(), system.s_N_x, system.s_N_y, osc_header_information, "pump_plus" + suffix );
+        }
+    if ( system.doOutput( "all", "mat", "pulse_plus", "pulse" ) )
+        for (int i = 0; i < system.pulse.groupSize(); i++) {
+            auto osc_header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i]);
+            std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
+            system.filehandler.outputMatrixToFile( host.pulse_plus[i].get(), system.s_N_x, system.s_N_y, osc_header_information, "pulse_plus" + suffix );
+        }
+    if ( system.doOutput( "all", "mat", "potential_plus", "potential" ) )
+        for (int i = 0; i < system.potential.groupSize(); i++) {
+            auto osc_header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t, system.potential.t0[i], system.potential.freq[i], system.potential.sigma[i]);
+            std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
+            system.filehandler.outputMatrixToFile( host.potential_plus[i].get(), system.s_N_x, system.s_N_y, osc_header_information, "potential_plus" + suffix );
+        }
+    if ( system.doOutput( "all", "mat", "fftplus", "fft" ) )
+        system.filehandler.outputMatrixToFile( host.fft_mask_plus.get(), system.s_N_x, system.s_N_y, header_information, "fft_mask_plus" );
+    
+    if (not system.use_twin_mode )
+        return;
+
+    if ( system.doOutput( "all", "mat", "initial_minus", "initial" ) )
+        system.filehandler.outputMatrixToFile( host.initial_state_minus.get(), system.s_N_x, system.s_N_y, header_information, "initial_condition_minus" );
+    if ( system.doOutput( "all", "mat", "pump_minus", "pump" ) )
+        for (int i = 0; i < system.pump.groupSize(); i++) {
+            auto osc_header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);
+            std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
+            system.filehandler.outputMatrixToFile( host.pump_minus[i].get(), system.s_N_x, system.s_N_y, osc_header_information, "pump_minus" + suffix );
+        }
+    if ( system.doOutput( "all", "mat", "pulse_minus", "pulse" ) )
+        for (int i = 0; i < system.pulse.groupSize(); i++) {
+            auto osc_header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i]);
+            std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
+            system.filehandler.outputMatrixToFile( host.pulse_minus[i].get(), system.s_N_x, system.s_N_y, osc_header_information, "pulse_minus" + suffix );
+        }
+    if ( system.doOutput( "all", "mat", "potential_minus", "potential" ) )
+        for (int i = 0; i < system.potential.groupSize(); i++) {
+            auto osc_header_information = PC3::FileHandler::Header(system.s_L_x, system.s_L_y, system.dx, system.dy, system.t, system.potential.t0[i], system.potential.freq[i], system.potential.sigma[i]);
+            std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
+            system.filehandler.outputMatrixToFile( host.potential_minus[i].get(), system.s_N_x, system.s_N_y, osc_header_information, "potential_minus" + suffix );
+        }
+    if ( system.doOutput( "all", "mat", "fftminus", "fft" ) )
+        system.filehandler.outputMatrixToFile( host.fft_mask_minus.get(), system.s_N_x, system.s_N_y, header_information, "fft_mask_minus" );
+}

@@ -38,6 +38,11 @@ void PC3::Solver::loadMatrices() {
         "initial_condition_plus", "initial_condition_minus" // Initial Conditions
     };
 
+    std::cout << EscapeSequence::YELLOW << "Warning: Matrices for the pump, pulse or potential that contain oscillation parameters are not loaded correctly.\n"
+              << "Due to the loading order, oscillations have to be set before the matrices are loaded. In the future, loading of matrices will change to\n"
+              << "support direct paths in the --pump, --pulse, --initialState, --fftMask and --potential parameters, which will then look something like\n"
+              << "'--pump path/to/pump_file.txt polarization osc t0 freq sigma'. But this is not implemented yet. Just so you know." << EscapeSequence::RESET << "\n";
+
     // Load all matrices from fileinputkeys that overlap with system.input_keys
 //#pragma omp parallel for
     for ( auto i = 0; i < fileinputkeys.size(); i++ ) {
@@ -50,8 +55,9 @@ void PC3::Solver::loadMatrices() {
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.reservoir_plus.get() );
         else if ( fileinputkeys[i] == "fft_mask_plus" and system.doInput( "fft_mask", "fft", "fft_plus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.fft_mask_plus.get() );
-        else if ( fileinputkeys[i] == "pump_plus" and system.doInput( "pump", "pump_plus", "plus", "mat", "all" ) )
+        else if ( fileinputkeys[i] == "pump_plus" and system.doInput( "pump", "pump_plus", "plus", "mat", "all" ) ) {
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pump_plus.front().get() );
+        }
         else if ( fileinputkeys[i] == "pulse_plus" and system.doInput( "pulse", "pulse_plus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", host.pulse_plus.front().get() );
         else if ( fileinputkeys[i] == "potential_plus" and system.doInput( "potential", "potential_plus", "plus", "mat", "all" ) )
