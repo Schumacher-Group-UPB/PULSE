@@ -22,17 +22,17 @@ class FileHandler {
 
     struct Header {
         // Spatial Parameters
-        real_number s_L_x, s_L_y;
+        real_number L_x, L_y;
         real_number dx, dy;
         // Time Parameter
         real_number t;
         // Oscillator Parameters
         real_number t0,freq,sigma;
 
-        Header() : s_L_x( 0 ), s_L_y( 0 ), dx( 0 ), dy( 0 ), t( 0 ), t0(0), freq(0), sigma(0) {}
-        Header( real_number s_L_x, real_number s_L_y, real_number dx, real_number dy, real_number t ) : Header() {
-            this->s_L_x = s_L_x;
-            this->s_L_y = s_L_y;
+        Header() : L_x( 0 ), L_y( 0 ), dx( 0 ), dy( 0 ), t( 0 ), t0(0), freq(0), sigma(0) {}
+        Header( real_number L_x, real_number L_y, real_number dx, real_number dy, real_number t ) : Header() {
+            this->L_x = L_x;
+            this->L_y = L_y;
             this->dx = dx;
             this->dy = dy;
             this->t = t;
@@ -40,9 +40,9 @@ class FileHandler {
             this->freq = 0;
             this->sigma = 0;
         }
-        Header( real_number s_L_x, real_number s_L_y, real_number dx, real_number dy, real_number t, real_number t0, real_number freq, real_number sigma ) : Header() {
-            this->s_L_x = s_L_x;
-            this->s_L_y = s_L_y;
+        Header( real_number L_x, real_number L_y, real_number dx, real_number dy, real_number t, real_number t0, real_number freq, real_number sigma ) : Header() {
+            this->L_x = L_x;
+            this->L_y = L_y;
             this->dx = dx;
             this->dy = dy;
             this->t = t;
@@ -52,7 +52,7 @@ class FileHandler {
         }
 
         friend std::ostream& operator<<( std::ostream& os, const Header& header ) {
-            os << "LX " << header.s_L_x << " LY " << header.s_L_y << " DX " << header.dx << " DY " << header.dy << " TIME " << header.t;
+            os << "LX " << header.L_x << " LY " << header.L_y << " DX " << header.dx << " DY " << header.dy << " TIME " << header.t;
             if (header.t0 != 0 and header.freq != 0 and header.sigma != 0)
                 os << " OSC T0 " << header.t0 << " FREQ " << header.freq << " SIGMA " << header.sigma;
             return os;

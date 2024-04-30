@@ -9,20 +9,20 @@
  * Temporarily copying the results is probably fine.
  */
 void PC3::System::calculateEnvelope( real_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask ) {
-    std::unique_ptr<complex_number[]> tmp_buffer = std::make_unique<complex_number[]>( s_N_x * s_N_y );
+    std::unique_ptr<complex_number[]> tmp_buffer = std::make_unique<complex_number[]>( p.N_x * p.N_y );
     calculateEnvelope( tmp_buffer.get(), mask, group, polarization, default_value_if_no_mask );
 // Transfer tmp_buffer to buffer as complex numbers
 #pragma omp parallel for
-    for ( int i = 0; i < s_N_x * s_N_y; i++ ) {
+    for ( int i = 0; i < p.N_x * p.N_y; i++ ) {
         buffer[i] = CUDA::real( tmp_buffer[i] );
     }
 }
 
 void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask ) {
 #pragma omp parallel for
-    for ( int row = 0; row < s_N_y; row++ ) {
-        for ( int col = 0; col < s_N_x; col++ ) {
-            int i = row * s_N_x + col;
+    for ( int row = 0; row < p.N_y; row++ ) {
+        for ( int col = 0; col < p.N_x; col++ ) {
+            int i = row * p.N_x + col;
             buffer[i] = complex_number(0.0,0.0);
             bool has_been_set = false;
             for ( int c = 0; c < mask.amp.size(); c++ ) {
@@ -30,12 +30,12 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                 if ( group >= 0 and mask.group_identifier[c] != group )
                     continue;
                 // Calculate X,Y in the grid space
-                auto x = -s_L_x + dx * col;
-                auto y = -s_L_y + dy * row;
+                auto x = -p.L_x + p.dx * col;
+                auto y = -p.L_y + p.dy * row;
                 // If type contains "local", use local coordinates instead
                 if ( mask.type[c] & PC3::Envelope::Type::Local ) {
-                    x = -1.0 + 2.0 * col / (s_N_x - 1);
-                    y = -1.0 + 2.0 * row / (s_N_y - 1);
+                    x = -1.0 + 2.0 * col / (p.N_x - 1);
+                    y = -1.0 + 2.0 * row / (p.N_y - 1);
                 }
                 // Check if the polarization matches or if the input polarization is both. If not, the envelope is skipped.
                 if ( mask.pol[c] != PC3::Envelope::Polarization::Both and mask.pol[c] != polarization and polarization != PC3::Envelope::Polarization::Both )
@@ -61,7 +61,7 @@ void PC3::System::calculateEnvelope( complex_number* buffer, const PC3::Envelope
                     amplitude = mask.amp[c] * buffer[i];
                 if ( mask.behavior[c] & PC3::Envelope::Behavior::Complex )
                     amplitude = complex_number( 0.0, CUDA::real( amplitude ) );
-                //complex_number charge = CUDA::pow( complex_number( ( x - mask.x[c] ) / s_L_x, 1.0 * CUDA::sign( mask.m[c] ) * ( y - mask.y[c] ) / s_L_y ), CUDA::abs( mask.m[c] ) );
+                //complex_number charge = CUDA::pow( complex_number( ( x - mask.x[c] ) / p.L_x, 1.0 * CUDA::sign( mask.m[c] ) * ( y - mask.y[c] ) / p.L_y ), CUDA::abs( mask.m[c] ) );
                 // Charge is e^(i*m*phi) where phi is the angle or r = [x,y]
                 complex_number charge = CUDA::exp( complex_number( 0.0, mask.m[c] * atan2( x - mask.x[c], y - mask.y[c] ) ) );
                 complex_number contribution = amplitude * pre_fractor * exp_function * charge;

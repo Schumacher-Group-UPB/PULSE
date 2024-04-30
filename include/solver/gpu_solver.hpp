@@ -13,11 +13,11 @@
 namespace PC3 {
 
 #define INSTANCIATE_K( index, twin )                                                                           \
-    device.k##index##_wavefunction_plus.construct( system.s_N_x, system.s_N_y, "device.k" #index "_wavefunction_plus" );       \
-    device.k##index##_reservoir_plus.construct( system.s_N_x, system.s_N_y, "device.k" #index "_reservoir_plus" );             \
+    device.k##index##_wavefunction_plus.construct( system.N_x, system.N_y, "device.k" #index "_wavefunction_plus" );       \
+    device.k##index##_reservoir_plus.construct( system.N_x, system.N_y, "device.k" #index "_reservoir_plus" );             \
     if ( twin ) {                                                                                              \
-        device.k##index##_wavefunction_minus.construct( system.s_N_x, system.s_N_y, "device.k" #index "_wavefunction_minus" ); \
-        device.k##index##_reservoir_minus.construct( system.s_N_x, system.s_N_y, "device.k" #index "_reservoir_minus" );       \
+        device.k##index##_wavefunction_minus.construct( system.N_x, system.N_y, "device.k" #index "_wavefunction_minus" ); \
+        device.k##index##_reservoir_minus.construct( system.N_x, system.N_y, "device.k" #index "_reservoir_minus" );       \
     }
 
 /**
@@ -70,7 +70,7 @@ class Solver {
         std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.use_twin_mode ) << std::endl;
 
         // Finally, initialize the FFT Plan
-        CUDA_FFT_CREATE( &plan, system.s_N_x, system.s_N_y );
+        CUDA_FFT_CREATE( &plan, system.p.N_x, system.p.N_y );
 
         // Initialize all host matrices
         initializeHostMatricesFromSystem();

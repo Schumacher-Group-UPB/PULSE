@@ -6,7 +6,7 @@ void PC3::Solver::finalize() {
     // Sync all device arrays
     syncDeviceArrays();
     // Output Matrices
-    outputMatrices( 0 /*start*/, system.s_N_x /*end*/, 0 /*start*/, system.s_N_y /*end*/, 1.0 /*increment*/);
+    outputMatrices( 0 /*start*/, system.p.N_x /*end*/, 0 /*start*/, system.p.N_y /*end*/, 1.0 /*increment*/);
     // Cache to files
     std::cout << "Caching to Files... " << std::endl;
     cacheToFiles();

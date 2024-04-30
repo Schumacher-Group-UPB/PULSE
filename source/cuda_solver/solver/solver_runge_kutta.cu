@@ -104,7 +104,7 @@ if (evaluate_stochastic) \
 
 void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_size ) {
     // This variable contains all the system parameters the kernel could need
-    auto p = system.snapshotParameters();
+    auto p = system.kernel_parameters;
     
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = device.pointers();
@@ -120,37 +120,37 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     auto potential_pointers = dev_potential_oscillation.pointers();
 
     // The delta time is either real or imaginary, depending on the system configuration
-    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -system.dt) : complex_number(system.dt, 0.0);
+    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -p.dt) : complex_number(p.dt, 0.0);
 
     // If required, calculate new set of random numbers.
     if (evaluate_stochastic)
     CALL_KERNEL(
         PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, system.s_N_x*system.s_N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt)
+        device_pointers.random_state, device_pointers.random_number, p.N_x*p.N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(p.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(p.dt)
     );
 
-    CALCULATE_K( 1, system.t, wavefunction, reservoir );
+    CALCULATE_K( 1, p.t, wavefunction, reservoir );
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k2, "Sum for K2", grid_size, block_size,
         delta_time, device_pointers, p, system.use_twin_mode
     );
 
-    CALCULATE_K( 2, system.t + 0.5 * system.dt, buffer_wavefunction, buffer_reservoir );
+    CALCULATE_K( 2, p.t + 0.5 * p.dt, buffer_wavefunction, buffer_reservoir );
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k3, "Sum for K3", grid_size, block_size,
         delta_time, device_pointers, p, system.use_twin_mode
     );
 
-    CALCULATE_K( 3, system.t + 0.5 * system.dt, buffer_wavefunction, buffer_reservoir);
+    CALCULATE_K( 3, p.t + 0.5 * p.dt, buffer_wavefunction, buffer_reservoir);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k4, "Sum for K4", grid_size, block_size,
         delta_time, device_pointers, p, system.use_twin_mode
     );
 
-    CALCULATE_K( 4, system.t + system.dt, buffer_wavefunction, buffer_reservoir);
+    CALCULATE_K( 4, p.t + p.dt, buffer_wavefunction, buffer_reservoir);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_final, "Final Sum", grid_size, block_size,
@@ -228,27 +228,27 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     bool evaluate_stochastic = system.evaluateStochastic();
 
     // The delta time is either real or imaginary, depending on the system configuration
-    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -system.dt) : complex_number(system.dt, 0.0);
+    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -system.p.dt) : complex_number(system.p.dt, 0.0);
 
     // If required, calculate new set of random numbers.
     if (evaluate_stochastic)
     CALL_KERNEL(
         PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, system.s_N_x*system.s_N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(system.dt)
+        device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt)
     );
 
     do {
         // We snapshot here to make sure that the dt is updated
-        auto p = system.snapshotParameters();
+        auto p = system.kernel_parameters;
 
-        CALCULATE_K( 1, system.t, wavefunction, reservoir );
+        CALCULATE_K( 1, p.t, wavefunction, reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k2, "Sum for K2", grid_size, block_size, 
             delta_time, device_pointers, p, system.use_twin_mode
         );
 
-        CALCULATE_K( 2, system.t + RKCoefficients::a2 * system.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 2, p.t + RKCoefficients::a2 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k3, "Sum for K3", grid_size, block_size, 
@@ -256,28 +256,28 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         );
 
 
-        CALCULATE_K( 3, system.t + RKCoefficients::a3 * system.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 3, p.t + RKCoefficients::a3 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k4, "Sum for K4", grid_size, block_size, 
             delta_time, device_pointers, p, system.use_twin_mode
         );
 
-        CALCULATE_K( 4, system.t + RKCoefficients::a4 * system.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 4, p.t + RKCoefficients::a4 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k5, "Sum for K5", grid_size, block_size, 
             delta_time, device_pointers, p, system.use_twin_mode
         );
 
-        CALCULATE_K( 5, system.t + RKCoefficients::a5 * system.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 5, p.t + RKCoefficients::a5 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k6, "Sum for K6", grid_size, block_size, 
             delta_time, device_pointers, p, system.use_twin_mode
         );
 
-        CALCULATE_K( 6, system.t + RKCoefficients::a6 * system.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 6, p.t + RKCoefficients::a6 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         // Final Result is in the buffer_ arrays
         CALL_KERNEL(
@@ -285,7 +285,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             delta_time, device_pointers, p, system.use_twin_mode
         );
 
-        CALCULATE_K( 7, system.t + RKCoefficients::a7 * system.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 7, p.t + RKCoefficients::a7 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_final_error, "Final Sum Error", grid_size, block_size, 
@@ -293,15 +293,15 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         );
 
         #ifndef USECPU
-        real_number final_error = thrust::reduce( THRUST_DEVICE, device.rk_error.get(), device.rk_error.get() + system.s_N_x * system.s_N_y, 0.0, thrust::plus<real_number>() );
-        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N_x * system.s_N_y, square_reduction(), 0.0, thrust::plus<real_number>() );
+        real_number final_error = thrust::reduce( THRUST_DEVICE, device.rk_error.get(), device.rk_error.get() + p.N_x * p.N_y, 0.0, thrust::plus<real_number>() );
+        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, device.wavefunction_plus.get(), device.wavefunction_plus.get() + p.N_x * p.N_y, square_reduction(), 0.0, thrust::plus<real_number>() );
         #else
-        real_number final_error = std::reduce( device.rk_error.get(), device.rk_error.get() + system.s_N_x * system.s_N_y, 0.0, std::plus<real_number>() );
-        real_number sum_abs2 = std::transform_reduce( device.wavefunction_plus.get(), device.wavefunction_plus.get() + system.s_N_x * system.s_N_y, 0.0, std::plus<real_number>(), square_reduction() );
+        real_number final_error = std::reduce( device.rk_error.get(), device.rk_error.get() + p.N_x * p.N_y, 0.0, std::plus<real_number>() );
+        real_number sum_abs2 = std::transform_reduce( device.wavefunction_plus.get(), device.wavefunction_plus.get() + p.N_x * p.N_y, 0.0, std::plus<real_number>(), square_reduction() );
         #endif
 
         // TODO: maybe go back to using max since thats faster
-        //auto plus_max = std::get<1>( minmax( device.wavefunction_plus.get(), system.s_N_x * system.s_N_y, true /*Device Pointer*/ ) );
+        //auto plus_max = std::get<1>( minmax( device.wavefunction_plus.get(), p.N_x * p.N_y, true /*Device Pointer*/ ) );
         final_error = final_error / sum_abs2;
 
         // Calculate dh
@@ -314,17 +314,17 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             dh = 0.5;
         
         //  Set new timestep
-        // system.dt = min(system.dt * dh, system.dt_max);
-        //if ( dh < 1.0 )
-        //    system.dt = CUDA::max( system.dt - system.dt_min * CUDA::floor( 1.0 / dh ), system.dt_min );
-        //    //system.dt -= system.dt_min;
-        //else
-        //    system.dt = CUDA::min( system.dt + system.dt_min * CUDA::floor( dh ), system.dt_max );
-        //    //system.dt += system.dt_min;
-//
-        //// Make sure to also update dt from p
-        //p.dt = system.dt;
-final_error = 0;
+        system.p.dt = min(p.dt * dh, system.dt_max);
+        if ( dh < 1.0 )
+           system.p.dt = CUDA::max( p.dt - system.dt_min * CUDA::floor( 1.0 / dh ), system.dt_min );
+           //p.dt -= system.dt_min;
+        else
+           system.p.dt = CUDA::min( p.dt + system.dt_min * CUDA::floor( dh ), system.dt_max );
+           //p.dt += system.dt_min;
+
+        // Make sure to also update dt from p
+        p.dt = p.dt;
+
         // Accept step if error is below tolerance
         if ( final_error < system.tolerance ) {
             accept = true;
@@ -360,13 +360,13 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
 
     // For now, we shift, transform, shift the results. TODO: Move this into one function without shifting
     // Shift FFT to center k = 0
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.s_N_x, system.s_N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.p.N_x, system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift Plus" );
 
     // Do the FFT and the shifting here already for visualization only
     if ( system.use_twin_mode ) {
         CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device.wavefunction_minus.get(), (fft_complex_number*)device.fft_minus.get(), CUFFT_FORWARD ), "FFT Exec" );
-        fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N_x, system.s_N_y );
+        fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.p.N_x, system.p.N_y );
         CHECK_CUDA_ERROR( {}, "FFT Shift Minus" );
     }
     
@@ -374,29 +374,29 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
         return;
     
     // Apply the FFT Mask Filter
-    kernel_mask_fft<<<grid_size, block_size>>>( device.fft_plus.get(), device.fft_mask_plus.get(), system.s_N_x*system.s_N_y );
+    kernel_mask_fft<<<grid_size, block_size>>>( device.fft_plus.get(), device.fft_mask_plus.get(), system.p.N_x*system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Filter" )
     
     // Undo the shift
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.s_N_x, system.s_N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.p.N_x, system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" )
 
     // Transform back.
     CHECK_CUDA_ERROR( FFTSOLVER( plan, device.fft_plus.get(), device.wavefunction_plus.get(), CUFFT_INVERSE ), "iFFT Exec" );
     
     // Shift FFT Once again for visualization
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.s_N_x, system.s_N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.p.N_x, system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     
     // Do the same for the minus component
     if (not system.use_twin_mode)
         return;
-    kernel_mask_fft<<<grid_size, block_size>>>( device.fft_minus.get(), device.fft_mask_minus.get(), system.s_N_x*system.s_N_y );
+    kernel_mask_fft<<<grid_size, block_size>>>( device.fft_minus.get(), device.fft_mask_minus.get(), system.p.N_x*system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Filter" )
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N_x,system.s_N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.p.N_x,system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" )
     CHECK_CUDA_ERROR( FFTSOLVER( plan, device.fft_minus.get(), device.wavefunction_minus.get(), CUFFT_INVERSE ), "iFFT Exec" );
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.s_N_x,system.s_N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.p.N_x,system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     #endif
 }
@@ -408,25 +408,25 @@ bool first_time = true;
  * Note, that all device arrays and variables have to be initialized at this point
  * @param t Current time, will be updated to t + dt
  * @param dt Time step, will be updated to the next time step
- * @param s_N_x Number of grid points in one dimension
- * @param s_N_y Number of grid points in the other dimension
+ * @param N_x Number of grid points in one dimension
+ * @param N_y Number of grid points in the other dimension
  */
 bool PC3::Solver::iterateRungeKutta( ) {
 
 
     // First, check if the maximum time has been reached
-    if ( system.t >= system.t_max )
+    if ( system.p.t >= system.t_max )
         return false;
 
     dim3 block_size( system.block_size, 1 );
-    dim3 grid_size( ( system.s_N_x*system.s_N_y + block_size.x ) / block_size.x, 1 );
+    dim3 grid_size( ( system.p.N_x*system.p.N_y + block_size.x ) / block_size.x, 1 );
     
     if (first_time and system.evaluateStochastic()) {
         first_time = false;
         auto device_pointers = device.pointers();
         CALL_KERNEL(
                 PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size,
-                system.random_seed, device_pointers.random_state, system.s_N_x*system.s_N_y
+                system.random_seed, device_pointers.random_state, system.p.N_x*system.p.N_y
             );
         std::cout << "Initialized Random Number Generator" << std::endl;
     }
@@ -440,17 +440,17 @@ bool PC3::Solver::iterateRungeKutta( ) {
     //CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
     
     // Increase t.
-    system.t = system.t + system.dt;
+    system.p.t = system.p.t + system.p.dt;
 
     // For statistical purposes, increase the iteration counter
     system.iteration++;
 
     // FFT Guard 
-    if ( system.t - cached_t < system.fft_every )
+    if ( system.p.t - cached_t < system.fft_every )
         return true;
 
     // Calculate the FFT
-    cached_t = system.t; 
+    cached_t = system.p.t; 
     applyFFTFilter( block_size, grid_size, system.fft_mask.size() > 0 );
 
     return true;

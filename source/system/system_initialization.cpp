@@ -20,30 +20,26 @@ void PC3::System::init( int argc, char** argv ) {
         use_twin_mode = true;
     }
 
-    // Systemparameter
-    if ( ( index = findInArgv( "--meff", argc, argv ) ) != -1 )
-        m_eff = getNextInput( argv, argc, "m_eff", ++index );
-
     if ( ( index = findInArgv( "--gammaC", argc, argv ) ) != -1 )
-        gamma_c = getNextInput( argv, argc, "gamma_c", ++index );
+        p.gamma_c = getNextInput( argv, argc, "gamma_c", ++index );
     if ( ( index = findInArgv( "--gammaR", argc, argv ) ) != -1 )
-        gamma_r = getNextInput( argv, argc, "gamma_r", ++index );
+        p.gamma_r = getNextInput( argv, argc, "gamma_r", ++index );
     if ( ( index = findInArgv( "--gc", argc, argv ) ) != -1 )
-        g_c = getNextInput( argv, argc, "g_c", ++index );
+        p.g_c = getNextInput( argv, argc, "g_c", ++index );
     if ( ( index = findInArgv( "--gr", argc, argv ) ) != -1 )
-        g_r = getNextInput( argv, argc, "g_r", ++index );
+        p.g_r = getNextInput( argv, argc, "g_r", ++index );
     if ( ( index = findInArgv( "--R", argc, argv ) ) != -1 ) {
-        R = getNextInput( argv, argc, "R", ++index );
+        p.R = getNextInput( argv, argc, "R", ++index );
     }
     if ( ( index = findInArgv( "--L", argc, argv ) ) != -1 ) {
-        s_L_x = getNextInput( argv, argc, "L", ++index );
-        s_L_y = getNextInput( argv, argc, "L", index );
+        p.L_x = getNextInput( argv, argc, "L", ++index );
+        p.L_y = getNextInput( argv, argc, "L", index );
     }
     if ( ( index = findInArgv( "--g_pm", argc, argv ) ) != -1 ) {
-        g_pm = getNextInput( argv, argc, "gm", ++index );
+        p.g_pm = getNextInput( argv, argc, "gm", ++index );
     }
     if ( ( index = findInArgv( "--deltaLT", argc, argv ) ) != -1 ) {
-        delta_LT = getNextInput( argv, argc, "deltaLT", ++index );
+        p.delta_LT = getNextInput( argv, argc, "deltaLT", ++index );
     }
     omp_max_threads = 4;
     if ( ( index = findInArgv( "--threads", argc, argv ) ) != -1 )
@@ -71,16 +67,18 @@ void PC3::System::init( int argc, char** argv ) {
 
     // Numerik
     if ( ( index = findInArgv( "--N", argc, argv ) ) != -1 ) {
-        s_N_x = (int)getNextInput( argv, argc, "s_N_x", ++index );
-        s_N_y = (int)getNextInput( argv, argc, "s_N_y", index );
+        p.N_x = (int)getNextInput( argv, argc, "N_x", ++index );
+        p.N_y = (int)getNextInput( argv, argc, "N_y", index );
     }        
+    p.N2 = p.N_x * p.N_y;
+    p.dV = p.L_x * p.L_y / p.N2;
 
     if ( ( index = findInArgv( "--tmax", argc, argv ) ) != -1 )
         t_max = getNextInput( argv, argc, "s_t_max", ++index );
     if ( ( index = findInArgv( "--tstep", argc, argv ) ) != -1 ) {
-        dt = getNextInput( argv, argc, "t_step", ++index );
+        p.dt = getNextInput( argv, argc, "t_step", ++index );
         do_overwrite_dt = false;
-        std::cout << EscapeSequence::YELLOW << "Overwritten (initial) dt to " << dt << EscapeSequence::RESET << std::endl;
+        std::cout << EscapeSequence::YELLOW << "Overwritten (initial) dt to " << p.dt << EscapeSequence::RESET << std::endl;
     }
     if ( ( index = findInArgv( "--tol", argc, argv ) ) != -1 ) {
         tolerance = getNextInput( argv, argc, "tol", ++index );
@@ -127,8 +125,8 @@ void PC3::System::init( int argc, char** argv ) {
     history_matrix_output_increment = 1u;
     history_matrix_start_x = 0;
     history_matrix_start_y = 0;
-    history_matrix_end_x = s_N_x;
-    history_matrix_end_y = s_N_y;
+    history_matrix_end_x = p.N_x;
+    history_matrix_end_y = p.N_y;
     do_output_history_matrix = false;
     if ( ( index = findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
         history_matrix_start_x = (unsigned int)getNextInput( argv, argc, "history_matrix_start_x", ++index );
@@ -147,25 +145,43 @@ void PC3::System::init( int argc, char** argv ) {
         normalize_before_masking = true;
     }
 
-    periodic_boundary_x = false;
-    periodic_boundary_y = false;
+    p.periodic_boundary_x = false;
+    p.periodic_boundary_y = false;
     if ( ( index = findInArgv( "--boundary", argc, argv ) ) != -1 ) {
         auto boundary_x = getNextStringInput( argv, argc, "boundary_x", ++index );
         auto boundary_y = getNextStringInput( argv, argc, "boundary_y", index );
         if ( boundary_x == "periodic" ) {
-            periodic_boundary_x = true;
+            p.periodic_boundary_x = true;
         }
         if ( boundary_y == "periodic" ) {
-            periodic_boundary_y = true;
+            p.periodic_boundary_y = true;
         }
     }
 
     // Initialize t_0 as 0.
-    t = 0.0;
+    p.t = 0.0;
     if ( ( index = findInArgv( "--t0", argc, argv ) ) != -1 ) {
-        t = getNextInput( argv, argc, "t0", ++index );
-        std::cout << EscapeSequence::YELLOW << "Overwritten (initial) t to " << t << EscapeSequence::RESET << std::endl;
+        p.t = getNextInput( argv, argc, "t0", ++index );
+        std::cout << EscapeSequence::YELLOW << "Overwritten (initial) t to " << p.t << EscapeSequence::RESET << std::endl;
     }
+
+    // Even though one probably shouldn't do this, here we read the electron charge, hbar and electron mass from the commandline
+    if ( ( index = findInArgv( "--hbar", argc, argv ) ) != -1 ) {
+        p.h_bar = getNextInput( argv, argc, "hbar", ++index );
+    }
+    if ( ( index = findInArgv( "--e", argc, argv ) ) != -1 ) {
+        p.e_e = getNextInput( argv, argc, "e", ++index );
+    }
+    if ( ( index = findInArgv( "--me", argc, argv ) ) != -1 ) {
+        p.m_e = getNextInput( argv, argc, "me", ++index );
+    }
+    // We can also directly set h_bar_scaled, which will result in hbar, e and me to be ignored
+    if ( ( index = findInArgv( "--hbarscaled", argc, argv ) ) != -1 ) {
+        p.h_bar_s = getNextInput( argv, argc, "hbars", ++index );
+    }
+    // Same goes for the scaled mass.
+    if ( ( index = findInArgv( "--meff", argc, argv ) ) != -1 )
+        p.m_eff = getNextInput( argv, argc, "m_eff", ++index );
 
     // Pumps
     pump = PC3::Envelope::fromCommandlineArguments( argc, argv, "pump", true /* Can have oscillation component */ );

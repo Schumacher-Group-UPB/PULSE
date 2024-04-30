@@ -14,12 +14,12 @@ void PC3::System::validateInputs() {
     // Give warnings if any variables appear to be too large or too small
     bool valid = true;
 
-    if ( s_N_x <= 0 or s_N_y <= 0 ) {
-        std::cout << EscapeSequence::YELLOW << "N = " << s_N_x << ", " << s_N_y << " cannot be negative!" << EscapeSequence::RESET << std::endl;
+    if ( p.N_x <= 0 or p.N_y <= 0 ) {
+        std::cout << EscapeSequence::YELLOW << "N = " << p.N_x << ", " << p.N_y << " cannot be negative!" << EscapeSequence::RESET << std::endl;
         valid = false;
     }
 
-    if ( s_N_x % 2 != 0 or s_N_y % 2) {
+    if ( p.N_x % 2 != 0 or p.N_y % 2) {
         std::cout << EscapeSequence::YELLOW << "Input Dimensions have to be even!" << EscapeSequence::RESET << std::endl;
         valid = false;    
     }
@@ -28,12 +28,12 @@ void PC3::System::validateInputs() {
         std::cout << EscapeSequence::YELLOW << "t_max = " << t_max << " cannot be negative!" << EscapeSequence::RESET << std::endl;
         valid = false;
     }
-    if (dt <= 0) {
-        std::cout << EscapeSequence::YELLOW << "dt = " << dt << " cannot be negative or zero!" << EscapeSequence::RESET << std::endl;
+    if (p.dt <= 0) {
+        std::cout << EscapeSequence::YELLOW << "dt = " << p.dt << " cannot be negative or zero!" << EscapeSequence::RESET << std::endl;
         valid = false;
     }
-    if ( dt > t_max)  {
-        std::cout << EscapeSequence::YELLOW << "dt = " << dt << " cannot be larger than t_max = " << t_max << "!" << EscapeSequence::RESET << std::endl;
+    if ( p.dt > t_max)  {
+        std::cout << EscapeSequence::YELLOW << "dt = " << p.dt << " cannot be larger than t_max = " << t_max << "!" << EscapeSequence::RESET << std::endl;
         valid = false;
     }
     if (dt_max < 0) {
@@ -44,8 +44,8 @@ void PC3::System::validateInputs() {
         std::cout << EscapeSequence::YELLOW << "dt_min = " << dt_min << " cannot be negative!" << EscapeSequence::RESET << std::endl;
         valid = false;
     }
-    if (abs( dt > 1.1*magic_timestep )) {
-        std::cout << EscapeSequence::YELLOW << "dt = " << dt << " is very large! Is this intended?" << EscapeSequence::RESET << std::endl;
+    if (abs( p.dt > 1.1*magic_timestep )) {
+        std::cout << EscapeSequence::YELLOW << "dt = " << p.dt << " is very large! Is this intended?" << EscapeSequence::RESET << std::endl;
     }
 
     if (not valid) {

@@ -7,13 +7,13 @@
 
 void PC3::Solver::cacheValues() {
     // System Time
-    host.times.emplace_back( system.t );
+    host.times.emplace_back( system.p.t );
 
     // Min and Max
-    const auto [min_plus, max_plus] = CUDA::minmax( device.wavefunction_plus.get(), system.s_N_x * system.s_N_y, true /*Device Pointer*/ );
+    const auto [min_plus, max_plus] = CUDA::minmax( device.wavefunction_plus.get(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
     host.wavefunction_max_plus.emplace_back( max_plus );
     // Cut at Y = 0
-    auto cut_p = device.wavefunction_plus.slice( system.s_N_x * system.s_N_y / 2, system.s_N_x );
+    auto cut_p = device.wavefunction_plus.slice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
     host.wavefunction_plus_history.emplace_back( cut_p );
 
     // TE/TM Guard
@@ -21,9 +21,9 @@ void PC3::Solver::cacheValues() {
         return;
 
     // Same for _minus component if use_twin_mode is true
-    const auto [min_minus, max_minus] = CUDA::minmax( device.wavefunction_minus.get(), system.s_N_x * system.s_N_y, true /*Device Pointer*/ );
+    const auto [min_minus, max_minus] = CUDA::minmax( device.wavefunction_minus.get(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
     host.wavefunction_max_minus.emplace_back( max_minus );
-    auto cut_m = device.wavefunction_minus.slice( system.s_N_x * system.s_N_y / 2, system.s_N_x );
+    auto cut_m = device.wavefunction_minus.slice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
     host.wavefunction_minus_history.emplace_back( cut_m );
 }
 

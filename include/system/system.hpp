@@ -22,18 +22,41 @@ namespace PC3 {
  */
 class System {
    public:
-    // SI Rescaling Units
-    real_number m_e, h_bar, e_e;
-    real_number h_bar_s;
 
-    // System Variables
-    real_number m_eff, m_eff_scaled, gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
+    // System Parameters. These are also passed to the Kernels
+    struct Parameters {
+
+        // Size Variables
+        unsigned int N_x, N_y, N2;
+        // Time variables
+        real_number t, dt;
+        
+        // SI Rescaling Units
+        real_number m_e, h_bar, e_e, h_bar_s, m_eff, m_eff_scaled;
+        
+        // System Variables
+        real_number L_x, L_y, dx, dy, dV;
+        real_number gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
+        
+        // Complex Scaled Values
+        real_number one_over_h_bar_s;
+        complex_number minus_i_over_h_bar_s, i_h_bar_s;
+        complex_number i = {0.0,1.0};
+        complex_number half_i = {0.0,0.5};
+        complex_number minus_half_i = {0.0,-0.5};
+        complex_number minus_i = {0.0,-1.0};
+
+        // Boundary Conditions
+        bool periodic_boundary_x, periodic_boundary_y;
+
+    } kernel_parameters;
+    Parameters& p = kernel_parameters;
 
     // Numerics
-    unsigned int s_N_x, s_N_y, iteration;
+    unsigned int iteration;
 
     // RK Solver Variables
-    real_number s_L_x, s_L_y, dx, dy, t_max, dt, t, dt_max, dt_min, tolerance, fft_every, random_system_amplitude, magic_timestep;
+    real_number t_max, dt_max, dt_min, tolerance, fft_every, random_system_amplitude, magic_timestep;
 
     // Kernel Block Size
     unsigned int block_size, omp_max_threads;
@@ -46,8 +69,6 @@ class System {
     bool do_output_history_matrix;
     real_number output_every;
 
-    // Helper variable to scale dt
-    real_number dt_scaling_factor;
     bool do_overwrite_dt;
     bool imaginary_time;
 
@@ -103,35 +124,6 @@ class System {
 
     void printHelp();
     void printSummary( std::map<std::string, std::vector<double>> timeit_times, std::map<std::string, double> timeit_times_total );
-
-    // System Parameters to be passed to a Kernel
-    struct Parameters {
-        unsigned int N_x, N_y, N2;
-        real_number t, dt, dt_half, s_L_x, s_L_y, dx, dy, m_e, h_bar_s, m_eff, gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
-        real_number one_over_h_bar_s;
-        complex_number minus_i_over_h_bar_s, i_h_bar_s, half_i, i, minus_half_i, minus_i;
-        real_number m_eff_scaled;
-        bool periodic_boundary_x, periodic_boundary_y;
-        real_number dV;
-        Parameters( unsigned int N_x, unsigned int N_y, real_number t, real_number dt, real_number s_L_x, real_number s_L_y, real_number dx, real_number dy,
-                    real_number m_e, real_number h_bar_s, real_number m_eff, real_number m_eff_scaled, 
-                    real_number gamma_c, real_number gamma_r, real_number g_c, real_number g_r, real_number R, 
-                    real_number g_pm, real_number delta_LT, bool periodic_boundary_x, bool periodic_boundary_y) : 
-                    N_x( N_x ), N_y(N_y), N2( N_x * N_y ), t( t ), dt( dt ), dt_half( dt / real_number( 2.0 ) ), s_L_x( s_L_x ), s_L_y(s_L_y), dx( dx ), dy(dy), 
-                    m_e( m_e ), m_eff( m_eff ), m_eff_scaled(m_eff_scaled), 
-                    gamma_c( gamma_c ), gamma_r( gamma_r ), g_c( g_c ), g_r( g_r ), R( R ), 
-                    g_pm( g_pm ), delta_LT( delta_LT ), h_bar_s( h_bar_s ), one_over_h_bar_s( real_number( 1.0 ) / h_bar_s ), 
-                    minus_i_over_h_bar_s( complex_number( 0.0, real_number( -1.0 ) / h_bar_s ) ), 
-                    i_h_bar_s( complex_number( 0.0, h_bar_s ) ), half_i( complex_number( 0.0, 0.5 ) ), 
-                    i( complex_number( 0.0, 1.0 ) ), minus_half_i( complex_number( 0.0, real_number( -0.5 ) ) ), 
-                    minus_i( complex_number( 0.0, real_number( -1.0 ) ) ), periodic_boundary_x( periodic_boundary_x ), periodic_boundary_y( periodic_boundary_y ), dV( dx * dy ){
-        }
-    };
-
-    Parameters snapshotParameters() {
-        return Parameters( s_N_x, s_N_y, t, dt, s_L_x, s_L_y, dx, dy, m_e, h_bar_s, m_eff, m_eff_scaled, gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT, periodic_boundary_x, periodic_boundary_y );
-    }
-
 };
 
 } // namespace PC3

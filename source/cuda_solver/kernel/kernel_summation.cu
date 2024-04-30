@@ -1,6 +1,11 @@
 #include "kernel/kernel_summation.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
+/**
+ * The Summation Kernels take an additional dt argument although dt is already included in the System::Parameters struct.
+ * This is because we want to be able to set the dt to a complex value to enable imaginary time propagation of the system.
+*/
+
 CUDA_GLOBAL void PC3::Kernel::RK45::runge_sum_to_input_of_k2( int i, complex_number dt, Device::Pointers dev_ptrs, System::Parameters p, bool use_twin_mode ) {
     OVERWRITE_THREAD_INDEX(i);
 

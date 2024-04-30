@@ -11,7 +11,7 @@
 void PC3::Solver::initializeHostMatricesFromSystem( ) {
     std::cout << EscapeSequence::BOLD << "--------------------------- Initializing Host Matrices ----------------------------" << EscapeSequence::RESET << std::endl;
     // First, construct all required host matrices
-    host.constructAll( system.s_N_x, system.s_N_y, system.use_twin_mode, not system.fixed_time_step  /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
+    host.constructAll( system.p.N_x, system.p.N_y, system.use_twin_mode, not system.fixed_time_step  /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // ==================================================
     // =................ Initial States ................=
@@ -20,20 +20,20 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
 
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
     system.calculateEnvelope( host.initial_state_plus.get(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus);
-    std::ranges::for_each( host.initial_state_plus.get(), host.initial_state_plus.get() + system.s_N_x * system.s_N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_plus[i]; i++; } );
+    std::ranges::for_each( host.initial_state_plus.get(), host.initial_state_plus.get() + system.p.N_x * system.p.N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_plus[i]; i++; } );
     if ( system.use_twin_mode ) {
         system.calculateEnvelope( host.initial_state_minus.get(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus);
-        std::ranges::for_each( host.initial_state_minus.get(), host.initial_state_minus.get() + system.s_N_x * system.s_N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_minus[i]; i++; } );
+        std::ranges::for_each( host.initial_state_minus.get(), host.initial_state_minus.get() + system.p.N_x * system.p.N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_minus[i]; i++; } );
     }
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
     if (system.randomly_initialize_system) {
         // Fill the buffer with random values
         std::mt19937 gen{system.random_seed};
         std::uniform_real_distribution<real_number> dist{-system.random_system_amplitude, system.random_system_amplitude};
-        std::ranges::for_each(host.initial_state_plus.get(), host.initial_state_plus.get() + system.s_N_x * system.s_N_y, [&dist,&gen](complex_number& z) { z += complex_number{dist(gen),dist(gen)}; });
+        std::ranges::for_each(host.initial_state_plus.get(), host.initial_state_plus.get() + system.p.N_x * system.p.N_y, [&dist,&gen](complex_number& z) { z += complex_number{dist(gen),dist(gen)}; });
         // Also fill minus component if use_twin_mode is true
         if ( system.use_twin_mode )
-            std::ranges::for_each(host.initial_state_minus.get(), host.initial_state_minus.get() + system.s_N_x * system.s_N_y, [&dist,&gen](complex_number& z) { z += complex_number{dist(gen),dist(gen)}; });
+            std::ranges::for_each(host.initial_state_minus.get(), host.initial_state_minus.get() + system.p.N_x * system.p.N_y, [&dist,&gen](complex_number& z) { z += complex_number{dist(gen),dist(gen)}; });
     }
     
     //TODO: Hier: Übergebene pumps (system.pump, .pulse, .potential) nach osc parametern sortieren und gruppieren! 
@@ -94,7 +94,7 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
 
     std::cout << "Initializing Device Matrices..." << std::endl;
     // Construct all Device Matrices
-    device.constructAll( system.s_N_x, system.s_N_y, system.use_twin_mode, not system.fixed_time_step /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
+    device.constructAll( system.p.N_x, system.p.N_y, system.use_twin_mode, not system.fixed_time_step /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // Initialize the Oscillation Parameters
     dev_pulse_oscillation.construct( system.pulse );
@@ -105,20 +105,20 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     device.wavefunction_plus.fromHost( host.initial_state_plus );
     device.reservoir_plus.fromHost( host.reservoir_plus );
     for (int i = 0; i < system.pump.groupSize(); i++) {
-        device.pump_plus.fromHost( host.pump_plus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+        device.pump_plus.fromHost( host.pump_plus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
     }
     for (int i = 0; i < system.pulse.groupSize(); i++) {
-        device.pulse_plus.fromHost( host.pulse_plus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+        device.pulse_plus.fromHost( host.pulse_plus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
     }
     for (int i = 0; i < system.potential.groupSize(); i++) {
-        device.potential_plus.fromHost( host.potential_plus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+        device.potential_plus.fromHost( host.potential_plus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
     }
     // Set FFT Masks
     device.fft_mask_plus.fromHost( host.fft_mask_plus );
     // Check once of the reservoir is zero.
     // If yes, then the reservoir may not be avaluated.
     #pragma omp parallel for
-    for (int i = 0; i < system.s_N_x * system.s_N_y; i++) {
+    for (int i = 0; i < system.p.N_x * system.p.N_y; i++) {
         if (CUDA::abs2(host.reservoir_plus[i]) != 0.0) {
             system.evaluate_reservoir_kernel = true;
         }
@@ -141,19 +141,19 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     device.wavefunction_minus.fromHost( host.initial_state_minus );
     device.reservoir_minus.fromHost( host.reservoir_minus );
     for (int i = 0; i < system.pump.groupSize(); i++) {
-        device.pump_minus.fromHost( host.pump_minus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+        device.pump_minus.fromHost( host.pump_minus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
     }
     for (int i = 0; i < system.pulse.groupSize(); i++) {
-        device.pulse_minus.fromHost( host.pulse_minus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+        device.pulse_minus.fromHost( host.pulse_minus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
     }
     for (int i = 0; i < system.potential.groupSize(); i++) {
-        device.potential_minus.fromHost( host.potential_minus[i], system.s_N_x*system.s_N_y*i, system.s_N_x*system.s_N_y );
+        device.potential_minus.fromHost( host.potential_minus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
     }
     device.fft_mask_minus.fromHost( host.fft_mask_minus );
     // Check once of the reservoir is zero.
     // If yes, then the reservoir may not be avaluated.
     #pragma omp parallel for
-    for (int i = 0; i < system.s_N_x * system.s_N_y; i++) {
+    for (int i = 0; i < system.p.N_x * system.p.N_y; i++) {
         if (CUDA::abs2(host.reservoir_minus[i]) != 0.0) {
             system.evaluate_reservoir_kernel = true;
         }
