@@ -7,24 +7,24 @@
 
 void PC3::Solver::cacheValues() {
     // System Time
-    host.times.emplace_back( system.p.t );
+    matrix.times.emplace_back( system.p.t );
 
     // Min and Max
-    const auto [min_plus, max_plus] = CUDA::minmax( device.wavefunction_plus.get(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
-    host.wavefunction_max_plus.emplace_back( max_plus );
+    const auto [min_plus, max_plus] = CUDA::minmax( matrix.wavefunction_plus.getDevicePtr(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
+    matrix.wavefunction_max_plus.emplace_back( max_plus );
     // Cut at Y = 0
-    auto cut_p = device.wavefunction_plus.slice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
-    host.wavefunction_plus_history.emplace_back( cut_p );
+    auto cut_p = matrix.wavefunction_plus.sliceDevice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
+    matrix.wavefunction_plus_history.emplace_back( cut_p );
 
     // TE/TM Guard
     if ( not system.use_twin_mode )
         return;
 
     // Same for _minus component if use_twin_mode is true
-    const auto [min_minus, max_minus] = CUDA::minmax( device.wavefunction_minus.get(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
-    host.wavefunction_max_minus.emplace_back( max_minus );
-    auto cut_m = device.wavefunction_minus.slice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
-    host.wavefunction_minus_history.emplace_back( cut_m );
+    const auto [min_minus, max_minus] = CUDA::minmax( matrix.wavefunction_minus.getDevicePtr(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
+    matrix.wavefunction_max_minus.emplace_back( max_minus );
+    auto cut_m = matrix.wavefunction_minus.sliceDevice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
+    matrix.wavefunction_minus_history.emplace_back( cut_m );
 }
 
 void PC3::Solver::cacheToFiles() {
@@ -34,11 +34,11 @@ void PC3::Solver::cacheToFiles() {
         if ( system.use_twin_mode )
             file_max << " Psi_Minus";
         file_max << "\n";
-        for ( int i = 0; i < host.wavefunction_max_plus.size(); i++ ) {
+        for ( int i = 0; i < matrix.wavefunction_max_plus.size(); i++ ) {
             if ( system.use_twin_mode )
-                file_max << i << " " << host.times[i] << " " << host.wavefunction_max_plus[i] << " " << host.wavefunction_max_minus[i] << "\n";
+                file_max << i << " " << matrix.times[i] << " " << matrix.wavefunction_max_plus[i] << " " << matrix.wavefunction_max_minus[i] << "\n";
             else
-                file_max << i << " " << host.times[i] << " " << host.wavefunction_max_plus[i] << "\n";
+                file_max << i << " " << matrix.times[i] << " " << matrix.wavefunction_max_plus[i] << "\n";
         }
         file_max.close();
     }
@@ -48,12 +48,12 @@ void PC3::Solver::cacheToFiles() {
         return;
 
     auto& file_history_plus = filehandler.getFile( "history_plus" );
-    const auto interval_time = std::max<unsigned int>( 1u, host.wavefunction_plus_history.size() / system.history_output_n );
-    const auto interval_x = std::max<unsigned int>( 1u, host.wavefunction_plus_history.front().size() / system.history_output_n );
-    for ( unsigned int i = 0; i < host.wavefunction_plus_history.size(); i += interval_time ) {
-        std::cout << "Writing history " << i << " of " << host.wavefunction_max_plus.size() << "\r";
-        for ( int k = 0; k < host.wavefunction_plus_history.front().size(); k += interval_x ) {
-            const auto current_plus = host.wavefunction_plus_history[i][k];
+    const auto interval_time = std::max<unsigned int>( 1u, matrix.wavefunction_plus_history.size() / system.history_output_n );
+    const auto interval_x = std::max<unsigned int>( 1u, matrix.wavefunction_plus_history.front().size() / system.history_output_n );
+    for ( unsigned int i = 0; i < matrix.wavefunction_plus_history.size(); i += interval_time ) {
+        std::cout << "Writing history " << i << " of " << matrix.wavefunction_max_plus.size() << "\r";
+        for ( int k = 0; k < matrix.wavefunction_plus_history.front().size(); k += interval_x ) {
+            const auto current_plus = matrix.wavefunction_plus_history[i][k];
             file_history_plus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
         }
         file_history_plus << "\n";
@@ -65,10 +65,10 @@ void PC3::Solver::cacheToFiles() {
         return;
 
     auto& file_history_minus = filehandler.getFile( "history_minus" );
-    for ( unsigned int i = 0; i < host.wavefunction_minus_history.size(); i += interval_time ) {
-        std::cout << "Writing history " << i << " of " << host.wavefunction_max_minus.size() << "\r";
-        for ( int k = 0; k < host.wavefunction_minus_history.front().size(); k += interval_x ) {
-            const auto current_plus = host.wavefunction_minus_history[i][k];
+    for ( unsigned int i = 0; i < matrix.wavefunction_minus_history.size(); i += interval_time ) {
+        std::cout << "Writing history " << i << " of " << matrix.wavefunction_max_minus.size() << "\r";
+        for ( int k = 0; k < matrix.wavefunction_minus_history.front().size(); k += interval_x ) {
+            const auto current_plus = matrix.wavefunction_minus_history[i][k];
             file_history_minus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
         }
         file_history_minus << "\n";

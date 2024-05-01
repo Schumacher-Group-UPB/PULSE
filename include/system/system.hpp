@@ -49,6 +49,11 @@ class System {
         // Boundary Conditions
         bool periodic_boundary_x, periodic_boundary_y;
 
+        ////////////////////////////////
+        // Custom Parameters go here! //
+        ////////////////////////////////
+        // TODO: maybe (at compile time) do a "include custom_parameters.hpp" here. bad practice, but it works
+
     } kernel_parameters;
     Parameters& p = kernel_parameters;
 

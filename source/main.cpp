@@ -64,9 +64,6 @@ int main( int argc, char* argv[] ) {
             while ( system.p.t <= start + system.output_every and solver.iterateRungeKutta() ) {
                 complete_iterations++;
             }
-
-            // Sync the current device arrays to their host array equivalents
-            solver.syncDeviceArrays();
             // Cache the history and max values
             solver.cacheValues();
             // Output Matrices if enabled

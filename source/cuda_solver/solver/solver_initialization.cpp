@@ -8,10 +8,10 @@
 #include "cuda/cuda_macro.cuh"
 #include "misc/escape_sequences.hpp"
 
-void PC3::Solver::initializeHostMatricesFromSystem( ) {
+void PC3::Solver::initializeHostMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "--------------------------- Initializing Host Matrices ----------------------------" << EscapeSequence::RESET << std::endl;
     // First, construct all required host matrices
-    host.constructAll( system.p.N_x, system.p.N_y, system.use_twin_mode, not system.fixed_time_step  /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
+    matrix.constructAll( system.p.N_x, system.p.N_y, system.use_twin_mode, not system.fixed_time_step /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // ==================================================
     // =................ Initial States ................=
@@ -19,35 +19,35 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
     std::cout << "Initializing Host Matrices..." << std::endl;
 
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
-    system.calculateEnvelope( host.initial_state_plus.get(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus);
-    std::ranges::for_each( host.initial_state_plus.get(), host.initial_state_plus.get() + system.p.N_x * system.p.N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_plus[i]; i++; } );
+    system.calculateEnvelope( matrix.initial_state_plus.getHostPtr(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus );
+    std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( complex_number& z ) mutable { z = z + matrix.initial_state_plus[i]; i++; } );
     if ( system.use_twin_mode ) {
-        system.calculateEnvelope( host.initial_state_minus.get(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus);
-        std::ranges::for_each( host.initial_state_minus.get(), host.initial_state_minus.get() + system.p.N_x * system.p.N_y, [&,i=0] ( complex_number& z ) mutable { z = z + host.initial_state_minus[i]; i++; } );
+        system.calculateEnvelope( matrix.initial_state_minus.getHostPtr(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus );
+        std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( complex_number& z ) mutable { z = z + matrix.initial_state_minus[i]; i++; } );
     }
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
-    if (system.randomly_initialize_system) {
+    if ( system.randomly_initialize_system ) {
         // Fill the buffer with random values
-        std::mt19937 gen{system.random_seed};
-        std::uniform_real_distribution<real_number> dist{-system.random_system_amplitude, system.random_system_amplitude};
-        std::ranges::for_each(host.initial_state_plus.get(), host.initial_state_plus.get() + system.p.N_x * system.p.N_y, [&dist,&gen](complex_number& z) { z += complex_number{dist(gen),dist(gen)}; });
+        std::mt19937 gen{ system.random_seed };
+        std::uniform_real_distribution<real_number> dist{ -system.random_system_amplitude, system.random_system_amplitude };
+        std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( complex_number& z ) { z += complex_number{ dist( gen ), dist( gen ) }; } );
         // Also fill minus component if use_twin_mode is true
         if ( system.use_twin_mode )
-            std::ranges::for_each(host.initial_state_minus.get(), host.initial_state_minus.get() + system.p.N_x * system.p.N_y, [&dist,&gen](complex_number& z) { z += complex_number{dist(gen),dist(gen)}; });
+            std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( complex_number& z ) { z += complex_number{ dist( gen ), dist( gen ) }; } );
     }
-    
-    //TODO: Hier: Übergebene pumps (system.pump, .pulse, .potential) nach osc parametern sortieren und gruppieren! 
-    // Matrix host.pump_plus -> std::vector<Matrix>
-    // für jeden gruppe envelope ausrechnen und in host.pump_plus pushen
+
+    // TODO: Hier: Übergebene pumps (system.pump, .pulse, .potential) nach osc parametern sortieren und gruppieren!
+    //  Matrix matrix.pump_plus ->HostPtr std::vector<Matrix>
+    //  für jeden gruppe envelope ausrechnen und in matrix.pump_plus pushenHostPtr
 
     // ==================================================
     // =................ Pump Envelopes ................=
     // ==================================================
     std::cout << "Initializing Pump Envelopes..." << std::endl;
-    for (int i = 0; i < system.pump.groupSize(); i++) {
-        system.calculateEnvelope( host.pump_plus[i].get(), system.pump, i, PC3::Envelope::Polarization::Plus );
+    for ( int i = 0; i < system.pump.groupSize(); i++ ) {
+        system.calculateEnvelope( matrix.pump_plus.getHostPtr() + i * system.p.N2, system.pump, i, PC3::Envelope::Polarization::Plus );
         if ( system.use_twin_mode ) {
-            system.calculateEnvelope( host.pump_minus[i].get(), system.pump, i, PC3::Envelope::Polarization::Minus );
+            system.calculateEnvelope( matrix.pump_minus.getHostPtr() + i * system.p.N2, system.pump, i, PC3::Envelope::Polarization::Minus );
         }
     }
     std::cout << EscapeSequence::GRAY << "Pump Groups: " << system.pump.groupSize() << EscapeSequence::RESET << std::endl;
@@ -56,22 +56,22 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
     // =............. Potential Envelopes ..............=
     // ==================================================
     std::cout << "Initializing Potential Envelopes..." << std::endl;
-    for (int i = 0; i < system.potential.groupSize(); i++) {
-        system.calculateEnvelope( host.potential_plus[i].get(), system.potential, i, PC3::Envelope::Polarization::Plus );
+    for ( int i = 0; i < system.potential.groupSize(); i++ ) {
+        system.calculateEnvelope( matrix.potential_plus.getHostPtr() + i * system.p.N2, system.potential, i, PC3::Envelope::Polarization::Plus );
         if ( system.use_twin_mode ) {
-            system.calculateEnvelope( host.potential_minus[i].get(), system.potential, i, PC3::Envelope::Polarization::Minus );
+            system.calculateEnvelope( matrix.potential_minus.getHostPtr() + i * system.p.N2, system.potential, i, PC3::Envelope::Polarization::Minus );
         }
     }
     std::cout << EscapeSequence::GRAY << "Potential Groups: " << system.potential.groupSize() << EscapeSequence::RESET << std::endl;
-    
+
     // ==================================================
     // =............... Pulse Envelopes ................=
     // ==================================================
     std::cout << "Initializing Pulse Envelopes..." << std::endl;
-    for (int i = 0; i < system.pulse.groupSize(); i++) {
-        system.calculateEnvelope( host.pulse_plus[i].get(), system.pulse, i, PC3::Envelope::Polarization::Plus );
+    for ( int i = 0; i < system.pulse.groupSize(); i++ ) {
+        system.calculateEnvelope( matrix.pulse_plus.getHostPtr() + i * system.p.N2, system.pulse, i, PC3::Envelope::Polarization::Plus );
         if ( system.use_twin_mode ) {
-            system.calculateEnvelope( host.pulse_minus[i].get(), system.pulse, i, PC3::Envelope::Polarization::Minus );
+            system.calculateEnvelope( matrix.pulse_minus.getHostPtr() + i * system.p.N2, system.pulse, i, PC3::Envelope::Polarization::Minus );
         }
     }
     std::cout << EscapeSequence::GRAY << "Pulse Groups: " << system.pulse.groupSize() << EscapeSequence::RESET << std::endl;
@@ -80,90 +80,83 @@ void PC3::Solver::initializeHostMatricesFromSystem( ) {
     // =................. FFT Envelopes ................=
     // ==================================================
     std::cout << "Initializing FFT Envelopes..." << std::endl;
-    if (system.fft_mask.size() == 0) {
+    if ( system.fft_mask.size() == 0 ) {
         std::cout << "No fft mask provided." << std::endl;
     } else {
-        system.calculateEnvelope( host.fft_mask_plus.get(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
-        if (system.use_twin_mode ) {
-            system.calculateEnvelope( host.fft_mask_minus.get(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
+        system.calculateEnvelope( matrix.fft_mask_plus.getHostPtr(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
+        if ( system.use_twin_mode ) {
+            system.calculateEnvelope( matrix.fft_mask_minus.getHostPtr(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
         }
     }
 }
 
 void PC3::Solver::initializeDeviceMatricesFromHost() {
-
     std::cout << "Initializing Device Matrices..." << std::endl;
-    // Construct all Device Matrices
-    device.constructAll( system.p.N_x, system.p.N_y, system.use_twin_mode, not system.fixed_time_step /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // Initialize the Oscillation Parameters
     dev_pulse_oscillation.construct( system.pulse );
     dev_pump_oscillation.construct( system.pump );
     dev_potential_oscillation.construct( system.potential );
 
+    // Copy Initial State to wavefunction
+    matrix.wavefunction_plus.setTo( matrix.initial_state_plus.getHostPtr() );
+
     // Copy Buffer matrices to device equivalents
-    device.wavefunction_plus.fromHost( host.initial_state_plus );
-    device.reservoir_plus.fromHost( host.reservoir_plus );
-    for (int i = 0; i < system.pump.groupSize(); i++) {
-        device.pump_plus.fromHost( host.pump_plus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
-    }
-    for (int i = 0; i < system.pulse.groupSize(); i++) {
-        device.pulse_plus.fromHost( host.pulse_plus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
-    }
-    for (int i = 0; i < system.potential.groupSize(); i++) {
-        device.potential_plus.fromHost( host.potential_plus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
-    }
+    //matrix.wavefunction_plus.hostToDeviceSync();
+    //matrix.reservoir_plus.hostToDeviceSync();
+    //matrix.pump_plus.hostToDeviceSync();
+    //matrix.pulse_plus.hostToDeviceSync();
+    //matrix.potential_plus.hostToDeviceSync();
+
     // Set FFT Masks
-    device.fft_mask_plus.fromHost( host.fft_mask_plus );
-    // Check once of the reservoir is zero.
-    // If yes, then the reservoir may not be avaluated.
-    #pragma omp parallel for
-    for (int i = 0; i < system.p.N_x * system.p.N_y; i++) {
-        if (CUDA::abs2(host.reservoir_plus[i]) != 0.0) {
+    matrix.fft_mask_plus.hostToDeviceSync();
+// Check once of the reservoir is zero.
+// If yes, then the reservoir may not be avaluated.
+#pragma omp parallel for
+    for ( int i = 0; i < system.p.N_x * system.p.N_y; i++ ) {
+        if ( CUDA::abs2( matrix.reservoir_plus[i] ) != 0.0 ) {
             system.evaluate_reservoir_kernel = true;
         }
-        for (int g = 0; g < system.pump.groupSize(); g++) {
-            if (CUDA::abs2(host.pump_plus[g][i]) != 0.0) {
+        for ( int g = 0; g < system.pump.groupSize(); g++ ) {
+            if ( CUDA::abs2( matrix.pump_plus[i+g*system.p.N2] ) != 0.0 ) {
                 system.evaluate_reservoir_kernel = true;
             }
         }
-        for (int g = 0; g < system.pulse.groupSize(); g++) {
-            if (CUDA::abs2(host.pulse_plus[g][i]) != 0.0) {
+        for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
+            if ( CUDA::abs2( matrix.pulse_plus[i+g*system.p.N2] ) != 0.0 ) {
                 system.evaluate_pulse_kernel = true;
             }
         }
     }
 
     // TE/TM Guard
-    if (not system.use_twin_mode) 
+    if ( not system.use_twin_mode )
         return;
 
-    device.wavefunction_minus.fromHost( host.initial_state_minus );
-    device.reservoir_minus.fromHost( host.reservoir_minus );
-    for (int i = 0; i < system.pump.groupSize(); i++) {
-        device.pump_minus.fromHost( host.pump_minus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
-    }
-    for (int i = 0; i < system.pulse.groupSize(); i++) {
-        device.pulse_minus.fromHost( host.pulse_minus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
-    }
-    for (int i = 0; i < system.potential.groupSize(); i++) {
-        device.potential_minus.fromHost( host.potential_minus[i], system.p.N_x*system.p.N_y*i, system.p.N_x*system.p.N_y );
-    }
-    device.fft_mask_minus.fromHost( host.fft_mask_minus );
-    // Check once of the reservoir is zero.
-    // If yes, then the reservoir may not be avaluated.
-    #pragma omp parallel for
-    for (int i = 0; i < system.p.N_x * system.p.N_y; i++) {
-        if (CUDA::abs2(host.reservoir_minus[i]) != 0.0) {
+    // Copy Initial State to wavefunction
+    matrix.wavefunction_minus.setTo( matrix.initial_state_minus.getHostPtr() );
+
+    // Copy Buffer matrices to device equivalents
+    //matrix.wavefunction_minus.hostToDeviceSync();
+    //matrix.reservoir_minus.hostToDeviceSync();
+    //matrix.pump_minus.hostToDeviceSync();
+    //matrix.pulse_minus.hostToDeviceSync();
+    //matrix.potential_minus.hostToDeviceSync();
+    //matrix.fft_mask_minus.hostToDeviceSync();
+// Check once of the reservoir is zero.
+// If yes, then the reservoir may not be avaluated.
+#pragma omp parallel for
+    for ( int i = 0; i < system.p.N_x * system.p.N_y; i++ ) {
+        if ( CUDA::abs2( matrix.reservoir_minus[i] ) != 0.0 ) {
             system.evaluate_reservoir_kernel = true;
         }
-        for (int g = 0; g < system.pump.groupSize(); g++) {
-            if (CUDA::abs2(host.pump_minus[g][i]) != 0.0) {
+        for ( int g = 0; g < system.pump.groupSize(); g++ ) {
+            if ( CUDA::abs2( matrix.pump_minus[i+g*system.p.N2] ) != 0.0 ) {
                 system.evaluate_reservoir_kernel = true;
             }
         }
-        for (int g = 0; g < system.pulse.groupSize(); g++) {
-            if (CUDA::abs2(host.pulse_minus[g][i]) != 0.0) {
+        for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
+            if ( CUDA::abs2( matrix.pulse_minus[i+g*system.p.N2] ) != 0.0 ) {
                 system.evaluate_pulse_kernel = true;
             }
         }

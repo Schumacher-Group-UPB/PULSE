@@ -7,7 +7,7 @@
  * The differential equation for this model reduces to
  * ...
  */
-CUDA_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io ) {
+CUDA_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io ) {
     
     OVERWRITE_THREAD_INDEX( i );
 

@@ -15,61 +15,68 @@ static inline bool global_matrix_transfer_log = false;
 /**
  * @brief Base class for all device matrices. Mostly a gimmick to have a global
  * counter for the total amount of allocated device memory.
-*/
-class DeviceMatrixBase {
+ */
+class CUDAMatrixBase {
    public:
-    static inline double global_total_mb = 0;
-    static inline double global_total_mb_max = 0;
+    static inline double global_total_device_mb = 0;
+    static inline double global_total_device_mb_max = 0;
+    static inline double global_total_host_mb = 0;
+    static inline double global_total_host_mb_max = 0;
 };
-
-/**
- * @brief Base class for all host matrices. 
-*/
-class HostMatrixBase {
-   public:
-    static inline double global_total_mb = 0;
-    static inline double global_total_mb_max = 0;
-};
-
-// Forward declaration of HostMatrix
-template <typename T>
-class HostMatrix;
 
 /**
  * @brief CUDA Wrapper for a matrix
  * Handles memory management.
  *
+ * Synchronization is left to the user to minimize
+ * copy overhead in case of multiple operations.
+ * Maybe we will change this in the future to work as follows:
+ * When getDevicePtr() is called, bool synchronized = false;
+ * Then, when getHostPtr() is called, if synchronized is false, hostToDeviceSync() is called and synchronized = true;
+ * Same with the other way around.
+ *
  * @tparam T either real_number or complex_number
  */
-template <typename T> 
-class CUDAMatrix : DeviceMatrixBase {
+template <typename T>
+class CUDAMatrix : CUDAMatrixBase {
    private:
-    unsigned int rows, cols; // One-Dimensional Size of size x size matrix
+    unsigned int rows, cols;
     unsigned int total_size;
     std::string name;
     T* device_data = nullptr;
+    std::unique_ptr<T[]> host_data;
     double size_in_mb;
+    bool is_on_device;
+    bool is_on_host;
+
+    bool host_is_ahead;
 
    public:
     CUDAMatrix() {
         device_data = nullptr;
+        host_data = nullptr;
         name = "unnamed";
         rows = 0;
         cols = 0;
         total_size = 0;
+        is_on_device = false;
+        is_on_host = false;
+        host_is_ahead = false;
     };
 
-    CUDAMatrix( CUDAMatrix& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), device_data( other.device_data ) {
+    CUDAMatrix( CUDAMatrix& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), device_data( other.device_data ), host_data( other.host_data ) {
         other.total_size = 0;
         other.cols = 0;
         other.rows = 0;
         other.device_data = nullptr;
+        other.host_data = nullptr;
     }
-    CUDAMatrix( CUDAMatrix&& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), device_data( other.device_data ) {
+    CUDAMatrix( CUDAMatrix&& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), device_data( other.device_data ), host_data( other.host_data ) {
         other.total_size = 0;
         other.cols = 0;
         other.rows = 0;
         other.device_data = nullptr;
+        other.host_data = nullptr;
     }
 
     CUDAMatrix( unsigned int rows, unsigned int cols, const std::string& name ) : rows( rows ), cols( cols ), name( name ) {
@@ -83,63 +90,124 @@ class CUDAMatrix : DeviceMatrixBase {
     CUDAMatrix( unsigned int root_size, const std::string& name ) : CUDAMatrix( root_size, root_size, name ){};
     CUDAMatrix( unsigned int root_size, T* data, const std::string& name ) : CUDAMatrix( root_size, root_size, data, name ){};
 
-    ~CUDAMatrix() {
-        if ( device_data == nullptr or rows == 0 or cols == 0 or total_size == 0 )
-            return;
-        global_total_mb -= size_in_mb;
-        if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated device space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
-        DEVICE_FREE( device_data, "free " );
-        device_data = nullptr;
+    bool isOnDevice() const {
+        return is_on_device;
+    }
+    bool isOnHost() const {
+        return is_on_host;
     }
 
-    CUDAMatrix<T>& construct( unsigned int rows, unsigned int cols, const std::string& name ) {
+    CUDAMatrix<T>& setTo( T* data ) {
+        if ( not is_on_host ) {
+            std::cout << EscapeSequence::RED << "Matrix '" << name << "' is not on host." << EscapeSequence::RESET << std::endl;
+            return *this;
+        }
+        std::copy( data, data + total_size, host_data.get() );
+        host_is_ahead = true;
+        return *this;
+    }
+
+    void destroy_host() {
+        if ( host_data == nullptr or rows == 0 or cols == 0 or total_size == 0 )
+            return;
+        global_total_host_mb -= size_in_mb;
+        if ( global_matrix_creation_log )
+            std::cout << EscapeSequence::GRAY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from host, total allocated host space: " << global_total_host_mb << " MB." << EscapeSequence::RESET << std::endl;
+        host_data.reset();
+        host_data = nullptr;
+        is_on_host = false;
+    }
+
+    void destroy_device() {
+        if ( device_data == nullptr or rows == 0 or cols == 0 or total_size == 0 )
+            return;
+        global_total_device_mb -= size_in_mb;
+        if ( global_matrix_creation_log )
+            std::cout << EscapeSequence::GRAY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated device space: " << global_total_device_mb << " MB." << EscapeSequence::RESET << std::endl;
+        DEVICE_FREE( device_data, "free " );
+        device_data = nullptr;
+        is_on_device = false;
+    }
+
+    ~CUDAMatrix() {
+        destroy_host();
+        destroy_device();
+    }
+
+    CUDAMatrix<T>& constructDevice( unsigned int rows, unsigned int cols, const std::string& name ) {
         total_size = rows * cols;
         size_in_mb = total_size * sizeof( T ) / 1024.0 / 1024.0;
-        global_total_mb += size_in_mb;
-        global_total_mb_max = std::max( global_total_mb, global_total_mb_max );
+        global_total_device_mb += size_in_mb;
+        global_total_device_mb_max = std::max( global_total_device_mb, global_total_device_mb_max );
         this->name = name;
         this->rows = rows;
         this->cols = cols;
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated device space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " device matrix '" << name << "', total allocated device space: " << global_total_device_mb << " MB." << EscapeSequence::RESET << std::endl;
         DEVICE_ALLOC( device_data, total_size * sizeof( T ), "malloc " );
+        is_on_device = true;
         return *this;
     }
-    CUDAMatrix<T>& construct( unsigned int root_size, const std::string& name ) {
+    CUDAMatrix<T>& constructDevice( unsigned int root_size, const std::string& name ) {
+        return constructDevice( root_size, root_size, name );
+    }
+
+    CUDAMatrix<T>& constructHost( unsigned int rows, unsigned int cols, const std::string& name = "unnamed" ) {
+        total_size = rows * cols;
+        size_in_mb = total_size * sizeof( T ) / 1024.0 / 1024.0;
+        global_total_host_mb += size_in_mb;
+        global_total_host_mb_max = std::max( global_total_host_mb, global_total_host_mb_max );
+        this->name = name;
+        this->rows = rows;
+        this->cols = cols;
+        if ( global_matrix_creation_log )
+            std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " host matrix '" << name << "', total allocated host space: " << global_total_host_mb << " MB." << EscapeSequence::RESET << std::endl;
+        host_data = std::make_unique<T[]>( total_size );
+        is_on_host = true;
+        return *this;
+    }
+    CUDAMatrix<T>& constructHost( unsigned int root_size, const std::string& name = "unnamed" ) {
+        return constructHost( root_size, root_size, name );
+    }
+
+    CUDAMatrix<T>& construct( unsigned int rows, unsigned int cols, const std::string& name = "unnamed" ) {
+        constructHost( rows, cols, name );
+        constructDevice( rows, cols, name );
+        return *this;
+    }
+    CUDAMatrix<T>& construct( unsigned int root_size, const std::string& name = "unnamed" ) {
         return construct( root_size, root_size, name );
     }
 
-    void setTo( T* host_data ) {
+    // Synchronize Host and Device. This functions usually doesn't have to be called manually by the user.
+    CUDAMatrix<T>& hostToDeviceSync() {
+        // If the matrix does not exist on device yet, create it from host parameters
+        if ( not is_on_device and total_size > 0 )
+            constructDevice( rows, cols, name );
+
         if ( global_matrix_transfer_log )
             std::cout << EscapeSequence::GRAY << "Copying " << rows << "x" << cols << " matrix to device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
-        MEMCOPY_TO_DEVICE( device_data, host_data, total_size * sizeof( T ), "memcopy host to device " );
-    }
-    void setTo( T* host_data, size_t start, size_t subsize) {
-        if ( global_matrix_transfer_log )
-            std::cout << EscapeSequence::GRAY << "Copying " << subsize  << " matrix elements to device matrix '" << name << "' starting at " << start << EscapeSequence::RESET << std::endl;
-        MEMCOPY_TO_DEVICE( device_data + start, host_data, subsize * sizeof( T ), "memcopy host to device " );
-    }
-    void fromHost( HostMatrix<T>& host_matrix ) {
-        setTo( host_matrix.get() );
-    }
-    void fromHost( HostMatrix<T>& host_matrix, size_t start, size_t subsize ) {
-        setTo( host_matrix.get(), start, subsize );
+        MEMCOPY_TO_DEVICE( device_data, host_data.get(), total_size * sizeof( T ), "memcopy host to device " );
+        return *this;
     }
 
-    void copyTo( T* host_data ) {
+    // Synchronize Host and Device. This functions usually doesn't have to be called manually by the user.
+    CUDAMatrix<T>& deviceToHostSync() {
+        // If the matrix does not exist on host yet, create it from device parameters
+        if ( not is_on_host and total_size > 0 )
+            constructHost( rows, cols, name );
+
         if ( global_matrix_transfer_log )
             std::cout << EscapeSequence::GRAY << "Copying " << rows << "x" << cols << " matrix from device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
-        MEMCOPY_FROM_DEVICE( host_data, device_data, total_size * sizeof( T ), "memcpy device to host " );
-    }
-    void toHost( HostMatrix<T>& host_matrix ) {
-        copyTo( host_matrix.get() );
+        MEMCOPY_FROM_DEVICE( host_data.get(), device_data, total_size * sizeof( T ), "memcpy device to host " );
+        return *this;
     }
 
     void swap( CUDAMatrix<T>& other ) {
         if ( rows != other.rows or cols != other.cols )
             return;
-        swap_symbol( device_data, other.device_data );
+        std::swap( device_data, other.device_data );
+        std::swap( host_data, other.host_data );
     }
 
     enum class Direction {
@@ -147,148 +215,17 @@ class CUDAMatrix : DeviceMatrixBase {
         COLUMN
     };
 
-    // TODO: implement direction
+    // Only Host Data is slicable
     std::vector<T> slice( const int start, const int size, Direction direction = Direction::ROW ) {
         std::unique_ptr<T[]> buffer_out = std::make_unique<T[]>( size );
-        MEMCOPY_FROM_DEVICE( buffer_out.get(), device_data + start, size * sizeof( T ), "memcpy device to host buffer" );
+        std::copy( host_data.get() + start, host_data.get() + start + size, buffer_out.get() );
         std::vector<T> out( buffer_out.get(), buffer_out.get() + size );
         return out;
     }
 
-    CUDA_HOST_DEVICE unsigned int getTotalSize() const {
-        return total_size;
-    }
-
-    // Data Access is device only, since this is a device matrix.
-    // If one wants to access the data on the host, one has to copy it first
-    // into a HostMatrix instance.
-
-    // Device Pointer Getter
-    CUDA_INLINE CUDA_HOST_DEVICE T* get() const {
-        return device_data;
-    }
-
-    // Row, col and index getters
-    CUDA_INLINE CUDA_HOST_DEVICE T at( int index ) const {
-        return device_data[index];
-    }
-    CUDA_INLINE CUDA_HOST_DEVICE T at( int row, int column ) const {
-        return device_data[row * rows + column];
-    }
-    CUDA_INLINE CUDA_HOST_DEVICE T& at( int index ) {
-        return device_data[index];
-    }
-    CUDA_INLINE CUDA_HOST_DEVICE T& at( int row, int column ) {
-        return device_data[row * rows + column];
-    }
-    CUDA_INLINE CUDA_HOST_DEVICE T& operator[]( int index ) {
-        return device_data[index];
-    }
-    CUDA_INLINE CUDA_HOST_DEVICE T operator()( int row, int column ) {
-        return device_data[row * rows + column];
-    }
-};
-
-template <typename T> 
-class HostMatrix : HostMatrixBase {
-   private:
-    unsigned int rows, cols; // One-Dimensional Size of size x size matrix
-    unsigned int total_size;
-    std::string name;
-    std::unique_ptr<T[]> host_data;
-    double size_in_mb;
-
-   public:
-    HostMatrix() {
-        host_data = nullptr;
-        name = "unnamed";
-        rows = 0;
-        cols = 0;
-        total_size = 0;
-    };
-
-    HostMatrix( HostMatrix& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), host_data( other.host_data ) {
-        other.total_size = 0;
-        other.cols = 0;
-        other.rows = 0;
-        other.host_data.reset(); // TODO does this release/erase the data? Do i have to use a shared_ptr?
-    }
-    HostMatrix( HostMatrix&& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), host_data( other.host_data ) {
-        other.total_size = 0;
-        other.cols = 0;
-        other.rows = 0;
-        other.host_data.reset();
-    }
-
-    HostMatrix( unsigned int rows, unsigned int cols, const std::string& name ) : rows( rows ), cols( cols ), name( name ) {
-        construct( rows, cols, name );
-    }
-
-    HostMatrix( unsigned int rows, unsigned int cols, T* data, const std::string& name ) : HostMatrix( rows, cols, name ) {
-        setTo( data );
-    }
-
-    HostMatrix( unsigned int root_size, const std::string& name ) : HostMatrix( root_size, root_size, name ){};
-    HostMatrix( unsigned int root_size, T* data, const std::string& name ) : HostMatrix( root_size, root_size, data, name ){};
-
-    ~HostMatrix() {
-        global_total_mb -= size_in_mb;
-        if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated host space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
-        host_data.reset();
-    }
-
-    HostMatrix<T>& construct( unsigned int rows, unsigned int cols, const std::string& name = "unnamed" ) {
-        total_size = rows * cols;
-        size_in_mb = total_size * sizeof( T ) / 1024.0 / 1024.0;
-        global_total_mb += size_in_mb;
-        global_total_mb_max = std::max( global_total_mb, global_total_mb_max );
-        this->name = name;
-        this->rows = rows;
-        this->cols = cols;
-        if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " matrix '" << name << "', total allocated host space: " << global_total_mb << " MB." << EscapeSequence::RESET << std::endl;
-        host_data = std::make_unique<T[]>( total_size );
-        return *this;
-    }
-    HostMatrix<T>& construct( unsigned int root_size, const std::string& name = "unnamed" ) {
-        return construct( root_size, root_size, name );
-    }
-
-    //void setTo( T* data ) {
-    //    if ( global_matrix_transfer_log )
-    //        std::cout << EscapeSequence::GRAY << "Copying " << rows << "x" << cols << " matrix to device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
-    //    std::copy( data, data + total_size, host_data.get() );
-    //}
-    //void fromDevice( CUDAMatrix<T>& device_matrix ) {
-    //    // setTo(device_matrix.get());
-    //    device_matrix.copyTo( host_data.get() );
-    //}
-
-    //void copyTo( T* host_data ) {
-    //    if ( global_matrix_transfer_log )
-    //        std::cout << EscapeSequence::GRAY << "Copying " << rows << "x" << cols << " matrix from device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
-    //    std::copy( this->host_data.get(), this->host_data.get() + total_size, host_data );
-    //}
-    //void toDevice( CUDAMatrix<T>& device_matrix ) {
-    //    // copyTo(device_matrix.get());
-    //    device_matrix.setTo( host_data.get() );
-    //}
-
-    void swap( HostMatrix<T>& other ) {
-        if ( rows != other.rows or cols != other.cols )
-            return;
-        swap_symbol( host_data, other.host_data );
-    }
-
-    enum class Direction {
-        ROW,
-        COLUMN
-    };
-
-    std::vector<T> slice( const int start, const int size, Direction direction = Direction::ROW ) {
+    std::vector<T> sliceDevice( const int start, const int size, Direction direction = Direction::ROW ) {
         std::unique_ptr<T[]> buffer_out = std::make_unique<T[]>( size );
-        std::copy( host_data.get() + start, host_data.get() + start + size, buffer_out.get() );
+        MEMCOPY_FROM_DEVICE( buffer_out.get(), device_data + start, size * sizeof( T ), "memcpy device to host buffer" );
         std::vector<T> out( buffer_out.get(), buffer_out.get() + size );
         return out;
     }
@@ -298,13 +235,24 @@ class HostMatrix : HostMatrixBase {
     }
 
     // Device Pointer Getter
-    inline T* get() const {
-        if ( total_size == 0 )
-            std::cout << EscapeSequence::YELLOW << "Warning: accessing empty host matrix '" << name << "'." << EscapeSequence::RESET << std::endl;
+    inline T* getDevicePtr() {
+        // If the host is ahead, synchronize first
+        if ( host_is_ahead ) {
+            hostToDeviceSync();
+            host_is_ahead = false;
+        }
+        return device_data;
+    }
+    inline T* getHostPtr() {
+        // If the device is ahead, synchronize first
+        if ( not host_is_ahead ) {
+            deviceToHostSync();
+            host_is_ahead = true;
+        }
         return host_data.get();
     }
 
-    // Row, col and index getters
+    // Row, col and index getters for host matrix
     inline T at( int index ) const {
         return host_data.get()[index];
     }

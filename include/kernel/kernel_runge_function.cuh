@@ -1,6 +1,6 @@
 #pragma once
 #include "cuda/cuda_complex.cuh"
-#include "solver/device_struct.hpp"
+#include "solver/matrix_folder.hpp"
 #include "system/envelope.hpp"
 #include "system/system.hpp"
 #include "solver/gpu_solver.hpp" // For PulseParameters. TODO: Change
@@ -21,15 +21,15 @@ struct InputOutput {
 
 namespace Compute {
 
-CUDA_GLOBAL void gp_tetm( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
-CUDA_GLOBAL void gp_scalar( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void gp_tetm( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void gp_scalar( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
 
-CUDA_GLOBAL void scalar_pulse( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
-CUDA_GLOBAL void scalar_reservoir( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
-CUDA_GLOBAL void scalar_stochastic( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
-CUDA_GLOBAL void tetm_pulse( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
-CUDA_GLOBAL void tetm_reservoir( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
-CUDA_GLOBAL void tetm_stochastic( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io );
+CUDA_GLOBAL void scalar_pulse( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void scalar_reservoir( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void scalar_stochastic( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, InputOutput io );
+CUDA_GLOBAL void tetm_pulse( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void tetm_reservoir( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io );
+CUDA_GLOBAL void tetm_stochastic( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, InputOutput io );
 
 } // namespace Compute
 

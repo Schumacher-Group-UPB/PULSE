@@ -73,7 +73,9 @@ Button* b_sub_dt;
 Button* b_snapshot;
 Button* b_reset_to_snapshot;
 Button* b_reset_to_initial;
+Button* b_cycle_subplot;
 double snapshot_time = 0.0;
+size_t current_subplot = 0;
 
 void initSFMLWindow( PC3::Solver& solver ) {
     if ( solver.system.filehandler.disableRender ) {
@@ -119,23 +121,30 @@ void initSFMLWindow( PC3::Solver& solver ) {
     getWindow().addObject( b_reset_to_snapshot );
     b_reset_to_initial = new Button( 10, 440, "Reset to Initial" );
     getWindow().addObject( b_reset_to_initial );
+    b_cycle_subplot = new Button( 10, 480, "Cycle Subplot" );
+    getWindow().addObject( b_cycle_subplot );
 }
 
 int __local_inset = 0;
+
+std::vector<std::string> subplot_names{ "FFT", "Wavefunction K1", "Wavefunction K2", "Wavefunction K3", "Wavefunction K4", 
+                                        "Reservoir K1", "Reservoir K2", "Reservoir K3", "Reservoir K4", "Pump", "Pulse", "Potential", "RandomNumber"};
 
 bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed_time, size_t iterations ) {
     if ( solver.system.filehandler.disableRender )
         return true;
     bool running = getWindow().run();
 
-    // Get Device arrays
-    solver.syncDeviceArrays();
 
     complex_number* inset_plot_array_plus = nullptr, *inset_plot_array_minus = nullptr;
     if ( __local_inset == 1 ) {
-        inset_plot_array_plus = solver.host.fft_plus.get();
+        std::vector<PC3::CUDAMatrix<complex_number>*> subplots{ &solver.matrix.fft_plus, 
+        &solver.matrix.k1_wavefunction_plus, &solver.matrix.k2_wavefunction_plus, &solver.matrix.k3_wavefunction_plus, &solver.matrix.k4_wavefunction_plus,
+        &solver.matrix.k1_reservoir_plus, &solver.matrix.k2_reservoir_plus, &solver.matrix.k3_reservoir_plus, &solver.matrix.k4_reservoir_plus,
+        &solver.matrix.pump_plus, &solver.matrix.pulse_plus, &solver.matrix.potential_plus, &solver.matrix.random_number };
+        inset_plot_array_plus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
         if ( solver.system.use_twin_mode )
-            inset_plot_array_minus = solver.host.fft_minus.get();
+            inset_plot_array_minus = solver.matrix.fft_minus.getHostPtr();
     }
     if ( getWindow().keyPressed( BasicWindow::KEY_i ) ) {
         __local_inset = ( __local_inset + 1 ) % 2;
@@ -148,18 +157,18 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
 
     bool plot_min_max = cb_min_and_max->isChecked();
     // Plot Plus
-    plotMatrix( solver.host.wavefunction_plus.get(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
-    plotMatrix( inset_plot_array_plus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 3, __local_colorpalette, "FFT+ ", plot_min_max );
-    plotMatrix( solver.host.reservoir_plus.get(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
-    PC3::CUDA::angle( solver.host.wavefunction_plus.get(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
+    plotMatrix( solver.matrix.wavefunction_plus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
+    plotMatrix( inset_plot_array_plus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 2, __local_colorpalette, subplot_names.at(current_subplot), plot_min_max );
+    plotMatrix( solver.matrix.reservoir_plus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
+    PC3::CUDA::angle( solver.matrix.wavefunction_plus.getHostPtr(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
     plotMatrix( __plotarray.get(), solver.system.p.N_x, solver.system.p.N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
 
     // Plot Minus
     if ( solver.system.use_twin_mode ) {
-        plotMatrix( solver.host.wavefunction_minus.get(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "Psi- ", plot_min_max );
-        plotMatrix( inset_plot_array_minus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 3, __local_colorpalette, "FFT- ", plot_min_max );
-        plotMatrix( solver.host.reservoir_minus.get(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "n- ", plot_min_max );
-        PC3::CUDA::angle( solver.host.wavefunction_minus.get(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
+        plotMatrix( solver.matrix.wavefunction_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "Psi- ", plot_min_max );
+        plotMatrix( inset_plot_array_minus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 2, __local_colorpalette, "FFT- ", plot_min_max );
+        plotMatrix( solver.matrix.reservoir_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "n- ", plot_min_max );
+        PC3::CUDA::angle( solver.matrix.wavefunction_minus.getHostPtr(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
         plotMatrix( __plotarray.get(), solver.system.p.N_x, solver.system.p.N_y, 0, solver.system.p.N_y, 1, __local_colorpalette_phase, "ang(Psi-) ", plot_min_max );
     } 
 
@@ -206,11 +215,12 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     }
 
     if (b_snapshot->isToggled()) {
-        solver.device.wavefunction_plus.toHost( solver.host.snapshot_wavefunction_plus );
-        solver.device.reservoir_plus.toHost( solver.host.snapshot_reservoir_plus );
+        // Copy the current state of the host wavefunction to the snapshot
+        solver.matrix.snapshot_wavefunction_plus.setTo( solver.matrix.wavefunction_plus.getHostPtr() );
+        solver.matrix.snapshot_reservoir_plus.setTo( solver.matrix.reservoir_plus.getHostPtr() );
         if ( solver.system.use_twin_mode ) {
-            solver.device.wavefunction_minus.toHost( solver.host.snapshot_wavefunction_minus );
-            solver.device.reservoir_minus.toHost( solver.host.snapshot_reservoir_minus );
+            solver.matrix.snapshot_wavefunction_minus.setTo( solver.matrix.wavefunction_minus.getHostPtr() );
+            solver.matrix.snapshot_reservoir_minus.setTo( solver.matrix.reservoir_minus.getHostPtr() );
         }
         snapshot_time = solver.system.p.t;
         
@@ -218,25 +228,30 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     }
 
     if (b_reset_to_snapshot->isToggled()) {
-        solver.device.wavefunction_plus.fromHost( solver.host.snapshot_wavefunction_plus );
-        solver.device.reservoir_plus.fromHost( solver.host.snapshot_reservoir_plus );
+        // Copy the contents of the snapshot back to the host wavefunction and sync the host matrix to the device.
+        solver.matrix.wavefunction_plus.setTo( solver.matrix.snapshot_wavefunction_plus.getHostPtr() ).hostToDeviceSync();
+        solver.matrix.reservoir_plus.setTo( solver.matrix.snapshot_reservoir_plus.getHostPtr() ).hostToDeviceSync();
         if ( solver.system.use_twin_mode ) {
-            solver.device.wavefunction_minus.fromHost( solver.host.snapshot_wavefunction_minus );
-            solver.device.reservoir_minus.fromHost( solver.host.snapshot_reservoir_minus );
+            solver.matrix.wavefunction_minus.setTo( solver.matrix.snapshot_wavefunction_minus.getHostPtr() ).hostToDeviceSync();
+            solver.matrix.reservoir_minus.setTo( solver.matrix.snapshot_reservoir_minus.getHostPtr() ).hostToDeviceSync();
         }
         solver.system.p.t = snapshot_time;
         std::cout << "Reset to Snapshot!" << std::endl;
     }
 
     if (b_reset_to_initial->isToggled()) {
-        solver.device.wavefunction_plus.fromHost( solver.host.initial_state_plus );
-        solver.device.reservoir_plus.fromHost( solver.host.initial_state_plus );
+        solver.matrix.wavefunction_plus.setTo( solver.matrix.initial_state_plus.getHostPtr() ).hostToDeviceSync();
+        solver.matrix.reservoir_plus.setTo( solver.matrix.initial_state_plus.getHostPtr() ).hostToDeviceSync();
         if ( solver.system.use_twin_mode ) {
-            solver.device.wavefunction_minus.fromHost( solver.host.initial_state_minus );
-            solver.device.reservoir_minus.fromHost( solver.host.initial_state_minus );
+            solver.matrix.wavefunction_minus.setTo( solver.matrix.initial_state_minus.getHostPtr() ).hostToDeviceSync();
+            solver.matrix.reservoir_minus.setTo( solver.matrix.initial_state_minus.getHostPtr() ).hostToDeviceSync();
         }
         solver.system.p.t = 0.0;
         std::cout << "Reset to Initial!" << std::endl;
+    }
+
+    if (b_cycle_subplot->isToggled()) {
+        current_subplot = (current_subplot + 1) % subplot_names.size();
     }
 
 

@@ -5,7 +5,7 @@
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-CUDA_GLOBAL void PC3::Kernel::Compute::scalar_stochastic( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, InputOutput io ) {
+CUDA_GLOBAL void PC3::Kernel::Compute::scalar_stochastic( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, InputOutput io ) {
     OVERWRITE_THREAD_INDEX( i );
 
     const complex_number in_wf = io.in_wf_plus[i];

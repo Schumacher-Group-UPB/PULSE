@@ -2,7 +2,7 @@
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-CUDA_GLOBAL void PC3::Kernel::Compute::tetm_pulse( int i, real_number t, Device::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io ) {
+CUDA_GLOBAL void PC3::Kernel::Compute::tetm_pulse( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation, InputOutput io ) {
 
     OVERWRITE_THREAD_INDEX( i );
 

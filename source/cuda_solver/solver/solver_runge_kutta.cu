@@ -107,7 +107,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     auto p = system.kernel_parameters;
     
     // This variable contains all the device pointers the kernel could need
-    auto device_pointers = device.pointers();
+    auto device_pointers = matrix.pointers();
 
     // The CPU should briefly evaluate wether the pulse and the reservoir have to be evaluated
     bool evaluate_pulse = system.evaluatePulse();
@@ -158,11 +158,11 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     );
 
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
-    device.wavefunction_plus.swap( device.buffer_wavefunction_plus );
-    device.reservoir_plus.swap( device.buffer_reservoir_plus );
+    matrix.wavefunction_plus.swap( matrix.buffer_wavefunction_plus );
+    matrix.reservoir_plus.swap( matrix.buffer_reservoir_plus );
     if ( system.use_twin_mode ) {
-        device.wavefunction_minus.swap( device.buffer_wavefunction_minus );
-        device.reservoir_minus.swap( device.buffer_reservoir_minus );
+        matrix.wavefunction_minus.swap( matrix.buffer_wavefunction_minus );
+        matrix.reservoir_minus.swap( matrix.buffer_reservoir_minus );
     }
 
     return;
@@ -217,7 +217,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     // Accept current step?
     bool accept = false;
     // This variable contains all the device pointers the kernel could need
-    auto device_pointers = device.pointers();
+    auto device_pointers = matrix.pointers();
     // Pointers to Oscillation Parameters
     auto pulse_pointers = dev_pulse_oscillation.pointers();
     auto pump_pointers = dev_pump_oscillation.pointers();
@@ -293,15 +293,15 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         );
 
         #ifndef USECPU
-        real_number final_error = thrust::reduce( THRUST_DEVICE, device.rk_error.get(), device.rk_error.get() + p.N_x * p.N_y, 0.0, thrust::plus<real_number>() );
-        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, device.wavefunction_plus.get(), device.wavefunction_plus.get() + p.N_x * p.N_y, square_reduction(), 0.0, thrust::plus<real_number>() );
+        real_number final_error = thrust::reduce( THRUST_DEVICE, matrix.rk_error.getDevicePtr(), matrix.rk_error.getDevicePtr() + p.N_x * p.N_y, 0.0, thrust::plus<real_number>() );
+        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, matrix.wavefunction_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr() + p.N_x * p.N_y, square_reduction(), 0.0, thrust::plus<real_number>() );
         #else
-        real_number final_error = std::reduce( device.rk_error.get(), device.rk_error.get() + p.N_x * p.N_y, 0.0, std::plus<real_number>() );
-        real_number sum_abs2 = std::transform_reduce( device.wavefunction_plus.get(), device.wavefunction_plus.get() + p.N_x * p.N_y, 0.0, std::plus<real_number>(), square_reduction() );
+        real_number final_error = std::reduce( matrix.rk_error.getDevicePtr(), matrix.rk_error.getDevicePtr() + p.N_x * p.N_y, 0.0, std::plus<real_number>() );
+        real_number sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr() + p.N_x * p.N_y, 0.0, std::plus<real_number>(), square_reduction() );
         #endif
 
         // TODO: maybe go back to using max since thats faster
-        //auto plus_max = std::get<1>( minmax( device.wavefunction_plus.get(), p.N_x * p.N_y, true /*Device Pointer*/ ) );
+        //auto plus_max = std::get<1>( minmax( matrix.wavefunction_plus.getDevicePtr(), p.N_x * p.N_y, true /*Device Pointer*/ ) );
         final_error = final_error / sum_abs2;
 
         // Calculate dh
@@ -330,11 +330,11 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             accept = true;
             // Since the "next" Y is in the buffer_ arrays, we swap current_wavefunction and buffer_wf
             // This is fast, because we just swap pointers instead of copying data.
-            device.wavefunction_plus.swap( device.buffer_wavefunction_plus );
-            device.reservoir_plus.swap( device.buffer_reservoir_plus );
+            matrix.wavefunction_plus.swap( matrix.buffer_wavefunction_plus );
+            matrix.reservoir_plus.swap( matrix.buffer_reservoir_plus );
             if ( system.use_twin_mode ) {
-                device.wavefunction_minus.swap( device.buffer_wavefunction_minus );
-                device.reservoir_minus.swap( device.buffer_reservoir_minus );
+                matrix.wavefunction_minus.swap( matrix.buffer_wavefunction_minus );
+                matrix.reservoir_minus.swap( matrix.buffer_reservoir_minus );
             }
         }
     } while ( !accept );
@@ -355,18 +355,18 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask ) {
     #ifndef USECPU
     // Calculate the actual FFTs
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device.wavefunction_plus.get(), (fft_complex_number*)device.fft_plus.get(), CUFFT_FORWARD ), "FFT Exec" );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)matrix.wavefunction_plus.getDevicePtr(), (fft_complex_number*)matrix.fft_plus.getDevicePtr(), CUFFT_FORWARD ), "FFT Exec" );
 
 
     // For now, we shift, transform, shift the results. TODO: Move this into one function without shifting
     // Shift FFT to center k = 0
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.p.N_x, system.p.N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift Plus" );
 
     // Do the FFT and the shifting here already for visualization only
     if ( system.use_twin_mode ) {
-        CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device.wavefunction_minus.get(), (fft_complex_number*)device.fft_minus.get(), CUFFT_FORWARD ), "FFT Exec" );
-        fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.p.N_x, system.p.N_y );
+        CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)matrix.wavefunction_minus.getDevicePtr(), (fft_complex_number*)matrix.fft_minus.getDevicePtr(), CUFFT_FORWARD ), "FFT Exec" );
+        fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x, system.p.N_y );
         CHECK_CUDA_ERROR( {}, "FFT Shift Minus" );
     }
     
@@ -374,29 +374,29 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
         return;
     
     // Apply the FFT Mask Filter
-    kernel_mask_fft<<<grid_size, block_size>>>( device.fft_plus.get(), device.fft_mask_plus.get(), system.p.N_x*system.p.N_y );
+    kernel_mask_fft<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), matrix.fft_mask_plus.getDevicePtr(), system.p.N_x*system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Filter" )
     
     // Undo the shift
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.p.N_x, system.p.N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" )
 
     // Transform back.
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, device.fft_plus.get(), device.wavefunction_plus.get(), CUFFT_INVERSE ), "iFFT Exec" );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, matrix.fft_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr(), CUFFT_INVERSE ), "iFFT Exec" );
     
     // Shift FFT Once again for visualization
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_plus.get(), system.p.N_x, system.p.N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     
     // Do the same for the minus component
     if (not system.use_twin_mode)
         return;
-    kernel_mask_fft<<<grid_size, block_size>>>( device.fft_minus.get(), device.fft_mask_minus.get(), system.p.N_x*system.p.N_y );
+    kernel_mask_fft<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), matrix.fft_mask_minus.getDevicePtr(), system.p.N_x*system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Filter" )
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.p.N_x,system.p.N_y );
+    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" )
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, device.fft_minus.get(), device.wavefunction_minus.get(), CUFFT_INVERSE ), "iFFT Exec" );
-    fft_shift_2D<<<grid_size, block_size>>>( device.fft_minus.get(), system.p.N_x,system.p.N_y );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, matrix.fft_minus.getDevicePtr(), matrix.wavefunction_minus.getDevicePtr(), CUFFT_INVERSE ), "iFFT Exec" );
+    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     #endif
 }
@@ -423,7 +423,7 @@ bool PC3::Solver::iterateRungeKutta( ) {
     
     if (first_time and system.evaluateStochastic()) {
         first_time = false;
-        auto device_pointers = device.pointers();
+        auto device_pointers = matrix.pointers();
         CALL_KERNEL(
                 PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size,
                 system.random_seed, device_pointers.random_state, system.p.N_x*system.p.N_y

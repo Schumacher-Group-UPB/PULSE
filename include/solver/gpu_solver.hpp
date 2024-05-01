@@ -7,17 +7,16 @@
 #include "kernel/kernel_fft.cuh"
 #include "system/system.hpp"
 #include "system/filehandler.hpp"
-#include "solver/device_struct.hpp"
-#include "solver/host_struct.hpp"
+#include "solver/matrix_folder.hpp"
 
 namespace PC3 {
 
 #define INSTANCIATE_K( index, twin )                                                                           \
-    device.k##index##_wavefunction_plus.construct( system.N_x, system.N_y, "device.k" #index "_wavefunction_plus" );       \
-    device.k##index##_reservoir_plus.construct( system.N_x, system.N_y, "device.k" #index "_reservoir_plus" );             \
+    matrix.k##index##_wavefunction_plus.constructDevice( system.N_x, system.N_y, "matrix.k" #index "_wavefunction_plus" );       \
+    matrix.k##index##_reservoir_plus.constructDevice( system.N_x, system.N_y, "matrix.k" #index "_reservoir_plus" );             \
     if ( twin ) {                                                                                              \
-        device.k##index##_wavefunction_minus.construct( system.N_x, system.N_y, "device.k" #index "_wavefunction_minus" ); \
-        device.k##index##_reservoir_minus.construct( system.N_x, system.N_y, "device.k" #index "_reservoir_minus" );       \
+        matrix.k##index##_wavefunction_minus.constructDevice( system.N_x, system.N_y, "matrix.k" #index "_wavefunction_minus" ); \
+        matrix.k##index##_reservoir_minus.constructDevice( system.N_x, system.N_y, "matrix.k" #index "_reservoir_minus" );       \
     }
 
 /**
@@ -54,14 +53,12 @@ class Solver {
         }
 
         Pointers pointers() {
-            return Pointers{ t0.get(), freq.get(), sigma.get(), n };
+            return Pointers{ t0.getDevicePtr(), freq.getDevicePtr(), sigma.getDevicePtr(), n };
         }
     } dev_pulse_oscillation, dev_pump_oscillation, dev_potential_oscillation;
 
     // Device Variables
-    Device device;
-    // Host Variables
-    Host host;
+    MatrixContainer matrix;
 
     // FFT Plan
     cuda_fft_plan plan;
@@ -107,9 +104,6 @@ class Solver {
 
     // Output the history and max caches to files. should be called from finalize()
     void cacheToFiles();
-
-    // "Syncs" or copies the device arrays to host.
-    void syncDeviceArrays();
 
     void finalize();
 
