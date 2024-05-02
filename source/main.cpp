@@ -19,8 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- */ 
- 
+ */
+
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -38,7 +38,6 @@
 #include "solver/gpu_solver.hpp"
 
 int main( int argc, char* argv[] ) {
-
     // Try and read-in any config file
     auto config = PC3::readConfigFromFile( argc, argv );
 
@@ -92,10 +91,9 @@ int main( int argc, char* argv[] ) {
         bool evaluate_stochastic = system.evaluateStochastic();
         std::cout << "    Current System: " << ( system.use_twin_mode ? "TE/TM" : "Scalar" ) << " - " << ( evaluate_reservoir ? "With Reservoir" : "No Reservoir" ) << " - " << ( evaluate_pulse ? "With Pulse" : "No Pulse" ) << " - " << ( evaluate_stochastic ? "With Stochastic" : "No Stochastic" ) << "    \n";
         std::cout << "    Runtime: " << int( complete_duration ) << "s, remaining: " << int( complete_duration * ( system.t_max - system.p.t ) / system.p.t ) << "s    \n";
-        std::cout << "    Time per ps: " << complete_duration / system.p.t << "s/ps  -  " << std::setprecision( 3 ) << system.p.t / complete_duration << "ps/s  -  " << complete_iterations/complete_duration << "it/s    \n";
+        std::cout << "    Time per ps: " << complete_duration / system.p.t << "s/ps  -  " << std::setprecision( 3 ) << system.p.t / complete_duration << "ps/s  -  " << complete_iterations / complete_duration << "it/s    \n";
         std::cout << "-----------------------------------------------------------------------------------" << std::endl;
         std::cout << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP;
-
     }
     std::cout << "\n\n\n\n\n\n\n"
               << EscapeSequence::SHOW_CURSOR;

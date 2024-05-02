@@ -69,7 +69,7 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--N", argc, argv ) ) != -1 ) {
         p.N_x = (int)getNextInput( argv, argc, "N_x", ++index );
         p.N_y = (int)getNextInput( argv, argc, "N_y", index );
-    }        
+    }
     p.N2 = p.N_x * p.N_y;
     p.dV = p.L_x * p.L_y / p.N2;
 
@@ -100,13 +100,13 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
         imaginary_time = true;
     }
-    
+
     if ( ( index = findInArgv( "--initRandom", argc, argv ) ) != -1 ) {
         randomly_initialize_system = true;
         random_system_amplitude = getNextInput( argv, argc, "random_system_amplitude", ++index );
         random_seed = std::random_device{}();
         auto str_seed = getNextStringInput( argv, argc, "random_seed", index );
-        if (str_seed != "random") {
+        if ( str_seed != "random" ) {
             random_seed = (unsigned int)std::stod( str_seed );
             std::cout << EscapeSequence::YELLOW << "Overwritten random seed to " << random_seed << EscapeSequence::RESET << std::endl;
         }

@@ -7,7 +7,7 @@
 #include "kernel/kernel_fft.cuh"
 #include "system/system.hpp"
 #include "system/filehandler.hpp"
-#include "solver/matrix_folder.hpp"
+#include "solver/matrix_container.hpp"
 
 namespace PC3 {
 

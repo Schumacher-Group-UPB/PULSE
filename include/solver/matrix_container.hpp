@@ -93,12 +93,18 @@ struct MatrixContainer {
     std::vector<real_number> wavefunction_max_plus, wavefunction_max_minus;
     std::vector<real_number> times;
 
+    //////////////////////////////
+    // Custom Matrices go here! //
+    // Don't forget to add them //
+    // to the construction and  //
+    // pointers too!            //
+    //////////////////////////////
+
     // Empty Constructor
     MatrixContainer() = default;
 
     // Construction Chain
     void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_rk_45, const int n_pulses, const int n_pumps, const int n_potentials ) {
-
         // Construct Random Number Cache
         random_number.constructDevice( N_x, N_y, "random_number" );
         random_state.constructDevice( N_x, N_y, "random_state" );
@@ -107,9 +113,9 @@ struct MatrixContainer {
         initial_state_plus.constructHost( N_x, N_y, "initial_state_plus" );
         wavefunction_plus.construct( N_x, N_y, "wavefunction_plus" );
         reservoir_plus.construct( N_x, N_y, "reservoir_plus" );
-        pump_plus.construct( N_x, N_y*n_pumps, "pump_plus" );
-        pulse_plus.construct( N_x, N_y*n_pulses, "pulse_plus" );
-        potential_plus.construct( N_x, N_y*n_potentials, "potential_plus" );
+        pump_plus.construct( N_x, N_y * n_pumps, "pump_plus" );
+        pulse_plus.construct( N_x, N_y * n_pulses, "pulse_plus" );
+        potential_plus.construct( N_x, N_y * n_potentials, "potential_plus" );
         buffer_wavefunction_plus.construct( N_x, N_y, "buffer_wavefunction_plus" );
         buffer_reservoir_plus.construct( N_x, N_y, "buffer_reservoir_plus" );
         fft_mask_plus.construct( N_x, N_y, "fft_mask_plus" );
@@ -146,14 +152,13 @@ struct MatrixContainer {
         initial_state_minus.constructHost( N_x, N_y, "initial_state_minus" );
         wavefunction_minus.construct( N_x, N_y, "wavefunction_minus" );
         reservoir_minus.construct( N_x, N_y, "reservoir_minus" );
-        pump_minus.construct( N_x, N_y*n_pumps, "pump_minus" );
-        pulse_minus.construct( N_x, N_y*n_pulses, "pulse_minus" );
-        potential_minus.construct( N_x, N_y*n_potentials, "potential_minus" );
+        pump_minus.construct( N_x, N_y * n_pumps, "pump_minus" );
+        pulse_minus.construct( N_x, N_y * n_pulses, "pulse_minus" );
+        potential_minus.construct( N_x, N_y * n_potentials, "potential_minus" );
         buffer_wavefunction_minus.construct( N_x, N_y, "buffer_wavefunction_minus" );
         buffer_reservoir_minus.construct( N_x, N_y, "buffer_reservoir_minus" );
         fft_mask_minus.construct( N_x, N_y, "fft_mask_minus" );
         fft_minus.construct( N_x, N_y, "fft_minus" );
-
 
         k1_wavefunction_minus.constructDevice( N_x, N_y, "k1_wavefunction_minus" );
         k1_reservoir_minus.constructDevice( N_x, N_y, "k1_reservoir_minus" );
@@ -200,9 +205,9 @@ struct MatrixContainer {
         complex_number* k6_reservoir_plus;
         complex_number* k7_wavefunction_plus;
         complex_number* k7_reservoir_plus;
-        
+
         real_number* rk_error;
-        
+
         complex_number* wavefunction_minus;
         complex_number* reservoir_minus;
         complex_number* pump_minus;
@@ -229,7 +234,7 @@ struct MatrixContainer {
         cuda_random_state* random_state;
     };
 
-    Pointers pointers(){                    
+    Pointers pointers() {
         return Pointers{
             wavefunction_plus.getDevicePtr(),
             reservoir_plus.getDevicePtr(),
@@ -278,9 +283,8 @@ struct MatrixContainer {
             k7_reservoir_minus.getDevicePtr(),
 
             random_number.getDevicePtr(),
-            random_state.getDevicePtr()
-        };
-    } 
+            random_state.getDevicePtr() };
+    }
 };
 
 } // namespace PC3

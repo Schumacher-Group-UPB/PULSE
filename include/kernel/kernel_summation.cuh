@@ -1,7 +1,7 @@
 #pragma once
 #include "cuda/cuda_complex.cuh"
 #include "kernel_coefficients_dormand_prince.cuh"
-#include "solver/matrix_folder.hpp"
+#include "solver/matrix_container.hpp"
 #include "system/system.hpp"
 
 namespace PC3::Kernel {

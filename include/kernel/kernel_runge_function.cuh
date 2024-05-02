@@ -1,6 +1,6 @@
 #pragma once
 #include "cuda/cuda_complex.cuh"
-#include "solver/matrix_folder.hpp"
+#include "solver/matrix_container.hpp"
 #include "system/envelope.hpp"
 #include "system/system.hpp"
 #include "solver/gpu_solver.hpp" // For PulseParameters. TODO: Change

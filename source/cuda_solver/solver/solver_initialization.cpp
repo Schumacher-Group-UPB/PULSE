@@ -101,15 +101,6 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     // Copy Initial State to wavefunction
     matrix.wavefunction_plus.setTo( matrix.initial_state_plus.getHostPtr() );
 
-    // Copy Buffer matrices to device equivalents
-    //matrix.wavefunction_plus.hostToDeviceSync();
-    //matrix.reservoir_plus.hostToDeviceSync();
-    //matrix.pump_plus.hostToDeviceSync();
-    //matrix.pulse_plus.hostToDeviceSync();
-    //matrix.potential_plus.hostToDeviceSync();
-
-    // Set FFT Masks
-    matrix.fft_mask_plus.hostToDeviceSync();
 // Check once of the reservoir is zero.
 // If yes, then the reservoir may not be avaluated.
 #pragma omp parallel for
@@ -118,12 +109,12 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
             system.evaluate_reservoir_kernel = true;
         }
         for ( int g = 0; g < system.pump.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pump_plus[i+g*system.p.N2] ) != 0.0 ) {
+            if ( CUDA::abs2( matrix.pump_plus[i + g * system.p.N2] ) != 0.0 ) {
                 system.evaluate_reservoir_kernel = true;
             }
         }
         for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pulse_plus[i+g*system.p.N2] ) != 0.0 ) {
+            if ( CUDA::abs2( matrix.pulse_plus[i + g * system.p.N2] ) != 0.0 ) {
                 system.evaluate_pulse_kernel = true;
             }
         }
@@ -136,13 +127,6 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     // Copy Initial State to wavefunction
     matrix.wavefunction_minus.setTo( matrix.initial_state_minus.getHostPtr() );
 
-    // Copy Buffer matrices to device equivalents
-    //matrix.wavefunction_minus.hostToDeviceSync();
-    //matrix.reservoir_minus.hostToDeviceSync();
-    //matrix.pump_minus.hostToDeviceSync();
-    //matrix.pulse_minus.hostToDeviceSync();
-    //matrix.potential_minus.hostToDeviceSync();
-    //matrix.fft_mask_minus.hostToDeviceSync();
 // Check once of the reservoir is zero.
 // If yes, then the reservoir may not be avaluated.
 #pragma omp parallel for
@@ -151,12 +135,12 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
             system.evaluate_reservoir_kernel = true;
         }
         for ( int g = 0; g < system.pump.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pump_minus[i+g*system.p.N2] ) != 0.0 ) {
+            if ( CUDA::abs2( matrix.pump_minus[i + g * system.p.N2] ) != 0.0 ) {
                 system.evaluate_reservoir_kernel = true;
             }
         }
         for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pulse_minus[i+g*system.p.N2] ) != 0.0 ) {
+            if ( CUDA::abs2( matrix.pulse_minus[i + g * system.p.N2] ) != 0.0 ) {
                 system.evaluate_pulse_kernel = true;
             }
         }
