@@ -88,9 +88,9 @@ Insert custom variable definitions into the `Parameters` struct at the designate
 Examples:
 
 ```C++
-complex_number custom_var; // No default value at definition
+real_number custom_var; // No default value at definition
   
-complex_number custom_var = {0.5f,-1.0f}; // Default value at definition
+real_number custom_var = 0.5; // Default value at definition
 ```
 
 ### Read-In of custom variables. 
@@ -170,11 +170,11 @@ Example:
 ```C++
 std::cout << "Initializing Custom Envelopes..." << std::endl;
 if ( system.custom_envelope.size() == 0 ) {
-    std::cout << "No fft mask provided." << std::endl;
+    std::cout << "No custom envelope provided." << std::endl;
 } else {
-    system.calculateEnvelope( matrix.custom_envelope_plus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
+    system.calculateEnvelope( matrix.custom_envelope_plus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0 /* Default if no mask is applied */ );
     if ( system.use_twin_mode ) {
-        system.calculateEnvelope( matrix.custom_envelope_minus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
+        system.calculateEnvelope( matrix.custom_envelope_minus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0 /* Default if no mask is applied */ );
     }
 }
 ```
@@ -188,6 +188,14 @@ Example:
 ```C++
 if ( system.doOutput( "all" ) ) // Or add your custom keys here
     system.filehandler.outputMatrixToFile( matrix.custom_matrix.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "custom_matrix" );
+```
+
+And the possible loading of matrices from the loading folder by editing the code of the [solver matrix load method](source/cuda_solver/solver/solver_load_matrices.cpp). 
+
+Example:
+
+```C++
+filehandler.loadMatrixFromFile( filehandler.loadPath + "custom_matrix.txt", matrix.custom_matrix.getHostPtr() );
 ```
 
 # TODO
