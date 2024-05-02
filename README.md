@@ -88,9 +88,9 @@ Insert custom variable definitions into the `Parameters` struct at the designate
 Examples:
 
 ```C++
-complex_number custom_var; No default value at definition
+complex_number custom_var; // No default value at definition
   
-complex_number custom_var = {0.5f,-1.0f} Default value at definition
+complex_number custom_var = {0.5f,-1.0f}; // Default value at definition
 ```
 
 ### Read-In of custom variables. 
