@@ -65,6 +65,10 @@ void PC3::Solver::outputInitialMatrices() {
     if ( system.doOutput( "all", "mat", "fftplus", "fft" ) )
         system.filehandler.outputMatrixToFile( matrix.fft_mask_plus.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "fft_mask_plus" );
     
+    /////////////////////////////
+    // Custom Outputs go here! //
+    /////////////////////////////
+
     if (not system.use_twin_mode )
         return;
 

@@ -76,7 +76,120 @@ Settings: 800 Grid, RK4, 3070Ti
 | Scalar | `~135ms/ps`  | `~465ms/ps`  |
 | TE/TM | tbd.  | `~920ms/ps`  |
 
+# Custom Kernel Variables
+Right now, changing Kernels is quite easy to do. Just go to [the kernel source directory](source/cuda_solver/kernel/compute/) and edit one of the Kernel files. Recompile and you are good to go!
+
+## Adding new variables to the Kernels
+Adding new user defined variables to the Kernels is also quite straight forward. All of the inputs are hardcoded into the program, but we can insert code at two places to make them available in the Kernels.
+### Definition of the variable in the [system header file](include/system/system.hpp). 
+
+Insert custom variable definitions into the `Parameters` struct at the designated location. This is marked in the source file so you can't miss it.
+
+Examples:
+
+```C++
+complex_number custom_var; No default value at definition
+  
+complex_number custom_var = {0.5f,-1.0f} Default value at definition
+```
+
+### Read-In of custom variables. 
+
+If setting the value directly at the definition is not an option, you can also add parsing of your variable. Go to [the system's initialization source file](source/system/system_initialization.cpp) and edit the source file according to your needs at the designated location. Examples on how to parse two or more parameters from a single input can also be found there. 
+
+Examples:
+
+```C++
+if ( ( index = findInArgv( "--custom_var", argc, argv ) ) != -1 )
+    p.custom_var = getNextInput( argv, argc, "custom_var", ++index );
+
+if ( ( index = findInArgv( "--custom_vars", argc, argv ) ) != -1 )
+    p.custom_var_1 = getNextInput( argv, argc, "custom_var_1", ++index ); // <-- Note the "++index"
+    p.custom_var_2 = getNextInput( argv, argc, "custom_var_2", index ); 
+    p.custom_var_3 = getNextInput( argv, argc, "custom_var_3", index );
+```
+
+If done correctly, you can now add your own variables to the Kernels, parse them using the same syntax as you can for the remaining parameters and use them in the Kernels by calling `p.custom_var`!
+
+## Adding new Envelopes to the Kernels
+Adding new matrices and their respective spatial envelopes is quite a bit more challenging, but also doable. You need to add the matrix to the solver, which is quite easy, add an envelope to the system header and then read-in that envelope.
+
+### Definition of the matrix in the [matrix container header file](include/solver/matrix_container.hpp)
+Again add the definition of your matrix at the designated location in the code
+
+Example:
+
+```C++
+PC3::CUDAMatrix<complex_number> custom_matrix;
+```
+
+You also need to add the construction of the matrices on both the CPU and GPU memory further down the file at the designated location.
+
+Example:
+
+```C++
+custom_matrix.construct( N_x, N_y, "custom_matrix" );
+```
+
+The Kernel does not need the larger container class for the matrices. Hence, we provide a stripped-down container struct that contains all of the pointers to the GPU memory locations of the matrices. This is done in the same file in the `Pointers` struct, again at the designated location in the code.
+
+Example:
+
+```C++
+complex_number* custom_matrix; // Inside the Pointers struct definition
+...
+custom_matrix.getDevicePtr() // Inside the pointers() method
+```
+
+Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix[i]`!
+
+### Defining envelope parsing to fill the custom matrix during [the system initialization](source/system/system_initialization.cpp)
+Custom envelopes require three things: Definition of the envelope variable, parsing of the envelope and calculating/transfering it onto your custom matrix.
+
+Define your envelope in a group with the others in the [system header file](include/system/system.hpp). Search for `PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;` inside the file, and add your envelope to the list.
+
+Example:
+    
+```C++
+PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential, custom_envelope;
+```
+
+Add parsing of your envelope inside the [system initialization source file](source/system/system_initialization.cpp). Search for the designated location inside the code. The other envelopes also get parsed there.
+
+Example:
+
+```C++
+custom_envelope = PC3::Envelope::fromCommandlineArguments( argc, argv, "customEnvelope", false );
+```
+
+This envelope can then be passed via the commandline using `--customEnvelope ...`
+
+Finally, add the evaluation of the envelope. Go to the [solver initialization source file](source/cuda_solver/solver/solver_initialization.cpp), search for the designated location in the code and copy one of the already defined initialization sections. Change the variable names and you are done!
+
+Example:
+```C++
+std::cout << "Initializing Custom Envelopes..." << std::endl;
+if ( system.custom_envelope.size() == 0 ) {
+    std::cout << "No fft mask provided." << std::endl;
+} else {
+    system.calculateEnvelope( matrix.custom_envelope_plus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
+    if ( system.use_twin_mode ) {
+        system.calculateEnvelope( matrix.custom_envelope_minus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
+    }
+}
+```
+
+You are done! The host matrix will automatically get synchronized with the device matrix on the GPU whenever its device pointer is used.
+
+As a final note, you can also add outputting of your matrix in the [solver matrix output methods](source/cuda_solver/solver/solver_output_matrices.cpp). Go the the `outputInitialMatrices()` method and insert your code at the designated location.
+
+Example:
+
+```C++
+if ( system.doOutput( "all" ) ) // Or add your custom keys here
+    system.filehandler.outputMatrixToFile( matrix.custom_matrix.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "custom_matrix" );
+```
+
 # TODO
 - Better Benchmarking
 - Display Examples with Videos / Gifs
-

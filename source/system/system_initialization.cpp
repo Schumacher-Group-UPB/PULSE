@@ -183,6 +183,14 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--meff", argc, argv ) ) != -1 )
         p.m_eff = getNextInput( argv, argc, "m_eff", ++index );
 
+    //////////////////////////////
+    // Custom Read-Ins go here! //
+    //////////////////////////////
+    // 
+    // Example:
+    // if ( ( index = findInArgv( "--custom_var", argc, argv ) ) != -1 )
+    //     p.custom_var = getNextInput( argv, argc, "custom_var", ++index );
+
     // Pumps
     pump = PC3::Envelope::fromCommandlineArguments( argc, argv, "pump", true /* Can have oscillation component */ );
     // Potential
@@ -193,4 +201,8 @@ void PC3::System::init( int argc, char** argv ) {
     fft_mask = PC3::Envelope::fromCommandlineArguments( argc, argv, "fftMask", false );
     // Initial State
     initial_state = PC3::Envelope::fromCommandlineArguments( argc, argv, "initialState", false );
+
+    ///////////////////////////////////////
+    // Custom Envelope Read-Ins go here! //
+    ///////////////////////////////////////
 }

@@ -88,6 +88,11 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
             system.calculateEnvelope( matrix.fft_mask_minus.getHostPtr(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
         }
     }
+
+    //////////////////////////////////////////////////
+    // Custom Envelope Initializations go here      //
+    // Just copy the one above and change the names //
+    //////////////////////////////////////////////////
 }
 
 void PC3::Solver::initializeDeviceMatricesFromHost() {

@@ -145,6 +145,10 @@ struct MatrixContainer {
         snapshot_wavefunction_plus.construct( N_x, N_y, "snapshot_wavefunction_plus" );
         snapshot_reservoir_plus.construct( N_x, N_y, "snapshot_reservoir_plus" );
 
+        //////////////////////////////////
+        // Construct your matrices here //
+        //////////////////////////////////
+
         // TE/TM Guard
         if ( not use_twin_mode )
             return;
@@ -181,8 +185,6 @@ struct MatrixContainer {
         snapshot_reservoir_minus.construct( N_x, N_y, "snapshot_reservoir_minus" );
     }
 
-    // TODO: Try and just pass the Device struct to the kernels; see if performance
-    // is affected.
     struct Pointers {
         complex_number* wavefunction_plus;
         complex_number* reservoir_plus;
@@ -232,6 +234,10 @@ struct MatrixContainer {
 
         complex_number* random_number;
         cuda_random_state* random_state;
+
+        //////////////////////////////
+        // Custom Pointers go here! //
+        //////////////////////////////
     };
 
     Pointers pointers() {
@@ -283,7 +289,13 @@ struct MatrixContainer {
             k7_reservoir_minus.getDevicePtr(),
 
             random_number.getDevicePtr(),
-            random_state.getDevicePtr() };
+            random_state.getDevicePtr() // , // <-- Comma here if you insert more pointers
+
+            ////////////////////////////////////////////
+            // Custom Pointers initializer goes here! //
+            ////////////////////////////////////////////
+
+            };
     }
 };
 
