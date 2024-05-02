@@ -26,14 +26,8 @@ class CUDAMatrixBase {
 
 /**
  * @brief CUDA Wrapper for a matrix
- * Handles memory management.
- *
- * Synchronization is left to the user to minimize
- * copy overhead in case of multiple operations.
- * Maybe we will change this in the future to work as follows:
- * When getDevicePtr() is called, bool synchronized = false;
- * Then, when getHostPtr() is called, if synchronized is false, hostToDeviceSync() is called and synchronized = true;
- * Same with the other way around.
+ * Handles memory management and host-device synchronization when
+ * using the getDevicePtr() and getHostPtr() functions.
  *
  * @tparam T either real_number or complex_number
  */

@@ -186,10 +186,6 @@ void PC3::System::init( int argc, char** argv ) {
     //////////////////////////////
     // Custom Read-Ins go here! //
     //////////////////////////////
-    // 
-    // Example:
-    // if ( ( index = findInArgv( "--custom_var", argc, argv ) ) != -1 )
-    //     p.custom_var = getNextInput( argv, argc, "custom_var", ++index );
 
     // Pumps
     pump = PC3::Envelope::fromCommandlineArguments( argc, argv, "pump", true /* Can have oscillation component */ );

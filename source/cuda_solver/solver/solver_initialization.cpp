@@ -103,6 +103,10 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     dev_pump_oscillation.construct( system.pump );
     dev_potential_oscillation.construct( system.potential );
 
+    for (int i = 0; i < system.pump.groupSize(); i++) {
+        std::cout << "pump Group " << i << ": " << system.pump.freq[i] << ", " << system.pump.sigma[i] << ", " << system.pump.t0[i] << std::endl;
+    }
+
     // Copy Initial State to wavefunction
     matrix.wavefunction_plus.setTo( matrix.initial_state_plus.getHostPtr() );
 

@@ -313,7 +313,7 @@ CUDA_HOST_DEVICE static CUDA_INLINE complex_number gaussian_complex_oscillator( 
 }
 CUDA_HOST_DEVICE static CUDA_INLINE real_number gaussian_oscillator( real_number t, real_number t0, real_number sigma, real_number freq ) {
     const auto p = ( t - t0 )/sigma;
-    return exp( -0.5*p*p ) * (1.0 + cos( freq * ( t - t0 ) )/2.0);
+    return exp( -0.5*p*p ) * (1.0 + cos( freq * ( t - t0 ) ))/2.0;
 }
 
 } // namespace PC3::CUDA
