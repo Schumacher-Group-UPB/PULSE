@@ -29,8 +29,8 @@ CUDA_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, real_number t, MatrixCont
 
     result_wf += p.minus_i_over_h_bar_s * p.g_c * in_psi_plus_norm * in_wf_plus;
     result_wf += p.minus_i_over_h_bar_s * p.g_r * in_rv_plus * in_wf_plus;
-    result_wf += 0.5 * p.R * in_rv_plus * in_wf_plus;
-    result_wf -= 0.5* p.gamma_c * in_wf_plus;
+    result_wf += real_number(0.5) * p.R * in_rv_plus * in_wf_plus;
+    result_wf -= real_number(0.5)* p.gamma_c * in_wf_plus;
 
     result_wf += p.minus_i_over_h_bar_s * p.g_pm * in_psi_minus_norm * in_wf_plus;
     result_wf += p.minus_i_over_h_bar_s * p.delta_LT * hamilton_cross_plus;
@@ -47,8 +47,8 @@ CUDA_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, real_number t, MatrixCont
 
     result_wf += p.minus_i_over_h_bar_s * p.g_c * in_psi_minus_norm * in_wf_minus;
     result_wf += p.minus_i_over_h_bar_s * p.g_r * in_rv_minus * in_wf_minus;
-    result_wf += 0.5 * p.R * in_rv_minus * in_wf_minus;
-    result_wf -= 0.5 * p.gamma_c * in_wf_minus;
+    result_wf += real_number(0.5) * p.R * in_rv_minus * in_wf_minus;
+    result_wf -= real_number(0.5) * p.gamma_c * in_wf_minus;
  
     result_wf += p.minus_i_over_h_bar_s * p.g_pm * in_psi_plus_norm * in_wf_minus;
     result_wf += p.minus_i_over_h_bar_s * p.delta_LT * hamilton_cross_minus;

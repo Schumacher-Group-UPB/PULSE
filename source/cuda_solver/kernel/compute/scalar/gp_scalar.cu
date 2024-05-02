@@ -31,8 +31,8 @@ CUDA_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, real_number t, MatrixCo
 
     result += p.minus_i_over_h_bar_s * p.g_c * in_psi_norm * in_wf;
     result += p.minus_i_over_h_bar_s * p.g_r * in_rv * in_wf;
-    result += 0.5 * p.R * in_rv * in_wf;
-    result -= 0.5 * p.gamma_c * in_wf;
+    result += real_number(0.5) * p.R * in_rv * in_wf;
+    result -= real_number(0.5) * p.gamma_c * in_wf;
     
     io.out_wf_plus[i] = result;
 }

@@ -11,14 +11,14 @@ CUDA_GLOBAL void PC3::Kernel::Compute::tetm_stochastic( int i, real_number t, Ma
     complex_number in_wf = io.in_wf_plus[i];
     complex_number in_rv = io.in_rv_plus[i];
 
-    complex_number dw = dev_ptrs.random_number[i] * PC3::CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (4.0 * p.dV) );
+    complex_number dw = dev_ptrs.random_number[i] * PC3::CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (real_number(4.0) * p.dV) );
     io.out_wf_plus[i] -= p.minus_i_over_h_bar_s * p.g_c * in_wf / p.dV - dw / p.dt;
     io.out_rv_plus[i] += p.R * in_rv / p.dV;
     
     in_wf = io.in_wf_minus[i];
     in_rv = io.in_rv_minus[i];
     
-    dw = dev_ptrs.random_number[i] * PC3::CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (4.0 * p.dV) );
+    dw = dev_ptrs.random_number[i] * PC3::CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (real_number(4.0) * p.dV) );
     io.out_wf_minus[i] -= p.minus_i_over_h_bar_s * p.g_c * in_wf / p.dV - dw / p.dt;
     io.out_rv_minus[i] += p.R * in_rv / p.dV;
 }

@@ -271,7 +271,7 @@ CUDA_HOST_DEVICE static CUDA_INLINE complex_number pow( const complex_number& a,
     complex_number res = { 1.0, 0 };
     for ( int i = 0; i < abs( N ); i++ )
         res = res * a;
-    return N > 0 ? res : 1. / res;    
+    return N > 0 ? res : real_number(1.0) / res;    
 }
 CUDA_HOST_DEVICE static CUDA_INLINE real_number pow( const real_number& x, const real_number N ) {
     return std::pow(x, N);

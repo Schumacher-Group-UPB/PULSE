@@ -314,7 +314,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             dh = 0.5;
         
         //  Set new timestep
-        system.p.dt = min(p.dt * dh, system.dt_max);
+        system.p.dt = CUDA::min(p.dt * dh, system.dt_max);
         if ( dh < 1.0 )
            system.p.dt = CUDA::max( p.dt - system.dt_min * CUDA::floor( 1.0 / dh ), system.dt_min );
            //p.dt -= system.dt_min;

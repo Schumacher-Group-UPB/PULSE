@@ -43,6 +43,7 @@ void PC3::Solver::loadMatrices() {
               << "support direct paths in the --pump, --pulse, --initialState, --fftMask and --potential parameters, which will then look something like\n"
               << "'--pump path/to/pump_file.txt polarization osc t0 freq sigma'. But this is not implemented yet. Just so you know." << EscapeSequence::RESET << "\n";
 
+    // TODO: Fix this mess lol
     // Load all matrices from fileinputkeys that overlap with system.input_keys
 //#pragma omp parallel for
     for ( auto i = 0; i < fileinputkeys.size(); i++ ) {
@@ -64,7 +65,7 @@ void PC3::Solver::loadMatrices() {
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", matrix.potential_plus.getHostPtr() );
         else if ( fileinputkeys[i] == "initial_condition_plus" and system.doInput( "init", "initial_condition", "init_plus", "initial_condition_plus", "plus", "mat", "all" ) ) 
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", matrix.initial_state_plus.getHostPtr() );
-        
+
         // Guard when not useing TE/TM splitting
         if (not system.use_twin_mode)
             continue;
@@ -87,4 +88,8 @@ void PC3::Solver::loadMatrices() {
         else if ( fileinputkeys[i] == "initial_condition_minus" and system.doInput( "init", "initial_condition", "init_minus", "initial_condition_minus", "plus", "mat", "all" ) )
             filehandler.loadMatrixFromFile( filehandler.loadPath + fileinputkeys[i] + ".txt", matrix.initial_state_minus.getHostPtr() );
     }
+
+    //////////////////////////////////////////
+    // Custom Loading of Matrices goes here //
+    //////////////////////////////////////////
 }

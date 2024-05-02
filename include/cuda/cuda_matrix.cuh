@@ -146,6 +146,7 @@ class CUDAMatrix : CUDAMatrixBase {
             std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " device matrix '" << name << "', total allocated device space: " << global_total_device_mb << " MB." << EscapeSequence::RESET << std::endl;
         DEVICE_ALLOC( device_data, total_size * sizeof( T ), "malloc " );
         is_on_device = true;
+        host_is_ahead = false;
         return *this;
     }
     CUDAMatrix<T>& constructDevice( unsigned int root_size, const std::string& name ) {
@@ -164,6 +165,7 @@ class CUDAMatrix : CUDAMatrixBase {
             std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " host matrix '" << name << "', total allocated host space: " << global_total_host_mb << " MB." << EscapeSequence::RESET << std::endl;
         host_data = std::make_unique<T[]>( total_size );
         is_on_host = true;
+        host_is_ahead = true;
         return *this;
     }
     CUDAMatrix<T>& constructHost( unsigned int root_size, const std::string& name = "unnamed" ) {
