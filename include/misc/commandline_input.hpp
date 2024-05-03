@@ -33,4 +33,4 @@ std::string getNextStringInput( char** arguments, const int argc, const std::str
  * @param unit The unit of the parameter.
  * @param description The description of the parameter.
  */
-std::string unifyLength( std::string indicator, std::string unit, std::string description, int L1 = 30, int L2 = 30 );
+std::string unifyLength(std::string w1, std::string w2, std::string w3, int L1 = 40, int L2 = 40, int L3 = 100, std::string seperator = " | ");

@@ -112,37 +112,7 @@ class Envelope {
 
     static Envelope fromCommandlineArguments( int argc, char** argv, const std::string& key, const bool time );
 
-    // Overwrite "<<" operator for cout
-    std::string toString() const {
-        auto os = std::ostringstream();
-        auto gs = groupSize();
-        std::string b = "";
-        if (gs > 1) {
-            os << " Groups: " << gs << std::endl;
-            b = "  ";
-        }
-        for ( int g = 0; g < groupSize(); g++ ) {
-            if (gs > 1) {
-                os << "  Group: " << g << " - contains " << sizeOfGroup(g) << " envelopes." << std::endl;
-            }
-            if (t0[g] == 0 and sigma[g] > 1e19 and freq[g] == 0)
-                os << b << "  No Temporal Envelope" << std::endl;
-            else
-                os << b << "  t0 = " << t0[g] << ", sigma = " << sigma[g] << ", freq = " << freq[g] << std::endl;
-            for ( int i = 0; i < size(); i++ ) {
-                if ( group_identifier[i] != g )
-                    continue;
-                if (load_path[i] == "") {
-                os << "   Envelope " << i << ":" << std::endl;
-                os << "    Amplitude: " << amp[i] << ", Width_x: " << width_x[i] << ", Width_y: " << width_y[i] << ", x: " << x[i] << ", y: " << y[i] << ", Exponent: " << exponent[i] << std::endl;
-                } else {
-                    os << "   Envelope " << i << " - Loaded from: " << load_path[i] << std::endl;
-                }
-            }
-        }
-        return os.str();
-    
-    }
+    std::string toString() const;
 };
 
 // Overload the bitwise OR (|) operator

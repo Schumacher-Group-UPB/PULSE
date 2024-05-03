@@ -106,7 +106,7 @@ int PC3::Envelope::groupSize() const {
 
 // Returns the size of a specific group. This is the number of spacial components
 // that are present in the envelope that belong to the group g.
-int PC3::Envelope::sizeOfGroup(int g) const {
+int PC3::Envelope::sizeOfGroup( int g ) const {
     int count = 0;
     for ( int i = 0; i < group_identifier.size(); i++ ) {
         if ( group_identifier[i] == g )
@@ -279,4 +279,50 @@ void PC3::Envelope::calculate( complex_number* buffer, const int group, PC3::Env
         }
     }
     cache.clear();
+}
+
+std::string PC3::Envelope::toString() const {
+    auto os = std::ostringstream();
+    auto gs = groupSize();
+    std::string b = "";
+    if ( gs > 1 ) {
+        os << " Groups: " << gs << std::endl;
+        b = "  ";
+    }
+    for ( int g = 0; g < groupSize(); g++ ) {
+        if ( gs > 1 ) {
+            os << "  Group: " << g << " - contains " << sizeOfGroup( g );
+            if ( sizeOfGroup( g ) == 1 )
+                os << " Envelope." << std::endl;
+            else
+                os << " Envelopes." << std::endl;
+        }
+        if ( t0[g] == 0 and sigma[g] > 1e19 and freq[g] == 0 )
+            os << b << "  Constant Temporal Envelope" << std::endl;
+        else
+            os << b << "  t0 = " << t0[g] << ", sigma = " << sigma[g] << ", freq = " << freq[g] << std::endl;
+        for ( int i = 0; i < size(); i++ ) {
+            if ( group_identifier[i] != g )
+                continue;
+            if ( load_path[i] == "" ) {
+                os << b << "  Envelope " << i << ":" << std::endl
+                   << "    " << b << unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "Type: ", s_type[i], "", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "Polarization: ", s_pol[i], "", 25, 25, 25, " " ) << std::endl
+                   << "    " << b << unifyLength( "Behavior: ", s_behavior[i], "", 25, 25, 25, " " ) << std::endl;
+            } else {
+                os << b << "  Envelope " << i << ":" << std::endl
+                   << b << "     Loaded from: " << load_path[i] << std::endl
+                   << b << "     Scaling Amp: " << amp[i] << std::endl
+                   << b << "     Behavior: " << s_behavior[i] << std::endl
+                   << b << "     Polarization: " << s_pol[i] << std::endl;
+            }
+        }
+    }
+    return os.str();
 }
