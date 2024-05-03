@@ -75,13 +75,6 @@ struct MatrixContainer {
     PC3::CUDAMatrix<complex_number> random_number;
     PC3::CUDAMatrix<cuda_random_state> random_state;
 
-    std::vector<complex_number*> pump_plus_array;
-    std::vector<complex_number*> pulse_plus_array;
-    std::vector<complex_number*> potential_plus_array;
-    std::vector<complex_number*> pump_minus_array;
-    std::vector<complex_number*> pulse_minus_array;
-    std::vector<complex_number*> potential_minus_array;
-
     // Snapshot Matrices (GUI only)
     PC3::CUDAMatrix<complex_number> snapshot_wavefunction_plus;
     PC3::CUDAMatrix<complex_number> snapshot_wavefunction_minus;

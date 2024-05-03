@@ -71,11 +71,9 @@ class Solver {
 
         // Initialize all host matrices
         initializeHostMatricesFromSystem();
-        // Overwrite them by loading Matrices from File. If --input was not passed in argv, this method does nothing.
-        loadMatrices();
         // Then output all matrices to file. If --output was not passed in argv, this method outputs everything.
         outputInitialMatrices();
-        // Copy to Device.
+        // Copy remaining stuff to Device.
         initializeDeviceMatricesFromHost();
     }
 

@@ -121,6 +121,7 @@ Example:
 
 ```C++
 PC3::CUDAMatrix<complex_number> custom_matrix;
+//                         This ^^^^^^^^^^^^^ is your matrix definition
 ```
 
 You also need to add the construction of the matrices on both the CPU and GPU memory further down the file at the designated location.
@@ -129,6 +130,7 @@ Example:
 
 ```C++
 custom_matrix.construct( N_x, N_y, "custom_matrix" );
+// ^^^^^^^^^^ This has to match your matrix definition
 ```
 
 The Kernel does not need the larger container class for the matrices. Hence, we provide a stripped-down container struct that contains all of the pointers to the GPU memory locations of the matrices. This is done in the same file in the `Pointers` struct, again at the designated location in the code.
@@ -137,9 +139,12 @@ Example:
 
 ```C++
 complex_number* custom_matrix; // Inside the Pointers struct definition
+//         This ^^^^^^^^^^^^^ is your matrix pointer definition
 ...
 custom_matrix.getDevicePtr() // Inside the pointers() method
+// ^^^^^^^^^^ This has to match your matrix definition
 ```
+Make sure they appear in the same order relative to the other matrices in both places.
 
 Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix[i]`!
 
@@ -152,6 +157,7 @@ Example:
     
 ```C++
 PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential, custom_envelope;
+// This is your envelope defintion                                   ^^^^^^^^^^^^^^^
 ```
 
 Add parsing of your envelope inside the [system initialization source file](source/system/system_initialization.cpp). Search for the designated location inside the code. The other envelopes also get parsed there.
@@ -160,6 +166,7 @@ Example:
 
 ```C++
 custom_envelope = PC3::Envelope::fromCommandlineArguments( argc, argv, "customEnvelope", false );
+// ^^^^^^^^^^^ this is your envelope name in the code and        this   ^^^^^^^^^^^^^ is just a debugging helper. They dont have to match.
 ```
 
 This envelope can then be passed via the commandline using `--customEnvelope ...`
@@ -170,11 +177,14 @@ Example:
 ```C++
 std::cout << "Initializing Custom Envelopes..." << std::endl;
 if ( system.custom_envelope.size() == 0 ) {
+    //      ^^^^^^^^^^^^^^^  make sure this matches your definition
     std::cout << "No custom envelope provided." << std::endl;
 } else {
-    system.calculateEnvelope( matrix.custom_envelope_plus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0 /* Default if no mask is applied */ );
+    system.custom_envelope( matrix.custom_envelope_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0 /* Default if no mask is applied */ );
+    //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^ this too
     if ( system.use_twin_mode ) {
-        system.calculateEnvelope( matrix.custom_envelope_minus.getHostPtr(), system.custom_envelope, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0 /* Default if no mask is applied */ );
+        system.custom_envelope( matrix.custom_envelope_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0 /* Default if no mask is applied */ );
+        //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^^ this too
     }
 }
 ```
@@ -188,15 +198,10 @@ Example:
 ```C++
 if ( system.doOutput( "all" ) ) // Or add your custom keys here
     system.filehandler.outputMatrixToFile( matrix.custom_matrix.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "custom_matrix" );
+    //                             make sure this ^^^^^^^^^^^^^ again matches your definition.    This is the output file name ^^^^^^^^^^^^^ without the ".txt"
 ```
 
-And the possible loading of matrices from the loading folder by editing the code of the [solver matrix load method](source/cuda_solver/solver/solver_load_matrices.cpp). 
-
-Example:
-
-```C++
-filehandler.loadMatrixFromFile( filehandler.loadPath + "custom_matrix.txt", matrix.custom_matrix.getHostPtr() );
-```
+You can of course also load external .txt matrices using the regular envelope syntax.
 
 # TODO
 - Better Benchmarking

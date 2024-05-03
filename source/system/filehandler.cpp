@@ -7,7 +7,6 @@
 #include "omp.h"
 
 PC3::FileHandler::FileHandler() : outputPath( "data" ),
-                                  loadPath( "data" ),
                                   outputName( "" ),
                                   color_palette( "vik" ),
                                   color_palette_phase( "viko" ),
@@ -26,11 +25,6 @@ void PC3::FileHandler::init( int argc, char** argv ) {
 
     if ( ( index = findInArgv( "--name", argc, argv ) ) != -1 )
         outputName = getNextStringInput( argv, argc, "name", ++index );
-
-    // Save Load Path if passed, else use output path as laod path
-    loadPath = outputPath;
-    if ( ( index = findInArgv( "--loadFrom", argc, argv ) ) != -1 )
-        loadPath = getNextStringInput( argv, argc, "loadFrom", ++index );
 
     // Colormap
     if ( ( index = findInArgv( "--cmap", argc, argv ) ) != -1 ) {

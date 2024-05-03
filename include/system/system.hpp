@@ -107,18 +107,6 @@ class System {
     // Save structure as bool use_twin_mode
     bool use_twin_mode;
 
-    /**
-     * @brief Calculates a mask for the given system and saves it to the mask buffer.
-     * @param buffer The buffer to save the mask to.
-     * @param mask The envelope of the mask.
-     * @param polarization The polarization of the mask. If set to 0, the mask will
-     * always be applied no matter the polarization. If set to 1, the mask will only
-     * be applied to the plus polarization. If set to -1, the mask will only be
-     * applied to the minus polarization.
-     */
-    void calculateEnvelope( real_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
-    void calculateEnvelope( complex_number* buffer, const PC3::Envelope& mask, const int group, PC3::Envelope::Polarization polarization, real_number default_value_if_no_mask = 0.0 );
-
     bool evaluatePulse();
     bool evaluateReservoir();
     bool evaluateStochastic();

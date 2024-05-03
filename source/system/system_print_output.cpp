@@ -79,16 +79,19 @@ void PC3::System::printHelp() {
               << unifyLength( "--deltaLT", "<double>", "Standard is " + to_str( p.delta_LT ) + " eV. Only effective in a system with TE/TM splitting.\n" )
               << unifyLength( "--L", "<double> <double>", "Standard is " + to_str( p.L_x ) + ", " + to_str( p.L_y ) + " mum\n" ) << std::endl;
     std::cout << "-----------------------------------------------------------------------------------\n";
-    std::cout << unifyLength( "Pulse, pump and mask.", "", "\n" )
-              << unifyLength( "Flag", "Inputs", "Description\n", 30, 80 )
-              << unifyLength( "--pump", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring)\n", 30, 80 )
-              << unifyLength( "--potential", "Same as Pump", "\n", 30, 80 )
-              << unifyLength( "--initialState", "Same as Pump", "\n", 30, 80 )
-              << unifyLength( "--initRandom", "<double>", "Amplitude. Randomly initialize Psi\n", 30, 80 )
-              << unifyLength( "--pulse", "Same as Pump <double> <double> <double> <int>", "t0, frequency, sigma, m\n", 30, 80 )
-              << unifyLength( "--fftMask", "Same as Pump", "\n", 30, 80 )
+    std::cout << unifyLength( "Envelopes.", "", "\n" )
+              << "Envelopes are passed using either their spatial and temporal characteristics, or by loading an external file. Syntax:\n"
+              << unifyLength( "--envelope", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string> [osc <double> <double> <double>]", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring) [t0, frequency, sigma]\n", 30, 80 )
+              << unifyLength( "--envelope", "<string> <double> <string> <string> [osc <double> <double> <double>]", "path, amplitude, behaviour (add,multiply,replace,adaptive,complex), pol (plus,minus,both) [t0, frequency, sigma]\n", 30, 80 )
+              << "Possible Envelopes include:"
+              << unifyLength( "--pump", "Spatial and Temporal ~cos(wt)", "\n", 30, 80 )
+              << unifyLength( "--potential", "Spatial and Temporal ~cos(wt)", "\n", 30, 80 )
+              << unifyLength( "--initialState", "Spatial", "\n", 30, 80 )
+              << unifyLength( "--pulse", "Spatial and Temporal ~exp(iwt)", "\n", 30, 80 )
+              << unifyLength( "--fftMask", "Spatial", "\n", 30, 80 )
+              << "Additional Parameters:\n"
               << unifyLength( "--fftEvery", "<int>", "Apply FFT Filter every x ps\n", 30, 80 )
-              << unifyLength( "-masknorm", "no arguments", "If passed, both the mask and Psi will be normalized before calculating the error.\n", 30, 80 ) << std::endl;
+              << unifyLength( "--initRandom", "<double>", "Amplitude. Randomly initialize Psi\n", 30, 80 );
     std::cout << "-----------------------------------------------------------------------------------\n";
     std::cout << unifyLength("SI Scalings", "", "\n")
               << unifyLength( "Flag", "Inputs", "Description\n" )
@@ -127,29 +130,15 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << "Boundary Condition: " << (p.periodic_boundary_x ? "Periodic" : "Zero" ) << "(x):" << (p.periodic_boundary_y ? "Periodic" : "Zero" ) << "(y)" << std::endl;
     std::cout << "--------------------------------- Envelope Functions ------------------------------" << std::endl;
     // TODO: overwrite << operator of the Envelope Class
-    for ( int i = 0; i < pulse.amp.size(); i++ ) {
-        auto g = pulse.group_identifier[i];
-        std::cout << "Pulse (G" << g << ") at t0 = " << pulse.t0[g] << ", amp = " << pulse.amp[i] << ", freq = " << pulse.freq[g] << ", sigma = " << pulse.sigma[g] << "\n         m = " << pulse.m[i] << ", pol = " << pulse.s_pol[i] << ", width X = " << pulse.width_x[i] << ", width Y = " << pulse.width_y[i] << ", X = " << pulse.x[i] << ", Y = " << pulse.y[i] << std::endl;
-    }
-    for ( int i = 0; i < pump.amp.size(); i++ ) {
-        auto g = pump.group_identifier[i];
-        std::cout << "Pump (G" << g << ") at t0 = " << pump.t0[g] << ", freq = " << pump.freq[g] << ", sigma = " << pump.sigma[g] << "\n          at amp = " << pump.amp[i] << ", width X = " << pump.width_x[i] << ", width Y = " << pump.width_y[i] << ", X = " << pump.x[i] << ", Y = " << pump.y[i] << ", pol = " << pump.s_pol[i] << ", type = " << pump.s_type[i] << std::endl;
-    }
-    for ( int i = 0; i < potential.amp.size(); i++ ) {
-        auto g = potential.group_identifier[i];
-        std::cout << "Potential (G" << g << ") at t0 = " << potential.t0[g] << ", freq = " << potential.freq[g] << ", sigma = " << potential.sigma[g] << "\n          at amp = " << potential.amp[i] << ", width X = " << potential.width_x[i] << ", width Y = " << potential.width_y[i] << ", X = " << potential.x[i] << ", Y = " << potential.y[i] << ", pol = " << potential.s_pol[i] << ", type = " << potential.s_type[i] << std::endl;
-    }
-    for ( int i = 0; i < fft_mask.amp.size(); i++ ) {
-        std::cout << "FFT Mask at amp = " << fft_mask.amp[i] << ", width X = " << fft_mask.width_x[i] << ", width Y = " << fft_mask.width_y[i] << ", X = " << fft_mask.x[i] << ", Y = " << fft_mask.y[i] << ", pol = " << fft_mask.s_pol[i] << ", type = " << fft_mask.s_type[i] << std::endl;
-    }
-    if ( fft_mask.size() > 0 )
-        std::cout << "Applying FFT every " << fft_every << " ps" << std::endl;
+    std::cout << "Pulse Envelopes:\n" << pulse.toString();
+    std::cout << "Pump Envelopes:\n" << pump.toString();
+    std::cout << "Potential Envelopes:\n" << potential.toString();
+    std::cout << "FFT Mask Envelopes:\n" << fft_mask.toString();
+    std::cout << "Initial State Envelopes:\n" << initial_state.toString();
     std::cout << EscapeSequence::BOLD << "--------------------------------- Runtime Statistics ------------------------------" << EscapeSequence::RESET << std::endl;
     double total = PC3::TimeIt::totalRuntime();
     std::cout << unifyLength( "Total Runtime:", std::to_string( total ) + "s", std::to_string( total / p.t * 1E3 ) + "ms/ps", l, l ) << " --> " << std::to_string( p.t/total ) << "ps/s" << " --> " << std::to_string( total / iteration ) << "s/it" << std::endl;
     std::cout << EscapeSequence::BOLD << "---------------------------------------- Infos ------------------------------------" << EscapeSequence::RESET << std::endl;
-    if ( filehandler.loadPath.size() > 0 and not input_keys.empty() )
-        std::cout << "Loaded Initial Matrices from " << filehandler.loadPath << std::endl;
     if ( fixed_time_step )
         std::cout << "Calculations done using the fixed timestep RK4 solver" << std::endl;
     else {
@@ -159,6 +148,8 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
         std::cout << " = dt_min used: " << dt_min << std::endl;
     }
     std::cout << "Calculated until t = " << p.t << "ps" << std::endl;
+    if ( fft_mask.size() > 0 )
+        std::cout << "Applying FFT every " << fft_every << " ps" << std::endl;
     std::cout << "Output variables and plots every " << output_every << " ps" << std::endl;
     std::cout << "Total allocated space for Device Matrices: " << CUDAMatrixBase::global_total_device_mb_max << " MB." << std::endl;
     std::cout << "Total allocated space for Host Matrices: " << CUDAMatrixBase::global_total_host_mb_max << " MB." << std::endl;

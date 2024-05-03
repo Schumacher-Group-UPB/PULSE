@@ -11,15 +11,22 @@ namespace PC3 {
 
 class Envelope {
     public:
+    // Parameters to Construct the Envelope from
     std::vector<real_number> amp, width_x, width_y, x, y, exponent;
     std::vector<int> m;
     std::vector<real_number> freq, sigma, t0;
     std::vector<std::string> s_type, s_pol, s_behavior;
+    // Or path to load the matrix from
+    std::vector<std::string> load_path;
+    // Either way, all of these vectors should have the same length
+
     // Identifier for temporal grouping
     // Same length as amp, width, ... and maps the spatial envelope to the temporal envelopes
     std::vector<int> group_identifier;
     // Helper map to map the temporal group identifier to an index in group_identifier
     std::map<std::string, int> str_to_group_identifier;
+    // Helper to load cache matrices from paths
+    std::vector<std::unique_ptr<complex_number[]>> cache;
 
     enum class Type : unsigned int {
         Gauss = 1, // Gaussian Envelope
@@ -69,11 +76,73 @@ class Envelope {
     static inline int AllGroups = -1;
 
     void addSpacial(real_number amp, real_number width_x, real_number width_y, real_number x, real_number y, real_number exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
+    void addSpacial(const std::string& path, real_number amp, const std::string& s_behaviour, const std::string& s_pol);
     void addTemporal(real_number t0, real_number sigma, real_number freq);
-    int size();
-    int groupSize();
+    int size() const;
+    int groupSize() const;
+    int sizeOfGroup(int g) const;
+
+    struct Dimensions {
+        size_t N_x, N_y;
+        real_number L_x,L_y,dx,dy;
+        Dimensions(size_t N_x, size_t N_y, real_number L_x, real_number L_y, real_number dx, real_number dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
+    };
+
+    void calculate( real_number* buffer, const int group, Polarization polarization, Dimensions dim, real_number default_value_if_no_mask = 0.0 );
+    void calculate( complex_number* buffer, const int group, Polarization polarization, Dimensions dim, real_number default_value_if_no_mask = 0.0 );
+
+    // We use template functions here to avoid circular dependencies
+    template <class FH>
+    void prepareCache(FH& filehandler, const Dimensions& dim) {
+        if ( cache.size() > 0 )
+            return;
+        for ( int c = 0; c < load_path.size(); c++ ) {
+            cache.push_back( nullptr );
+            if ( load_path[c] == "" )
+                continue;
+            cache.back() = std::make_unique<complex_number[]>( dim.N_x * dim.N_y );
+            filehandler.loadMatrixFromFile( load_path[c], cache.back().get() );
+        }
+    }
+    template <class FH, typename T> 
+    void calculate(FH& filehandler, T* buffer, const int group, Polarization polarization, Dimensions dim, real_number default_value_if_no_mask = 0.0) {
+        prepareCache( filehandler, dim );
+        calculate( buffer, group, polarization, dim, default_value_if_no_mask );
+    }
 
     static Envelope fromCommandlineArguments( int argc, char** argv, const std::string& key, const bool time );
+
+    // Overwrite "<<" operator for cout
+    std::string toString() const {
+        auto os = std::ostringstream();
+        auto gs = groupSize();
+        std::string b = "";
+        if (gs > 1) {
+            os << " Groups: " << gs << std::endl;
+            b = "  ";
+        }
+        for ( int g = 0; g < groupSize(); g++ ) {
+            if (gs > 1) {
+                os << "  Group: " << g << " - contains " << sizeOfGroup(g) << " envelopes." << std::endl;
+            }
+            if (t0[g] == 0 and sigma[g] > 1e19 and freq[g] == 0)
+                os << b << "  No Temporal Envelope" << std::endl;
+            else
+                os << b << "  t0 = " << t0[g] << ", sigma = " << sigma[g] << ", freq = " << freq[g] << std::endl;
+            for ( int i = 0; i < size(); i++ ) {
+                if ( group_identifier[i] != g )
+                    continue;
+                if (load_path[i] == "") {
+                os << "   Envelope " << i << ":" << std::endl;
+                os << "    Amplitude: " << amp[i] << ", Width_x: " << width_x[i] << ", Width_y: " << width_y[i] << ", x: " << x[i] << ", y: " << y[i] << ", Exponent: " << exponent[i] << std::endl;
+                } else {
+                    os << "   Envelope " << i << " - Loaded from: " << load_path[i] << std::endl;
+                }
+            }
+        }
+        return os.str();
+    
+    }
 };
 
 // Overload the bitwise OR (|) operator

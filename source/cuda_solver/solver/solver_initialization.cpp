@@ -18,11 +18,13 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     // ==================================================
     std::cout << "Initializing Host Matrices..." << std::endl;
 
+    Envelope::Dimensions dim{ system.p.N_x, system.p.N_y, system.p.L_x, system.p.L_y, system.p.dx, system.p.dy };
+
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
-    system.calculateEnvelope( matrix.initial_state_plus.getHostPtr(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus );
+    system.initial_state.calculate( system.filehandler, matrix.initial_state_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
     std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( complex_number& z ) mutable { z = z + matrix.initial_state_plus[i]; i++; } );
     if ( system.use_twin_mode ) {
-        system.calculateEnvelope( matrix.initial_state_minus.getHostPtr(), system.initial_state, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus );
+        system.initial_state.calculate( system.filehandler, matrix.initial_state_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
         std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( complex_number& z ) mutable { z = z + matrix.initial_state_minus[i]; i++; } );
     }
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
@@ -45,9 +47,9 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     // ==================================================
     std::cout << "Initializing Pump Envelopes..." << std::endl;
     for ( int i = 0; i < system.pump.groupSize(); i++ ) {
-        system.calculateEnvelope( matrix.pump_plus.getHostPtr() + i * system.p.N2, system.pump, i, PC3::Envelope::Polarization::Plus );
+        system.pump.calculate( system.filehandler, matrix.pump_plus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Plus, dim );
         if ( system.use_twin_mode ) {
-            system.calculateEnvelope( matrix.pump_minus.getHostPtr() + i * system.p.N2, system.pump, i, PC3::Envelope::Polarization::Minus );
+            system.pump.calculate( system.filehandler, matrix.pump_minus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Minus, dim );
         }
     }
     std::cout << EscapeSequence::GRAY << "Pump Groups: " << system.pump.groupSize() << EscapeSequence::RESET << std::endl;
@@ -57,9 +59,9 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     // ==================================================
     std::cout << "Initializing Potential Envelopes..." << std::endl;
     for ( int i = 0; i < system.potential.groupSize(); i++ ) {
-        system.calculateEnvelope( matrix.potential_plus.getHostPtr() + i * system.p.N2, system.potential, i, PC3::Envelope::Polarization::Plus );
+        system.potential.calculate( system.filehandler, matrix.potential_plus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Plus, dim );
         if ( system.use_twin_mode ) {
-            system.calculateEnvelope( matrix.potential_minus.getHostPtr() + i * system.p.N2, system.potential, i, PC3::Envelope::Polarization::Minus );
+            system.potential.calculate( system.filehandler, matrix.potential_minus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Minus, dim );
         }
     }
     std::cout << EscapeSequence::GRAY << "Potential Groups: " << system.potential.groupSize() << EscapeSequence::RESET << std::endl;
@@ -69,9 +71,9 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     // ==================================================
     std::cout << "Initializing Pulse Envelopes..." << std::endl;
     for ( int i = 0; i < system.pulse.groupSize(); i++ ) {
-        system.calculateEnvelope( matrix.pulse_plus.getHostPtr() + i * system.p.N2, system.pulse, i, PC3::Envelope::Polarization::Plus );
+        system.pulse.calculate( system.filehandler, matrix.pulse_plus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Plus, dim );
         if ( system.use_twin_mode ) {
-            system.calculateEnvelope( matrix.pulse_minus.getHostPtr() + i * system.p.N2, system.pulse, i, PC3::Envelope::Polarization::Minus );
+            system.pulse.calculate( system.filehandler, matrix.pulse_minus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Minus, dim );
         }
     }
     std::cout << EscapeSequence::GRAY << "Pulse Groups: " << system.pulse.groupSize() << EscapeSequence::RESET << std::endl;
@@ -83,9 +85,9 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     if ( system.fft_mask.size() == 0 ) {
         std::cout << "No fft mask provided." << std::endl;
     } else {
-        system.calculateEnvelope( matrix.fft_mask_plus.getHostPtr(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 1.0 /* Default if no mask is applied */ );
+        system.fft_mask.calculate( system.filehandler, matrix.fft_mask_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim, 1.0 /* Default if no mask is applied */ );
         if ( system.use_twin_mode ) {
-            system.calculateEnvelope( matrix.fft_mask_minus.getHostPtr(), system.fft_mask, PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 1.0 /* Default if no mask is applied */ );
+            system.fft_mask.calculate( system.filehandler, matrix.fft_mask_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim, 1.0 /* Default if no mask is applied */ );
         }
     }
 

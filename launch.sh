@@ -9,19 +9,6 @@ system_parameters=(
 
     ############################ Basic Configuration ###########################
 
-    ##-------------------------- Loading Parameters --------------------------##
-    # To correctly load matrices, their filenames have to equal the output filenames
-    #   of the program. For example, if the program outputs "wavefunction_plus.txt", 
-    #   then the input file has to be named "wavefunction_plus.txt".
-    #"--loadFrom <path>" # Path to Load input matrices from
-    ## -- Input Keywords -- #
-    # The files to actually load can then be specified using keywords.
-    #   For example, if you want to load the pump, then pump_plus/minus.txt has to
-    #   exist in the load path, as well as the keyword "pump" (or "mat" or "all") 
-    #   has to be specified.
-    #   Don't forget to specify the grid size N using --N <gridsize>
-    #"--input pump,potential,initial,fft" # Keywords of input matrices to load
-
     ##-------------------------- Output Parameters ---------------------------##
     #"--output <strings>"                                                   # Keywords of matrices to output to file
     #                                                                       # You can also specify "none" to disable all output, or "max" or "scalar" to not output matrices
@@ -48,7 +35,10 @@ system_parameters=(
 
     ##---------------------------- Mask Syntax -------------------------------##
     #"--(mask) <Amplitude> <behaviour:add,multiply,replace,adaptive,complex> <Width X> <Width Y> <X> <Y> 
-    #          <polarization:plus,minus,both> <Exponent> <Charge or none> <gauss,outerExponent,ring,noDivide,local> # FFT Mask
+    #          <polarization:plus,minus,both> <Exponent> <Charge or none> <gauss,outerExponent,ring,noDivide,local> # Matrix Mask
+    # or:
+    #"--(mask) path/to/matrix.txt <Scaling Amplitude> <behaviour:add,multiply,replace,adaptive,complex> <polarization:plus,minus,both> # Matrix Mask 
+    #
     # Amplitude: float
     # Behaviour: add, multiply, replace, adaptive, complex
     #   add: Add the mask to the current mask
@@ -85,7 +75,7 @@ system_parameters=(
     ##------------------------- Pulse Configuration --------------------------##
     # The pulses follow the same syntax as the masks. Additionally, they also take
     # a T0, Frequency and TWidth parameter.
-    #"--pulse <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type> <T0> <Frequency> <TWidth>"
+    #"--pulse <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type> osc <T0> <Frequency> <TWidth>"
     
     ##---------------------- Initial State Configuration ---------------------##
     #"--initialState <Amp> <Behaviour> <Width X> <Width Y> <X> <Y> <Pol> <Exponent> <M> <Type>"

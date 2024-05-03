@@ -12,7 +12,7 @@ namespace PC3 {
 class FileHandler {
    public:
     std::map<std::string, std::ofstream> files;
-    std::string outputPath, loadPath, outputName, color_palette, color_palette_phase;
+    std::string outputPath, outputName, color_palette, color_palette_phase;
 
     bool disableRender;
 
