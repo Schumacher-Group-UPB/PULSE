@@ -1,5 +1,6 @@
 #include "cuda/cuda_complex.cuh"
 #include "misc/commandline_input.hpp"
+#include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
 #include "cuda/cuda_complex.cuh"
 #include "system/filehandler.hpp"
@@ -306,21 +307,22 @@ std::string PC3::Envelope::toString() const {
                 continue;
             if ( load_path[i] == "" ) {
                 os << b << "  Envelope " << i << ":" << std::endl
-                   << "    " << b << unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "Type: ", s_type[i], "", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "Polarization: ", s_pol[i], "", 25, 25, 25, " " ) << std::endl
-                   << "    " << b << unifyLength( "Behavior: ", s_behavior[i], "", 25, 25, 25, " " ) << std::endl;
+                   << "    " << b << "Generated from Parameters:" << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Type: ", s_type[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Polarization: ", s_pol[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Behavior: ", s_behavior[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl;
             } else {
                 os << b << "  Envelope " << i << ":" << std::endl
-                   << b << "     Loaded from: " << load_path[i] << std::endl
-                   << b << "     Scaling Amp: " << amp[i] << std::endl
-                   << b << "     Behavior: " << s_behavior[i] << std::endl
-                   << b << "     Polarization: " << s_pol[i] << std::endl;
+                   << b << EscapeSequence::GRAY << "     Loaded from: " << load_path[i] << EscapeSequence::RESET << std::endl
+                   << b << EscapeSequence::GRAY << "     Scaling Amp: " << amp[i] << EscapeSequence::RESET << std::endl
+                   << b << EscapeSequence::GRAY << "     Behavior: " << s_behavior[i] << EscapeSequence::RESET << std::endl
+                   << b << EscapeSequence::GRAY << "     Polarization: " << s_pol[i] << EscapeSequence::RESET << std::endl;
             }
         }
     }
