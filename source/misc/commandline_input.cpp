@@ -85,7 +85,7 @@ std::string unifyLength(std::string w1, std::string w2, std::string w3, int L1, 
     auto lines3 = splitIntoLines(w3, L3);
 
     std::string result;
-    size_t maxLines = std::max({lines1.size(), lines2.size(), lines3.size()});
+    size_t maxLines = std::max(std::max(lines1.size(), lines2.size()), lines3.size());
 
     for (size_t i = 0; i < maxLines; ++i) {
         if (i < lines1.size()) result += lines1[i]; else result += std::string(L1, ' '); result += seperator;
