@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <memory>
 #include <bit>
 
 #include "cuda/cuda_complex.cuh"
