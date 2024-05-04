@@ -11,15 +11,14 @@ TETM ?= FALSE
 FP32 ?= FALSE
 CPU ?= FALSE
 
+# SFML PATH
+SFML_PATH = external/SFML/
+
 # Compiler flags
 GCCFLAGS = -std=c++20 -fopenmp -x c++
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -rdc=true
-	ifeq ($(COMPILER),nvcc)
-		SFMLLIBS = -I'SFML_msvc/include/' -L'SFML_msvc/lib'
-	else
-		SFMLLIBS = -I'SFML_gcc/include/' -L'SFML_gcc/lib'
-	endif
+	SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 else
 	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -rdc=true -diag-suppress 177 -lstdc++ 
 endif
