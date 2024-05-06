@@ -162,13 +162,14 @@ Again add the definition of your matrix at the designated location in the code
 Example:
 
 ```C++
-DEFINE_MATRIX(complex_number, custom_matrix, 1) \
+DEFINE_MATRIX(complex_number, custom_matrix_plus, 1) \
+DEFINE_MATRIX(complex_number, custom_matrix_minus, 1) \
 //                       This ^^^^^^^^^^^^^ is your matrix definition
 ```
 
-You usually only have to change the name of your matrix. Don't forget the trailing backslashes.
+You usually only have to change the name of your matrix. If you want to support TE/TM splitting, make sure to use two matrices, ideally with a trailing `_plus` or `_minus`. Don't forget the trailing backslashes.
 
-Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix[i]`!
+Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix_plus[i]`!
 
 ### Defining envelope parsing to fill the custom matrix during [the system initialization](source/system/system_initialization.cpp)
 Custom envelopes require three things: Definition of the envelope variable, parsing of the envelope and calculating/transfering it onto your custom matrix.
@@ -202,10 +203,10 @@ if ( system.custom_envelope.size() == 0 ) {
     //      ^^^^^^^^^^^^^^^  make sure this matches your definition
     std::cout << "No custom envelope provided." << std::endl;
 } else {
-    system.custom_envelope( matrix.custom_envelope_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0 /* Default if no mask is applied */ );
+    system.custom_envelope( matrix.custom_matrix_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0 /* Default if no mask is applied */ );
     //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^ this too
     if ( system.use_twin_mode ) {
-        system.custom_envelope( matrix.custom_envelope_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0 /* Default if no mask is applied */ );
+        system.custom_envelope( matrix.custom_matrix_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0 /* Default if no mask is applied */ );
         //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^^ this too
     }
 }
