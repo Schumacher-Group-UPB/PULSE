@@ -144,10 +144,11 @@ Examples:
 if ( ( index = findInArgv( "--custom_var", argc, argv ) ) != -1 )
     p.custom_var = getNextInput( argv, argc, "custom_var", ++index );
 
-if ( ( index = findInArgv( "--custom_vars", argc, argv ) ) != -1 )
+if ( ( index = findInArgv( "--custom_vars", argc, argv ) ) != -1 ) {
     p.custom_var_1 = getNextInput( argv, argc, "custom_var_1", ++index ); // <-- Note the "++index"
     p.custom_var_2 = getNextInput( argv, argc, "custom_var_2", index ); 
     p.custom_var_3 = getNextInput( argv, argc, "custom_var_3", index );
+}
 ```
 
 If done correctly, you can now add your own variables to the Kernels, parse them using the same syntax as you can for the remaining parameters and use them in the Kernels by calling `p.custom_var`!
@@ -187,7 +188,7 @@ Example:
 
 ```C++
 custom_envelope = PC3::Envelope::fromCommandlineArguments( argc, argv, "customEnvelope", false );
-// ^^^^^^^^^^^ this is your envelope name in the code and        this   ^^^^^^^^^^^^^ is just a debugging helper. They dont have to match.
+// ^^^^^^^^^^^ this is your envelope name in the code and        this   ^^^^^^^^^^^^^ is the name used for parsing the command line.
 ```
 
 This envelope can then be passed via the commandline using `--customEnvelope ...`
