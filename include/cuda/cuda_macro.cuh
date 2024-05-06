@@ -85,11 +85,8 @@
 #    define CUDA_FFT_CREATE( plan, Nx, Ny )
 #    define CALL_KERNEL( func, name, grid, block, ... )                                                                                    \
         {                                                                                                                                  \
-            _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( int i = 0; i < system.p.N_x; ++i ) { \
-                for ( int j = 0; j < system.p.N_y; ++j ) {                                                                                 \
-                    const auto index = i * system.p.N_x + j;                                                                               \
-                    func( index, __VA_ARGS__ );                                                                                            \
-                }                                                                                                                          \
+            _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( int i = 0; i < system.p.N_x*system.p.N_y; ++i ) { \
+                    func( i, __VA_ARGS__ );                                                                                            \
             }                                                                                                                              \
         }
 #endif
