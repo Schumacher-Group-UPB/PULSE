@@ -164,7 +164,7 @@ Example:
 ```C++
 DEFINE_MATRIX(complex_number, custom_matrix_plus, 1) \
 DEFINE_MATRIX(complex_number, custom_matrix_minus, 1) \
-//                       This ^^^^^^^^^^^^^ is your matrix definition
+//                       This ^^^^^^^^^^^^^^^^^^^ is your matrix definition
 ```
 
 You usually only have to change the name of your matrix. If you want to support TE/TM splitting, make sure to use two matrices, ideally with a trailing `_plus` or `_minus`. Don't forget the trailing backslashes.
