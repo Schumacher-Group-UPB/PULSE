@@ -11,58 +11,90 @@ P.U.L.S.E. can also solve ...
 - Optional: [Gnuplot](http://www.gnuplot.info/) for fast plotting
 
 If you are on Windows it is required to install some kind of UNIX based software distribution like [msys2](https://www.msys2.org/) or any wsl UNIX distribution for the makefile to work.
-You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path.
+You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path if you want to compile PULSE yourself.
 
 # Build
-Build with SFML rendering
-- Clone the repositry using `git clone --recursive https://github.com/davidbauch/PC3`. This will also donwload the SFML repository.
-- Build SFML using CMake and/or MSVC
-- Alternatively, download SFML 2.6.1 or higher for MSVC if you are on Windows or for gcc if you are on linux.
-- Compile P.U.L.S.E. using `make SFML=TRUE/FALSE [TETM=TRUE/FALSE FP32=TRUE/FALSE]`. Note, that arguments in `[]` are optional and default to `FALSE` if omitted. Pass *either* `TRUE` *or* `FALSE` to the arguments.
+### Build with SFML rendering
+1 -  Clone the repository using
+```    
+    git clone --recursive https://github.com/davidbauch/PC3 
+``` 
+This will also donwload the SFML repository.
 
-When using SFML rendering, you need to either install all SFML libraries correctly, or copy the .dll files that come either with building SFML yourself or with the download of precompiled versions to the main folder of your PULSE executable. If you do not do this and still compile with SFML support, PULSE will crash on launch. For the compilation, you also *need* to provide the path to your SFML installation if it's not already in your systems path. You can do this by setting the `SFML_PATH=...` variable when compiling, similar to passing `SFML=TRUE`. The SFML path needs to contain the SFML `include/...` as well as the `lib/...` folder. These are NOT contained directly in the recursively cloned SFML repository, but rather get created when building SFML yourself. They are also contained in any precompiled version of SFML.
+2 - Build SFML using CMake and/or MSVC
 
-Build without rendering
-- Clone the repositry using `git clone https://github.com/davidbauch/PC3`
-- Compile P.U.L.S.E. using `make [TETM=TRUE/FALSE FP32=TRUE/FALSE]`
+Alternatively, download SFML 2.6.1 or higher for MSVC if you are on Windows or for gcc if you are on linux.
+
+3 - Compile P.U.L.S.E. using 
+
+```
+make SFML=TRUE/FALSE [SFML_PATH=external/SFML/ FP32=TRUE/FALSE ARCH=NONE/ALL/XY]
+```
+Note, that arguments in `[]` are optional and default to `FALSE` (or `NONE`) if omitted. Pass only one parameter to the arguments, for example *either* `TRUE` *or* `FALSE`.
+
+When using SFML rendering, you need to either install all SFML libraries correctly, or copy the .dll files that come either with building SFML yourself or with the download of precompiled versions to the main folder of your PULSE executable. If you do not do this and still compile with SFML support, PULSE will crash on launch. For the compilation, you also *need* to provide the path to your SFML installation if it's not already in your systems path. You can do this by setting the `SFML_PATH=...` variable when compiling, similar to passing `SFML=TRUE`. The SFML path needs to contain the SFML `include/...` as well as the `lib/...` folder. These are NOT contained directly in the recursively cloned SFML repository, but rather get created when building SFML yourself. They are also contained in any precompiled version of SFML, so I suggest to simply download a precompiled version.
+
+### Build without rendering
+1 - Clone the repositry using 
+```bash
+git clone https://github.com/davidbauch/PC3
+```
+
+2 - Compile P.U.L.S.E. using 
+```bash
+make [TETM=TRUE/FALSE ARCH=NONE/ALL/XY]`
+```
 
 ## FP32 - Single Precision
 By default, the program is compiled using double precision 64b floats.
 For some cases, FP32 may be sufficient for convergent simulations.
-To manually change the precision to 32b floats, use the 
+To manually change the precision to 32b floats, use
 
-`-DUSEFP32`
-
-compiler flag. Alternatively, use
-
-`FP32=TRUE`
+```
+FP32=TRUE
+```
 
 when using the makefile.
+
+# CUDA Architexture
+You can also specify the architexture used when compiling PULSE. The release binaries are compiled with a variety of Compute Capabilities (CC). To ensure maximum performance, picking the CC for your specific GPU and using 
+
+```
+ARCH=xy
+```
+
+when using the Makefile, where xy is your CC, is most beneficial.
 
 # Getting Started
 P.U.L.S.E. uses single and double hyphen commandline arguments with multiple parameters per argument. Use
 
-`./main.exe[.o] --help` 
+```
+./main.exe[.o] --help
+```
 
 to get an overview of the available arguments. Also, look into [the shell launchscript](/launch.sh) for a detailed commented parameterset.
 
-## Examples
-We provide multiple examples for using PULSE in scientific work. See the [examples folder](/examples/) for an overview.
+# Usage
 
+Use 
+```
+./main.exe[].o --help
+```
+
+to get a simple overview.
+
+More to come...
+ 
 # Current Stats
 P.U.L.S.E. is currently benchmarked against common Matlab Solvers for the nonlinear Schrödinger Equation as well as against itself as a CPU version.
 
 We reproduce recent research results using P.U.L.S.E. and compare the runtimes. 
 
-All benchmarks are evaluated with minimal output overhead. Hence, we set 
+...
 
-`--outEvery = 1e10` 
+# Examples
+We provide multiple examples for using PULSE in scientific work. See the [examples folder](/examples/) for an overview.
 
-and
-
- `--output max`
- 
-  to only output the final maximum value.
 
 ## Example 1: 
 - Gif of result
@@ -70,11 +102,20 @@ and
 
 ...
 
-Settings: 800 Grid, RK4, 3070Ti
-|  | FP32  | FP64 |
-| - | - | - |
-| Scalar | `~135ms/ps`  | `~465ms/ps`  |
-| TE/TM | tbd.  | `~920ms/ps`  |
+Runstring:
+```bash
+./pulse.exe ...
+```
+
+|  | FP32  | FP64 | CPU |
+| - | - | - | - |
+| RTX 3070ti / AMD Ryzen 6c | 0 | 0 | 0 |
+| RTX 4090 / AMD Ryzen 48c | 0 | 0 | 0 |
+| A100 / AMD Milan | 0 | 0 | 0 |
+
+alt: Scalar  `~135ms/ps`  `~465ms/ps` 
+
+alt: TE/TM  tbd.   `~920ms/ps` 
 
 # Custom Kernel Variables
 Right now, changing Kernels is quite easy to do. Just go to [the kernel source directory](source/cuda_solver/kernel/compute/) and edit one of the Kernel files. Recompile and you are good to go!
@@ -120,31 +161,11 @@ Again add the definition of your matrix at the designated location in the code
 Example:
 
 ```C++
-PC3::CUDAMatrix<complex_number> custom_matrix;
-//                         This ^^^^^^^^^^^^^ is your matrix definition
+DEFINE_MATRIX(complex_number, custom_matrix, 1) \
+//                       This ^^^^^^^^^^^^^ is your matrix definition
 ```
 
-You also need to add the construction of the matrices on both the CPU and GPU memory further down the file at the designated location.
-
-Example:
-
-```C++
-custom_matrix.construct( N_x, N_y, "custom_matrix" );
-// ^^^^^^^^^^ This has to match your matrix definition
-```
-
-The Kernel does not need the larger container class for the matrices. Hence, we provide a stripped-down container struct that contains all of the pointers to the GPU memory locations of the matrices. This is done in the same file in the `Pointers` struct, again at the designated location in the code.
-
-Example:
-
-```C++
-complex_number* custom_matrix; // Inside the Pointers struct definition
-//         This ^^^^^^^^^^^^^ is your matrix pointer definition
-...
-custom_matrix.getDevicePtr() // Inside the pointers() method
-// ^^^^^^^^^^ This has to match your matrix definition
-```
-Make sure they appear in the same order relative to the other matrices in both places.
+You usually only have to change the name of your matrix. Don't forget the trailing backslashes.
 
 Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix[i]`!
 
