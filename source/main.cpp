@@ -29,6 +29,7 @@
 #include <cstdlib>
 #include <omp.h>
 #include <chrono>
+#include <ctime>
 #include "cuda/cuda_complex.cuh"
 #include "system/system.hpp"
 #include "system/filehandler.hpp"
@@ -53,6 +54,7 @@ int main( int argc, char* argv[] ) {
     // Some Helper Variables
     bool running = true;
     double complete_duration = 0.;
+    double last_output_time = 0.;
     size_t complete_iterations = 0;
 
     // Main Loop
@@ -73,6 +75,8 @@ int main( int argc, char* argv[] ) {
         complete_duration = PC3::TimeIt::totalRuntime();
 
         // TODO: move this into function and hide the ugly thing where noone can find it.
+        if ( std::time(nullptr) - last_output_time < 0.25 )
+            continue;
         // Print Runtime
         std::cout << EscapeSequence::HIDE_CURSOR;
         std::cout << "-----------------------------------------------------------------------------------\n";
@@ -94,6 +98,7 @@ int main( int argc, char* argv[] ) {
         std::cout << "    Time per ps: " << complete_duration / system.p.t << "s/ps  -  " << std::setprecision( 3 ) << system.p.t / complete_duration << "ps/s  -  " << complete_iterations / complete_duration << "it/s    \n";
         std::cout << "-----------------------------------------------------------------------------------" << std::endl;
         std::cout << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP;
+        last_output_time = std::time(nullptr);
     }
     std::cout << "\n\n\n\n\n\n\n"
               << EscapeSequence::SHOW_CURSOR;

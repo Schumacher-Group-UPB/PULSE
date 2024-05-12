@@ -95,8 +95,6 @@ if (evaluate_stochastic) \
  * k4 = f(t + dt, input_for_k4) = rungeFuncKernel(input_for_k4)
  * next = current + dt * (1/6 * k1 + 1/3 * k2 + 1/3 * k3 + 1/6 * k4)
  * ------------------------------------------------------------------------------
- * @param evaluate_pulse If true, the pulse is evaluated at the current time step
- * ------------------------------------------------------------------------------
  * The Runge method iterates psi,k1-k4 to psi_next using a wave-like approach.
  * We calculate 4 rows of k1, 3 rows of k2, 2 rows of k3 and 1 row of k4 before the first iteration.
  * Then, we iterate all of the remaining rows after each other, incrementing the buffer for the next iteration.
@@ -157,14 +155,12 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
         delta_time, device_pointers, p, system.use_twin_mode
     );
 
+    // Do one device synchronization to make sure that the kernel has finished
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
-    matrix.wavefunction_plus.swap( matrix.buffer_wavefunction_plus );
-    matrix.reservoir_plus.swap( matrix.buffer_reservoir_plus );
-    if ( system.use_twin_mode ) {
-        matrix.wavefunction_minus.swap( matrix.buffer_wavefunction_minus );
-        matrix.reservoir_minus.swap( matrix.buffer_reservoir_minus );
-    }
 
+    // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
+    swapBuffers();
+    
     return;
 }
 
@@ -292,9 +288,13 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             delta_time, device_pointers, p, system.use_twin_mode
         );
 
+        // Do one device synchronization to make sure that the kernel has finished
+        CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
+
         #ifndef USECPU
         real_number final_error = thrust::reduce( THRUST_DEVICE, matrix.rk_error.getDevicePtr(), matrix.rk_error.getDevicePtr() + p.N_x * p.N_y, 0.0, thrust::plus<real_number>() );
         real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, matrix.wavefunction_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr() + p.N_x * p.N_y, square_reduction(), 0.0, thrust::plus<real_number>() );
+        CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
         #else
         real_number final_error = std::reduce( matrix.rk_error.getDevicePtr(), matrix.rk_error.getDevicePtr() + p.N_x * p.N_y, 0.0, std::plus<real_number>() );
         real_number sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr() + p.N_x * p.N_y, 0.0, std::plus<real_number>(), square_reduction() );
@@ -328,14 +328,8 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         // Accept step if error is below tolerance
         if ( final_error < system.tolerance ) {
             accept = true;
-            // Since the "next" Y is in the buffer_ arrays, we swap current_wavefunction and buffer_wf
-            // This is fast, because we just swap pointers instead of copying data.
-            matrix.wavefunction_plus.swap( matrix.buffer_wavefunction_plus );
-            matrix.reservoir_plus.swap( matrix.buffer_reservoir_plus );
-            if ( system.use_twin_mode ) {
-                matrix.wavefunction_minus.swap( matrix.buffer_wavefunction_minus );
-                matrix.reservoir_minus.swap( matrix.buffer_reservoir_minus );
-            }
+            // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
+            swapBuffers();
         }
     } while ( !accept );
 }

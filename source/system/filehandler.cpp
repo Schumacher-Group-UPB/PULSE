@@ -73,7 +73,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, complex_
     std::istringstream inputstring;
     std::string line;
     int i = 0;
-    double re, im;
+    real_number re, im;
     if ( not filein.is_open() ) {
 #pragma omp critical
         std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;
@@ -113,7 +113,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, real_num
     std::istringstream inputstring;
     std::string line;
     int i = 0;
-    double val;
+    real_number val;
     if ( not filein.is_open() ) {
 #pragma omp critical
         std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;

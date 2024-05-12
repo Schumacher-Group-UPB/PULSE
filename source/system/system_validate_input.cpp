@@ -7,6 +7,10 @@
     }
 
 void PC3::System::validateInputs() {
+    // Warnings
+    if (output_every < 2*p.dt) {
+        std::cout << EscapeSequence::YELLOW << "Output Interval = " << output_every << " is very small!\nThis may lead to slower runtimes due to extensive caching." << EscapeSequence::RESET << std::endl;
+    }
     // TODO.
     // Also: make sure Envelopes are constructed using try:catch blocks. if pc3 tries to read an envelope but fails, it should display a bright yellow message
     // Maybe split envelope read-in and evaluation into two parts? read in in init, evaluate in validateInputs?   

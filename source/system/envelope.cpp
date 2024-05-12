@@ -239,7 +239,7 @@ void PC3::Envelope::calculate( complex_number* buffer, const int group, PC3::Env
                     amplitude = cache[c][i] * amp[c];
                 } else {
                     // Calculate Content of Exponential function
-                    exp_factor = 0.5 * ( CUDA::abs2( cx - x[c] ) / width_x[c] / width_x[c] + CUDA::abs2( cy - y[c] ) / width_y[c] / width_y[c] );
+                    exp_factor = 0.5 * ( CUDA::abs2( ( cx - x[c] ) / width_x[c] ) + CUDA::abs2( ( cy - y[c] ) / width_y[c] ) );
                     // Calculate the exponential function
                     exp_function = CUDA::exp( -CUDA::pow( exp_factor, exponent[c] ) );
                     // If the type is a gaussian outer, we calculate CUDA::exp(...)^N instead of CUDA::exp((...)^N)

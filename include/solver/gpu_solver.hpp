@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include "cuda/cuda_complex.cuh"
 #include "cuda/cuda_matrix.cuh"
 #include "cuda/cuda_macro.cuh"
@@ -35,6 +36,7 @@ class Solver {
         PC3::CUDAMatrix<real_number> t0;
         PC3::CUDAMatrix<real_number> freq;
         PC3::CUDAMatrix<real_number> sigma;
+        std::vector<bool> active;
         unsigned int n;
 
         struct Pointers {
@@ -50,6 +52,13 @@ class Solver {
             freq.construct( n, 1, "oscillation_freq" ).setTo( envelope.freq.data() );
             sigma.construct( n, 1, "oscillation_sigma" ).setTo( envelope.sigma.data() );
             this->n = n;
+            for (int i = 0; i < n; i++) {
+                bool is_active = true;
+                if ( envelope.t0.data()[i] == 0.0 && envelope.freq.data()[i] == 0.0 && envelope.sigma.data()[i] > 1E11 ) {
+                    is_active = false;
+                }
+                active.push_back( is_active );
+            } 
         }
 
         Pointers pointers() {
@@ -59,6 +68,12 @@ class Solver {
 
     // Device Variables
     MatrixContainer matrix;
+
+    // Cache Maps
+    std::map<std::string, std::vector<real_number>> cache_map_scalar;
+    //std::vector<std::vector<complex_number>> wavefunction_plus_history, wavefunction_minus_history;
+    //std::vector<real_number> wavefunction_max_plus, wavefunction_max_minus;
+    //std::vector<real_number> times;
 
     // FFT Plan
     cuda_fft_plan plan;
@@ -90,13 +105,10 @@ class Solver {
      * Excepts the system host components to be initialized.
      */
     void initializeHostMatricesFromSystem();               // Evaluates the envelopes and initializes the host matrices
-    void initializeDeviceParametersFromSystemParameters(); // Transfers the host parameters to their device equivalents
     void initializeDeviceMatricesFromHost();               // Transfers the host matrices to their device equivalents
 
     // Output (Final) Host Matrices to files
     void outputMatrices( const unsigned int start_x, const unsigned int end_x, const unsigned int start_y, const unsigned int end_y, const unsigned int increment, const std::string& suffix = "", const std::string& prefix = "" );
-    // Load Host Matrices from files
-    void loadMatrices();
     // Output Initial Host Matrices to files
     void outputInitialMatrices();
 
@@ -110,6 +122,8 @@ class Solver {
     bool iterateRungeKutta();
 
     void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );
+
+    void swapBuffers();
 
     void cacheValues();
     void cacheMatrices();

@@ -7,23 +7,33 @@ INCDIR = include
 OBJDIR = obj
 
 SFML ?= FALSE
-TETM ?= FALSE
 FP32 ?= FALSE
 CPU ?= FALSE
 
+# GPU Architexture flag. If false, none is used
+ARCH ?= NONE
+
 # SFML PATH
 SFML_PATH = external/SFML/
+# Optimization
+OPTIMIZATION = -O3
 
-# Compiler flags
+# Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
 GCCFLAGS = -std=c++20 -fopenmp -x c++
 ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -rdc=true
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -Xcompiler="-wd4005" -rdc=true
 	SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -rdc=true -diag-suppress 177 -lstdc++ 
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -diag-suppress 177 -diag-suppress 4005 -lstdc++ -rdc=true
 endif
 
-OPTIMIZATION = -O3
+ifneq ($(ARCH),NONE)
+    ifeq ($(ARCH),ALL)
+        NVCCFLAGS += -gencode arch=compute_50,code=sm_50 -gencode arch=compute_52,code=sm_52 -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_72,code=sm_72 -gencode arch=compute_75,code=sm_75 -gencode arch=compute_80,code=sm_80 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_86,code=compute_86
+    else
+        NVCCFLAGS += -gencode arch=compute_$(ARCH),code=sm_$(ARCH) -gencode arch=compute_$(ARCH),code=compute_$(ARCH)
+    endif
+endif
 
 # Object files
 ifeq ($(SFML),FALSE)
@@ -39,10 +49,6 @@ CU_OBJS = $(patsubst $(SRCDIR)/%.cu,$(OBJDIR)/%.o,$(CU_SRCS))
 
 ifeq ($(SFML),TRUE)
 	ADD_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system $(SFMLLIBS) -DSFML_RENDER
-	ADD_FLAGS += 
-endif
-ifeq ($(TETM),TRUE)
-	ADD_FLAGS += -DTETMSPLITTING
 endif
 ifeq ($(FP32),TRUE)
 	ADD_FLAGS += -DUSEFP32
@@ -50,7 +56,6 @@ endif
 ifeq ($(CPU),TRUE)
 	ADD_FLAGS += -DUSECPU
 endif
-#ADD_FLAGS += -gencode arch=compute_86,code=sm_86 # A100: 80, 4090: 89
 
 # Targets
 ifndef TARGET

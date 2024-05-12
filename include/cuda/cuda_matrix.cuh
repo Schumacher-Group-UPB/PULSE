@@ -249,23 +249,24 @@ class CUDAMatrix : CUDAMatrixBase {
     }
 
     // Row, col and index getters for host matrix
+    // The [] operator does synchronize the host and device memory
     inline T at( int index ) const {
-        return host_data.get()[index];
+        return getHostPtr()[index];
     }
     inline T at( int row, int column ) const {
-        return host_data.get()[row * rows + column];
+        return getHostPtr()[row * rows + column];
     }
     inline T& at( int index ) {
-        return host_data.get()[index];
+        return getHostPtr()[index];
     }
     inline T& at( int row, int column ) {
-        return host_data.get()[row * rows + column];
+        return getHostPtr()[row * rows + column];
     }
     inline T& operator[]( int index ) {
         return host_data.get()[index];
     }
     inline T operator()( int row, int column ) {
-        return host_data.get()[row * rows + column];
+        return getHostPtr()[row * rows + column];
     }
 };
 
