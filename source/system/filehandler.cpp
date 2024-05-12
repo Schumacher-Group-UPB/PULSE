@@ -9,8 +9,7 @@
 PC3::FileHandler::FileHandler() : outputPath( "data" ),
                                   outputName( "" ),
                                   color_palette( "vik" ),
-                                  color_palette_phase( "viko" ),
-                                  disableRender( false ){};
+                                  color_palette_phase( "viko" ){};
 
 PC3::FileHandler::FileHandler( int argc, char** argv ) : FileHandler() {
     init( argc, argv );
@@ -31,10 +30,6 @@ void PC3::FileHandler::init( int argc, char** argv ) {
         color_palette = getNextStringInput( argv, argc, "cmap", ++index );
         color_palette_phase = getNextStringInput( argv, argc, "cmap", index );
     }
-
-    // We can also disable to SFML renderer by using the --nosfml flag.
-    if ( findInArgv( "-nosfml", argc, argv ) != -1 )
-        disableRender = true;
 
     // Creating output directory.
     try {

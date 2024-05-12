@@ -59,6 +59,7 @@ class System {
 
     // Numerics
     unsigned int iteration;
+    bool disableRender;
 
     // RK Solver Variables
     real_number t_max, dt_max, dt_min, tolerance, fft_every, random_system_amplitude, magic_timestep;
@@ -117,6 +118,8 @@ class System {
 
     void printHelp();
     void printSummary( std::map<std::string, std::vector<double>> timeit_times, std::map<std::string, double> timeit_times_total );
+    void printCMD( double complete_duration, double complete_iterations );
+    void finishCMD();
 };
 
 } // namespace PC3

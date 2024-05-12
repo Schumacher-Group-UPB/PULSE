@@ -1,3 +1,4 @@
+#include <ctime>
 #include "system/system.hpp"
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
@@ -183,4 +184,38 @@ std::cout << "Device Used: " << EscapeSequence::GREEN << EscapeSequence::BOLD <<
     std::cout << "  Warp-size: " << prop.warpSize << EscapeSequence::RESET << std::endl;
 #endif
     std::cout << EscapeSequence::BOLD << "===================================================================================" << EscapeSequence::RESET << std::endl;
+}
+
+double _pc3_last_output_time = 0.;
+
+void PC3::System::printCMD(double complete_duration, double complete_iterations) {
+    // TODO: move this into function and hide the ugly thing where noone can find it.
+    if ( std::time(nullptr) - _pc3_last_output_time < 0.25 )
+        return;
+    // Print Runtime
+    std::cout << EscapeSequence::HIDE_CURSOR;
+    std::cout << "-----------------------------------------------------------------------------------\n";
+    std::cout << "    T = " << int( p.t ) << "ps - dt = " << std::setprecision( 2 ) << p.dt << "ps    \n";
+    // Progressbar for p.t/t_max
+    std::cout << "    Progress:  [";
+    for ( int i = 0; i < 50. * p.t / t_max; i++ ) {
+        std::cout << EscapeSequence::BLUE << "#" << EscapeSequence::RESET; // █
+    }
+    for ( int i = 0; i < 50. * ( 1. - p.t / t_max ); i++ ) {
+        std::cout << EscapeSequence::GRAY << "#" << EscapeSequence::RESET;
+    }
+    std::cout << "]  " << int( 100. * p.t / t_max ) << "%  \n";
+    bool evaluate_pulse = evaluatePulse();
+    bool evaluate_reservoir = evaluateReservoir();
+    bool evaluate_stochastic = evaluateStochastic();
+    std::cout << "    Current System: " << ( use_twin_mode ? "TE/TM" : "Scalar" ) << " - " << ( evaluate_reservoir ? "With Reservoir" : "No Reservoir" ) << " - " << ( evaluate_pulse ? "With Pulse" : "No Pulse" ) << " - " << ( evaluate_stochastic ? "With Stochastic" : "No Stochastic" ) << "    \n";
+    std::cout << "    Runtime: " << int( complete_duration ) << "s, remaining: " << int( complete_duration * ( t_max - p.t ) / p.t ) << "s    \n";
+    std::cout << "    Time per ps: " << complete_duration / p.t << "s/ps  -  " << std::setprecision( 3 ) << p.t / complete_duration << "ps/s  -  " << complete_iterations / complete_duration << "it/s    \n";
+    std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+    std::cout << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP;
+    _pc3_last_output_time = std::time(nullptr);    
+}
+
+void PC3::System::finishCMD() {
+    std::cout << "\n\n\n\n\n\n\n" << EscapeSequence::SHOW_CURSOR;
 }

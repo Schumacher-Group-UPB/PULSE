@@ -73,6 +73,11 @@ void PC3::System::init( int argc, char** argv ) {
     p.N2 = p.N_x * p.N_y;
     p.dV = p.L_x * p.L_y / p.N2;
 
+    // We can also disable to SFML renderer by using the --nosfml flag.
+    disableRender = false;
+    if ( findInArgv( "-nosfml", argc, argv ) != -1 )
+        disableRender = true;
+
     if ( ( index = findInArgv( "--tmax", argc, argv ) ) != -1 )
         t_max = getNextInput( argv, argc, "s_t_max", ++index );
     if ( ( index = findInArgv( "--tstep", argc, argv ) ) != -1 ) {

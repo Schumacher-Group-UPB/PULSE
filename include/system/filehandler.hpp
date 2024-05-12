@@ -14,8 +14,6 @@ class FileHandler {
     std::map<std::string, std::ofstream> files;
     std::string outputPath, outputName, color_palette, color_palette_phase;
 
-    bool disableRender;
-
     FileHandler();
     FileHandler( int argc, char** argv);
     FileHandler( FileHandler& other ) = delete;

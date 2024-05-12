@@ -78,7 +78,7 @@ double snapshot_time = 0.0;
 size_t current_subplot = 0;
 
 void initSFMLWindow( PC3::Solver& solver ) {
-    if ( solver.system.filehandler.disableRender ) {
+    if ( solver.system.disableRender ) {
         std::cout << "Manually disabled SFML Renderer!" << std::endl;
         return;
     }
@@ -131,7 +131,7 @@ std::vector<std::string> subplot_names{ "FFT - ", "Wavefunction K1 - ", "Wavefun
                                         "Reservoir K1 - ", "Reservoir K2 - ", "Reservoir K3 - ", "Reservoir K4 - ", "Pump - ", "Pulse - ", "Potential - ", "RandomNumber - " };
 
 bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed_time, size_t iterations ) {
-    if ( solver.system.filehandler.disableRender )
+    if ( solver.system.disableRender )
         return true;
     bool running = getWindow().run();
 

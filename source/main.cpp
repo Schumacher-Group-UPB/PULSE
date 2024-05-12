@@ -29,7 +29,6 @@
 #include <cstdlib>
 #include <omp.h>
 #include <chrono>
-#include <ctime>
 #include "cuda/cuda_complex.cuh"
 #include "system/system.hpp"
 #include "system/filehandler.hpp"
@@ -54,7 +53,6 @@ int main( int argc, char* argv[] ) {
     // Some Helper Variables
     bool running = true;
     double complete_duration = 0.;
-    double last_output_time = 0.;
     size_t complete_iterations = 0;
 
     // Main Loop
@@ -71,37 +69,12 @@ int main( int argc, char* argv[] ) {
             solver.cacheMatrices();
             // Plot
             running = plotSFMLWindow( solver, system.p.t, complete_duration, complete_iterations );
-            , "Main-Loop" );
+        , "Main-Loop" );
         complete_duration = PC3::TimeIt::totalRuntime();
 
-        // TODO: move this into function and hide the ugly thing where noone can find it.
-        if ( std::time(nullptr) - last_output_time < 0.25 )
-            continue;
-        // Print Runtime
-        std::cout << EscapeSequence::HIDE_CURSOR;
-        std::cout << "-----------------------------------------------------------------------------------\n";
-        std::cout << "    T = " << int( system.p.t ) << "ps - dt = " << std::setprecision( 2 ) << system.p.dt << "ps    \n";
-        // Progressbar for system.p.t/system.t_max
-        std::cout << "    Progress:  [";
-        for ( int i = 0; i < 50. * system.p.t / system.t_max; i++ ) {
-            std::cout << EscapeSequence::BLUE << "#" << EscapeSequence::RESET; // █
-        }
-        for ( int i = 0; i < 50. * ( 1. - system.p.t / system.t_max ); i++ ) {
-            std::cout << EscapeSequence::GRAY << "#" << EscapeSequence::RESET;
-        }
-        std::cout << "]  " << int( 100. * system.p.t / system.t_max ) << "%  \n";
-        bool evaluate_pulse = system.evaluatePulse();
-        bool evaluate_reservoir = system.evaluateReservoir();
-        bool evaluate_stochastic = system.evaluateStochastic();
-        std::cout << "    Current System: " << ( system.use_twin_mode ? "TE/TM" : "Scalar" ) << " - " << ( evaluate_reservoir ? "With Reservoir" : "No Reservoir" ) << " - " << ( evaluate_pulse ? "With Pulse" : "No Pulse" ) << " - " << ( evaluate_stochastic ? "With Stochastic" : "No Stochastic" ) << "    \n";
-        std::cout << "    Runtime: " << int( complete_duration ) << "s, remaining: " << int( complete_duration * ( system.t_max - system.p.t ) / system.p.t ) << "s    \n";
-        std::cout << "    Time per ps: " << complete_duration / system.p.t << "s/ps  -  " << std::setprecision( 3 ) << system.p.t / complete_duration << "ps/s  -  " << complete_iterations / complete_duration << "it/s    \n";
-        std::cout << "-----------------------------------------------------------------------------------" << std::endl;
-        std::cout << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP << EscapeSequence::LINE_UP;
-        last_output_time = std::time(nullptr);
+        system.printCMD( complete_duration, complete_iterations );
     }
-    std::cout << "\n\n\n\n\n\n\n"
-              << EscapeSequence::SHOW_CURSOR;
+    system.finishCMD();
 
     // Fileoutput
     solver.finalize();
