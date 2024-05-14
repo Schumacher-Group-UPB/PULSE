@@ -67,7 +67,7 @@ class System {
     // Kernel Block Size
     unsigned int block_size, omp_max_threads;
 
-    bool fixed_time_step, normalize_before_masking, randomly_initialize_system, periodic_boundary_x, periodic_boundary_y;
+    bool fixed_time_step, randomly_initialize_system, periodic_boundary_x, periodic_boundary_y;
     unsigned int random_seed;
     
     // History Output
@@ -79,7 +79,7 @@ class System {
     bool imaginary_time;
 
     // Output of Variables
-    std::vector<std::string> output_keys, input_keys;
+    std::vector<std::string> output_keys;
 
     // Envelope ReadIns
     PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;
@@ -98,11 +98,6 @@ class System {
     template <typename... Args>
     bool doOutput( const Args&... args ) {
         return ( ( std::find( output_keys.begin(), output_keys.end(), args ) != output_keys.end() ) || ... );
-    }
-
-    template <typename... Args>
-    bool doInput( const Args&... args ) {
-        return ( ( std::find( input_keys.begin(), input_keys.end(), args ) != input_keys.end() ) || ... );
     }
 
     // Save structure as bool use_twin_mode

@@ -63,8 +63,6 @@ PC3::System::System() {
     // Output of Variables
     output_keys = { "mat", "scalar" };
 
-    normalize_before_masking = false;
-
     // By Default, no stochstic noise is added
     stochastic_amplitude = 0.0;
 

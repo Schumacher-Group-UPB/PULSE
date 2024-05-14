@@ -38,7 +38,7 @@ std::string to_str(T t) {
 
 void PC3::System::printHelp() {
     print_name();
-#ifdef USEFP64
+#ifndef USEFP32
     std::cout << "This program is compiled with " << EscapeSequence::UNDERLINE << EscapeSequence::YELLOW << "double precision" << EscapeSequence::RESET << " numbers.\n";
 #else
     std::cout << "This program is compiled with " << EscapeSequence::UNDERLINE << EscapeSequence::YELLOW << "single precision" << EscapeSequence::RESET << " numbers.\n";
@@ -53,12 +53,13 @@ void PC3::System::printHelp() {
         << unifyLength( "Flag", "Inputs", "Description\n" ) << std::endl
         << unifyLength( "--path", "<string>", "Workingfolder. Standard is '" + filehandler.outputPath + "'" ) << std::endl
         << unifyLength( "--name", "<string>", "File prefix. Standard is '" + filehandler.outputName + "'" ) << std::endl
-        << unifyLength( "--loadFrom", "<string> <string...>", "Loads list of matrices from path." ) << std::endl
+        //<< unifyLength( "--loadFrom", "<string> <string...>", "Loads list of matrices from path." ) << std::endl
+        << unifyLength( "--config", "<string>", "Loads configuration from file." ) << std::endl
         << unifyLength( "--outEvery", "<int>", "Number of Runge-Kutta iterations for each plot. Standard is every " + std::to_string( output_every ) + " ps" ) << std::endl
         << unifyLength( "--output", "<string...>", "Comma seperated list of things to output. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus." ) << std::endl
-        << unifyLength( "--history", "<Y> <points>", "Outputs a maximum number of x-slices at Y for history. y-slices are not supported." ) << std::endl
+        //<< unifyLength( "--history", "<Y> <points>", "Outputs a maximum number of x-slices at Y for history. y-slices are not supported." ) << std::endl
         << unifyLength( "--historyMatrix", "<int> <int> <int> <int> <int>", "Outputs the matrices specified in --output with specified startx,endx,starty,endy index and increment." ) << std::endl
-        << unifyLength( "--input", "<string...>", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus." ) << std::endl
+        //<< unifyLength( "--input", "<string...>", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus." ) << std::endl
         << unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. " ) << std::endl;
     std::cout << seperator << std::endl;
     std::cout << unifyLength( "Numerical parameters", "", "" ) << std::endl 

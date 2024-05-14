@@ -41,10 +41,12 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--deltaLT", argc, argv ) ) != -1 ) {
         p.delta_LT = getNextInput( argv, argc, "deltaLT", ++index );
     }
+
     omp_max_threads = 4;
     if ( ( index = findInArgv( "--threads", argc, argv ) ) != -1 )
         omp_max_threads = (int)getNextInput( argv, argc, "threads", ++index );
     omp_set_num_threads( omp_max_threads );
+
     if ( ( index = findInArgv( "--blocksize", argc, argv ) ) != -1 )
         block_size = (int)getNextInput( argv, argc, "block_size", ++index );
 
@@ -54,14 +56,6 @@ void PC3::System::init( int argc, char** argv ) {
         // Split output_string at ","
         for ( auto range : output_string | std::views::split( ',' ) ) {
             output_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
-        }
-    }
-    if ( ( index = findInArgv( "--input", argc, argv ) ) != -1 ) {
-        input_keys.clear();
-        auto output_string = getNextStringInput( argv, argc, "input", ++index );
-        // Split output_string at ","
-        for ( auto range : output_string | std::views::split( ',' ) ) {
-            input_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
         }
     }
 
@@ -144,11 +138,6 @@ void PC3::System::init( int argc, char** argv ) {
 
     if ( ( index = findInArgv( "--outEvery", argc, argv ) ) != -1 )
         output_every = getNextInput( argv, argc, "output_every", ++index );
-
-    // If -masknorm is passed to the program, the mask and psi is normalized before the error calculation
-    if ( ( index = findInArgv( "-masknorm", argc, argv ) ) != -1 ) {
-        normalize_before_masking = true;
-    }
 
     p.periodic_boundary_x = false;
     p.periodic_boundary_y = false;

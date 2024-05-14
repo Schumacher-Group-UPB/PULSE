@@ -108,10 +108,13 @@
 #    define cuda_fft_plan int
 #    include <random>
 #    define cuda_random_state std::mt19937
+// If nvcc is not used, redefine dim3
+#ifndef __CUDACC__
 class dim3 {
    public:
     int x, y;
 };
+#endif
 #else
 #    include "cufft.h"
 #    include <curand_kernel.h>
