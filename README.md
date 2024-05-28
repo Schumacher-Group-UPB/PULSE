@@ -12,6 +12,7 @@ P.U.L.S.E. can also solve ...
 
 If you are on Windows it is required to install some kind of UNIX based software distribution like [msys2](https://www.msys2.org/) or any wsl UNIX distribution for the makefile to work.
 You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path if you want to compile PULSE yourself.
+Also, make sure to check the C++ Desktop Development section in the VS installer! Then, add [cl.exe](https://stackoverflow.com/questions/7865432/command-line-compile-using-cl-exe) to your [path](https://stackoverflow.com/questions/9546324/adding-a-directory-to-the-path-environment-variable-in-windows)
 
 # Build
 ### Build with SFML rendering
@@ -74,16 +75,14 @@ P.U.L.S.E. uses single and double hyphen commandline arguments with multiple par
 
 to get an overview of the available arguments. Also, look into [the shell launchscript](/launch.sh) for a detailed commented parameterset.
 
-# Usage
+# Trouble Shooting
 
-Use 
-```
-./main.exe[].o --help
-```
+Here are some common errors and how to hopefully fix them
 
-to get a simple overview.
+### Errors on Compilation even though VS and CUDA are installed, CUDA and cl are in the path variable
+If you get syntax or missing file errors, your Visual Studio installation may be incompatible with your current CUDA version. Try updating or downgrading either CUDA or VS, depending on what's older on your system. Older versions of VS can be downloaded [from here](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history#fixed-version-bootstrappers). Don't forget to add the new VS installation to your path. You can download older version for CUDA directly from Nvidias website. 
 
-More to come...
+Current working combinations: VS Community Edition or VS Build Tools 17.9.2 - CUDA 12.4
  
 # Current Stats
 P.U.L.S.E. is currently benchmarked against common Matlab Solvers for the nonlinear Schrödinger Equation as well as against itself as a CPU version.
