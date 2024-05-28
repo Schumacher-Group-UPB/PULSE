@@ -125,6 +125,11 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
                 system.evaluate_pulse_kernel = true;
             }
         }
+        for ( int g = 0; g < system.potential.groupSize(); g++ ) {
+            if ( CUDA::abs2( matrix.potential_plus[i + g * system.p.N2] ) != 0.0 ) {
+                system.evaluate_potential_kernel = true;
+            }
+        }
     }
 
     // TE/TM Guard
@@ -149,6 +154,11 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
         for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
             if ( CUDA::abs2( matrix.pulse_minus[i + g * system.p.N2] ) != 0.0 ) {
                 system.evaluate_pulse_kernel = true;
+            }
+        }
+        for ( int g = 0; g < system.potential.groupSize(); g++ ) {
+            if ( CUDA::abs2( matrix.potential_minus[i + g * system.p.N2] ) != 0.0 ) {
+                system.evaluate_potential_kernel = true;
             }
         }
     }

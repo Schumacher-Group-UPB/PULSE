@@ -112,7 +112,7 @@ void PC3::System::init( int argc, char** argv ) {
     }
 
     if ( ( index = findInArgv( "--dw", argc, argv ) ) != -1 ) {
-        stochastic_amplitude = getNextInput( argv, argc, "dw", ++index );
+        p.stochastic_amplitude = getNextInput( argv, argc, "dw", ++index );
     }
 
     history_output_n = 1000u;

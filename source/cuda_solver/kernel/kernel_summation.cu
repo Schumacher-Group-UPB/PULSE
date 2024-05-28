@@ -5,6 +5,7 @@
  * The Summation Kernels take an additional dt argument although dt is already included in the System::Parameters struct.
  * This is because we want to be able to set the dt to a complex value to enable imaginary time propagation of the system.
 */
+// MARK: - DP 4/5th Order
 
 CUDA_GLOBAL void PC3::Kernel::RK45::runge_sum_to_input_of_k2( int i, complex_number dt, MatrixContainer::Pointers dev_ptrs, System::Parameters p, bool use_twin_mode ) {
     OVERWRITE_THREAD_INDEX(i);
@@ -82,6 +83,8 @@ CUDA_GLOBAL void PC3::Kernel::RK45::runge_sum_final_error( int i, complex_number
     dev_ptrs.rk_error[i] += CUDA::abs2( dt * ( RKCoefficients::e1 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::e3 * dev_ptrs.k3_wavefunction_minus[i] + RKCoefficients::e4 * dev_ptrs.k4_wavefunction_minus[i] + RKCoefficients::e5 * dev_ptrs.k5_wavefunction_minus[i] + RKCoefficients::e6 * dev_ptrs.k6_wavefunction_minus[i] + RKCoefficients::e7 * dev_ptrs.k7_wavefunction_minus[i] ) );
     //dev_ptrs.rk_error[i] += CUDA::abs2( dt * ( RKCoefficients::e1 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::e3 * dev_ptrs.k3_reservoir_minus[i] + RKCoefficients::e4 * dev_ptrs.k4_reservoir_minus[i] + RKCoefficients::e5 * dev_ptrs.k5_reservoir_minus[i] + RKCoefficients::e6 * dev_ptrs.k6_reservoir_minus[i] + RKCoefficients::e7 * dev_ptrs.k7_reservoir_minus[i] ) );
 }
+
+// MARK: - Runge-Kutta 4th Order
 
 CUDA_GLOBAL void PC3::Kernel::RK4::runge_sum_to_input_k2( int i, complex_number dt, MatrixContainer::Pointers dev_ptrs, System::Parameters p, bool use_twin_mode ) {
     OVERWRITE_THREAD_INDEX(i);

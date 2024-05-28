@@ -90,6 +90,20 @@ class Solver {
         outputInitialMatrices();
         // Copy remaining stuff to Device.
         initializeDeviceMatricesFromHost();
+
+        // Set Pump, Potential and Pulse n to zero if they are not evaluated
+        if (not system.evaluate_reservoir_kernel) {
+            std::cout << "Reservoir is not evaluated, setting n to zero." << std::endl;
+            dev_pump_oscillation.n = 0;
+        }
+        if (not system.evaluate_potential_kernel) {
+            std::cout << "Potential is not evaluated, setting n to zero." << std::endl;
+            dev_potential_oscillation.n = 0;
+        } 
+        if (not system.evaluate_pulse_kernel) {
+            std::cout << "Pulse is not evaluated, setting n to zero." << std::endl;
+            dev_pulse_oscillation.n = 0;
+        }
     }
 
     ~Solver() {

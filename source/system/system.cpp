@@ -64,7 +64,7 @@ PC3::System::System() {
     output_keys = { "mat", "scalar" };
 
     // By Default, no stochstic noise is added
-    stochastic_amplitude = 0.0;
+    p.stochastic_amplitude = 0.0;
 
     randomly_initialize_system = false;
     random_system_amplitude = 1.0;
@@ -141,5 +141,5 @@ bool PC3::System::evaluateReservoir() {
 }
 
 bool PC3::System::evaluateStochastic() {
-    return stochastic_amplitude != 0.0;
+    return p.stochastic_amplitude != 0.0;
 }

@@ -36,48 +36,17 @@ real_number cached_t = 0.0;
 
 // Helper macro to choose the correct runge function
 #define RUNGE_FUNCTION_GP (system.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
-#define RUNGE_FUNCTION_RE (system.use_twin_mode ? PC3::Kernel::Compute::tetm_reservoir : PC3::Kernel::Compute::scalar_reservoir)
-#define RUNGE_FUNCTION_PULSE (system.use_twin_mode ? PC3::Kernel::Compute::tetm_pulse : PC3::Kernel::Compute::scalar_pulse)
-#define RUNGE_FUNCTION_STOCHASTIC (system.use_twin_mode ? PC3::Kernel::Compute::tetm_stochastic : PC3::Kernel::Compute::scalar_stochastic)
 
 // Helper Macro to iterate a specific RK K
 #define CALCULATE_K( index, time, input_wavefunction, input_reservoir ) \
 CALL_KERNEL( \
     RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size,  \
-    time, device_pointers, p, potential_pointers, \
+    time, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers, \
     {  \
         device_pointers.input_wavefunction##_plus, device_pointers.input_wavefunction##_minus, device_pointers.input_reservoir##_plus, device_pointers.input_reservoir##_minus, \
         device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
     } \
-); \
-if (evaluate_reservoir) \
-    CALL_KERNEL( \
-        RUNGE_FUNCTION_RE, "K"#index"_Reservoir", grid_size, block_size, \
-        time, device_pointers, p, pump_pointers, \
-        {  \
-            device_pointers.input_wavefunction##_plus, device_pointers.input_wavefunction##_minus, device_pointers.input_reservoir##_plus, device_pointers.input_reservoir##_minus, \
-            device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
-        } \
-    ); \
-if (evaluate_pulse) \
-    CALL_KERNEL( \
-        RUNGE_FUNCTION_PULSE, "K"#index"_Pulse", grid_size, block_size, \
-        time, device_pointers, p, pulse_pointers, \
-        {  \
-            device_pointers.input_wavefunction##_plus, device_pointers.input_wavefunction##_minus, device_pointers.input_reservoir##_plus, device_pointers.input_reservoir##_minus, \
-            device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
-        } \
-    ); \
-if (evaluate_stochastic) \
-    CALL_KERNEL( \
-        RUNGE_FUNCTION_STOCHASTIC, "K"#index"_Stochastic", grid_size, block_size, \
-        time, device_pointers, p, \
-        {  \
-            device_pointers.input_wavefunction##_plus, device_pointers.input_wavefunction##_minus, device_pointers.input_reservoir##_plus, device_pointers.input_reservoir##_minus, \
-            device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
-        } \
-    ); \
-
+);
 
 /*
  * This function iterates the Runge Kutta Kernel using a fixed time step.
@@ -124,7 +93,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     if (evaluate_stochastic)
     CALL_KERNEL(
         PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, p.N_x*p.N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(p.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(p.dt)
+        device_pointers.random_state, device_pointers.random_number, p.N_x*p.N_y, system.p.stochastic_amplitude*PC3::CUDA::sqrt(p.dt), system.p.stochastic_amplitude*PC3::CUDA::sqrt(p.dt)
     );
 
     CALCULATE_K( 1, p.t, wavefunction, reservoir );
@@ -230,7 +199,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     if (evaluate_stochastic)
     CALL_KERNEL(
         PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt), system.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt)
+        device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt), system.p.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt)
     );
 
     do {

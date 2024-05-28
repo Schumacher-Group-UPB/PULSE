@@ -35,7 +35,7 @@ class System {
         real_number m_e, h_bar, e_e, h_bar_s, m_eff, m_eff_scaled;
         
         // System Variables
-        real_number L_x, L_y, dx, dy, dV;
+        real_number L_x, L_y, dx, dy, dV, stochastic_amplitude;
         real_number gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
         
         // Complex Scaled Values
@@ -85,8 +85,7 @@ class System {
     PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;
     bool evaluate_reservoir_kernel = false;
     bool evaluate_pulse_kernel = false;
-
-    real_number stochastic_amplitude;
+    bool evaluate_potential_kernel = false;
 
     FileHandler filehandler;
 
