@@ -35,6 +35,19 @@ ifneq ($(ARCH),NONE)
     endif
 endif
 
+OBJDIR_SUFFIX = 
+ifeq ($(FP32),TRUE)
+    OBJDIR_SUFFIX := $(OBJDIR_SUFFIX)/fp32
+else
+    OBJDIR_SUFFIX := $(OBJDIR_SUFFIX)/fp64
+endif
+ifeq ($(CPU),TRUE)
+    OBJDIR_SUFFIX := $(OBJDIR_SUFFIX)/cpu
+else
+    OBJDIR_SUFFIX := $(OBJDIR_SUFFIX)/gpu
+endif
+OBJDIR := $(OBJDIR)/$(OBJDIR_SUFFIX)
+
 # Object files
 ifeq ($(SFML),FALSE)
 CPP_SRCS := $(shell find $(SRCDIR) -not -path "*sfml*" -name "*.cpp")
@@ -87,5 +100,4 @@ $(OBJDIR):
 	@mkdir -p $(OBJDIR)
 
 clean:
-	@rm -f $(OBJDIR)/*.o $(TARGET)
-	@rm -fr $(OBJDIR)
+	@rm -fr obj/
