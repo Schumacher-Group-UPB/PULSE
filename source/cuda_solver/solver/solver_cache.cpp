@@ -42,7 +42,7 @@ void PC3::Solver::cacheValues() {
     }
 
     // TE/TM Guard
-    if ( not system.use_twin_mode )
+    if ( not system.p.use_twin_mode )
         return;
 
     // Same for _minus component if use_twin_mode is true
@@ -89,7 +89,7 @@ void PC3::Solver::cacheToFiles() {
     //file_history_plus.close();
 
     // TE/TM Guard
-    //if ( not system.use_twin_mode )
+    //if ( not system.p.use_twin_mode )
     //    return;
     //auto& file_history_minus = filehandler.getFile( "history_minus" );
     //for ( unsigned int i = 0; i < matrix.wavefunction_minus_history.size(); i += interval_time ) {

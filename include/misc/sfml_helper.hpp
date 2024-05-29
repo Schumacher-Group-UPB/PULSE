@@ -82,7 +82,7 @@ void initSFMLWindow( PC3::Solver& solver ) {
         std::cout << "Manually disabled SFML Renderer!" << std::endl;
         return;
     }
-    if ( solver.system.use_twin_mode )
+    if ( solver.system.p.use_twin_mode )
         getWindow().construct( 1920, 1080, solver.system.p.N_x * 3, solver.system.p.N_y * 2, "PULSE - TE/TM" );
     else
         getWindow().construct( 1920, 540, solver.system.p.N_x * 3, solver.system.p.N_y, "PULSE - Scalar" );
@@ -142,7 +142,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
                                                                 &solver.matrix.k1_reservoir_plus, &solver.matrix.k2_reservoir_plus, &solver.matrix.k3_reservoir_plus, &solver.matrix.k4_reservoir_plus,
                                                                 &solver.matrix.pump_plus, &solver.matrix.pulse_plus, &solver.matrix.potential_plus, &solver.matrix.random_number };
         inset_plot_array_plus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
-        if ( solver.system.use_twin_mode ) {
+        if ( solver.system.p.use_twin_mode ) {
             std::vector<PC3::CUDAMatrix<complex_number>*> subplots{ &solver.matrix.fft_minus,
                                                                     &solver.matrix.k1_wavefunction_minus, &solver.matrix.k2_wavefunction_minus, &solver.matrix.k3_wavefunction_minus, &solver.matrix.k4_wavefunction_minus,
                                                                     &solver.matrix.k1_reservoir_minus, &solver.matrix.k2_reservoir_minus, &solver.matrix.k3_reservoir_minus, &solver.matrix.k4_reservoir_minus,
@@ -168,7 +168,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     plotMatrix( __plotarray.get(), solver.system.p.N_x, solver.system.p.N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
 
     // Plot Minus
-    if ( solver.system.use_twin_mode ) {
+    if ( solver.system.p.use_twin_mode ) {
         plotMatrix( solver.matrix.wavefunction_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "Psi- ", plot_min_max );
         plotMatrix( inset_plot_array_minus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
         plotMatrix( solver.matrix.reservoir_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "n- ", plot_min_max );
@@ -222,7 +222,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         // Copy the current state of the host wavefunction to the snapshot
         solver.matrix.snapshot_wavefunction_plus.setTo( solver.matrix.wavefunction_plus.getHostPtr() );
         solver.matrix.snapshot_reservoir_plus.setTo( solver.matrix.reservoir_plus.getHostPtr() );
-        if ( solver.system.use_twin_mode ) {
+        if ( solver.system.p.use_twin_mode ) {
             solver.matrix.snapshot_wavefunction_minus.setTo( solver.matrix.wavefunction_minus.getHostPtr() );
             solver.matrix.snapshot_reservoir_minus.setTo( solver.matrix.reservoir_minus.getHostPtr() );
         }
@@ -235,7 +235,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         // Copy the contents of the snapshot back to the host wavefunction and sync the host matrix to the device.
         solver.matrix.wavefunction_plus.setTo( solver.matrix.snapshot_wavefunction_plus.getHostPtr() ).hostToDeviceSync();
         solver.matrix.reservoir_plus.setTo( solver.matrix.snapshot_reservoir_plus.getHostPtr() ).hostToDeviceSync();
-        if ( solver.system.use_twin_mode ) {
+        if ( solver.system.p.use_twin_mode ) {
             solver.matrix.wavefunction_minus.setTo( solver.matrix.snapshot_wavefunction_minus.getHostPtr() ).hostToDeviceSync();
             solver.matrix.reservoir_minus.setTo( solver.matrix.snapshot_reservoir_minus.getHostPtr() ).hostToDeviceSync();
         }
@@ -246,7 +246,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     if ( b_reset_to_initial->isToggled() ) {
         solver.matrix.wavefunction_plus.setTo( solver.matrix.initial_state_plus.getHostPtr() ).hostToDeviceSync();
         solver.matrix.reservoir_plus.setTo( solver.matrix.initial_state_plus.getHostPtr() ).hostToDeviceSync();
-        if ( solver.system.use_twin_mode ) {
+        if ( solver.system.p.use_twin_mode ) {
             solver.matrix.wavefunction_minus.setTo( solver.matrix.initial_state_minus.getHostPtr() ).hostToDeviceSync();
             solver.matrix.reservoir_minus.setTo( solver.matrix.initial_state_minus.getHostPtr() ).hostToDeviceSync();
         }

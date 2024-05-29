@@ -60,7 +60,7 @@ int main( int argc, char* argv[] ) {
         TimeThis(
             // Iterate #output_every ps
             auto start = system.p.t;
-            while ( system.p.t <= start + system.output_every and solver.iterateRungeKutta() ) {
+            while ( system.p.t <= start + system.output_every and solver.iterate() ) {
                 complete_iterations++;
             }
             // Cache the history and max values

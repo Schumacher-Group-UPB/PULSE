@@ -15,9 +15,9 @@ void PC3::System::init( int argc, char** argv ) {
     int index = 0;
 
     // Structure
-    use_twin_mode = false;
+    p.use_twin_mode = false;
     if ( ( index = findInArgv( "-tetm", argc, argv ) ) != -1 ) {
-        use_twin_mode = true;
+        p.use_twin_mode = true;
     }
 
     if ( ( index = findInArgv( "--gammaC", argc, argv ) ) != -1 )

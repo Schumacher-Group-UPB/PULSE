@@ -35,7 +35,7 @@
 real_number cached_t = 0.0;
 
 // Helper macro to choose the correct runge function
-#define RUNGE_FUNCTION_GP (system.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
+#define RUNGE_FUNCTION_GP (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
 
 // Helper Macro to iterate a specific RK K
 #define CALCULATE_K( index, time, input_wavefunction, input_reservoir ) \
@@ -100,32 +100,34 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k2, "Sum for K2", grid_size, block_size,
-        delta_time, device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p
     );
 
     CALCULATE_K( 2, p.t + 0.5 * p.dt, buffer_wavefunction, buffer_reservoir );
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k3, "Sum for K3", grid_size, block_size,
-        delta_time, device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p
     );
 
     CALCULATE_K( 3, p.t + 0.5 * p.dt, buffer_wavefunction, buffer_reservoir);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k4, "Sum for K4", grid_size, block_size,
-        delta_time, device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p
     );
 
     CALCULATE_K( 4, p.t + p.dt, buffer_wavefunction, buffer_reservoir);
 
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_final, "Final Sum", grid_size, block_size,
-        delta_time, device_pointers, p, system.use_twin_mode
+        delta_time, device_pointers, p
     );
 
     // Do one device synchronization to make sure that the kernel has finished
     CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
+
+    normalizeImaginaryTimePropagation(device_pointers, p, block_size, grid_size);
 
     // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
     swapBuffers();
@@ -210,14 +212,14 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k2, "Sum for K2", grid_size, block_size, 
-            delta_time, device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p
         );
 
         CALCULATE_K( 2, p.t + RKCoefficients::a2 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k3, "Sum for K3", grid_size, block_size, 
-            delta_time, device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p
         );
 
 
@@ -225,21 +227,21 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k4, "Sum for K4", grid_size, block_size, 
-            delta_time, device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p
         );
 
         CALCULATE_K( 4, p.t + RKCoefficients::a4 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k5, "Sum for K5", grid_size, block_size, 
-            delta_time, device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p
         );
 
         CALCULATE_K( 5, p.t + RKCoefficients::a5 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_input_of_k6, "Sum for K6", grid_size, block_size, 
-            delta_time, device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p
         );
 
         CALCULATE_K( 6, p.t + RKCoefficients::a6 * p.dt, buffer_wavefunction, buffer_reservoir );
@@ -247,14 +249,14 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         // Final Result is in the buffer_ arrays
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_final, "Final Sum", grid_size, block_size, 
-            delta_time, device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p
         );
 
         CALCULATE_K( 7, p.t + RKCoefficients::a7 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_final_error, "Final Sum Error", grid_size, block_size, 
-            delta_time, device_pointers, p, system.use_twin_mode
+            delta_time, device_pointers, p
         );
 
         // Do one device synchronization to make sure that the kernel has finished
@@ -294,6 +296,8 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         // Make sure to also update dt from p
         p.dt = p.dt;
 
+        normalizeImaginaryTimePropagation(device_pointers, p, block_size, grid_size);
+
         // Accept step if error is below tolerance
         if ( final_error < system.tolerance ) {
             accept = true;
@@ -327,7 +331,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     CHECK_CUDA_ERROR( {}, "FFT Shift Plus" );
 
     // Do the FFT and the shifting here already for visualization only
-    if ( system.use_twin_mode ) {
+    if ( system.p.use_twin_mode ) {
         CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)matrix.wavefunction_minus.getDevicePtr(), (fft_complex_number*)matrix.fft_minus.getDevicePtr(), CUFFT_FORWARD ), "FFT Exec" );
         fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x, system.p.N_y );
         CHECK_CUDA_ERROR( {}, "FFT Shift Minus" );
@@ -352,7 +356,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     
     // Do the same for the minus component
-    if (not system.use_twin_mode)
+    if (not system.p.use_twin_mode)
         return;
     kernel_mask_fft<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), matrix.fft_mask_minus.getDevicePtr(), system.p.N_x*system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Filter" )
@@ -362,6 +366,66 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y );
     CHECK_CUDA_ERROR( {}, "FFT Shift" );
     #endif
+}
+
+/**
+ * Split Step Fourier Method
+ */
+void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
+    
+    auto p = system.kernel_parameters;
+    
+    // This variable contains all the device pointers the kernel could need
+    auto device_pointers = matrix.pointers();
+
+    // Pointers to Oscillation Parameters
+    auto pulse_pointers = dev_pulse_oscillation.pointers();
+    auto pump_pointers = dev_pump_oscillation.pointers();
+    auto potential_pointers = dev_potential_oscillation.pointers();
+
+    // Liner Half Step
+    // Calculate the FFT of Psi
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device_pointers.wavefunction_plus, (fft_complex_number*)device_pointers.k1_wavefunction_plus, CUFFT_FORWARD ), "FFT Exec" );
+    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.k1_wavefunction_plus, system.p.N_x,system.p.N_y );
+    
+    CALL_KERNEL(
+        Kernel::Compute::gp_scalar_linear_fourier, "linear_half_step", grid_size, block_size, 
+        p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
+        { 
+            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus,
+            device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
+        }
+    );
+    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.k2_wavefunction_plus, system.p.N_x,system.p.N_y );
+    // Transform back.
+    CHECK_CUDA_ERROR( FFTSOLVER( plan,  (fft_complex_number*)device_pointers.k2_wavefunction_plus,  (fft_complex_number*)device_pointers.k3_wavefunction_plus, CUFFT_INVERSE ), "iFFT Exec" );
+
+    // Nonlinear Full Step
+    CALL_KERNEL(
+        Kernel::Compute::gp_scalar_nonlinear, "nonlinear_half_step", grid_size, block_size, 
+        p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
+        { 
+            device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus,
+            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus
+        }
+    );
+
+    // Liner Half Step
+    // Calculate the FFT of Psi
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device_pointers.buffer_wavefunction_plus, (fft_complex_number*)device_pointers.k4_wavefunction_plus, CUFFT_FORWARD ), "FFT Exec" );
+    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.k4_wavefunction_plus, system.p.N_x,system.p.N_y );
+    CALL_KERNEL(
+        Kernel::Compute::gp_scalar_linear_fourier, "linear_half_step", grid_size, block_size, 
+        p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
+        { 
+            device_pointers.k4_wavefunction_plus, device_pointers.k4_wavefunction_minus, device_pointers.k4_reservoir_plus, device_pointers.k4_reservoir_minus,
+            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus
+        }
+    );
+    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.buffer_wavefunction_plus, system.p.N_x,system.p.N_y );
+    // Transform back.
+    CHECK_CUDA_ERROR( FFTSOLVER( plan,  (fft_complex_number*)device_pointers.buffer_wavefunction_plus,  (fft_complex_number*)device_pointers.wavefunction_plus, CUFFT_INVERSE ), "iFFT Exec" );
+
 }
 
 bool first_time = true;
@@ -374,7 +438,7 @@ bool first_time = true;
  * @param N_x Number of grid points in one dimension
  * @param N_y Number of grid points in the other dimension
  */
-bool PC3::Solver::iterateRungeKutta( ) {
+bool PC3::Solver::iterate( ) {
 
 
     // First, check if the maximum time has been reached
@@ -397,7 +461,7 @@ bool PC3::Solver::iterateRungeKutta( ) {
     if ( system.fixed_time_step )
         iterateFixedTimestepRungeKutta( block_size, grid_size );
     else
-        iterateVariableTimestepRungeKutta( block_size, grid_size );
+        iterateSplitStepFourier( block_size, grid_size );
 
     // Syncronize
     //CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );

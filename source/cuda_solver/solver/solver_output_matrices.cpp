@@ -26,7 +26,7 @@ void PC3::Solver::outputMatrices( const unsigned int start_x, const unsigned int
             if ( system.fft_every < system.t_max and key == "fft_plus" and system.doOutput( "fft_mask", "fft", "fft_plus", "plus", "mat", "all" ) )
                 filehandler.outputMatrixToFile( matrix.fft_plus.getHostPtr(), start_x, end_x, start_y, end_y, system.p.N_x, system.p.N_y, increment, fft_header_information, prefix + key + suffix );
             // Guard when not useing TE/TM splitting
-            if ( not system.use_twin_mode )
+            if ( not system.p.use_twin_mode )
                 continue;
             if ( key == "wavefunction_minus" and system.doOutput( "wavefunction", "psi", "wavefunction_minus", "psi_minus", "plus", "wf", "mat", "all", "initial", "initial_minus" ) )
                 filehandler.outputMatrixToFile( matrix.wavefunction_minus.getHostPtr(), start_x, end_x, start_y, end_y, system.p.N_x, system.p.N_y, increment, header_information, prefix + key + suffix );
@@ -69,7 +69,7 @@ void PC3::Solver::outputInitialMatrices() {
     // Custom Outputs go here! //
     /////////////////////////////
 
-    if (not system.use_twin_mode )
+    if (not system.p.use_twin_mode )
         return;
 
     if ( system.doOutput( "all", "mat", "initial_minus", "initial" ) )

@@ -49,6 +49,9 @@ class System {
         // Boundary Conditions
         bool periodic_boundary_x, periodic_boundary_y;
 
+        // Twin Mode
+        bool use_twin_mode;
+
         ////////////////////////////////
         // Custom Parameters go here! //
         ////////////////////////////////
@@ -98,9 +101,6 @@ class System {
     bool doOutput( const Args&... args ) {
         return ( ( std::find( output_keys.begin(), output_keys.end(), args ) != output_keys.end() ) || ... );
     }
-
-    // Save structure as bool use_twin_mode
-    bool use_twin_mode;
 
     bool evaluatePulse();
     bool evaluateReservoir();

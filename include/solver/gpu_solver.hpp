@@ -79,7 +79,7 @@ class Solver {
     cuda_fft_plan plan;
 
     Solver( PC3::System& system ) : system( system ), filehandler( system.filehandler ) {
-        std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.use_twin_mode ) << std::endl;
+        std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.p.use_twin_mode ) << std::endl;
 
         // Finally, initialize the FFT Plan
         CUDA_FFT_CREATE( &plan, system.p.N_x, system.p.N_y );
@@ -133,7 +133,8 @@ class Solver {
 
     void iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_size );
     void iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size );
-    bool iterateRungeKutta();
+    void iterateSplitStepFourier( dim3 block_size, dim3 grid_size );
+    bool iterate();
 
     void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );
 
@@ -141,6 +142,8 @@ class Solver {
 
     void cacheValues();
     void cacheMatrices();
+
+    void normalizeImaginaryTimePropagation( MatrixContainer::Pointers device_pointers, System::Parameters p, dim3 block_size, dim3 grid_size );
 };
 
 } // namespace PC3
