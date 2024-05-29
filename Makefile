@@ -67,7 +67,8 @@ ifeq ($(FP32),TRUE)
 	ADD_FLAGS += -DUSEFP32
 endif
 ifeq ($(CPU),TRUE)
-	ADD_FLAGS += -DUSECPU
+	ADD_FLAGS += -DUSECPU -DPC3_DISABLE_FFT 
+# lfftw3 - for now, disable fftw3 because its not working for some unknown reason.
 endif
 
 # Targets

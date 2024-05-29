@@ -204,7 +204,7 @@ if ( system.custom_envelope.size() == 0 ) {
 } else {
     system.custom_envelope( matrix.custom_matrix_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0 /* Default if no mask is applied */ );
     //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^ this too
-    if ( system.use_twin_mode ) {
+    if ( system.p.use_twin_mode ) {
         system.custom_envelope( matrix.custom_matrix_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0 /* Default if no mask is applied */ );
         //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^^ this too
     }

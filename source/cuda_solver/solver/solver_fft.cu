@@ -4,6 +4,12 @@
 #include "system/system.hpp"
 #include "solver/gpu_solver.hpp"
 
+#ifdef USECPU
+#ifndef PC3_DISABLE_FFT
+    #include <fftw3.h>
+#endif
+#endif
+
 /*
  * This function calculates the Fast Fourier Transformation of Psi+ and Psi-
  * and saves the result in dev_fft_plus and dev_fft_minus. These values can
@@ -81,7 +87,18 @@ void PC3::Solver::calculateFFT( complex_number* device_ptr_in, complex_number* d
     #ifndef USECPU
         // Do FFT using CUDAs FFT functions
         CHECK_CUDA_ERROR( FFTSOLVER( plan, device_ptr_in, device_ptr_out, dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
-    #else
+    #else   
+        #ifndef PC3_DISABLE_FFT 
         // Do FFT on CPU using external Library.
+        fftw_plan plan = fftw_plan_dft_2d(system.p.N_x, system.p.N_y,
+                                      reinterpret_cast<fftw_complex*>(device_ptr_in),
+                                      reinterpret_cast<fftw_complex*>(device_ptr_out),
+                                      dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE);
+        fftw_execute(plan);
+        fftw_destroy_plan(plan);
+        fftw_cleanup();
+        #else
+        #warning FFTW is disabled!
+        #endif
     #endif
 }

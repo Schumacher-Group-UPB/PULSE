@@ -59,10 +59,17 @@
 #else
 #    include <cstring>
 #    define CHECK_CUDA_ERROR( func, msg )
+#ifndef PC3_DISABLE_FFT
+#    define DEVICE_ALLOC( ptr, size, name )             \
+        {                                               \
+            ptr = (decltype( ptr ))std::malloc( size*2 ); \
+        }
+#else 
 #    define DEVICE_ALLOC( ptr, size, name )             \
         {                                               \
             ptr = (decltype( ptr ))std::malloc( size ); \
         }
+#endif
 #    define MEMCOPY_TO_DEVICE( dst, src, size, name ) \
         {                                             \
             std::memcpy( dst, src, size );            \
