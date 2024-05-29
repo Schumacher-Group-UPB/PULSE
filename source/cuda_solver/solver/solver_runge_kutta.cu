@@ -1,9 +1,5 @@
 #ifndef USECPU
-#include <cuComplex.h>
-#include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-#include <cuda.h>
-#include <device_launch_parameters.h>
-#include <cuda_runtime.h>
+//#include <cuComplex.h>
 #include <cufft.h>
 #include <thrust/reduce.h>
 #include <thrust/transform_reduce.h>
@@ -307,67 +303,6 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     } while ( !accept );
 }
 
-/*
- * This function calculates the Fast Fourier Transformation of Psi+ and Psi-
- * and saves the result in dev_fft_plus and dev_fft_minus. These values can
- * then be grabbed using the getDeviceArrays() function. The FFT is then
- * shifted such that k = 0 is in the center of the FFT matrix. Then, the
- * FFT Filter is applied to the FFT, and the FFT is shifted back. Finally,
- * the inverse FFT is calculated and the result is saved in dev_current_Psi_Plus
- * and dev_current_Psi_Minus. The FFT Arrays are shifted once again for
- * visualization purposes.
- * NOTE/OPTIMIZATION: The Shift->Filter->Shift function will be changed later
- * to a cached filter mask, which itself will be shifted.
- */
-void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask ) {
-    #ifndef USECPU
-    // Calculate the actual FFTs
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)matrix.wavefunction_plus.getDevicePtr(), (fft_complex_number*)matrix.fft_plus.getDevicePtr(), CUFFT_FORWARD ), "FFT Exec" );
-
-
-    // For now, we shift, transform, shift the results. TODO: Move this into one function without shifting
-    // Shift FFT to center k = 0
-    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y );
-    CHECK_CUDA_ERROR( {}, "FFT Shift Plus" );
-
-    // Do the FFT and the shifting here already for visualization only
-    if ( system.p.use_twin_mode ) {
-        CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)matrix.wavefunction_minus.getDevicePtr(), (fft_complex_number*)matrix.fft_minus.getDevicePtr(), CUFFT_FORWARD ), "FFT Exec" );
-        fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x, system.p.N_y );
-        CHECK_CUDA_ERROR( {}, "FFT Shift Minus" );
-    }
-    
-    if (not apply_mask)
-        return;
-    
-    // Apply the FFT Mask Filter
-    kernel_mask_fft<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), matrix.fft_mask_plus.getDevicePtr(), system.p.N_x*system.p.N_y );
-    CHECK_CUDA_ERROR( {}, "FFT Filter" )
-    
-    // Undo the shift
-    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y );
-    CHECK_CUDA_ERROR( {}, "FFT Shift" )
-
-    // Transform back.
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, matrix.fft_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr(), CUFFT_INVERSE ), "iFFT Exec" );
-    
-    // Shift FFT Once again for visualization
-    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y );
-    CHECK_CUDA_ERROR( {}, "FFT Shift" );
-    
-    // Do the same for the minus component
-    if (not system.p.use_twin_mode)
-        return;
-    kernel_mask_fft<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), matrix.fft_mask_minus.getDevicePtr(), system.p.N_x*system.p.N_y );
-    CHECK_CUDA_ERROR( {}, "FFT Filter" )
-    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y );
-    CHECK_CUDA_ERROR( {}, "FFT Shift" )
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, matrix.fft_minus.getDevicePtr(), matrix.wavefunction_minus.getDevicePtr(), CUFFT_INVERSE ), "iFFT Exec" );
-    fft_shift_2D<<<grid_size, block_size>>>( matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y );
-    CHECK_CUDA_ERROR( {}, "FFT Shift" );
-    #endif
-}
-
 /**
  * Split Step Fourier Method
  */
@@ -385,9 +320,7 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
 
     // Liner Half Step
     // Calculate the FFT of Psi
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device_pointers.wavefunction_plus, (fft_complex_number*)device_pointers.k1_wavefunction_plus, CUFFT_FORWARD ), "FFT Exec" );
-    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.k1_wavefunction_plus, system.p.N_x,system.p.N_y );
-    
+    calculateFFT( device_pointers.wavefunction_plus, device_pointers.k1_wavefunction_plus, FFT::forward );
     CALL_KERNEL(
         Kernel::Compute::gp_scalar_linear_fourier, "linear_half_step", grid_size, block_size, 
         p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
@@ -396,24 +329,22 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
             device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus
         }
     );
-    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.k2_wavefunction_plus, system.p.N_x,system.p.N_y );
     // Transform back.
-    CHECK_CUDA_ERROR( FFTSOLVER( plan,  (fft_complex_number*)device_pointers.k2_wavefunction_plus,  (fft_complex_number*)device_pointers.k3_wavefunction_plus, CUFFT_INVERSE ), "iFFT Exec" );
+    calculateFFT( device_pointers.k2_wavefunction_plus,  device_pointers.k3_wavefunction_plus, FFT::inverse );
 
     // Nonlinear Full Step
     CALL_KERNEL(
-        Kernel::Compute::gp_scalar_nonlinear, "nonlinear_half_step", grid_size, block_size, 
+        Kernel::Compute::gp_scalar_nonlinear, "nonlinear_full_step", grid_size, block_size, 
         p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
         { 
-            device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.k2_reservoir_plus, device_pointers.k2_reservoir_minus,
+            device_pointers.k3_wavefunction_plus, device_pointers.k3_wavefunction_minus, device_pointers.k3_reservoir_plus, device_pointers.k3_reservoir_minus,
             device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus
         }
     );
 
     // Liner Half Step
     // Calculate the FFT of Psi
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, (fft_complex_number*)device_pointers.buffer_wavefunction_plus, (fft_complex_number*)device_pointers.k4_wavefunction_plus, CUFFT_FORWARD ), "FFT Exec" );
-    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.k4_wavefunction_plus, system.p.N_x,system.p.N_y );
+    calculateFFT( device_pointers.buffer_wavefunction_plus, device_pointers.k4_wavefunction_plus, FFT::forward );
     CALL_KERNEL(
         Kernel::Compute::gp_scalar_linear_fourier, "linear_half_step", grid_size, block_size, 
         p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
@@ -422,9 +353,17 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
             device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus
         }
     );
-    fft_shift_2D<<<grid_size, block_size>>>( device_pointers.buffer_wavefunction_plus, system.p.N_x,system.p.N_y );
     // Transform back.
-    CHECK_CUDA_ERROR( FFTSOLVER( plan,  (fft_complex_number*)device_pointers.buffer_wavefunction_plus,  (fft_complex_number*)device_pointers.wavefunction_plus, CUFFT_INVERSE ), "iFFT Exec" );
+    calculateFFT( device_pointers.buffer_wavefunction_plus,  device_pointers.k1_wavefunction_plus, FFT::inverse );
+
+    CALL_KERNEL(
+        Kernel::Compute::gp_scalar_independent, "independent", grid_size, block_size, 
+        p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
+        { 
+            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.k1_reservoir_plus, device_pointers.k1_reservoir_minus,
+            device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus
+        }
+    );
 
 }
 

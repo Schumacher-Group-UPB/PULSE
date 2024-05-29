@@ -40,7 +40,7 @@ CUDA_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, real_number t, MatrixCont
     for (int k = 0; k < oscillation_pulse.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
         const complex_number pulse = dev_ptrs.pulse_plus[i+offset];
-        result += p.minus_i_over_h_bar_s * pulse * PC3::CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
+        result += p.one_over_h_bar_s * pulse * PC3::CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
     }
 
     // MARK: Stochastic
@@ -88,7 +88,7 @@ CUDA_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, real_number t, MatrixCont
     for (int k = 0; k < oscillation_pulse.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
         const complex_number pulse = dev_ptrs.pulse_minus[i+offset];
-        result += p.minus_i_over_h_bar_s * pulse * PC3::CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
+        result += p.one_over_h_bar_s * pulse * PC3::CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
     }
 
     if (p.stochastic_amplitude > 0.0) {

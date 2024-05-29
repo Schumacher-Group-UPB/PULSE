@@ -1,8 +1,10 @@
 #pragma once
 
 #ifndef USECPU
-#    include <cuda.h>
-#    include <cuda_runtime_api.h>
+#include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+#include <cuda.h>
+#include <device_launch_parameters.h>
+#include <cuda_runtime.h>
 #    define CHECK_CUDA_ERROR( func, msg )                             \
         {                                                             \
             func;                                                     \

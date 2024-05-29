@@ -26,6 +26,7 @@ CUDA_GLOBAL void gp_scalar( int i, real_number t, MatrixContainer::Pointers dev_
 
 CUDA_GLOBAL void gp_scalar_linear_fourier( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
 CUDA_GLOBAL void gp_scalar_nonlinear( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
+CUDA_GLOBAL void gp_scalar_independent( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
 
 } // namespace Compute
 

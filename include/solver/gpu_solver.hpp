@@ -138,6 +138,12 @@ class Solver {
 
     void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );
 
+    enum class FFT {
+        inverse,
+        forward
+    };
+    void calculateFFT( complex_number* device_ptr_in, complex_number* device_ptr_out, FFT dir );
+
     void swapBuffers();
 
     void cacheValues();
