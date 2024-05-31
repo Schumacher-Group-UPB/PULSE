@@ -6,16 +6,16 @@
 #include <memory>
 #include <bit>
 
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 
 namespace PC3 {
 
 class Envelope {
     public:
     // Parameters to Construct the Envelope from
-    std::vector<real_number> amp, width_x, width_y, x, y, exponent;
+    std::vector<PC3::Type::real> amp, width_x, width_y, x, y, exponent;
     std::vector<int> m;
-    std::vector<real_number> freq, sigma, t0;
+    std::vector<PC3::Type::real> freq, sigma, t0;
     std::vector<std::string> s_type, s_pol, s_behavior;
     // Or path to load the matrix from
     std::vector<std::string> load_path;
@@ -27,7 +27,7 @@ class Envelope {
     // Helper map to map the temporal group identifier to an index in group_identifier
     std::map<std::string, int> str_to_group_identifier;
     // Helper to load cache matrices from paths
-    std::vector<std::unique_ptr<complex_number[]>> cache;
+    std::vector<std::unique_ptr<PC3::Type::complex[]>> cache;
 
     enum class Type : unsigned int {
         Gauss = 1, // Gaussian Envelope
@@ -76,21 +76,21 @@ class Envelope {
 
     static inline int AllGroups = -1;
 
-    void addSpacial(real_number amp, real_number width_x, real_number width_y, real_number x, real_number y, real_number exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
-    void addSpacial(const std::string& path, real_number amp, const std::string& s_behaviour, const std::string& s_pol);
-    void addTemporal(real_number t0, real_number sigma, real_number freq);
+    void addSpacial(PC3::Type::real amp, PC3::Type::real width_x, PC3::Type::real width_y, PC3::Type::real x, PC3::Type::real y, PC3::Type::real exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
+    void addSpacial(const std::string& path, PC3::Type::real amp, const std::string& s_behaviour, const std::string& s_pol);
+    void addTemporal(PC3::Type::real t0, PC3::Type::real sigma, PC3::Type::real freq);
     int size() const;
     int groupSize() const;
     int sizeOfGroup(int g) const;
 
     struct Dimensions {
         size_t N_x, N_y;
-        real_number L_x,L_y,dx,dy;
-        Dimensions(size_t N_x, size_t N_y, real_number L_x, real_number L_y, real_number dx, real_number dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
+        PC3::Type::real L_x,L_y,dx,dy;
+        Dimensions(size_t N_x, size_t N_y, PC3::Type::real L_x, PC3::Type::real L_y, PC3::Type::real dx, PC3::Type::real dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
     };
 
-    void calculate( real_number* buffer, const int group, Polarization polarization, Dimensions dim, real_number default_value_if_no_mask = 0.0 );
-    void calculate( complex_number* buffer, const int group, Polarization polarization, Dimensions dim, real_number default_value_if_no_mask = 0.0 );
+    void calculate( PC3::Type::real* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0 );
+    void calculate( PC3::Type::complex* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0 );
 
     // We use template functions here to avoid circular dependencies
     template <class FH>
@@ -101,12 +101,12 @@ class Envelope {
             cache.push_back( nullptr );
             if ( load_path[c] == "" )
                 continue;
-            cache.back() = std::make_unique<complex_number[]>( dim.N_x * dim.N_y );
+            cache.back() = std::make_unique<PC3::Type::complex[]>( dim.N_x * dim.N_y );
             filehandler.loadMatrixFromFile( load_path[c], cache.back().get() );
         }
     }
     template <class FH, typename T> 
-    void calculate(FH& filehandler, T* buffer, const int group, Polarization polarization, Dimensions dim, real_number default_value_if_no_mask = 0.0) {
+    void calculate(FH& filehandler, T* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0) {
         prepareCache( filehandler, dim );
         calculate( buffer, group, polarization, dim, default_value_if_no_mask );
     }

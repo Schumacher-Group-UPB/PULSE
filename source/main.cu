@@ -29,7 +29,7 @@
 #include <cstdlib>
 #include <omp.h>
 #include <chrono>
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 #include "system/system.hpp"
 #include "system/filehandler.hpp"
 #include "misc/helperfunctions.hpp"

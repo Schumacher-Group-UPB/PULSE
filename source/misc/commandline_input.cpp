@@ -13,13 +13,13 @@ int findInArgv( std::string toFind, int argc, char** argv, int start ) {
     return -1;
 }
 
-real_number getNextInput( char** argv, const int argc, const std::string name, int& index ) {
+PC3::Type::real getNextInput( char** argv, const int argc, const std::string name, int& index ) {
     if (index >= argc) 
         return 0.0;
     if ( global_log_inputs ) {
         std::cout << EscapeSequence::GRAY << "Read input " << name << " as " << argv[ index ] << EscapeSequence::RESET << std::endl;
     }
-    real_number result = 0.0;
+    PC3::Type::real result = 0.0;
     try {
         result = std::stod( argv[ index++ ] );
     } catch (const std::invalid_argument& e) {

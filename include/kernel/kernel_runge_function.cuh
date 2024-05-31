@@ -1,5 +1,5 @@
 #pragma once
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 #include "solver/matrix_container.hpp"
 #include "system/envelope.hpp"
 #include "system/system.hpp"
@@ -9,24 +9,24 @@ namespace PC3::Kernel {
 
 // Helper Struct to pass input-target data pointers to the kernel
 struct InputOutput {
-    complex_number* CUDA_RESTRICT in_wf_plus;
-    complex_number* CUDA_RESTRICT in_wf_minus;
-    complex_number* CUDA_RESTRICT in_rv_plus;
-    complex_number* CUDA_RESTRICT in_rv_minus;
-    complex_number* CUDA_RESTRICT out_wf_plus;
-    complex_number* CUDA_RESTRICT out_wf_minus;
-    complex_number* CUDA_RESTRICT out_rv_plus;
-    complex_number* CUDA_RESTRICT out_rv_minus;
+    Type::complex* PULSE_RESTRICT in_wf_plus;
+    Type::complex* PULSE_RESTRICT in_wf_minus;
+    Type::complex* PULSE_RESTRICT in_rv_plus;
+    Type::complex* PULSE_RESTRICT in_rv_minus;
+    Type::complex* PULSE_RESTRICT out_wf_plus;
+    Type::complex* PULSE_RESTRICT out_wf_minus;
+    Type::complex* PULSE_RESTRICT out_rv_plus;
+    Type::complex* PULSE_RESTRICT out_rv_minus;
 };
 
 namespace Compute {
 
-CUDA_GLOBAL void gp_tetm( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
-CUDA_GLOBAL void gp_scalar( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
+PULSE_GLOBAL void gp_tetm( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
+PULSE_GLOBAL void gp_scalar( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
 
-CUDA_GLOBAL void gp_scalar_linear_fourier( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
-CUDA_GLOBAL void gp_scalar_nonlinear( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
-CUDA_GLOBAL void gp_scalar_independent( int i, real_number t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
+PULSE_GLOBAL void gp_scalar_linear_fourier( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
+PULSE_GLOBAL void gp_scalar_nonlinear( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
+PULSE_GLOBAL void gp_scalar_independent( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io );
 
 } // namespace Compute
 

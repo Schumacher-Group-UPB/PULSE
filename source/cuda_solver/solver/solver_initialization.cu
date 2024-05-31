@@ -22,20 +22,20 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
 
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
     system.initial_state.calculate( system.filehandler, matrix.initial_state_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
-    std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( complex_number& z ) mutable { z = z + matrix.initial_state_plus[i]; i++; } );
+    std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( Type::complex& z ) mutable { z = z + matrix.initial_state_plus[i]; i++; } );
     if ( system.p.use_twin_mode ) {
         system.initial_state.calculate( system.filehandler, matrix.initial_state_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
-        std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( complex_number& z ) mutable { z = z + matrix.initial_state_minus[i]; i++; } );
+        std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( Type::complex& z ) mutable { z = z + matrix.initial_state_minus[i]; i++; } );
     }
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
     if ( system.randomly_initialize_system ) {
         // Fill the buffer with random values
         std::mt19937 gen{ system.random_seed };
-        std::uniform_real_distribution<real_number> dist{ -system.random_system_amplitude, system.random_system_amplitude };
-        std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( complex_number& z ) { z += complex_number{ dist( gen ), dist( gen ) }; } );
+        std::uniform_real_distribution<Type::real> dist{ -system.random_system_amplitude, system.random_system_amplitude };
+        std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
         // Also fill minus component if use_twin_mode is true
         if ( system.p.use_twin_mode )
-            std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( complex_number& z ) { z += complex_number{ dist( gen ), dist( gen ) }; } );
+            std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
     }
 
     // TODO: Hier: Übergebene pumps (system.pump, .pulse, .potential) nach osc parametern sortieren und gruppieren!
@@ -106,7 +106,7 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     dev_potential_oscillation.construct( system.potential );
 
     // Copy Initial State to wavefunction
-    matrix.wavefunction_plus.setTo( matrix.initial_state_plus.getHostPtr() );
+    matrix.wavefunction_plus.setTo( matrix.initial_state_plus );
 
 // Check once of the reservoir is zero.
 // If yes, then the reservoir may not be avaluated.
@@ -137,7 +137,7 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
         return;
 
     // Copy Initial State to wavefunction
-    matrix.wavefunction_minus.setTo( matrix.initial_state_minus.getHostPtr() );
+    matrix.wavefunction_minus.setTo( matrix.initial_state_minus );
 
 // Check once of the reservoir is zero.
 // If yes, then the reservoir may not be avaluated.

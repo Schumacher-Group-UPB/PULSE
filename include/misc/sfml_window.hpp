@@ -5,7 +5,7 @@
 #include <omp.h>
 #include <iostream>
 #include "misc/colormap.hpp"
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 
 class BasicWindow;
 
@@ -159,7 +159,7 @@ class BasicWindow {
         window.display();
     }
 
-    void blitMatrixPtr( const real_number* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
+    void blitMatrixPtr( const PC3::Type::real* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
             const int cols_over_skip = cols / skip;
     const int rows_over_skip = rows / skip;
     //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;

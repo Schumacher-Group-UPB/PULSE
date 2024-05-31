@@ -1,13 +1,59 @@
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 #include "cuda/cuda_macro.cuh"
 #include "kernel/kernel_fft.cuh"
 #include "system/system.hpp"
 #include "solver/gpu_solver.hpp"
 
-#ifdef USECPU
-#ifndef PC3_DISABLE_FFT
-    #include <fftw3.h>
+#ifdef USE_CPU
+
+    #ifndef PC3_DISABLE_FFT
+        #include <fftw3.h>
+    #endif
+
+#else
+
+    #include <cufft.h>
+    #include <curand_kernel.h>
+    #define cuda_fft_plan cufftHandle
+    #ifdef USE_HALF_PRECISION
+        #define FFTSOLVER cufftExecC2C
+        #define FFTPLAN CUFFT_C2C
+    #else
+        #define FFTSOLVER cufftExecZ2Z
+        #define FFTPLAN CUFFT_Z2Z
+    #endif
+
 #endif
+
+
+#ifdef USE_CUDA
+    /**
+     * Static Helper Function to get the cuFFT Plan. The static variables ensure the
+     * fft plan is only created once. We don't destroy the plan and hope the operating
+     * system will forgive us. We could also implement a small wrapper class that
+     * holds the plan and calls the destruct method when the class instance is destroyed.
+    */
+    static cufftHandle& getCUFFTPlan( size_t N_x, size_t N_y ) {
+        static cufftHandle plan = 0;
+        static bool isInitialized = false;
+
+        if (not isInitialized) {
+            if ( cufftPlan2d( &plan, N_x, N_y, FFTPLAN ) != CUFFT_SUCCESS ) {
+                std::cout << "Error Creating CUDA FFT Plan!" << std::endl;
+                return plan;
+            }
+            isInitialized = true;
+        }
+
+        return plan;
+    }
+
+#else
+    
+    static int getCUFFTPlan( size_t N_x, size_t N_y ) {
+        return 0;
+    }
+
 #endif
 
 /*
@@ -29,7 +75,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
 
     // For now, we shift, transform, shift the results. TODO: Move this into one function without shifting
     // Shift FFT to center k = 0
-    CALL_KERNEL( fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
         matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y 
     );
 
@@ -37,7 +83,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     if ( system.p.use_twin_mode ) {
         calculateFFT( matrix.wavefunction_minus.getDevicePtr(), matrix.fft_minus.getDevicePtr(), FFT::forward );
         
-        CALL_KERNEL( fft_shift_2D, "FFT Shift Minus", grid_size, block_size, 
+        CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Minus", grid_size, block_size, 
             matrix.fft_minus.getDevicePtr(), system.p.N_x, system.p.N_y 
         );
     }
@@ -46,12 +92,12 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
         return;
     
     // Apply the FFT Mask Filter
-    CALL_KERNEL(kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 
+    CALL_KERNEL(PC3::Kernel::kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 
         matrix.fft_plus.getDevicePtr(), matrix.fft_mask_plus.getDevicePtr(), system.p.N_x*system.p.N_y
     );
     
     // Undo the shift
-    CALL_KERNEL( fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
          matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y 
     );
 
@@ -59,7 +105,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     calculateFFT(  matrix.fft_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr(), FFT::inverse );
     
     // Shift FFT Once again for visualization
-    CALL_KERNEL( fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
         matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y 
     );
     
@@ -67,26 +113,27 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     if (not system.p.use_twin_mode)
         return;
 
-    CALL_KERNEL(kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 
+    CALL_KERNEL(PC3::Kernel::kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 
         matrix.fft_minus.getDevicePtr(), matrix.fft_mask_minus.getDevicePtr(), system.p.N_x*system.p.N_y 
     );
 
-    CALL_KERNEL( fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 
         matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y 
     );
     
     calculateFFT( matrix.fft_minus.getDevicePtr(), matrix.wavefunction_minus.getDevicePtr(), FFT::inverse );
 
-    CALL_KERNEL( fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 
         matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y 
     );
 
 }
 
-void PC3::Solver::calculateFFT( complex_number* device_ptr_in, complex_number* device_ptr_out, FFT dir ) {
-    #ifndef USECPU
+void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir ) {
+    #ifdef USE_CUDA
         // Do FFT using CUDAs FFT functions
-        CHECK_CUDA_ERROR( FFTSOLVER( plan, device_ptr_in, device_ptr_out, dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
+        auto plan = getCUFFTPlan( system.p.N_x, system.p.N_y );
+        CHECK_CUDA_ERROR( FFTSOLVER( plan, reinterpret_cast<cufftComplex*>(device_ptr_in), reinterpret_cast<cufftComplex*>(device_ptr_out), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
     #else   
         #ifndef PC3_DISABLE_FFT 
         // Do FFT on CPU using external Library.
@@ -97,8 +144,6 @@ void PC3::Solver::calculateFFT( complex_number* device_ptr_in, complex_number* d
         fftw_execute(plan);
         fftw_destroy_plan(plan);
         fftw_cleanup();
-        #else
-        #warning FFTW is disabled!
         #endif
     #endif
 }

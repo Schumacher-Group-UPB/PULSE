@@ -1,11 +1,16 @@
 #pragma once
 
-#ifndef USECPU
-#include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-#include <cuda.h>
-#include <device_launch_parameters.h>
-#include <cuda_runtime.h>
-#    define CHECK_CUDA_ERROR( func, msg )                             \
+#ifdef USE_CUDA
+
+    // Include the required CUDA headers
+    #include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+    #include <cuda.h>
+    #include <device_launch_parameters.h>
+    #include <cuda_runtime.h>
+
+    // Execudes a CUDA Command, checks for the latest error and prints it
+    // This is technically not a requirement, but usually good practice
+    #define CHECK_CUDA_ERROR( func, msg )                             \
         {                                                             \
             func;                                                     \
             cudaError_t err = cudaGetLastError();                     \
@@ -13,126 +18,56 @@
                 printf( "%s: %s\n", msg, cudaGetErrorString( err ) ); \
             }                                                         \
         }
-#    define DEVICE_ALLOC( ptr, size, name )                             \
-        {                                                               \
-            CHECK_CUDA_ERROR( cudaMalloc( (void**)&ptr, size ), name ); \
-        }
-#    define MEMCOPY_TO_DEVICE( dst, src, size, name )                                       \
-        {                                                                                   \
-            CHECK_CUDA_ERROR( cudaMemcpy( dst, src, size, cudaMemcpyHostToDevice ), name ); \
-        }
-#    define MEMCOPY_FROM_DEVICE( dst, src, size, name )                                     \
-        {                                                                                   \
-            CHECK_CUDA_ERROR( cudaMemcpy( dst, src, size, cudaMemcpyDeviceToHost ), name ); \
-        }
-#    define SYMBOL_TO_DEVICE( dest, source, size, name )                        \
-        {                                                                       \
-            CHECK_CUDA_ERROR( cudaMemcpyToSymbol( dest, source, size ), name ); \
-        }
-#    define SYMBOL_TO_HOST( dest, source, size, name )                            \
-        {                                                                         \
-            CHECK_CUDA_ERROR( cudaMemcpyFromSymbol( dest, source, size ), name ); \
-        }
-#    define DEVICE_FREE( ptr, name )                   \
-        {                                              \
-            CHECK_CUDA_ERROR( cudaFree( ptr ), name ); \
-        }
-#    define CUDA_FFT_DESTROY( plan )                                      \
-        {                                                                 \
-            CHECK_CUDA_ERROR( cufftDestroy( plan ), "FFT Plan Destroy" ); \
-        }
-#    define CUDA_FFT_CREATE( plan, Nx, Ny )                                       \
-        {                                                                         \
-            CHECK_CUDA_ERROR( cufftPlan2d( plan, Ny, Nx, FFTPLAN ), "FFT Plan" ); \
-        }
-#    define CALL_KERNEL( func, name, grid, block, ... ) \
+
+    // Calls a Kernel and also checks for errors.
+    // The Kernel call requires a name and a grid and block size that 
+    // are not further passed to the actual compute Kernel. Instead, they
+    // are used as launch parameters and for debugging.
+    #define CALL_KERNEL( func, name, grid, block, ... ) \
         {                                               \
             func<<<grid, block>>>( 0, __VA_ARGS__ );    \
             CHECK_CUDA_ERROR( {}, name );               \
         }
-#    define CALL_PARTIAL_KERNEL( func, name, grid, block, start, stream, ... ) \
+    
+    // Partially Calls a Kernel with less threads, thus only executing the 
+    // Kernel on a subset of indices. A CUDA stream can be passed, theoretically
+    // enabling the parallel execution of Kernels. The range of the subset executed
+    // is determinded by the grid and block sizes.
+    #define CALL_PARTIAL_KERNEL( func, name, grid, block, start, stream, ... ) \
         {                                                                      \
             func<<<grid, block, 0, stream>>>( start, __VA_ARGS__ );            \
             CHECK_CUDA_ERROR( {}, name );                                      \
         }
 
 #else
-#    include <cstring>
-#    define CHECK_CUDA_ERROR( func, msg )
-#ifndef PC3_DISABLE_FFT
-#    define DEVICE_ALLOC( ptr, size, name )             \
-        {                                               \
-            ptr = (decltype( ptr ))std::malloc( size*2 ); \
-        }
-#else 
-#    define DEVICE_ALLOC( ptr, size, name )             \
-        {                                               \
-            ptr = (decltype( ptr ))std::malloc( size ); \
-        }
-#endif
-#    define MEMCOPY_TO_DEVICE( dst, src, size, name ) \
-        {                                             \
-            std::memcpy( dst, src, size );            \
-        }
-#    define MEMCOPY_FROM_DEVICE( dst, src, size, name ) \
-        {                                               \
-            std::memcpy( dst, src, size );              \
-        }
-#    define SYMBOL_TO_DEVICE( dest, source, size, name ) \
-        {                                                \
-            dest = *( source );                          \
-        }
-#    define SYMBOL_TO_HOST( dest, source, size, name ) \
-        {                                              \
-            dest = *( source );                        \
-        }
-#    define DEVICE_FREE( ptr, name ) \
-        {                            \
-            std::free( ptr );        \
-        }
-#    define CUDA_FFT_DESTROY( plan )
-#    define CUDA_FFT_CREATE( plan, Nx, Ny )
-#    define CALL_KERNEL( func, name, grid, block, ... )                                                                                    \
-        {                                                                                                                                  \
+    // Why do we include cstring here? I don't remember haha.
+    #include <cstring>
+    // On the CPU, the check for CUDA errors does nothing
+    #define CHECK_CUDA_ERROR( func, msg )
+    // On the CPU, the Kernel call does not execute a parallel GPU Kernel. Instead,
+    // it launches a group of threads using a #pragma omp instruction. This executes
+    // the Kernel in parallel on the CPU. 
+    #define CALL_KERNEL( func, name, grid, block, ... )                                                                                                 \
+        {                                                                                                                                               \
             _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( int i = 0; i < system.p.N_x*system.p.N_y; ++i ) { \
-                    func( i, __VA_ARGS__ );                                                                                            \
-            }                                                                                                                              \
+                    func( i, __VA_ARGS__ );                                                                                                             \
+            }                                                                                                                                           \
+        }
+    // Partially calls a Kernel with less threads. Stream does nothing here.
+    // The range of the subset executed is also determiend by the grid and block sizes.
+    #define CALL_PARTIAL_KERNEL( func, name, grid, block, start, stream, ... )                                                                  \
+        {                                                                                                                                       \
+            size_t total_threads = gridDim.x * gridDim.y * gridDim.z * blockDim.x * blockDim.y * blockDim.z;                                    \
+            _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( int i = start; i < total_threads; ++i ) { \
+                    func( i, __VA_ARGS__ );                                                                                                     \
+            }                                                                                                                                   \
         }
 #endif
 
+// Swaps symbols a and b
 #define swap_symbol( a, b ) \
     {                       \
         auto tmp = a;       \
         a = b;              \
         b = tmp;            \
     }
-
-#ifdef USECPU
-#    define CUDA_HOST_DEVICE
-#    define CUDA_DEVICE
-#    define CUDA_HOST
-#    define CUDA_GLOBAL
-#    define CUDA_RESTRICT
-#    define THRUST_DEVICE thrust::host
-#    define cuda_fft_plan int
-#    include <random>
-#    define cuda_random_state std::mt19937
-// If nvcc is not used, redefine dim3
-#ifndef __CUDACC__
-class dim3 {
-   public:
-    int x, y;
-};
-#endif
-#else
-#    include "cufft.h"
-#    include <curand_kernel.h>
-#    define CUDA_HOST_DEVICE __host__ __device__
-#    define CUDA_DEVICE __device__
-#    define CUDA_HOST __host__
-#    define CUDA_GLOBAL __global__
-#    define CUDA_RESTRICT __restrict__
-#    define THRUST_DEVICE thrust::device
-#    define cuda_fft_plan cufftHandle
-#    define cuda_random_state curandState
-#endif

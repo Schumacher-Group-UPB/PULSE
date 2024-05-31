@@ -7,7 +7,6 @@
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
-#include "cuda/cuda_matrix.cuh"
 #include "omp.h"
 
 void PC3::System::init( int argc, char** argv ) {

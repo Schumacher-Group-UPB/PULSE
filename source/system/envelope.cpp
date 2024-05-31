@@ -1,8 +1,7 @@
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
-#include "cuda/cuda_complex.cuh"
 #include "system/filehandler.hpp"
 
 /**
@@ -32,8 +31,8 @@ eval_enum _cast_string_list_to_enum( const std::string& input, std::string split
     return ret;
 }
 
-void PC3::Envelope::addSpacial( real_number amp, real_number width_x, real_number width_y, real_number x, real_number y,
-                                real_number exponent, const std::string& s_type, const std::string& s_pol,
+void PC3::Envelope::addSpacial( PC3::Type::real amp, PC3::Type::real width_x, PC3::Type::real width_y, PC3::Type::real x, PC3::Type::real y,
+                                PC3::Type::real exponent, const std::string& s_type, const std::string& s_pol,
                                 const std::string& s_behavior, const std::string& s_m ) {
     this->amp.push_back( amp );
     this->width_x.push_back( width_x );
@@ -58,7 +57,7 @@ void PC3::Envelope::addSpacial( real_number amp, real_number width_x, real_numbe
     this->load_path.push_back( "" );
 }
 
-void PC3::Envelope::addSpacial( const std::string& path, real_number amp, const std::string& s_behaviour, const std::string& s_pol ) {
+void PC3::Envelope::addSpacial( const std::string& path, PC3::Type::real amp, const std::string& s_behaviour, const std::string& s_pol ) {
     this->amp.push_back( amp );
     this->width_x.push_back( 0 );
     this->width_y.push_back( 0 );
@@ -78,7 +77,7 @@ void PC3::Envelope::addSpacial( const std::string& path, real_number amp, const 
 }
 
 #include <iostream>
-void PC3::Envelope::addTemporal( real_number t0, real_number sigma, real_number freq ) {
+void PC3::Envelope::addTemporal( PC3::Type::real t0, PC3::Type::real sigma, PC3::Type::real freq ) {
     // Create the temporal grouping identifier
     std::string group_identifier = std::to_string( t0 ) + std::to_string( sigma ) + std::to_string( freq );
 
@@ -102,7 +101,7 @@ int PC3::Envelope::size() const {
 // that are present in the envelope. The return value is at least 1 to ensure at
 // least one matrix is generated. Maybe this will change later.
 int PC3::Envelope::groupSize() const {
-    return std::max<int>( 1, str_to_group_identifier.size() );
+    return CUDA::max<int>( 1, str_to_group_identifier.size() );
 }
 
 // Returns the size of a specific group. This is the number of spacial components
@@ -128,7 +127,7 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
             auto path = getNextStringInput( argv, argc, key + "_path", index );
             std::cout << "Loading envelope from file: " << path << std::endl;
             // Ampltitude.
-            real_number amp = getNextInput( argv, argc, key + "_amp", index );
+            PC3::Type::real amp = getNextInput( argv, argc, key + "_amp", index );
             // Behaviour
             auto sbehavior = getNextStringInput( argv, argc, key + "_behaviour", index );
             // Polarization
@@ -137,22 +136,22 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         } else {
             index--;
             // Ampltitude.
-            real_number amp = getNextInput( argv, argc, key + "_amp", index );
+            PC3::Type::real amp = getNextInput( argv, argc, key + "_amp", index );
             // Behaviour
             auto sbehavior = getNextStringInput( argv, argc, key + "_behaviour", index );
             // Width
-            real_number width_x = getNextInput( argv, argc, key + "_width_x", index );
-            real_number width_y = getNextInput( argv, argc, key + "_width_y", index );
+            PC3::Type::real width_x = getNextInput( argv, argc, key + "_width_x", index );
+            PC3::Type::real width_y = getNextInput( argv, argc, key + "_width_y", index );
             // X Position
-            real_number pos_x = getNextInput( argv, argc, key + "_X", index );
+            PC3::Type::real pos_x = getNextInput( argv, argc, key + "_X", index );
             // Y Position
-            real_number pos_y = getNextInput( argv, argc, key + "_Y", index );
+            PC3::Type::real pos_y = getNextInput( argv, argc, key + "_Y", index );
 
             // Polarization
             auto spol = getNextStringInput( argv, argc, key + "_pol", index );
 
             // Exponent
-            real_number exponent = getNextInput( argv, argc, key + "_exponent", index );
+            PC3::Type::real exponent = getNextInput( argv, argc, key + "_exponent", index );
 
             // Charge
             auto sm = getNextStringInput( argv, argc, key + "_m", index );
@@ -173,9 +172,9 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         }
 
         // Temporal Component
-        real_number t0 = getNextInput( argv, argc, key + "_t0", index );
-        real_number freq = getNextInput( argv, argc, key + "_freq", index );
-        real_number sigma = getNextInput( argv, argc, key + "_sigma", index );
+        PC3::Type::real t0 = getNextInput( argv, argc, key + "_t0", index );
+        PC3::Type::real freq = getNextInput( argv, argc, key + "_freq", index );
+        PC3::Type::real sigma = getNextInput( argv, argc, key + "_sigma", index );
         ret.addTemporal( t0, sigma, freq );
     }
 
@@ -193,8 +192,8 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
  * This is only done at the beginning of the program and on the CPU.
  * Temporarily copying the results is probably fine.
  */
-void PC3::Envelope::calculate( real_number* buffer, const int group, PC3::Envelope::Polarization polarization, Dimensions dim, real_number default_value_if_no_mask ) {
-    std::unique_ptr<complex_number[]> tmp_buffer = std::make_unique<complex_number[]>( dim.N_x * dim.N_y );
+void PC3::Envelope::calculate( PC3::Type::real* buffer, const int group, PC3::Envelope::Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask ) {
+    std::unique_ptr<PC3::Type::complex[]> tmp_buffer = std::make_unique<PC3::Type::complex[]>( dim.N_x * dim.N_y );
     calculate( tmp_buffer.get(), group, polarization, dim, default_value_if_no_mask );
 // Transfer tmp_buffer to buffer as complex numbers
 #pragma omp parallel for
@@ -203,12 +202,12 @@ void PC3::Envelope::calculate( real_number* buffer, const int group, PC3::Envelo
     }
 }
 
-void PC3::Envelope::calculate( complex_number* buffer, const int group, PC3::Envelope::Polarization polarization, Dimensions dim, real_number default_value_if_no_mask ) {
+void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3::Envelope::Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask ) {
 #pragma omp parallel for
     for ( int row = 0; row < dim.N_y; row++ ) {
         for ( int col = 0; col < dim.N_x; col++ ) {
             int i = row * dim.N_x + col;
-            buffer[i] = complex_number( 0.0, 0.0 );
+            buffer[i] = PC3::Type::complex( 0.0, 0.0 );
             bool has_been_set = false;
             for ( int c = 0; c < amp.size(); c++ ) {
                 // If the group identifier does not match, skip the mask
@@ -229,10 +228,10 @@ void PC3::Envelope::calculate( complex_number* buffer, const int group, PC3::Env
                 has_been_set = true;
 
                 // Default Amplitude
-                complex_number amplitude = { amp[c], 0.0 };
+                PC3::Type::complex amplitude( amp[c], 0.0 );
 
-                real_number exp_factor = 1, pre_fractor = 1, exp_function = 1;
-                complex_number charge = { 1.0, 0 };
+                PC3::Type::real exp_factor = 1, pre_fractor = 1, exp_function = 1;
+                PC3::Type::complex charge( 1.0, 0 );
 
                 // If the matrix was loaded, use cached value
                 if ( cache[c] != nullptr ) {
@@ -241,30 +240,30 @@ void PC3::Envelope::calculate( complex_number* buffer, const int group, PC3::Env
                     // Calculate Content of Exponential function
                     exp_factor = 0.5 * ( CUDA::abs2( ( cx - x[c] ) / width_x[c] ) + CUDA::abs2( ( cy - y[c] ) / width_y[c] ) );
                     // Calculate the exponential function
-                    exp_function = CUDA::exp( -CUDA::pow( exp_factor, exponent[c] ) );
-                    // If the type is a gaussian outer, we calculate CUDA::exp(...)^N instead of CUDA::exp((...)^N)
+                    exp_function = std::exp( -std::pow( exp_factor, exponent[c] ) );
+                    // If the type is a gaussian outer, we calculate std::exp(...)^N instead of std::exp((...)^N)
                     if ( type[c] & PC3::Envelope::Type::OuterExponent )
-                        exp_function = CUDA::pow( CUDA::exp( -exp_factor ), exponent[c] );
+                        exp_function = std::pow( std::exp( -exp_factor ), exponent[c] );
                     // If the shape is a ring, we multiply the exp function with r^2/w^2 again.
                     pre_fractor = 1.0;
                     if ( type[c] & PC3::Envelope::Type::Ring )
                         pre_fractor = exp_factor;
 
                     // Charge is e^(i*m*phi) where phi is the angle or r = [x,y]
-                    charge = CUDA::exp( complex_number( 0.0, m[c] * atan2( cx - x[c], cy - y[c] ) ) );
+                    charge = CUDA::exp( PC3::Type::complex( 0.0, m[c] * std::atan2( cx - x[c], cy - y[c] ) ) );
 
                     // Default amplitude is A/sqrt(2pi)/w
                     if ( not( type[c] & PC3::Envelope::Type::NoDivide ) )
-                        amplitude = amplitude / CUDA::sqrt( 2 * 3.1415 * width_x[c] * width_y[c] );
+                        amplitude = amplitude / CUDA::sqrt<PC3::Type::real>( 2 * 3.1415 * width_x[c] * width_y[c] );
                 }
 
                 // If the behaviour is adaptive, the amplitude is set to the current value of the buffer instead.
                 if ( behavior[c] & PC3::Envelope::Behavior::Adaptive )
                     amplitude = amp[c] * buffer[i];
                 if ( behavior[c] & PC3::Envelope::Behavior::Complex )
-                    amplitude = complex_number( 0.0, CUDA::real( amplitude ) );
+                    amplitude = PC3::Type::complex( 0.0, CUDA::real( amplitude ) );
 
-                complex_number contribution = amplitude * pre_fractor * exp_function * charge;
+                PC3::Type::complex contribution = amplitude * pre_fractor * exp_function * charge;
                 // Add, multiply or replace the contribution to the buffer.
                 if ( behavior[c] & PC3::Envelope::Behavior::Add )
                     buffer[i] = buffer[i] + contribution;
@@ -276,7 +275,7 @@ void PC3::Envelope::calculate( complex_number* buffer, const int group, PC3::Env
             // If no mask has been applied, set the value to the default value.
             // This ensures the mask is always initialized
             if ( not has_been_set )
-                buffer[i] = { default_value_if_no_mask, 0 };
+                buffer[i] = PC3::Type::complex(default_value_if_no_mask, 0);
         }
     }
     cache.clear();

@@ -7,7 +7,6 @@
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
-#include "cuda/cuda_matrix.cuh"
 #include "omp.h"
 
 /**
@@ -94,8 +93,8 @@ void PC3::System::calculateAuto() {
 
     // Calculate scaled imaginary values
     p.one_over_h_bar_s = 1.0 / p.h_bar_s;
-    p.minus_i_over_h_bar_s = { 0.0, -real_number(1.0) / p.h_bar_s };
-    p.i_h_bar_s = { 0.0, p.h_bar_s };
+    p.minus_i_over_h_bar_s = Type::complex( 0.0, -Type::real(1.0) / p.h_bar_s );
+    p.i_h_bar_s = Type::complex( 0.0, p.h_bar_s );
 }
 
 PC3::System::System( int argc, char** argv ) : System() {

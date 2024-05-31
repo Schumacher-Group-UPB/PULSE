@@ -1,18 +1,16 @@
-#ifndef USECPU
-//#include <cuComplex.h>
-#include <cufft.h>
-#include <thrust/reduce.h>
-#include <thrust/transform_reduce.h>
-#include <thrust/execution_policy.h>
+#include "cuda/typedef.cuh"
+
+#ifdef USE_CUDA
+    #include <thrust/reduce.h>
+    #include <thrust/transform_reduce.h>
+    #include <thrust/execution_policy.h>
 #else
-#include <numeric>
+    #include <numeric>
 #endif
 
-#include <complex>
 #include <omp.h>
 
 // Include Cuda Kernel headers
-#include "cuda/cuda_complex.cuh"
 #include "cuda/cuda_macro.cuh"
 #include "kernel/kernel_runge_function.cuh"
 #include "kernel/kernel_summation.cuh"
@@ -28,7 +26,7 @@
  * We dont need this variable anywhere else, so we just create it
  * locally to this file here.
  */
-real_number cached_t = 0.0;
+PC3::Type::real cached_t = 0.0;
 
 // Helper macro to choose the correct runge function
 #define RUNGE_FUNCTION_GP (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
@@ -83,17 +81,17 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     auto potential_pointers = dev_potential_oscillation.pointers();
 
     // The delta time is either real or imaginary, depending on the system configuration
-    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -p.dt) : complex_number(p.dt, 0.0);
+    Type::complex delta_time = system.imaginary_time ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
 
     // If required, calculate new set of random numbers.
     if (evaluate_stochastic)
     CALL_KERNEL(
         PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, p.N_x*p.N_y, system.p.stochastic_amplitude*PC3::CUDA::sqrt(p.dt), system.p.stochastic_amplitude*PC3::CUDA::sqrt(p.dt)
+        device_pointers.random_state, device_pointers.random_number, p.N_x*p.N_y, system.p.stochastic_amplitude*std::sqrt(p.dt), system.p.stochastic_amplitude*std::sqrt(p.dt)
     );
 
     CALCULATE_K( 1, p.t, wavefunction, reservoir );
-
+    
     CALL_KERNEL(
         Kernel::RK4::runge_sum_to_input_k2, "Sum for K2", grid_size, block_size,
         delta_time, device_pointers, p
@@ -133,8 +131,8 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
 
 struct square_reduction
 {
-    CUDA_HOST_DEVICE real_number operator()(const complex_number& x) const { 
-        const real_number res = PC3::CUDA::abs2(x);
+    PULSE_HOST_DEVICE PC3::Type::real operator()(const PC3::Type::complex& x) const { 
+        const PC3::Type::real res = PC3::CUDA::abs2(x);
         return res; 
     }
 };
@@ -191,13 +189,13 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     bool evaluate_stochastic = system.evaluateStochastic();
 
     // The delta time is either real or imaginary, depending on the system configuration
-    complex_number delta_time = system.imaginary_time ? complex_number(0.0, -system.p.dt) : complex_number(system.p.dt, 0.0);
+    Type::complex delta_time = system.imaginary_time ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
 
     // If required, calculate new set of random numbers.
     if (evaluate_stochastic)
     CALL_KERNEL(
         PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt), system.p.stochastic_amplitude*PC3::CUDA::sqrt(system.p.dt)
+        device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
     );
 
     do {
@@ -258,13 +256,12 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         // Do one device synchronization to make sure that the kernel has finished
         CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
 
-        #ifndef USECPU
-        real_number final_error = thrust::reduce( THRUST_DEVICE, matrix.rk_error.getDevicePtr(), matrix.rk_error.getDevicePtr() + p.N_x * p.N_y, 0.0, thrust::plus<real_number>() );
-        real_number sum_abs2 = thrust::transform_reduce( THRUST_DEVICE, matrix.wavefunction_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr() + p.N_x * p.N_y, square_reduction(), 0.0, thrust::plus<real_number>() );
-        CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
+        #ifdef USE_CUDA
+            Type::real final_error = thrust::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), 0.0, thrust::plus<Type::real>() );
+            Type::real sum_abs2 = thrust::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), square_reduction(), 0.0, thrust::plus<Type::real>() );
         #else
-        real_number final_error = std::reduce( matrix.rk_error.getDevicePtr(), matrix.rk_error.getDevicePtr() + p.N_x * p.N_y, 0.0, std::plus<real_number>() );
-        real_number sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr() + p.N_x * p.N_y, 0.0, std::plus<real_number>(), square_reduction() );
+            Type::real final_error = std::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), 0.0, std::plus<Type::real>() );
+            Type::real sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), 0.0, std::plus<Type::real>(), square_reduction() );
         #endif
 
         // TODO: maybe go back to using max since thats faster
@@ -272,7 +269,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         final_error = final_error / sum_abs2;
 
         // Calculate dh
-        real_number dh = std::pow( system.tolerance / 2. / CUDA::max( final_error, 1E-15 ), 0.25 );
+        Type::real dh = std::pow<Type::real>( system.tolerance / 2. / std::max<Type::real>( final_error, 1E-15 ), 0.25 );
         // Check if dh is nan
         if ( std::isnan( dh ) ) {
             dh = 1.0;
@@ -281,12 +278,12 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             dh = 0.5;
         
         //  Set new timestep
-        system.p.dt = CUDA::min(p.dt * dh, system.dt_max);
+        system.p.dt = std::min<Type::real>(p.dt * dh, system.dt_max);
         if ( dh < 1.0 )
-           system.p.dt = CUDA::max( p.dt - system.dt_min * CUDA::floor( 1.0 / dh ), system.dt_min );
+           system.p.dt = std::max<Type::real>( p.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
            //p.dt -= system.dt_min;
         else
-           system.p.dt = CUDA::min( p.dt + system.dt_min * CUDA::floor( dh ), system.dt_max );
+           system.p.dt = std::min<Type::real>( p.dt + system.dt_min * std::floor( dh ), system.dt_max );
            //p.dt += system.dt_min;
 
         // Make sure to also update dt from p
@@ -378,7 +375,6 @@ bool first_time = true;
  * @param N_y Number of grid points in the other dimension
  */
 bool PC3::Solver::iterate( ) {
-
 
     // First, check if the maximum time has been reached
     if ( system.p.t >= system.t_max )

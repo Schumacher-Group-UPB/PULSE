@@ -1,5 +1,5 @@
 #pragma once
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 #include "cuda/cuda_matrix.cuh"
 #include "cuda/cuda_macro.cuh"
 
@@ -7,7 +7,7 @@ namespace PC3 {
 
 /**
 * DEFINE_MATRIX(type, name, size_scaling)
-* type: The type of the matrix (real_number, complex_number, etc.)
+* type: The type of the matrix (Type::real, Type::complex, etc.)
 * name: The name of the matrix
 * size_scaling: The scaling factor for the size of the matrix
 * 
@@ -18,61 +18,61 @@ namespace PC3 {
 */
 
 #define MATRIX_LIST \
-    DEFINE_MATRIX(complex_number, initial_state_plus, 1) \
-    DEFINE_MATRIX(complex_number, initial_state_minus, 1) \
-    DEFINE_MATRIX(complex_number, wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, reservoir_minus, 1) \
-    DEFINE_MATRIX(complex_number, pump_plus, n_pumps) \
-    DEFINE_MATRIX(complex_number, pump_minus, n_pumps) \
-    DEFINE_MATRIX(complex_number, pulse_plus, n_pulses) \
-    DEFINE_MATRIX(complex_number, pulse_minus, n_pulses) \
-    DEFINE_MATRIX(complex_number, potential_plus, n_potentials) \
-    DEFINE_MATRIX(complex_number, potential_minus, n_potentials) \
-    DEFINE_MATRIX(complex_number, buffer_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, buffer_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, buffer_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, buffer_reservoir_minus, 1) \
-    DEFINE_MATRIX(real_number, fft_mask_plus, 1) \
-    DEFINE_MATRIX(real_number, fft_mask_minus, 1) \
-    DEFINE_MATRIX(complex_number, fft_plus, 1) \
-    DEFINE_MATRIX(complex_number, fft_minus, 1) \
-    DEFINE_MATRIX(complex_number, k1_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, k1_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, k1_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, k1_reservoir_minus, 1) \
-    DEFINE_MATRIX(complex_number, k2_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, k2_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, k2_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, k2_reservoir_minus, 1) \
-    DEFINE_MATRIX(complex_number, k3_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, k3_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, k3_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, k3_reservoir_minus, 1) \
-    DEFINE_MATRIX(complex_number, k4_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, k4_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, k4_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, k4_reservoir_minus, 1) \
-    DEFINE_MATRIX(complex_number, k5_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, k5_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, k5_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, k5_reservoir_minus, 1) \
-    DEFINE_MATRIX(complex_number, k6_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, k6_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, k6_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, k6_reservoir_minus, 1) \
-    DEFINE_MATRIX(complex_number, k7_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, k7_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, k7_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, k7_reservoir_minus, 1) \
-    DEFINE_MATRIX(real_number, rk_error, 1) \
-    DEFINE_MATRIX(complex_number, random_number, 1) \
-    DEFINE_MATRIX(cuda_random_state, random_state, 1) \
-    DEFINE_MATRIX(complex_number, snapshot_wavefunction_plus, 1) \
-    DEFINE_MATRIX(complex_number, snapshot_wavefunction_minus, 1) \
-    DEFINE_MATRIX(complex_number, snapshot_reservoir_plus, 1) \
-    DEFINE_MATRIX(complex_number, snapshot_reservoir_minus, 1) // \ // <-- Don't forget the backslash!
+    DEFINE_MATRIX(Type::complex, initial_state_plus, 1) \
+    DEFINE_MATRIX(Type::complex, initial_state_minus, 1) \
+    DEFINE_MATRIX(Type::complex, wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::complex, pump_plus, n_pumps) \
+    DEFINE_MATRIX(Type::complex, pump_minus, n_pumps) \
+    DEFINE_MATRIX(Type::complex, pulse_plus, n_pulses) \
+    DEFINE_MATRIX(Type::complex, pulse_minus, n_pulses) \
+    DEFINE_MATRIX(Type::complex, potential_plus, n_potentials) \
+    DEFINE_MATRIX(Type::complex, potential_minus, n_potentials) \
+    DEFINE_MATRIX(Type::complex, buffer_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, buffer_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, buffer_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, buffer_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::real, fft_mask_plus, 1) \
+    DEFINE_MATRIX(Type::real, fft_mask_minus, 1) \
+    DEFINE_MATRIX(Type::complex, fft_plus, 1) \
+    DEFINE_MATRIX(Type::complex, fft_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k1_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k1_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k1_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k1_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k2_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k2_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k2_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k2_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k3_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k3_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k3_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k3_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k4_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k4_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k4_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k4_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k5_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k5_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k5_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k5_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k6_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k6_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k6_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k6_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k7_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k7_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, k7_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, k7_reservoir_minus, 1) \
+    DEFINE_MATRIX(Type::real, rk_error, 1) \
+    DEFINE_MATRIX(Type::complex, random_number, 1) \
+    DEFINE_MATRIX(Type::cuda_random_state, random_state, 1) \
+    DEFINE_MATRIX(Type::complex, snapshot_wavefunction_plus, 1) \
+    DEFINE_MATRIX(Type::complex, snapshot_wavefunction_minus, 1) \
+    DEFINE_MATRIX(Type::complex, snapshot_reservoir_plus, 1) \
+    DEFINE_MATRIX(Type::complex, snapshot_reservoir_minus, 1) // \ // <-- Don't forget the backslash!
     /////////////////////////////
     // Add your matrices here. //
     // Make sure to end each   //

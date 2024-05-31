@@ -1,9 +1,13 @@
 #pragma once
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 #include "cuda/cuda_macro.cuh"
 
-CUDA_GLOBAL void kernel_make_fft_visible( int i, complex_number* input, complex_number* output, const unsigned int N );
+namespace PC3::Kernel {
 
-CUDA_GLOBAL void fft_shift_2D( int i, complex_number* data, const unsigned int N_x, const unsigned int N_y );
+PULSE_GLOBAL void kernel_make_fft_visible( int i, Type::complex* input, Type::complex* output, const unsigned int N );
 
-CUDA_GLOBAL void kernel_mask_fft( int i, complex_number* data, real_number* mask, const unsigned int N );
+PULSE_GLOBAL void fft_shift_2D( int i, Type::complex* data, const unsigned int N_x, const unsigned int N_y );
+
+PULSE_GLOBAL void kernel_mask_fft( int i, Type::complex* data, Type::real* mask, const unsigned int N );
+
+}

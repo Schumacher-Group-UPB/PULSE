@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <map>
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 #include "cuda/cuda_matrix.cuh"
 #include "cuda/cuda_macro.cuh"
 #include "kernel/kernel_fft.cuh"
@@ -33,24 +33,24 @@ class Solver {
 
     // TODO: Move these into one single float buffer.
     struct Oscillation {
-        PC3::CUDAMatrix<real_number> t0;
-        PC3::CUDAMatrix<real_number> freq;
-        PC3::CUDAMatrix<real_number> sigma;
+        PC3::CUDAMatrix<Type::real> t0;
+        PC3::CUDAMatrix<Type::real> freq;
+        PC3::CUDAMatrix<Type::real> sigma;
         std::vector<bool> active;
         unsigned int n;
 
         struct Pointers {
-            real_number* t0;
-            real_number* freq;
-            real_number* sigma;
+            Type::real* t0;
+            Type::real* freq;
+            Type::real* sigma;
             unsigned int n;
         };
 
         void construct( Envelope& envelope) {
             const auto n = envelope.groupSize();
-            t0.construct( n, 1, "oscillation_t0" ).setTo( envelope.t0.data() );
-            freq.construct( n, 1, "oscillation_freq" ).setTo( envelope.freq.data() );
-            sigma.construct( n, 1, "oscillation_sigma" ).setTo( envelope.sigma.data() );
+            t0.construct( n, 1, "oscillation_t0" ).setTo( envelope.t0 );
+            freq.construct( n, 1, "oscillation_freq" ).setTo( envelope.freq );
+            sigma.construct( n, 1, "oscillation_sigma" ).setTo( envelope.sigma );
             this->n = n;
             for (int i = 0; i < n; i++) {
                 bool is_active = true;
@@ -70,19 +70,13 @@ class Solver {
     MatrixContainer matrix;
 
     // Cache Maps
-    std::map<std::string, std::vector<real_number>> cache_map_scalar;
-    //std::vector<std::vector<complex_number>> wavefunction_plus_history, wavefunction_minus_history;
-    //std::vector<real_number> wavefunction_max_plus, wavefunction_max_minus;
-    //std::vector<real_number> times;
-
-    // FFT Plan
-    cuda_fft_plan plan;
+    std::map<std::string, std::vector<Type::real>> cache_map_scalar;
+    //std::vector<std::vector<Type::complex>> wavefunction_plus_history, wavefunction_minus_history;
+    //std::vector<Type::real> wavefunction_max_plus, wavefunction_max_minus;
+    //std::vector<Type::real> times;
 
     Solver( PC3::System& system ) : system( system ), filehandler( system.filehandler ) {
         std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.p.use_twin_mode ) << std::endl;
-
-        // Finally, initialize the FFT Plan
-        CUDA_FFT_CREATE( &plan, system.p.N_x, system.p.N_y );
 
         // Initialize all host matrices
         initializeHostMatricesFromSystem();
@@ -105,11 +99,7 @@ class Solver {
             dev_pulse_oscillation.n = 0;
         }
     }
-
-    ~Solver() {
-        CUDA_FFT_DESTROY( plan );
-    }
-
+    
     // Functions the global kernel can do
 
     /**
@@ -142,7 +132,7 @@ class Solver {
         inverse,
         forward
     };
-    void calculateFFT( complex_number* device_ptr_in, complex_number* device_ptr_out, FFT dir );
+    void calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir );
 
     void swapBuffers();
 
@@ -151,5 +141,17 @@ class Solver {
 
     void normalizeImaginaryTimePropagation( MatrixContainer::Pointers device_pointers, System::Parameters p, dim3 block_size, dim3 grid_size );
 };
+
+namespace CUDA {
+
+    PULSE_HOST_DEVICE static PULSE_INLINE Type::complex gaussian_complex_oscillator( Type::real t, Type::real t0, Type::real sigma, Type::real freq ) {
+        return CUDA::exp( -Type::complex(( t - t0 )*( t - t0 ) / ( Type::real(2.0)*sigma*sigma ), freq * ( t - t0 )) );
+    }
+    PULSE_HOST_DEVICE static PULSE_INLINE Type::real gaussian_oscillator( Type::real t, Type::real t0, Type::real sigma, Type::real freq ) {
+        const auto p = ( t - t0 )/sigma;
+        return std::exp( -0.5*p*p ) * (1.0 + std::cos( freq * ( t - t0 ) ))/2.0;
+    }
+
+} // namespace CUDA
 
 } // namespace PC3

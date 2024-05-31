@@ -1,8 +1,9 @@
 #pragma once
+#include "cuda/typedef.cuh"
 
 namespace PC3::Kernel {
 
-#ifndef USECPU
+#ifdef USE_CUDA
 // If the GPU is used, overwrite the current index with the gpu thread index.
 #define OVERWRITE_THREAD_INDEX( i ) \
     i += blockIdx.x * blockDim.x + threadIdx.x; \

@@ -5,7 +5,7 @@
 #include <map>
 #include <fstream>
 #include <iostream>
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 
 namespace PC3 {
 
@@ -20,15 +20,15 @@ class FileHandler {
 
     struct Header {
         // Spatial Parameters
-        real_number L_x, L_y;
-        real_number dx, dy;
+        Type::real L_x, L_y;
+        Type::real dx, dy;
         // Time Parameter
-        real_number t;
+        Type::real t;
         // Oscillator Parameters
-        real_number t0,freq,sigma;
+        Type::real t0,freq,sigma;
 
         Header() : L_x( 0 ), L_y( 0 ), dx( 0 ), dy( 0 ), t( 0 ), t0(0), freq(0), sigma(0) {}
-        Header( real_number L_x, real_number L_y, real_number dx, real_number dy, real_number t ) : Header() {
+        Header( Type::real L_x, Type::real L_y, Type::real dx, Type::real dy, Type::real t ) : Header() {
             this->L_x = L_x;
             this->L_y = L_y;
             this->dx = dx;
@@ -38,7 +38,7 @@ class FileHandler {
             this->freq = 0;
             this->sigma = 0;
         }
-        Header( real_number L_x, real_number L_y, real_number dx, real_number dy, real_number t, real_number t0, real_number freq, real_number sigma ) : Header() {
+        Header( Type::real L_x, Type::real L_y, Type::real dx, Type::real dy, Type::real t, Type::real t0, Type::real freq, Type::real sigma ) : Header() {
             this->L_x = L_x;
             this->L_y = L_y;
             this->dx = dx;
@@ -61,18 +61,18 @@ class FileHandler {
 
     std::ofstream& getFile( const std::string& name );
 
-    bool loadMatrixFromFile( const std::string& filepath, complex_number* buffer );
-    bool loadMatrixFromFile( const std::string& filepath, real_number* buffer );
+    bool loadMatrixFromFile( const std::string& filepath, Type::complex* buffer );
+    bool loadMatrixFromFile( const std::string& filepath, Type::real* buffer );
 
-    void outputMatrixToFile( const complex_number* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name );
-    void outputMatrixToFile( const complex_number* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out );
-    void outputMatrixToFile( const complex_number* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out );
-    void outputMatrixToFile( const complex_number* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::complex* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::complex* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::complex* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::complex* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name );
 
-    void outputMatrixToFile( const real_number* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name );
-    void outputMatrixToFile( const real_number* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out );
-    void outputMatrixToFile( const real_number* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out );
-    void outputMatrixToFile( const real_number* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::real* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::real* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::real* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::real* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name );
 
     void init( int argc, char** argv );
 };

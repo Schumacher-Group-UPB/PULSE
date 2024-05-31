@@ -1,9 +1,9 @@
 #pragma once
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 
-namespace PC3::Hamilton {
+namespace PC3::Kernel::Hamilton {
 
-CUDA_DEVICE CUDA_INLINE bool is_valid_index( const int row, const int col, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE bool is_valid_index( const int row, const int col, const int N_x, const int N_y ) {
     return row >= 0 && row < N_y && col >= 0 && col < N_x;
 }
 
@@ -13,28 +13,28 @@ CUDA_DEVICE CUDA_INLINE bool is_valid_index( const int row, const int col, const
  * Hence, when we leave the main grid, we simply return zero.
 */
 
-CUDA_DEVICE CUDA_INLINE complex_number upper_neighbour( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex upper_neighbour( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // We are alread in the most upper row
     if ( !is_valid_index( row - distance, col, N_x, N_y ) )
         return { 0.0, 0.0 };
     // Valid upper neighbour
     return vector[index - N_x * distance];
 }
-CUDA_DEVICE CUDA_INLINE complex_number lower_neighbour( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex lower_neighbour( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // We are already in the most lower row
     if ( !is_valid_index( row + distance, col, N_x, N_y ) )
         return { 0.0, 0.0 };
     // Valid lower neighbour
     return vector[index + N_x * distance];
 }
-CUDA_DEVICE CUDA_INLINE complex_number left_neighbour( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex left_neighbour( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // Desired Index is in the previous row
     if ( !is_valid_index( row, col - distance, N_x, N_y ) )
         return { 0.0, 0.0 };
     // Valid left neighbour
     return vector[index - distance];
 }
-CUDA_DEVICE CUDA_INLINE complex_number right_neighbour( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex right_neighbour( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // Desired Index is in the next row
     if ( !is_valid_index( row, col + distance, N_x, N_y ) )
         return { 0.0, 0.0 };
@@ -49,28 +49,28 @@ CUDA_DEVICE CUDA_INLINE complex_number right_neighbour( complex_number* vector, 
  * Hence, when we leave the main grid, we return the value of the opposite side.
 */
 
-CUDA_DEVICE CUDA_INLINE complex_number upper_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex upper_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // We are alread in the most upper row
     if ( !is_valid_index( row - distance, col, N_x, N_y ) )
         return vector[index - N_x * distance + N_x*N_y];
     // Valid upper neighbour
     return vector[index - N_x * distance];
 }
-CUDA_DEVICE CUDA_INLINE complex_number lower_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex lower_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // We are already in the most lower row
     if ( !is_valid_index( row + distance, col, N_x, N_y ) )
         return vector[index + N_x * distance - N_x*N_y];
     // Valid lower neighbour
     return vector[index + N_x * distance];
 }
-CUDA_DEVICE CUDA_INLINE complex_number left_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex left_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // Desired Index is in the previous row
     if ( !is_valid_index( row, col - distance, N_x, N_y ) )
         return vector[index - distance + N_x ];
     // Valid left neighbour
     return vector[index - distance];
 }
-CUDA_DEVICE CUDA_INLINE complex_number right_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex right_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     // Desired Index is in the next row
     if ( !is_valid_index( row, col + distance, N_x, N_y ) )
         return vector[index - N_x + distance ];
@@ -79,7 +79,7 @@ CUDA_DEVICE CUDA_INLINE complex_number right_neighbour_periodic( complex_number*
 }
 
 // Special top-right, top-left, bottom-right and bottom-left periodic boundary conditions that honour the periodicity of the grid
-CUDA_DEVICE CUDA_INLINE complex_number upper_right_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex upper_right_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     if ( is_valid_index( row - distance, col + distance, N_x, N_y ) )
         // Valid upper neighbour
         return vector[index - N_x * distance + distance];
@@ -91,7 +91,7 @@ CUDA_DEVICE CUDA_INLINE complex_number upper_right_neighbour_periodic( complex_n
         index += distance - N_x;
     return vector[index];
 }
-CUDA_DEVICE CUDA_INLINE complex_number upper_left_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex upper_left_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     if ( is_valid_index( row - distance, col - distance, N_x, N_y ) )
         // Valid upper neighbour
         return vector[index - N_x * distance - distance];
@@ -103,7 +103,7 @@ CUDA_DEVICE CUDA_INLINE complex_number upper_left_neighbour_periodic( complex_nu
         index -= distance + N_x;
     return vector[index];
 }
-CUDA_DEVICE CUDA_INLINE complex_number lower_right_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex lower_right_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     if ( is_valid_index( row + distance, col + distance, N_x, N_y ) )
         // Valid upper neighbour
         return vector[index + N_x * distance + distance];
@@ -115,7 +115,7 @@ CUDA_DEVICE CUDA_INLINE complex_number lower_right_neighbour_periodic( complex_n
         index += distance + N_x;
     return vector[index];
 }
-CUDA_DEVICE CUDA_INLINE complex_number lower_left_neighbour_periodic( complex_number* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
+PULSE_DEVICE PULSE_INLINE Type::complex lower_left_neighbour_periodic( Type::complex* vector, int index, const int row, const int col, const int distance, const int N_x, const int N_y ) {
     if ( is_valid_index( row + distance, col - distance, N_x, N_y ) )
         // Valid upper neighbour
         return vector[index + N_x * distance - distance];
@@ -128,10 +128,10 @@ CUDA_DEVICE CUDA_INLINE complex_number lower_left_neighbour_periodic( complex_nu
     return vector[index];
 }
 
-CUDA_DEVICE void scalar(complex_number& regular, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const real_number dx, const real_number dy, const bool periodic_x = false, const bool periodic_y = false);
+PULSE_DEVICE void scalar(Type::complex& regular, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x = false, const bool periodic_y = false);
 
-CUDA_DEVICE void tetm_plus( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const real_number dx, const real_number dy, const bool periodic_x = false, const bool periodic_y = false );
+PULSE_DEVICE void tetm_plus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x = false, const bool periodic_y = false );
 
-CUDA_DEVICE void tetm_minus( complex_number& regular, complex_number& cross, complex_number* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const real_number dx, const real_number dy, const bool periodic_x = false, const bool periodic_y = false );
+PULSE_DEVICE void tetm_minus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x = false, const bool periodic_y = false );
 
-} // namespace PC3::Hamilton
+} // namespace PC3::Kernel::Hamilton

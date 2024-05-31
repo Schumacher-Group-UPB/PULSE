@@ -24,20 +24,20 @@ void PC3::Solver::cacheValues() {
     for (int i = 0; i < dev_pulse_oscillation.n; i++) {
         if (not dev_pulse_oscillation.active[i])
             continue;
-        complex_number pulse = PC3::CUDA::gaussian_complex_oscillator(system.p.t, dev_pulse_oscillation.t0[i], dev_pulse_oscillation.sigma[i], dev_pulse_oscillation.freq[i]);
+        Type::complex pulse = PC3::CUDA::gaussian_complex_oscillator(system.p.t, dev_pulse_oscillation.t0[i], dev_pulse_oscillation.sigma[i], dev_pulse_oscillation.freq[i]);
         cache_map_scalar["pulse_"+std::to_string(i)+"_real"].push_back( PC3::CUDA::real(pulse) );
         cache_map_scalar["pulse_"+std::to_string(i)+"_imag"].push_back( PC3::CUDA::imag(pulse) );
     }
     for (int i = 0; i < dev_pump_oscillation.n; i++) {
         if (not dev_pump_oscillation.active[i])
             continue;
-        real_number pump = PC3::CUDA::gaussian_oscillator(system.p.t, dev_pump_oscillation.t0[i], dev_pump_oscillation.sigma[i], dev_pump_oscillation.freq[i]);
+        Type::real pump = PC3::CUDA::gaussian_oscillator(system.p.t, dev_pump_oscillation.t0[i], dev_pump_oscillation.sigma[i], dev_pump_oscillation.freq[i]);
         cache_map_scalar["pump_"+std::to_string(i)].push_back( PC3::CUDA::real(pump) );
     }
     for (int i = 0; i < dev_potential_oscillation.n; i++) {
         if (not dev_potential_oscillation.active[i])
             continue;
-        real_number potential = PC3::CUDA::gaussian_oscillator(system.p.t, dev_potential_oscillation.t0[i], dev_potential_oscillation.sigma[i], dev_potential_oscillation.freq[i]);
+        Type::real potential = PC3::CUDA::gaussian_oscillator(system.p.t, dev_potential_oscillation.t0[i], dev_potential_oscillation.sigma[i], dev_potential_oscillation.freq[i]);
         cache_map_scalar["potential_"+std::to_string(i)].push_back( PC3::CUDA::real(potential) );
     }
 
@@ -76,8 +76,8 @@ void PC3::Solver::cacheToFiles() {
     //if ( not system.doOutput( "all", "mat", "history" ) )
     //    return;
     //auto& file_history_plus = filehandler.getFile( "history_plus" );
-    //const auto interval_time = std::max<unsigned int>( 1u, matrix.wavefunction_plus_history.size() / system.history_output_n );
-    //const auto interval_x = std::max<unsigned int>( 1u, matrix.wavefunction_plus_history.front().size() / system.history_output_n );
+    //const auto interval_time = CUDA::max<unsigned int>( 1u, matrix.wavefunction_plus_history.size() / system.history_output_n );
+    //const auto interval_x = CUDA::max<unsigned int>( 1u, matrix.wavefunction_plus_history.front().size() / system.history_output_n );
     //for ( unsigned int i = 0; i < matrix.wavefunction_plus_history.size(); i += interval_time ) {
     //    std::cout << "Writing history " << i << " of " << matrix.wavefunction_max_plus.size() << "\r";
     //    for ( int k = 0; k < matrix.wavefunction_plus_history.front().size(); k += interval_x ) {
@@ -113,3 +113,4 @@ void PC3::Solver::cacheMatrices() {
     _local_file_out_counter++;
     outputMatrices( system.history_matrix_start_x, system.history_matrix_end_x, system.history_matrix_start_y, system.history_matrix_end_y, system.history_matrix_output_increment, suffix, "timeoutput/" );
 }
+

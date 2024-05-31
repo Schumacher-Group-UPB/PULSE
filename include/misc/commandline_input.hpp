@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
 
 /**
  * @brief Finds a string in a the argv array and returns its index.
@@ -21,7 +21,7 @@ int findInArgv( std::string toFind, int argc, char** argv, int start = 0 );
  * @param index The index to start searching from. This field is updated to the
  * index of the next parameter.
  */
-real_number getNextInput( char** arguments, const int argc, const std::string name, int& index );
+PC3::Type::real getNextInput( char** arguments, const int argc, const std::string name, int& index );
 std::string getNextStringInput( char** arguments, const int argc, const std::string name, int& index );
 
 /**

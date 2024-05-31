@@ -1,5 +1,6 @@
 #include <ctime>
 #include "system/system.hpp"
+#include "cuda/cuda_matrix_base.hpp"
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
 #include "misc/timeit.hpp"
@@ -38,12 +39,12 @@ std::string to_str(T t) {
 
 void PC3::System::printHelp() {
     print_name();
-#ifndef USEFP32
+#ifndef USE_HALF_PRECISION
     std::cout << "This program is compiled with " << EscapeSequence::UNDERLINE << EscapeSequence::YELLOW << "double precision" << EscapeSequence::RESET << " numbers.\n";
 #else
     std::cout << "This program is compiled with " << EscapeSequence::UNDERLINE << EscapeSequence::YELLOW << "single precision" << EscapeSequence::RESET << " numbers.\n";
 #endif
-#ifdef USECPU
+#ifdef USE_CPU
     std::cout << "This program is compiled as a " << EscapeSequence::UNDERLINE << EscapeSequence::YELLOW << "CPU Version" << EscapeSequence::RESET << ".\n";
     std::cout << "Maximum number of CPU cores utilized " << omp_get_max_threads() << std::endl;
 #endif
@@ -104,7 +105,7 @@ void PC3::System::printHelp() {
               << unifyLength("--me", "<double>", "Standard is " + to_str(p.m_e)) << std::endl
               << unifyLength("--hbarscaled", "<double>", "Standard is " + to_str(p.h_bar_s)) << std::endl
               << unifyLength("--meff", "<double>", "Standard is " + to_str(p.m_eff)) << std::endl;
-#ifdef USECPU
+#ifdef USE_CPU
     std::cout << unifyLength( "--threads", "<int>", "Standard is " + std::to_string( omp_max_threads ) + " Threads\n" ) << std::endl;
 #endif
 }
@@ -163,12 +164,12 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
     std::cout << "Total allocated space for Device Matrices: " << CUDAMatrixBase::global_total_device_mb_max << " MB." << std::endl;
     std::cout << "Total allocated space for Host Matrices: " << CUDAMatrixBase::global_total_host_mb_max << " MB." << std::endl;
     std::cout << "Random Seed was: " << random_seed << std::endl;
-#ifdef USEFP32
+#ifdef USE_HALF_PRECISION
     std::cout << "This program is compiled using " << EscapeSequence::UNDERLINE << EscapeSequence::BLUE << "single precision" << EscapeSequence::RESET << " numbers.\n";
 #else
     std::cout << "This program is compiled using " << EscapeSequence::UNDERLINE << EscapeSequence::BLUE << "double precision" << EscapeSequence::RESET << " numbers.\n";
 #endif
-#ifdef USECPU
+#ifdef USE_CPU
     std::cout << "Device Used: " << EscapeSequence::BOLD << EscapeSequence::YELLOW << "CPU" << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::GRAY << "  Cores utilized " << omp_max_threads << " of " << omp_get_max_threads() << " total cores." << EscapeSequence::RESET << std::endl;
 #else

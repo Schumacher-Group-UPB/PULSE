@@ -1,8 +1,9 @@
 #pragma once
-#include "cuda/cuda_complex.cuh"
+#include "cuda/typedef.cuh"
+#include "cuda/cuda_macro.cuh"
 
 struct compare_complex_abs2 {
-    CUDA_HOST_DEVICE bool operator()( complex_number lhs, complex_number rhs ) {
+    PULSE_HOST_DEVICE bool operator()( PC3::Type::complex lhs, PC3::Type::complex rhs ) {
         return PC3::CUDA::real(lhs) * PC3::CUDA::real(lhs) + PC3::CUDA::imag(lhs) * PC3::CUDA::imag(lhs) < PC3::CUDA::real(rhs) * PC3::CUDA::real(rhs) + PC3::CUDA::imag(rhs) * PC3::CUDA::imag(rhs);
     }
 };
@@ -13,10 +14,10 @@ namespace PC3::CUDA {
  * @brief Calculates the minimum and maximum of a buffer of (complex) numbers
  * @param z The buffer to calculate the minimum and maximum of.
  * @param size The size of the buffer.
- * @return std::tuple<real_number, real_number> A tuple containing the minimum and maximum
+ * @return std::tuple<PC3::Type::real, PC3::Type::real> A tuple containing the minimum and maximum
  */
-std::tuple<real_number, real_number> minmax( complex_number* buffer, int size, bool device_pointer = false );
-std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool device_pointer = false );
+std::tuple<Type::real, Type::real> minmax( Type::complex* buffer, int size, bool device_pointer = false );
+std::tuple<Type::real, Type::real> minmax( Type::real* buffer, int size, bool device_pointer = false );
 
 /**
  * @brief Normalizes a buffer of real numbers using the minimum and maximum
@@ -27,7 +28,7 @@ std::tuple<real_number, real_number> minmax( real_number* buffer, int size, bool
  * @param min The minimum value to normalize to.
  * @param max The maximum value to normalize to.
  */
-void normalize( real_number* buffer, int size, real_number min = 0, real_number max = 0, bool device_pointer = false );
+void normalize( Type::real* buffer, int size, Type::real min = 0, Type::real max = 0, bool device_pointer = false );
 
 /**
  * @brief Calculates the angle of a buffer of complex numbers, as long as
@@ -36,6 +37,9 @@ void normalize( real_number* buffer, int size, real_number min = 0, real_number 
  * @param buffer The buffer to save the result to.
  * @param size The size of the buffer.
  */
-void angle( complex_number* z, real_number* buffer, int size );
+void angle( Type::complex* z, Type::real* buffer, int size );
+
+void cwiseAbs2( Type::complex* z, Type::real* buffer, int size );
+void cwiseAbs2( Type::real* z, Type::real* buffer, int size );
 
 } // namespace PC3::Kernel
