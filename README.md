@@ -8,6 +8,7 @@ P.U.L.S.E. can also solve ...
 - [MSVC](https://visualstudio.microsoft.com/de/downloads/) [Windows]
 - [CUDA](https://developer.nvidia.com/cuda-downloads)
 - Optional: [SFML](https://www.sfml-dev.org/download.php) v 2.6.x
+- Optional: [FFTW](https://www.fftw.org/) for the CPU version
 - Optional: [Gnuplot](http://www.gnuplot.info/) for fast plotting
 
 If you are on Windows it is required to install some kind of UNIX based software distribution like [msys2](https://www.msys2.org/) or any wsl UNIX distribution for the makefile to work.
@@ -44,6 +45,15 @@ git clone https://github.com/davidbauch/PC3
 2 - Compile P.U.L.S.E. using 
 ```bash
 make [TETM=TRUE/FALSE ARCH=NONE/ALL/XY]`
+```
+
+### Build with CPU Kernel
+If you, for some reason, want to compile this program as a CPU version, you can do this by adding the `CPU=TRUE` compiler flag to `make`. This is probably only usefull if you do not have a NVIDIA GPU.
+While nvcc can compile this into CPU code, it generally makes more sense to use [GCC](https://gcc.gnu.org/) or any other compiler of your choice, as those are generally faster and better for CPU code than nvcc.
+You can specify the compiler using the `COMPILER=` flag to `make`.
+
+```bash
+make [SFML=TRUE/FALSE FP32=TRUE/FALSE TETM=TRUE/FALSE CPU=TRUE COMPILER=g++]
 ```
 
 ## FP32 - Single Precision
@@ -94,18 +104,6 @@ We reproduce recent research results using P.U.L.S.E. and compare the runtimes.
 # Examples
 We provide multiple examples for using PULSE in scientific work. See the [examples folder](/examples/) for an overview.
 
-
-## Example 1: 
-- Gif of result
-- Runtime Matlab, PULSE, PULSE_CPU
-
-...
-
-Runstring:
-```bash
-./pulse.exe ...
-```
-
 |  | FP32  | FP64 | CPU |
 | - | - | - | - |
 | RTX 3070ti / AMD Ryzen 6c | 0 | 0 | 0 |
@@ -113,7 +111,6 @@ Runstring:
 | A100 / AMD Milan | 0 | 0 | 0 |
 
 alt: Scalar  `~135ms/ps`  `~465ms/ps` 
-
 alt: TE/TM  tbd.   `~920ms/ps` 
 
 # Custom Kernel Variables
