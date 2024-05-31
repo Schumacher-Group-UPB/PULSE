@@ -21,10 +21,10 @@ OPTIMIZATION = -O3
 # Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
 GCCFLAGS = -std=c++20 -fopenmp -x c++
 ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -Xcompiler="-wd4005" -rdc=true
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true
 	SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -diag-suppress 177 -diag-suppress 4005 -lstdc++ -rdc=true
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -diag-suppress 4005 -lstdc++ -rdc=true
 endif
 
 ifneq ($(ARCH),NONE)
@@ -57,18 +57,18 @@ endif
 CU_SRCS = $(shell find $(SRCDIR) -name "*.cu")
 
 CPP_OBJS = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(CPP_SRCS))
-CU_OBJS = $(patsubst $(SRCDIR)/%.cu,$(OBJDIR)/%.o,$(CU_SRCS))
+CU_OBJS = $(patsubst $(SRCDIR)/%.cu,$(OBJDIR)/%.obj,$(CU_SRCS))
 
 
 ifeq ($(SFML),TRUE)
 	ADD_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system $(SFMLLIBS) -DSFML_RENDER
 endif
 ifeq ($(FP32),TRUE)
-	ADD_FLAGS += -DUSEFP32
+	ADD_FLAGS += -DUSE_HALF_PRECISION
 endif
 ifeq ($(CPU),TRUE)
-	ADD_FLAGS += -DUSECPU -DPC3_DISABLE_FFT 
-# lfftw3 - for now, disable fftw3 because its not working for some unknown reason.
+	ADD_FLAGS += -DUSE_CPU
+	ADD_FLAGS += -lfftw3f -lfftw3
 endif
 
 # Targets
@@ -93,7 +93,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(COMPILER) $(COMPILER_FLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cu
+$(OBJDIR)/%.obj: $(SRCDIR)/%.cu
 	@mkdir -p $(dir $@)
 	$(COMPILER) $(COMPILER_FLAGS) -c $< -o $@ -I$(INCDIR) $(ADD_FLAGS)
 

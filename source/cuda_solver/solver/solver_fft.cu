@@ -6,8 +6,17 @@
 
 #ifdef USE_CPU
 
-    #ifndef PC3_DISABLE_FFT
-        #include <fftw3.h>
+    #include <fftw3.h>
+
+    #ifdef USE_HALF_PRECISION
+        using fftwplan = fftwf_plan;
+        using fftwdt = fftwf_complex;
+        #define fftwExecutePlan fftwf_execute_dft;
+
+    #else
+        using fftwplan = fftw_plan;
+        using fftwdt = fftw_complex;
+        #define fftwExecutePlan fftw_execute_dft;
     #endif
 
 #else
@@ -33,7 +42,7 @@
      * system will forgive us. We could also implement a small wrapper class that
      * holds the plan and calls the destruct method when the class instance is destroyed.
     */
-    static cufftHandle& getCUFFTPlan( size_t N_x, size_t N_y ) {
+    static cufftHandle& getFFTPlan( size_t N_x, size_t N_y ) {
         static cufftHandle plan = 0;
         static bool isInitialized = false;
 
@@ -49,9 +58,38 @@
     }
 
 #else
-    
-    static int getCUFFTPlan( size_t N_x, size_t N_y ) {
-        return 0;
+
+    static std::tuple<fftwplan&,fftwplan&> getFFTPlan( size_t N_x, size_t N_y, PC3::Type::complex* device_ptr_in, PC3::Type::complex* device_ptr_out ) {
+        static fftwplan forward_plan;
+        static fftwplan inverse_plan;
+        static bool isInitialized = false;
+
+        if (not isInitialized) {
+            #ifdef USE_HALF_PRECISION
+            forward_plan = fftwf_plan_dft_2d(N_x, N_y,
+                                      reinterpret_cast<fftwdt*>(device_ptr_in),
+                                      reinterpret_cast<fftwdt*>(device_ptr_out),
+                                      FFTW_FORWARD, FFTW_ESTIMATE);
+            inverse_plan = fftwf_plan_dft_2d(N_x, N_y,
+                                      reinterpret_cast<fftwdt*>(device_ptr_in),
+                                      reinterpret_cast<fftwdt*>(device_ptr_out),
+                                      FFTW_BACKWARD, FFTW_ESTIMATE);
+            #else
+            forward_plan = fftw_plan_dft_2d(N_x, N_y,
+                                      reinterpret_cast<fftwdt*>(device_ptr_in),
+                                      reinterpret_cast<fftwdt*>(device_ptr_out),
+                                      FFTW_FORWARD, FFTW_ESTIMATE);
+            inverse_plan = fftw_plan_dft_2d(N_x, N_y,
+                                      reinterpret_cast<fftwdt*>(device_ptr_in),
+                                      reinterpret_cast<fftwdt*>(device_ptr_out),
+                                      FFTW_BACKWARD, FFTW_ESTIMATE);
+            #endif
+            if (forward_plan == nullptr or inverse_plan == nullptr) {
+                std::cout << "Error creating FFTW plans!" << std::endl;
+            }
+            isInitialized = true;
+        }
+        return std::make_tuple(std::ref(forward_plan),std::ref(inverse_plan));
     }
 
 #endif
@@ -132,18 +170,15 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
 void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir ) {
     #ifdef USE_CUDA
         // Do FFT using CUDAs FFT functions
-        auto plan = getCUFFTPlan( system.p.N_x, system.p.N_y );
+        auto plan = getFFTPlan( system.p.N_x, system.p.N_y );
         CHECK_CUDA_ERROR( FFTSOLVER( plan, reinterpret_cast<cufftComplex*>(device_ptr_in), reinterpret_cast<cufftComplex*>(device_ptr_out), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
     #else   
-        #ifndef PC3_DISABLE_FFT 
+        auto [plan_forward, plan_inverse] = getFFTPlan(system.p.N_x, system.p.N_y, device_ptr_in, device_ptr_out);
         // Do FFT on CPU using external Library.
-        fftw_plan plan = fftw_plan_dft_2d(system.p.N_x, system.p.N_y,
-                                      reinterpret_cast<fftw_complex*>(device_ptr_in),
-                                      reinterpret_cast<fftw_complex*>(device_ptr_out),
-                                      dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE);
-        fftw_execute(plan);
-        fftw_destroy_plan(plan);
-        fftw_cleanup();
-        #endif
+        int index = system.p.N2 / 2;
+        std::cout << "Before In: " << device_ptr_in[index] << " Out: " << device_ptr_out[index] <<  std::endl;
+        fftwExecutePlan(dir == FFT::inverse ? plan_inverse : plan_forward, reinterpret_cast<fftwdt*>(device_ptr_in), reinterpret_cast<fftwdt*>(device_ptr_out));
+        std::cout << "After In: " << device_ptr_in[index] << " Out: " << device_ptr_out[index] <<  std::endl;
+        
     #endif
 }

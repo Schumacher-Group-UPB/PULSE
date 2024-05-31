@@ -171,7 +171,7 @@ void PC3::System::printSummary( std::map<std::string, std::vector<double>> timei
 #endif
 #ifdef USE_CPU
     std::cout << "Device Used: " << EscapeSequence::BOLD << EscapeSequence::YELLOW << "CPU" << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::GRAY << "  Cores utilized " << omp_max_threads << " of " << omp_get_max_threads() << " total cores." << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::GRAY << "  CPU cores utilized: " << omp_max_threads << EscapeSequence::RESET << std::endl;
 #else
     int nDevices;
     cudaGetDeviceCount(&nDevices);
