@@ -175,10 +175,6 @@ void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* dev
     #else   
         auto [plan_forward, plan_inverse] = getFFTPlan(system.p.N_x, system.p.N_y, device_ptr_in, device_ptr_out);
         // Do FFT on CPU using external Library.
-        int index = system.p.N2 / 2;
-        std::cout << "Before In: " << device_ptr_in[index] << " Out: " << device_ptr_out[index] <<  std::endl;
         fftwExecutePlan(dir == FFT::inverse ? plan_inverse : plan_forward, reinterpret_cast<fftwdt*>(device_ptr_in), reinterpret_cast<fftwdt*>(device_ptr_out));
-        std::cout << "After In: " << device_ptr_in[index] << " Out: " << device_ptr_out[index] <<  std::endl;
-        
     #endif
 }
