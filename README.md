@@ -5,7 +5,7 @@ We use cache-friendly grid division to achieve the maximum possible performance 
 P.U.L.S.E. can also solve ...
 
 # Requirements
-- [MSVC](https://visualstudio.microsoft.com/de/downloads/) [Windows]
+- [MSVC](https://visualstudio.microsoft.com/de/downloads/) [Windows] or [GCC](https://gcc.gnu.org/) [Linux]
 - [CUDA](https://developer.nvidia.com/cuda-downloads)
 - Optional: [SFML](https://www.sfml-dev.org/download.php) v 2.6.x
 - Optional: [FFTW](https://www.fftw.org/) for the CPU version
@@ -21,7 +21,7 @@ Also, make sure to check the C++ Desktop Development section in the VS installer
 ```    
     git clone --recursive https://github.com/davidbauch/PC3 
 ``` 
-This will also donwload the SFML repository.
+This will also download the SFML repository. I suggest also downloading a precompiled version of the library using the link at the top.
 
 2 - Build SFML using CMake and/or MSVC
 
