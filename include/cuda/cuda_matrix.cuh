@@ -285,6 +285,9 @@ class CUDAMatrix : CUDAMatrixBase {
      * the corresponding device matrix when it is needed.
     */
     CUDAMatrix<T>& hostToDeviceSync() {
+        // If the matrix is not on host and thus, has to be empty, do nothing
+        if (not is_on_host)
+            return *this;
         // If the matrix does not exist on device yet, create it from host parameters
         if ( not is_on_device and total_size > 0 )
             constructDevice( rows, cols, name );
@@ -308,6 +311,9 @@ class CUDAMatrix : CUDAMatrixBase {
      * the corresponding device matrix when it is needed.
     */
     CUDAMatrix<T>& deviceToHostSync() {
+        // If the matrix is not on device and thus, has to be empty, do nothing
+        if (not is_on_device)
+            return *this;
         // If the matrix does not exist on host yet, create it from device parameters
         if ( not is_on_host and total_size > 0 )
             constructHost( rows, cols, name );
