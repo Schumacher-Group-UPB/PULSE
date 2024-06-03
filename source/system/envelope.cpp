@@ -82,7 +82,7 @@ void PC3::Envelope::addTemporal( PC3::Type::real t0, PC3::Type::real sigma, PC3:
     std::string group_identifier = std::to_string( t0 ) + std::to_string( sigma ) + std::to_string( freq );
 
     // If the group identifier is not present in the map, add it and the temporal components
-    if ( not str_to_group_identifier.contains( group_identifier ) ) {
+    if ( not str_to_group_identifier.count( group_identifier ) ) {
         str_to_group_identifier[group_identifier] = str_to_group_identifier.size();
         this->t0.push_back( t0 );
         this->sigma.push_back( sigma );

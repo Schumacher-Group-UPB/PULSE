@@ -1,4 +1,5 @@
 #include <ctime>
+#include <iomanip> // std::setprecision
 #include "system/system.hpp"
 #include "cuda/cuda_matrix_base.hpp"
 #include "misc/commandline_input.hpp"
