@@ -1,13 +1,6 @@
 #pragma once
 
 #ifdef USE_CUDA
-
-    // Include the required CUDA headers
-    #include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-    #include <cuda.h>
-    #include <device_launch_parameters.h>
-    #include <cuda_runtime.h>
-
     // Execudes a CUDA Command, checks for the latest error and prints it
     // This is technically not a requirement, but usually good practice
     #define CHECK_CUDA_ERROR( func, msg )                             \
@@ -71,4 +64,3 @@
         a = b;              \
         b = tmp;            \
     }
-    

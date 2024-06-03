@@ -12,6 +12,11 @@
     #include <vector>
     #include <random>
 #else
+    // Include the required CUDA headers
+    #include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+    #include <cuda.h>
+    #include <device_launch_parameters.h>
+    #include <cuda_runtime.h>
 
     // We use Thrust for most of the type definitions on the GPU
     // Complex Host and Device Numbers
