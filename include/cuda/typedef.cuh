@@ -5,13 +5,6 @@
  * ALWAYS be included as the first file in this project.
 */
 
-#ifdef __CUDACC__
-    #define USE_CUDA
-#endif
-#ifdef __GNUC__
-    #define USE_CPU 
-#endif
-
 #ifdef USE_CPU
 
     // Complex Host Numbers
