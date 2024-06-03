@@ -15,9 +15,11 @@
     #ifdef USE_HALF_PRECISION
         #define FFTSOLVER cufftExecC2C
         #define FFTPLAN CUFFT_C2C
+        using fft_type = cufftComplex;
     #else
         #define FFTSOLVER cufftExecZ2Z
         #define FFTPLAN CUFFT_Z2Z
+        using fft_type = cufftDoubleComplex;
     #endif
 
 #endif
@@ -124,7 +126,7 @@ void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* dev
     #ifdef USE_CUDA
         // Do FFT using CUDAs FFT functions
         auto plan = getFFTPlan( system.p.N_x, system.p.N_y );
-        CHECK_CUDA_ERROR( FFTSOLVER( plan, reinterpret_cast<cufftComplex*>(device_ptr_in), reinterpret_cast<cufftComplex*>(device_ptr_out), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
+        CHECK_CUDA_ERROR( FFTSOLVER( plan, reinterpret_cast<fft_type*>(device_ptr_in), reinterpret_cast<fft_type*>(device_ptr_out), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
     #else   
         //auto [plan_forward, plan_inverse] = getFFTPlan(system.p.N_x, system.p.N_y, device_ptr_in, device_ptr_out);
         #ifdef USE_HALF_PRECISION
