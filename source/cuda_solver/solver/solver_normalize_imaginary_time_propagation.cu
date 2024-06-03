@@ -1,5 +1,4 @@
 #include "cuda/typedef.cuh"
-#include "cuda/cuda_macro.cuh"
 #include "solver/gpu_solver.hpp"
 #include "kernel/kernel_normalize_imaginary_time_propagation.cuh"
 #include "misc/helperfunctions.hpp"

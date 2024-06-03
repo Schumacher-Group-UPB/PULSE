@@ -1,5 +1,4 @@
 #include "cuda/typedef.cuh"
-#include "cuda/cuda_macro.cuh"
 #include "kernel/kernel_fft.cuh"
 #include "system/system.hpp"
 #include "solver/gpu_solver.hpp"

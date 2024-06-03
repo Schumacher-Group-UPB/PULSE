@@ -11,7 +11,6 @@
 #include <omp.h>
 
 // Include Cuda Kernel headers
-#include "cuda/cuda_macro.cuh"
 #include "kernel/kernel_runge_function.cuh"
 #include "kernel/kernel_summation.cuh"
 #include "kernel/kernel_fft.cuh"

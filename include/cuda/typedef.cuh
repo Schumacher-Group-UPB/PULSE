@@ -22,6 +22,9 @@
     #include <thrust/copy.h>
     #include <thrust/device_ptr.h>
     #include <curand_kernel.h>
+
+    // Define Helper Macro so we dont always have to use "ifneq USE_CPU"
+    #define USE_CUDA
 #endif
 
 #include <cmath>

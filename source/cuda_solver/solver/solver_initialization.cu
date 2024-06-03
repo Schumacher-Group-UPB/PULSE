@@ -3,9 +3,9 @@
 #include <random>
 #include <ranges>
 #include <vector>
+#include "cuda/typedef.cuh"
 #include "misc/helperfunctions.hpp"
 #include "solver/gpu_solver.hpp"
-#include "cuda/cuda_macro.cuh"
 #include "misc/escape_sequences.hpp"
 
 void PC3::Solver::initializeHostMatricesFromSystem() {

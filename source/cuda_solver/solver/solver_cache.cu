@@ -1,9 +1,9 @@
 #include <vector>
 #include <string>
 
+#include "cuda/typedef.cuh"
 #include "misc/helperfunctions.hpp"
 #include "solver/gpu_solver.hpp"
-#include "cuda/cuda_macro.cuh"
 
 void PC3::Solver::cacheValues() {
     // System Time

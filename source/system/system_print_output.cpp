@@ -1,5 +1,5 @@
 #include <ctime>
-#include <iomanip> // std::setprecision
+#include <iomanip> // std::setprecision, std::setw, std::setfill
 #include "system/system.hpp"
 #include "cuda/cuda_matrix_base.hpp"
 #include "misc/commandline_input.hpp"
@@ -9,9 +9,13 @@
 
 // TODO: Create a few wrapper functions for formatting, make help screen and final screen fixed width
 
+static size_t console_width = 90;
+static char seperator = '-';
+
 void print_name() {
-    std::cout << "-------------------------------------------------------------------------------------\n\n";
-    std::cout << EscapeSequence::BLUE << EscapeSequence::BOLD;
+    std::cout << std::setfill(seperator) << std::setw(console_width) << "\n\n"; // Horizontal Seperator
+    std::cout << EscapeSequence::BLUE << EscapeSequence::BOLD; // Make Text Blue and Bold
+    // Print Pulse LOGO
     std::cout << "                   _____    _     _            _______   _______\n";
     std::cout << "                  |_____]   |     |   |        |______   |______\n";
     std::cout << "                  |       . |_____| . |_____ . ______| . |______ .\n\n";
@@ -21,9 +25,10 @@ void print_name() {
     std::cout << "ver for the nonlinear " << EscapeSequence::BLUE << "S" << EscapeSequence::GRAY << "chroedinger ";
     std::cout << EscapeSequence::BLUE << "E" << EscapeSequence::GRAY << "quation";
     std::cout << EscapeSequence::RESET << "                         \n" << std::endl;
+
     std::cout << "                                 Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.1.0" << EscapeSequence::RESET << std::endl;
     std::cout << "                       https://github.com/davidbauch/PC3" << std::endl;
-    std::cout << "-------------------------------------------------------------------------------------" << std::endl;
+    std::cout << std::setfill(seperator) << std::setw(console_width) << "\n\n"; // Horizontal Seperator
 }
 
 template <typename T> 
