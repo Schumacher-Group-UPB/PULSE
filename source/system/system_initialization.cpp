@@ -54,7 +54,12 @@ void PC3::System::init( int argc, char** argv ) {
         auto output_string = getNextStringInput( argv, argc, "output", ++index );
         // Split output_string at ","
         for ( auto range : output_string | std::views::split( ',' ) ) {
-            output_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
+            std::string split_str;
+            for (auto ch : range) {
+                split_str += ch;
+            }
+            output_keys.emplace_back(split_str);
+            //output_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
         }
     }
 
