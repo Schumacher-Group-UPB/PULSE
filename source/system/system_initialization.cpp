@@ -2,14 +2,14 @@
 #include <algorithm>
 #include <ranges>
 #include <random>
-#include "system/system.hpp"
+#include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
 #include "omp.h"
 
-void PC3::System::init( int argc, char** argv ) {
+void PC3::SystemParameters::init( int argc, char** argv ) {
     // Initialize system
     int index = 0;
 
@@ -94,8 +94,26 @@ void PC3::System::init( int argc, char** argv ) {
     if ( ( index = findInArgv( "--fftEvery", argc, argv ) ) != -1 ) {
         fft_every = getNextInput( argv, argc, "fft_every", ++index );
     }
+
+    // Choose the iterator
+    iterator = Iterator::RK4;
     if ( ( index = findInArgv( "-rk45", argc, argv ) ) != -1 ) {
-        fixed_time_step = false;
+        std::cout << EscapeSequence::RED << "Currently not implemented. Using default iterator." << EscapeSequence::RESET << std::endl;
+        //iterator = Iterator::RK45;
+    }
+    if ( ( index = findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
+        std::cout << EscapeSequence::RED << "Currently not implemented. Using default iterator." << EscapeSequence::RESET << std::endl;
+        //iterator = Iterator::SSFM;
+    }
+    if ( ( index = findInArgv( "--iterator", argc, argv ) ) != -1 ) {
+        std::string it = getNextStringInput( argv, argc, "iterator", ++index );
+        if (not iterator_map.count(it)) {
+            std::cout << EscapeSequence::RED << "Invalid iterator specified. Using default iterator." << EscapeSequence::RESET << std::endl;
+        } else {
+            iterator = iterator_map[ it ];
+        }
+        std::cout << EscapeSequence::RED << "Currently not implemented. Using default iterator." << EscapeSequence::RESET << std::endl;
+        iterator = Iterator::RK4;
     }
 
     // Imaginary Time Propagation

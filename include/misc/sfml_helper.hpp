@@ -70,16 +70,16 @@ void plotMatrix( T* buffer, int NX, int NY, int posX, int posY, int skip, ColorP
 ColorPalette __local_colorpalette_phase;
 ColorPalette __local_colorpalette;
 
-CheckBox* cb_toggle_fft;
-CheckBox* cb_min_and_max;
-Button* b_add_outevery;
-Button* b_sub_outevery;
-Button* b_add_dt;
-Button* b_sub_dt;
-Button* b_snapshot;
-Button* b_reset_to_snapshot;
-Button* b_reset_to_initial;
-Button* b_cycle_subplot;
+CheckBox cb_toggle_fft;
+CheckBox cb_min_and_max;
+Button b_add_outevery;
+Button b_sub_outevery;
+Button b_add_dt;
+Button b_sub_dt;
+Button b_snapshot;
+Button b_reset_to_snapshot;
+Button b_reset_to_initial;
+Button b_cycle_subplot;
 double snapshot_time = 0.0;
 size_t current_subplot = 0;
 
@@ -109,26 +109,26 @@ void initSFMLWindow( PC3::Solver& solver ) {
     getWindow().init();
     __plotarray = std::make_unique<Type::real[]>( solver.system.p.N_x * solver.system.p.N_y );
 
-    cb_toggle_fft = new CheckBox( 10, 50, "Toggle FFT Plot", false );
-    getWindow().addObject( cb_toggle_fft );
-    cb_min_and_max = new CheckBox( 10, 80, "Toggle Min/Max", false );
-    getWindow().addObject( cb_min_and_max );
-    b_add_outevery = new Button( 10, 150, "Increase" );
-    getWindow().addObject( b_add_outevery );
-    b_sub_outevery = new Button( 10, 180, "Decrease" );
-    getWindow().addObject( b_sub_outevery );
-    b_add_dt = new Button( 10, 250, "Increase dt" );
-    getWindow().addObject( b_add_dt );
-    b_sub_dt = new Button( 10, 280, "Decrease dt" );
-    getWindow().addObject( b_sub_dt );
-    b_snapshot = new Button( 10, 380, "Snapshot" );
-    getWindow().addObject( b_snapshot );
-    b_reset_to_snapshot = new Button( 10, 410, "Reset to Snapshot" );
-    getWindow().addObject( b_reset_to_snapshot );
-    b_reset_to_initial = new Button( 10, 440, "Reset to Initial" );
-    getWindow().addObject( b_reset_to_initial );
-    b_cycle_subplot = new Button( 10, 480, "Cycle Subplot" );
-    getWindow().addObject( b_cycle_subplot );
+    cb_toggle_fft = CheckBox( 10, 50, "Toggle FFT Plot", false );
+    getWindow().addObject( &cb_toggle_fft );
+    cb_min_and_max = CheckBox( 10, 80, "Toggle Min/Max", false );
+    getWindow().addObject( &cb_min_and_max );
+    b_add_outevery = Button( 10, 150, "Increase" );
+    getWindow().addObject( &b_add_outevery );
+    b_sub_outevery = Button( 10, 180, "Decrease" );
+    getWindow().addObject( &b_sub_outevery );
+    b_add_dt = Button( 10, 250, "Increase dt" );
+    getWindow().addObject( &b_add_dt );
+    b_sub_dt = Button( 10, 280, "Decrease dt" );
+    getWindow().addObject( &b_sub_dt );
+    b_snapshot = Button( 10, 380, "Snapshot" );
+    getWindow().addObject( &b_snapshot );
+    b_reset_to_snapshot = Button( 10, 410, "Reset to Snapshot" );
+    getWindow().addObject( &b_reset_to_snapshot );
+    b_reset_to_initial = Button( 10, 440, "Reset to Initial" );
+    getWindow().addObject( &b_reset_to_initial );
+    b_cycle_subplot = Button( 10, 480, "Cycle Subplot" );
+    getWindow().addObject( &b_cycle_subplot );
 }
 
 int __local_inset = 0;
@@ -160,12 +160,12 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         __local_inset = ( __local_inset + 1 ) % 2;
     }
 
-    if ( cb_toggle_fft->isChecked() )
+    if ( cb_toggle_fft.isChecked() )
         __local_inset = 1;
     else
         __local_inset = 0;
 
-    bool plot_min_max = cb_min_and_max->isChecked();
+    bool plot_min_max = cb_min_and_max.isChecked();
     // Plot Plus
     plotMatrix( solver.matrix.wavefunction_plus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
     plotMatrix( inset_plot_array_plus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
@@ -208,23 +208,23 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         }
     }
 
-    if ( b_add_outevery->isToggled() ) {
+    if ( b_add_outevery.isToggled() ) {
         if ( solver.system.output_every == 0.0 )
             solver.system.output_every = solver.system.p.dt;
         solver.system.output_every *= 2;
     }
-    if ( b_sub_outevery->isToggled() ) {
+    if ( b_sub_outevery.isToggled() ) {
         solver.system.output_every /= 2;
     }
 
-    if ( b_add_dt->isToggled() ) {
+    if ( b_add_dt.isToggled() ) {
         solver.system.p.dt *= 1.1;
     }
-    if ( b_sub_dt->isToggled() ) {
+    if ( b_sub_dt.isToggled() ) {
         solver.system.p.dt /= 1.1;
     }
 
-    if ( b_snapshot->isToggled() ) {
+    if ( b_snapshot.isToggled() ) {
         // Copy the current state of the host wavefunction to the snapshot
         solver.matrix.snapshot_wavefunction_plus.setTo( solver.matrix.wavefunction_plus );
         solver.matrix.snapshot_reservoir_plus.setTo( solver.matrix.reservoir_plus );
@@ -237,7 +237,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         std::cout << "Snapshot taken!" << std::endl;
     }
 
-    if ( b_reset_to_snapshot->isToggled() ) {
+    if ( b_reset_to_snapshot.isToggled() ) {
         // Copy the contents of the snapshot back to the host wavefunction and sync the host matrix to the device.
         solver.matrix.wavefunction_plus.setTo( solver.matrix.snapshot_wavefunction_plus ).hostToDeviceSync();
         solver.matrix.reservoir_plus.setTo( solver.matrix.snapshot_reservoir_plus ).hostToDeviceSync();
@@ -249,7 +249,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         std::cout << "Reset to Snapshot!" << std::endl;
     }
 
-    if ( b_reset_to_initial->isToggled() ) {
+    if ( b_reset_to_initial.isToggled() ) {
         solver.matrix.wavefunction_plus.setTo( solver.matrix.initial_state_plus ).hostToDeviceSync();
         solver.matrix.reservoir_plus.setTo( solver.matrix.initial_state_plus ).hostToDeviceSync();
         if ( solver.system.p.use_twin_mode ) {
@@ -260,7 +260,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         std::cout << "Reset to Initial!" << std::endl;
     }
 
-    if ( b_cycle_subplot->isToggled() ) {
+    if ( b_cycle_subplot.isToggled() ) {
         current_subplot = ( current_subplot + 1 ) % subplot_names.size();
     }
 

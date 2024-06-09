@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <ranges>
 #include <random>
-#include "system/system.hpp"
+#include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
@@ -15,7 +15,7 @@
  * overwritten by the user cmd input.
  *
  */
-PC3::System::System() {
+PC3::SystemParameters::SystemParameters() {
     // SI Rescaling Units
     p.m_e = 9.10938356E-31;
     p.h_bar = 1.0545718E-34;
@@ -56,8 +56,8 @@ PC3::System::System() {
     block_size = 256;
     omp_max_threads = omp_get_max_threads();
 
-    // If this is true, the solver will use a fixed timestep RK4 method instead of the variable timestep RK45 method
-    fixed_time_step = true;
+    // Default Solver is RK4
+    iterator = Iterator::RK4;
 
     // Output of Variables
     output_keys = { "mat", "scalar" };
@@ -69,7 +69,7 @@ PC3::System::System() {
     random_system_amplitude = 1.0;
 }
 
-void PC3::System::calculateAuto() {
+void PC3::SystemParameters::calculateAuto() {
     // If hbar_s is < 0, calculate it
     if ( p.h_bar_s < 0 ) {
         p.h_bar_s = p.h_bar / p.e_e * 1E12;
@@ -97,7 +97,7 @@ void PC3::System::calculateAuto() {
     p.i_h_bar_s = Type::complex( 0.0, p.h_bar_s );
 }
 
-PC3::System::System( int argc, char** argv ) : System() {
+PC3::SystemParameters::SystemParameters( int argc, char** argv ) : SystemParameters() {
 
     // Check if help is requested
     if ( findInArgv( "--help", argc, argv ) != -1 || findInArgv( "-h", argc, argv ) != -1 ) {
@@ -120,7 +120,7 @@ PC3::System::System( int argc, char** argv ) : System() {
     filehandler.init( argc, argv );
 }
 
-bool PC3::System::evaluatePulse() {
+bool PC3::SystemParameters::evaluatePulse() {
     if (not evaluate_pulse_kernel)
         return false;
     bool evaluate_pulse = false;
@@ -135,10 +135,10 @@ bool PC3::System::evaluatePulse() {
     return evaluate_pulse;
 }
 
-bool PC3::System::evaluateReservoir() {
+bool PC3::SystemParameters::evaluateReservoir() {
     return evaluate_reservoir_kernel;
 }
 
-bool PC3::System::evaluateStochastic() {
+bool PC3::SystemParameters::evaluateStochastic() {
     return p.stochastic_amplitude != 0.0;
 }

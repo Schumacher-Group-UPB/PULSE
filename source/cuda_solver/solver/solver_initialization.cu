@@ -11,7 +11,7 @@
 void PC3::Solver::initializeHostMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "--------------------------- Initializing Host Matrices ----------------------------" << EscapeSequence::RESET << std::endl;
     // First, construct all required host matrices
-    matrix.constructAll( system.p.N_x, system.p.N_y, system.p.use_twin_mode, not system.fixed_time_step /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
+    matrix.constructAll( system.p.N_x, system.p.N_y, system.p.use_twin_mode, system.iterator == SystemParameters::Iterator::RK45 /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // ==================================================
     // =................ Initial States ................=
@@ -100,7 +100,7 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
 void PC3::Solver::initializeDeviceMatricesFromHost() {
     std::cout << "Initializing Device Matrices..." << std::endl;
 
-    // Initialize the Oscillation Parameters
+    // Initialize the Oscillation KernelParameters
     dev_pulse_oscillation.construct( system.pulse );
     dev_pump_oscillation.construct( system.pump );
     dev_potential_oscillation.construct( system.potential );

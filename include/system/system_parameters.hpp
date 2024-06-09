@@ -19,11 +19,11 @@ namespace PC3 {
  * also contains envelope wrappers for the different system variables and provides a few
  * helper functions called by the main loop cpu functions.
  */
-class System {
+class SystemParameters {
    public:
 
     // System Parameters. These are also passed to the Kernels
-    struct Parameters {
+    struct KernelParameters {
 
         // Size Variables
         unsigned int N_x, N_y, N2;
@@ -57,7 +57,8 @@ class System {
         // TODO: maybe (at compile time) do a "include custom_parameters.hpp" here. bad practice, but it works
 
     } kernel_parameters;
-    Parameters& p = kernel_parameters;
+    // Truncated alias for the Kernel parameters so we can use p. instead of kernel_parameters.
+    KernelParameters& p = kernel_parameters;
 
     // Numerics
     unsigned int iteration;
@@ -69,7 +70,21 @@ class System {
     // Kernel Block Size
     unsigned int block_size, omp_max_threads;
 
-    bool fixed_time_step, randomly_initialize_system, periodic_boundary_x, periodic_boundary_y;
+    // Initialize the system randomly
+    bool randomly_initialize_system;
+    
+    // Periodic Boundary Conditions
+    bool periodic_boundary_x, periodic_boundary_y;
+
+    enum class Iterator {
+        RK4, // 4th Order Runge-Kutta
+        RK45, // 4th Order Runge-Kutta with 5th Order Error Estimation
+        SSFM, // Split-Step Fourier Method
+    } iterator;
+    // Helper Map for the string -> Iterator conversion
+    std::map<std::string, Iterator> iterator_map = { { "RK4", Iterator::RK4 }, { "RK45", Iterator::RK45 }, { "SSFM", Iterator::SSFM } };
+
+    // Seed for random number generator
     unsigned int random_seed;
     
     // History Output
@@ -92,9 +107,9 @@ class System {
     FileHandler filehandler;
 
     // Default Constructor; Initializes all variables to their default values
-    System();
+    SystemParameters();
     // CMD Argument Constructor; Initializes passed variables according to the CMD arguments
-    System( int argc, char** argv );
+    SystemParameters( int argc, char** argv );
 
     template <typename... Args>
     bool doOutput( const Args&... args ) {

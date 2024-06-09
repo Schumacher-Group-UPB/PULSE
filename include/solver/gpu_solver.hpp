@@ -6,7 +6,7 @@
 #include "cuda/cuda_matrix.cuh"
 #include "cuda/cuda_macro.cuh"
 #include "kernel/kernel_fft.cuh"
-#include "system/system.hpp"
+#include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
 #include "solver/matrix_container.hpp"
 
@@ -28,7 +28,7 @@ namespace PC3 {
 class Solver {
    public:
     // References to system and filehandler so we dont need to pass them around all the time
-    PC3::System& system;
+    PC3::SystemParameters& system;
     PC3::FileHandler& filehandler;
 
     // TODO: Move these into one single float buffer.
@@ -75,7 +75,7 @@ class Solver {
     //std::vector<Type::real> wavefunction_max_plus, wavefunction_max_minus;
     //std::vector<Type::real> times;
 
-    Solver( PC3::System& system ) : system( system ), filehandler( system.filehandler ) {
+    Solver( PC3::SystemParameters& system ) : system( system ), filehandler( system.filehandler ) {
         std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.p.use_twin_mode ) << std::endl;
 
         // Initialize all host matrices
@@ -139,7 +139,7 @@ class Solver {
     void cacheValues();
     void cacheMatrices();
 
-    void normalizeImaginaryTimePropagation( MatrixContainer::Pointers device_pointers, System::Parameters p, dim3 block_size, dim3 grid_size );
+    void normalizeImaginaryTimePropagation( MatrixContainer::Pointers device_pointers, SystemParameters::KernelParameters p, dim3 block_size, dim3 grid_size );
 };
 
 namespace CUDA {

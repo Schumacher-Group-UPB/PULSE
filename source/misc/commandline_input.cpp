@@ -1,4 +1,7 @@
+#include <sstream>
+#include <vector>
 #include <iostream>
+#include <iomanip>
 #include "misc/commandline_input.hpp"
 #include "misc/escape_sequences.hpp"
 
@@ -43,9 +46,6 @@ std::string getNextStringInput( char** argv, const int argc, const std::string n
         exit( EXIT_FAILURE );
     }
 }
-
-#include <sstream>
-#include <vector>
 
 std::string padString(const std::string& str, int len) {
     std::string result = str;
@@ -96,4 +96,23 @@ std::string unifyLength(std::string w1, std::string w2, std::string w3, int L1, 
     }
 
     return result;
+}
+
+std::string centerString(const std::string& input, size_t size, const char fill, const std::string& raw ) {
+    size_t raw_size = raw.size() > 0 ? raw.size() : input.size();
+    int padding = std::floor((size - raw_size) / 2);
+    std::stringstream ss;
+    ss << std::setw(padding) << std::setfill(fill) << "" << input;
+    ss << std::setw(size - padding - raw_size) << std::setfill(fill) << "";
+    return ss.str();
+}
+
+std::string centerStringRaw(const std::string& input, size_t size, const std::string& raw, const char fill ) {
+    return centerString(input ,size, fill, raw);
+}
+
+std::string fillLine(size_t size, const char fill) {
+    std::stringstream ss;
+    ss << std::setfill(fill) << std::setw(size) << "";
+    return ss.str();
 }

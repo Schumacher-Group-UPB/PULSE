@@ -14,7 +14,7 @@
 #include "kernel/kernel_runge_function.cuh"
 #include "kernel/kernel_summation.cuh"
 #include "kernel/kernel_fft.cuh"
-#include "system/system.hpp"
+#include "system/system_parameters.hpp"
 #include "misc/helperfunctions.hpp"
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
@@ -69,9 +69,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_siz
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = matrix.pointers();
 
-    // The CPU should briefly evaluate wether the pulse and the reservoir have to be evaluated
-    bool evaluate_pulse = system.evaluatePulse();
-    bool evaluate_reservoir = system.evaluateReservoir();
+    // The CPU should briefly evaluate wether the stochastic kernel is used
     bool evaluate_stochastic = system.evaluateStochastic();
 
     // Pointers to Oscillation Parameters
@@ -176,16 +174,18 @@ struct square_reduction
 void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size ) {
     // Accept current step?
     bool accept = false;
+
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = matrix.pointers();
+
+    // The CPU should briefly evaluate wether the stochastic kernel is used
+    bool evaluate_stochastic = system.evaluateStochastic();
+
     // Pointers to Oscillation Parameters
     auto pulse_pointers = dev_pulse_oscillation.pointers();
     auto pump_pointers = dev_pump_oscillation.pointers();
     auto potential_pointers = dev_potential_oscillation.pointers();
-    // The CPU should briefly evaluate wether the pulse and the reservoir have to be evaluated
-    bool evaluate_pulse = system.evaluatePulse();
-    bool evaluate_reservoir = system.evaluateReservoir();
-    bool evaluate_stochastic = system.evaluateStochastic();
+
 
     // The delta time is either real or imaginary, depending on the system configuration
     Type::complex delta_time = system.imaginary_time ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
@@ -239,18 +239,16 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALCULATE_K( 6, p.t + RKCoefficients::a6 * p.dt, buffer_wavefunction, buffer_reservoir );
 
-        // Final Result is in the buffer_ arrays
+        // Final Result is in the buffer_ arrays. This is also K7
         CALL_KERNEL(
             PC3::Kernel::RK45::runge_sum_to_final, "Final Sum", grid_size, block_size, 
             delta_time, device_pointers, p
         );
 
-        CALCULATE_K( 7, p.t + RKCoefficients::a7 * p.dt, buffer_wavefunction, buffer_reservoir );
-
-        CALL_KERNEL(
-            PC3::Kernel::RK45::runge_sum_final_error, "Final Sum Error", grid_size, block_size, 
-            delta_time, device_pointers, p
-        );
+        //CALL_KERNEL(
+        //    PC3::Kernel::RK45::runge_sum_final_error, "Final Sum Error", grid_size, block_size, 
+        //    delta_time, device_pointers, p
+        //);
 
         // Do one device synchronization to make sure that the kernel has finished
         CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
@@ -277,25 +275,25 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             dh = 0.5;
         
         //  Set new timestep
-        system.p.dt = std::min<Type::real>(p.dt * dh, system.dt_max);
-        if ( dh < 1.0 )
-           system.p.dt = std::max<Type::real>( p.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
-           //p.dt -= system.dt_min;
-        else
-           system.p.dt = std::min<Type::real>( p.dt + system.dt_min * std::floor( dh ), system.dt_max );
-           //p.dt += system.dt_min;
+        //system.p.dt = std::min<Type::real>(p.dt * dh, system.dt_max);
+        //if ( dh < 1.0 )
+        //   system.p.dt = std::max<Type::real>( p.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
+        //   //p.dt -= system.dt_min;
+        //else
+        //   system.p.dt = std::min<Type::real>( p.dt + system.dt_min * std::floor( dh ), system.dt_max );
+        //   //p.dt += system.dt_min;
 
         // Make sure to also update dt from p
-        p.dt = p.dt;
+        //p.dt = p.dt;
 
         normalizeImaginaryTimePropagation(device_pointers, p, block_size, grid_size);
 
         // Accept step if error is below tolerance
-        if ( final_error < system.tolerance ) {
+        //if ( final_error < system.tolerance ) {
             accept = true;
             // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
             swapBuffers();
-        }
+        //}
     } while ( !accept );
 }
 
@@ -392,9 +390,11 @@ bool PC3::Solver::iterate( ) {
         std::cout << "Initialized Random Number Generator" << std::endl;
     }
     
-    if ( system.fixed_time_step )
+    if ( system.iterator == SystemParameters::Iterator::RK4 )
         iterateFixedTimestepRungeKutta( block_size, grid_size );
-    else
+    else if ( system.iterator == SystemParameters::Iterator::RK45 )
+        iterateVariableTimestepRungeKutta( block_size, grid_size );
+    else 
         iterateSplitStepFourier( block_size, grid_size );
 
     // Syncronize

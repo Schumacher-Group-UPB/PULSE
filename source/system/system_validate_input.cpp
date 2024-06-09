@@ -1,4 +1,4 @@
-#include "system/system.hpp"
+#include "system/system_parameters.hpp"
 #include "misc/escape_sequences.hpp"
 
 #define VALIDATE( condition, variable, message ) \
@@ -6,7 +6,7 @@
         std::cout << EscapeSequence::YELLOW << "Warning: " << variable << " = " << message << EscapeSequence::RESET << std::endl; \
     }
 
-void PC3::System::validateInputs() {
+void PC3::SystemParameters::validateInputs() {
     // Warnings
     if (output_every < 2*p.dt) {
         std::cout << EscapeSequence::YELLOW << "Output Interval = " << output_every << " is very small!\nThis may lead to slower runtimes due to extensive caching." << EscapeSequence::RESET << std::endl;

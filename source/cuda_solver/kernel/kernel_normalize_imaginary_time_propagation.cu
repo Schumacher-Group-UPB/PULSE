@@ -11,7 +11,7 @@
     maxn(n)= max(max(max(abs(u))));  
 */
 
-PULSE_GLOBAL void PC3::Kernel::normalize_imaginary_time_propagation(int i, MatrixContainer::Pointers dev_ptrs, System::Parameters p, Type::complex normalization_wavefunction, Type::complex normalization_reservoir) {
+PULSE_GLOBAL void PC3::Kernel::normalize_imaginary_time_propagation(int i, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Type::complex normalization_wavefunction, Type::complex normalization_reservoir) {
     OVERWRITE_THREAD_INDEX( i );
 
     // MARK: Normalize Wavefunction and Reservoir Plus

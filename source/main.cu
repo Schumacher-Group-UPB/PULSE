@@ -30,7 +30,7 @@
 #include <omp.h>
 #include <chrono>
 #include "cuda/typedef.cuh"
-#include "system/system.hpp"
+#include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
 #include "misc/helperfunctions.hpp"
 #include "misc/timeit.hpp"
@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ) {
     auto config = PC3::readConfigFromFile( argc, argv );
 
     // Convert input arguments to system and handler variables
-    auto system = PC3::System( config.size(), config.data() );
+    auto system = PC3::SystemParameters( config.size(), config.data() );
 
     // Create Solver Class
     auto solver = PC3::Solver( system );

@@ -1,6 +1,6 @@
 #include "cuda/typedef.cuh"
 #include "kernel/kernel_fft.cuh"
-#include "system/system.hpp"
+#include "system/system_parameters.hpp"
 #include "solver/gpu_solver.hpp"
 
 #ifdef USE_CPU

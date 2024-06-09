@@ -3,7 +3,7 @@
 #include "kernel/kernel_normalize_imaginary_time_propagation.cuh"
 #include "misc/helperfunctions.hpp"
 #include <iostream>
-void PC3::Solver::normalizeImaginaryTimePropagation( MatrixContainer::Pointers device_pointers, System::Parameters p, dim3 block_size, dim3 grid_size ) {
+void PC3::Solver::normalizeImaginaryTimePropagation( MatrixContainer::Pointers device_pointers, SystemParameters::KernelParameters p, dim3 block_size, dim3 grid_size ) {
     if (not system.imaginary_time)
         return;
         

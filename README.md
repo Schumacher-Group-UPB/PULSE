@@ -85,6 +85,15 @@ P.U.L.S.E. uses single and double hyphen commandline arguments with multiple par
 
 to get an overview of the available arguments. Also, look into [the shell launchscript](/launch.sh) for a detailed commented parameterset.
 
+# Current Issues
+
+- RK45 not working properly. TODO: better time step control
+- SSFM not working properly.
+
+In both cases, a fallback to RK4 is used as a temporary workaround
+
+- Some code refactoring required to prettify things
+
 # Trouble Shooting
 
 Here are some common errors and how to hopefully fix them
@@ -99,10 +108,14 @@ P.U.L.S.E. is currently benchmarked against common Matlab Solvers for the nonlin
 
 We reproduce recent research results using P.U.L.S.E. and compare the runtimes. 
 
-...
+TODO
 
 # Examples
 We provide multiple examples for using PULSE in scientific work. See the [examples folder](/examples/) for an overview.
+
+
+## Current Benchmark Times
+TODO
 
 |  | FP32  | FP64 | CPU |
 | - | - | - | - |
@@ -110,8 +123,8 @@ We provide multiple examples for using PULSE in scientific work. See the [exampl
 | RTX 4090 / AMD Ryzen 48c | 0 | 0 | 0 |
 | A100 / AMD Milan | 0 | 0 | 0 |
 
-alt: Scalar  `~135ms/ps`  `~465ms/ps` 
-alt: TE/TM  tbd.   `~920ms/ps` 
+old values: Scalar  `~135ms/ps`  `~465ms/ps` 
+old values: TE/TM  tbd.   `~920ms/ps` 
 
 # Custom Kernel Variables
 Right now, changing Kernels is quite easy to do. Just go to [the kernel source directory](source/cuda_solver/kernel/compute/) and edit one of the Kernel files. Recompile and you are good to go!
@@ -153,13 +166,16 @@ If done correctly, you can now add your own variables to the Kernels, parse them
 Adding new matrices and their respective spatial envelopes is quite a bit more challenging, but also doable. You need to add the matrix to the solver, which is quite easy, add an envelope to the system header and then read-in that envelope.
 
 ### Definition of the matrix in the [matrix container header file](include/solver/matrix_container.hpp)
-Again add the definition of your matrix at the designated location in the code
+Again add the definition of your matrix at the designated location in the code. 
 
 Example:
 
 ```C++
-DEFINE_MATRIX(complex_number, custom_matrix_plus, 1) \
-DEFINE_MATRIX(complex_number, custom_matrix_minus, 1) \
+// Macro for definition: 
+// DEFINE_MATRIX(type, name, size_scaling, condition_for_construction)
+
+DEFINE_MATRIX(complex_number, custom_matrix_plus, 1, true) \
+DEFINE_MATRIX(complex_number, custom_matrix_minus, 1, use_twin_mode) \
 //                       This ^^^^^^^^^^^^^^^^^^^ is your matrix definition
 ```
 

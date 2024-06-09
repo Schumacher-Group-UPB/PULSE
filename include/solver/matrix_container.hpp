@@ -1,7 +1,6 @@
 #pragma once
 #include "cuda/typedef.cuh"
 #include "cuda/cuda_matrix.cuh"
-#include "cuda/cuda_macro.cuh"
 
 namespace PC3 {
 
@@ -12,10 +11,8 @@ namespace PC3 {
 * size_scaling: The scaling factor for the size of the matrix
 * condition_for_construction: if false, neither the host nor the device matrices are constructed
 * 
-* The matrices will always be constructed with the size N_x x N_y * size_scaling 
-* on the Host only. When the device pointer is used for the first time, the
-* Matrix class will handle the initialization of the device memory and the
-* copying of the data from the host to the device.
+* We use this not-so-pretty macro to define matrices to shorten this file and to 
+* make it easier for the user to add new matrices.
 */
 
 #define MATRIX_LIST \
@@ -55,25 +52,25 @@ namespace PC3 {
     DEFINE_MATRIX(Type::complex, k4_wavefunction_minus, 1, use_twin_mode) \
     DEFINE_MATRIX(Type::complex, k4_reservoir_plus, 1, true) \
     DEFINE_MATRIX(Type::complex, k4_reservoir_minus, 1, use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, k5_wavefunction_plus, 1, true and use_rk_45) \
+    DEFINE_MATRIX(Type::complex, k5_wavefunction_plus, 1, use_rk_45) \
     DEFINE_MATRIX(Type::complex, k5_wavefunction_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k5_reservoir_plus, 1, true and use_rk_45) \
+    DEFINE_MATRIX(Type::complex, k5_reservoir_plus, 1, use_rk_45) \
     DEFINE_MATRIX(Type::complex, k5_reservoir_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k6_wavefunction_plus, 1, true and use_rk_45) \
+    DEFINE_MATRIX(Type::complex, k6_wavefunction_plus, 1, use_rk_45) \
     DEFINE_MATRIX(Type::complex, k6_wavefunction_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k6_reservoir_plus, 1, true and use_rk_45) \
+    DEFINE_MATRIX(Type::complex, k6_reservoir_plus, 1, use_rk_45) \
     DEFINE_MATRIX(Type::complex, k6_reservoir_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k7_wavefunction_plus, 1, true and use_rk_45) \
+    DEFINE_MATRIX(Type::complex, k7_wavefunction_plus, 1, use_rk_45) \
     DEFINE_MATRIX(Type::complex, k7_wavefunction_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k7_reservoir_plus, 1, true and use_rk_45) \
+    DEFINE_MATRIX(Type::complex, k7_reservoir_plus, 1, use_rk_45) \
     DEFINE_MATRIX(Type::complex, k7_reservoir_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::real, rk_error, 1, true) \
+    DEFINE_MATRIX(Type::real, rk_error, 1, use_rk_45) \
     DEFINE_MATRIX(Type::complex, random_number, 1, true) \
     DEFINE_MATRIX(Type::cuda_random_state, random_state, 1, true) \
-    DEFINE_MATRIX(Type::complex, snapshot_wavefunction_plus, 1, true) \
-    DEFINE_MATRIX(Type::complex, snapshot_wavefunction_minus, 1, use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, snapshot_reservoir_plus, 1, true) \
-    DEFINE_MATRIX(Type::complex, snapshot_reservoir_minus, 1, use_twin_mode) // \ // <-- Don't forget the backslash!
+    DEFINE_MATRIX(Type::complex, snapshot_wavefunction_plus, 1, false) \
+    DEFINE_MATRIX(Type::complex, snapshot_wavefunction_minus, 1, false) \
+    DEFINE_MATRIX(Type::complex, snapshot_reservoir_plus, 1, false) \
+    DEFINE_MATRIX(Type::complex, snapshot_reservoir_minus, 1, false) // \ // <-- Don't forget the backslash!
     /////////////////////////////
     // Add your matrices here. //
     // Make sure to end each   //
@@ -93,6 +90,8 @@ struct MatrixContainer {
 
     // Empty Constructor
     MatrixContainer() = default;
+
+    // TODO: if reservoir... system.evaluateReservoir() !
 
     // Construction Chain
     void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_rk_45, const int n_pulses, const int n_pumps, const int n_potentials ) {

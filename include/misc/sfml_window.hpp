@@ -15,6 +15,7 @@ class WindowObject {
     bool visible = true;
 
     WindowObject( int x, int y, bool visible = true ) : x( x ), y( y ), visible( visible ) {}
+    WindowObject() = default;
 
     virtual bool draw( BasicWindow* basicwindow ) = 0;
     virtual void update() = 0;
@@ -335,6 +336,7 @@ class CheckBox : public WindowObject {
         w = 20;
         h = 20;
     }
+    CheckBox() = default;
 
     bool isChecked() {
         return checked;
@@ -381,6 +383,7 @@ class Button : public WindowObject {
         w = 170;
         h = 25;
     }
+    Button() = default;
 
     bool draw( BasicWindow* basicwindow ) override {
         if ( !visible )

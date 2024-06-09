@@ -55,5 +55,5 @@ PULSE_DEVICE constexpr PC3::Type::real e3 = b63 - 7571. / 16695.;
 PULSE_DEVICE constexpr PC3::Type::real e4 = b64 - 393. / 640.;      
 PULSE_DEVICE constexpr PC3::Type::real e5 = b65 - -92097. / 339200.;
 PULSE_DEVICE constexpr PC3::Type::real e6 = b66 - 187. / 2100.;     
-PULSE_DEVICE constexpr PC3::Type::real e7 = 1. / 40.;         
+PULSE_DEVICE constexpr PC3::Type::real e7 = -1. / 40.;         
 } // namespace RKCoefficients
