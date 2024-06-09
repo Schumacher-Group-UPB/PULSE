@@ -22,10 +22,10 @@ OPTIMIZATION = -O3
 GCCFLAGS = -std=c++20 -fopenmp -x c++
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true
-	SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 else
 	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -diag-suppress 4005 -lstdc++ -rdc=true
 endif
+SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 
 ifneq ($(ARCH),NONE)
     ifeq ($(ARCH),ALL)
