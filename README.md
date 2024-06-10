@@ -2,7 +2,7 @@
 
 PULSE is a CUDA-accelerated Solver for the nonlinear two-dimensional Schrödinger Equation. Primarily developped to simulate Polariton Condensates, PULSE is able to do much more than that!
 
-We provide multiple examples using PULSE in scientific work. See the [examples folder](/examples/) for an overview. We provide Jupyter Notebooks as well as MatLab files to launch PULSE into different configurations. Simple use one of the precompiled binaries from the [current release](https://github.com/AG-Schumacher-UPB/PULSE/releases) and drop it into the same folder as the example you want to run.
+We provide multiple examples using PULSE in scientific work. See the [examples folder](/examples/) for an overview. We provide Jupyter Notebooks as well as MatLab files to launch PULSE into different configurations. Simple use one of the precompiled binaries from the [current release](https://github.com/AG-Schumacher-UPB/PULSE/releases) and drop it into the same folder as the example you want to run. Make sure to edit the respective example file to match the executable.
 
 # Requirements
 - [MSVC](https://visualstudio.microsoft.com/de/downloads/) [Windows] or [GCC](https://gcc.gnu.org/) [Linux]
