@@ -104,8 +104,8 @@ class CUDAMatrix : CUDAMatrixBase {
     */
     CUDAMatrix<T>& setTo( const Type::host_vector<T>& data ) {
         // If this matrix is not on host, we cannot set its host data. 
-        if ( not is_on_host ) {
-            std::cout << EscapeSequence::RED << "Matrix '" << name << "' is not on host." << EscapeSequence::RESET << std::endl;
+        if ( not isOnHost() ) {
+            std::cout << PC3::CLIO::prettyPrint( "Matrix '" + name + "' is not on host!", PC3::CLIO::Control::FullError) << std::endl;
             return *this;
         }
         // Set the host data to the current data. This works fine with both std::vector and thrust::vector
@@ -114,7 +114,7 @@ class CUDAMatrix : CUDAMatrixBase {
         host_is_ahead = true;
         // Log this action
         if (global_matrix_transfer_log)
-            std::cout << EscapeSequence::GRAY << "Copied " << data.size() << " elements to '" << getName() << "'" << std::endl; 
+            std::cout << PC3::CLIO::prettyPrint( "Copied " + std::to_string(data.size()) + " elements to '" + getName() + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl; 
         // Return this pointer
         return *this;
     }
@@ -125,8 +125,8 @@ class CUDAMatrix : CUDAMatrixBase {
     */
     CUDAMatrix<T>& setTo( CUDAMatrix<T>& other ) {
         // If this matrix is not on host, we cannot set its host data. 
-        if ( not is_on_host or not other.isOnHost()) {
-            std::cout << EscapeSequence::RED << "Matrix '" << name << "' or Matrix '" << other.getName() << "' is not on host." << EscapeSequence::RESET << std::endl;
+        if ( not isOnHost() or not other.isOnHost()) {
+            std::cout << PC3::CLIO::prettyPrint( "Matrix '" + name + "' or Matrix '" + other.getName() + "' is not on host.", PC3::CLIO::Control::FullError) << std::endl;
             return *this;
         }
         // Set the host data to the current data. This works fine with both std::vector and thrust::vector
@@ -135,7 +135,7 @@ class CUDAMatrix : CUDAMatrixBase {
         host_is_ahead = true;
         // Log this action
         if (global_matrix_transfer_log)
-            std::cout << EscapeSequence::GRAY << "Copied '" << other.getName() << "' to '" << getName() << "'" << std::endl; 
+            std::cout << PC3::CLIO::prettyPrint( "Copied '" + other.getName() + "' to '" + getName() + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl; 
         // Return this pointer
         return *this;
     }
@@ -153,7 +153,7 @@ class CUDAMatrix : CUDAMatrixBase {
         global_total_host_mb -= size_in_mb;
         // Log this action. Mostly for simple debugging.
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from host, total allocated host space: " << global_total_host_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string(rows) + "x" + std::to_string(rows) + " matrix '" + name + "' from host, total allocated host space: " + std::to_string(global_total_host_mb) + " MB.", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Clear the Host data
         host_data.clear();
         // And make sure this matrix is not flagged as on host.
@@ -174,7 +174,7 @@ class CUDAMatrix : CUDAMatrixBase {
         global_total_device_mb -= size_in_mb;
         // Log this action. Mostly for simple debugging.
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Freeing " << rows << "x" << cols << " matrix '" << name << "' from device, total allocated device space: " << global_total_device_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string(rows) + "x" + std::to_string(cols) + " matrix '" + name + "' from device, total allocated device space: " + std::to_string(global_total_device_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Clear the Device Data. This calls cudaFree when using nvcc and std::vector's .clear() when using gcc
         device_data.clear();
         // Make sure this matrix is not flagged as on device
@@ -208,7 +208,7 @@ class CUDAMatrix : CUDAMatrixBase {
         this->cols = cols;
         // Log this action.
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " device matrix '" << name << "', total allocated device space: " << global_total_device_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string(size_in_mb) + " MB for " + std::to_string(rows) + "x" + std::to_string(cols) + " device matrix '" + name + "', total allocated device space: " + std::to_string(global_total_device_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Reserve space on the device. When using nvcc, this allocates device memory on the GPU using thrust. When using gcc, this allocates memory for the CPU using std::vector.
         device_data.resize( total_size );
         // This matrix is now on device
@@ -243,7 +243,7 @@ class CUDAMatrix : CUDAMatrixBase {
         this->cols = cols;
         // Log this action.
         if ( global_matrix_creation_log )
-            std::cout << EscapeSequence::GRAY << "Allocating " << size_in_mb << " MB for " << rows << "x" << cols << " host matrix '" << name << "', total allocated host space: " << global_total_host_mb << " MB." << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string(size_in_mb) + " MB for " + std::to_string(rows) + "x" + std::to_string(cols) + " host matrix '" + name + "', total allocated host space: " + std::to_string(global_total_host_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Reserve space on the device. When using nvcc, this allocates device memory on the GPU using thrust. When using gcc, this allocates memory for the CPU using std::vector.
         host_data.resize( total_size );
         // This Matrix is now on the host
@@ -294,7 +294,7 @@ class CUDAMatrix : CUDAMatrixBase {
             constructDevice( rows, cols, name );
         // Log this action
         if ( global_matrix_transfer_log )
-            std::cout << EscapeSequence::GRAY << "Copying " << rows << "x" << cols << " matrix to device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string(rows) + "x" + std::to_string(cols) + " matrix to device matrix '" + name + "'" , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Because we use std::vectors for host and device when using gcc, and thrust::host_vector and thrust::device_vector when using nvcc, we
         // can just call device_data = host_data and std:: or thrust:: will take care of the rest. Internally, this will memcopy in both cases.
         device_data = host_data;
@@ -320,7 +320,7 @@ class CUDAMatrix : CUDAMatrixBase {
             constructHost( rows, cols, name );
         // Log this data
         if ( global_matrix_transfer_log )
-            std::cout << EscapeSequence::GRAY << "Copying " << rows << "x" << cols << " matrix from device matrix '" << name << "'" << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string(rows) + "x" + std::to_string(cols) + " matrix from device matrix '" + name + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Because we use std::vectors for host and device when using gcc, and thrust::host_vector and thrust::device_vector when using nvcc, we
         // can just call host_data = device_data and std:: or thrust:: will take care of the rest. Internally, this will memcopy in both cases.
         host_data = device_data;

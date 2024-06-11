@@ -93,13 +93,14 @@ struct MatrixContainer {
 
     // TODO: if reservoir... system.evaluateReservoir() !
 
-    // Construction Chain
+    // Construction Chain. The Host Matrix is always constructed (who carese about RAM right?) and the device matrix is constructed if the condition is met.
     void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_rk_45, const int n_pulses, const int n_pumps, const int n_potentials ) {
         this->use_twin_mode = use_twin_mode;
         this->use_rk_45 = use_rk_45;
         #define DEFINE_MATRIX(type, name, size_scaling, condition_for_construction) \
+            name.constructHost( N_x, N_y * size_scaling, #name); \
             if (condition_for_construction) \
-                name.construct( N_x, N_y * size_scaling, #name);
+                name.constructDevice( N_x, N_y * size_scaling, #name);
             MATRIX_LIST
         #undef X
      }

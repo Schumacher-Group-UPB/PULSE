@@ -5,6 +5,7 @@
 #include <iomanip>
 #include "solver/gpu_solver.hpp"
 #include "misc/helperfunctions.hpp"
+#include "misc/commandline_io.hpp"
 
 #ifdef SFML_RENDER
 #    include <SFML/Graphics.hpp>
@@ -85,7 +86,7 @@ size_t current_subplot = 0;
 
 void initSFMLWindow( PC3::Solver& solver ) {
     if ( solver.system.disableRender ) {
-        std::cout << "Manually disabled SFML Renderer!" << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Manually disabled SFML Renderer!", PC3::CLIO::Control::Warning ) << std::endl;
         return;
     }
     if ( solver.system.p.use_twin_mode )
@@ -234,7 +235,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         }
         snapshot_time = solver.system.p.t;
 
-        std::cout << "Snapshot taken!" << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Snapshot taken!", PC3::CLIO::Control::Info ) << std::endl;
     }
 
     if ( b_reset_to_snapshot.isToggled() ) {
@@ -246,7 +247,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
             solver.matrix.reservoir_minus.setTo( solver.matrix.snapshot_reservoir_minus ).hostToDeviceSync();
         }
         solver.system.p.t = snapshot_time;
-        std::cout << "Reset to Snapshot!" << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Reset to Snapshot!", PC3::CLIO::Control::Info ) << std::endl;
     }
 
     if ( b_reset_to_initial.isToggled() ) {
@@ -257,7 +258,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
             solver.matrix.reservoir_minus.setTo( solver.matrix.initial_state_minus ).hostToDeviceSync();
         }
         solver.system.p.t = 0.0;
-        std::cout << "Reset to Initial!" << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Reset to Initial!", PC3::CLIO::Control::Info ) << std::endl;
     }
 
     if ( b_cycle_subplot.isToggled() ) {
