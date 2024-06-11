@@ -4,7 +4,7 @@
 #include <random>
 #include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
-#include "misc/commandline_input.hpp"
+#include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
 #include "omp.h"
@@ -100,7 +100,7 @@ void PC3::SystemParameters::calculateAuto() {
 PC3::SystemParameters::SystemParameters( int argc, char** argv ) : SystemParameters() {
 
     // Check if help is requested
-    if ( findInArgv( "--help", argc, argv ) != -1 || findInArgv( "-h", argc, argv ) != -1 ) {
+    if ( PC3::CLIO::findInArgv( "--help", argc, argv ) != -1 || PC3::CLIO::findInArgv( "-h", argc, argv ) != -1 ) {
         calculateAuto();
         printHelp();
         exit( 0 );

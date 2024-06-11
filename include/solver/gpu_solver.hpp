@@ -9,6 +9,7 @@
 #include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
 #include "solver/matrix_container.hpp"
+#include "misc/escape_sequences.hpp"
 
 namespace PC3 {
 
@@ -76,7 +77,7 @@ class Solver {
     //std::vector<Type::real> times;
 
     Solver( PC3::SystemParameters& system ) : system( system ), filehandler( system.filehandler ) {
-        std::cout << "Creating Solver with TE/TM Splitting: " << static_cast<unsigned int>( system.p.use_twin_mode ) << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Creating Solver...", PC3::CLIO::Control::Info ) << std::endl;
 
         // Initialize all host matrices
         initializeHostMatricesFromSystem();
@@ -87,15 +88,15 @@ class Solver {
 
         // Set Pump, Potential and Pulse n to zero if they are not evaluated
         if (not system.evaluate_reservoir_kernel) {
-            std::cout << "Reservoir is not evaluated, setting n to zero." << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Reservoir is not evaluated, setting n to zero.", PC3::CLIO::Control::Info ) << std::endl;
             dev_pump_oscillation.n = 0;
         }
         if (not system.evaluate_potential_kernel) {
-            std::cout << "Potential is not evaluated, setting n to zero." << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Potential is not evaluated, setting n to zero.", PC3::CLIO::Control::Info ) << std::endl;
             dev_potential_oscillation.n = 0;
         } 
         if (not system.evaluate_pulse_kernel) {
-            std::cout << "Pulse is not evaluated, setting n to zero." << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Pulse is not evaluated, setting n to zero.", PC3::CLIO::Control::Info ) << std::endl;
             dev_pulse_oscillation.n = 0;
         }
     }

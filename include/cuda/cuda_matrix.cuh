@@ -7,6 +7,7 @@
 #include "cuda/cuda_macro.cuh"
 #include "misc/escape_sequences.hpp"
 #include "cuda/cuda_matrix_base.hpp"
+#include "misc/commandline_io.hpp"
 
 namespace PC3 {
 

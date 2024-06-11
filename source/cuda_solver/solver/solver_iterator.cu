@@ -19,6 +19,7 @@
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
 #include "kernel/kernel_random_numbers.cuh"
+#include "misc/commandline_io.hpp"
 
 /*
  * Helper variable for caching the current time for FFT evaluations.
@@ -387,7 +388,7 @@ bool PC3::Solver::iterate( ) {
                 PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size,
                 system.random_seed, device_pointers.random_state, system.p.N_x*system.p.N_y
             );
-        std::cout << "Initialized Random Number Generator" << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
     }
     
     if ( system.iterator == SystemParameters::Iterator::RK4 )

@@ -1,6 +1,39 @@
 #pragma once
 #include <string>
+#include <iostream>
 #include "cuda/typedef.cuh"
+
+namespace PC3::CLIO {
+
+/**
+ * Pretty Commandline Output. Extended Symbols can be disabled by defining PC3_NO_EXTENDED_SYMBOLS
+ * in which case no colors, symbols or other extended features will be used.
+ */
+enum class Control : size_t {
+    Info = 1 << 0, // Print blue info sign
+    Warning = 1 << 1, // Print yellow warning sign
+    Error = 1 << 2, // Print red cross
+    Success = 1 << 3, // Print green checkmark
+    Debug = 1 << 4, // Only print when the internal debug flag is set
+    Regular = 1 << 5, // Print in regular colors
+    Primary = 1 << 6, // Print in solid colors
+    Secondary = 1 << 7, // Print in light colors, for secondary information
+    FullColor = 1 << 8, // Also Print the text in color
+    FullInfo = Info | FullColor, // Print the info sign in color
+    FullWarning = Warning | FullColor, // Print the warning sign in color
+    FullError = Error | FullColor, // Print the error sign in color
+    FullSuccess = Success | FullColor, // Print the success sign in color
+    FullDebug = Debug | FullColor, // Print the debug sign in color
+    Underline = 1 << 9, // Underline the text
+    Bold = 1 << 10, // Bold the text
+    Follow = 1 << 11, // -> text
+};
+
+// Overwrite | and & operators to allow for combining flags
+inline Control operator |(Control a, Control b) { return static_cast<Control>(static_cast<size_t>(a) | static_cast<size_t>(b)); }
+inline Control operator &(Control a, Control b) { return static_cast<Control>(static_cast<size_t>(a) & static_cast<size_t>(b)); }
+
+std::string prettyPrint( const std::string& message, Control control = Control::Regular );
 
 /**
  * @brief Finds a string in a the argv array and returns its index.
@@ -70,6 +103,8 @@ std::string to_str(T t) {
     return ss.str();
 }
 
+std::string createProgressBar( double current, double total, size_t width = 50 );
+
 // Table Printing; Straight from https://en.cppreference.com/w/cpp/io/ios_base/width
 /*
 class Table {
@@ -107,3 +142,5 @@ void print_break(const widths_t& widths)
 }
 
 */
+
+} // namespace PC3::CLIO

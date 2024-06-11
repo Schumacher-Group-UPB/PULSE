@@ -10,6 +10,10 @@ SFML ?= FALSE
 FP32 ?= FALSE
 CPU ?= FALSE
 
+PRETTYCMD ?= FALSE
+CMD_COLORS ?= FALSE
+CMD_SYMBOLS ?= FALSE
+
 # GPU Architexture flag. If false, none is used
 ARCH ?= NONE
 
@@ -69,6 +73,15 @@ endif
 ifeq ($(CPU),TRUE)
 	ADD_FLAGS += -DUSE_CPU
 	ADD_FLAGS += -lfftw3f -lfftw3
+endif
+
+ifeq ($(PRETTYCMD),FALSE)
+	ifeq ($(CMD_COLORS),FALSE)
+		ADD_FLAGS += -DPC3_NO_ANSI_COLORS
+	endif
+	ifeq ($(CMD_SYMBOLS),FALSE)
+		ADD_FLAGS += -DPC3_NO_EXTENDED_SYMBOLS
+	endif
 endif
 
 # Targets

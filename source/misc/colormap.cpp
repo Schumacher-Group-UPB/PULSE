@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include "misc/colormap.hpp"
+#include "misc/commandline_io.hpp"
 
 // TODO: optional: return as tuple (with std::tie(r,g,b)) such that the Color class is not needed outside this class
 ColorPalette::Color &ColorPalette::getColor( double value, bool invert, bool cutoff ) {
@@ -18,7 +19,7 @@ ColorPalette::Color &ColorPalette::getColor( double value, bool invert, bool cut
     Read colormalette from TXT file. Colors can be either hex or r g b values
 */
 void ColorPalette::readColorPaletteFromTXT( std::string filepath, int repetitions ) {
-    std::cout << "Loading .txt colormap from " << filepath << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Loading .txt colormap from " + filepath, PC3::CLIO::Control::Info ) << std::endl;
     for ( int o = 0; o < repetitions; o++ ) {
         std::ifstream file( filepath );
         std::string str;
@@ -55,7 +56,7 @@ void ColorPalette::readColorPaletteFromTXT( std::string filepath, int repetition
     Reads gnuplot colorpalette .pal, converst contained hex colors to r,g,b and saves them into input_colors array
 */
 void ColorPalette::readColorPaletteFromGnuplotDOTPAL( std::string filepath, int repetitions ) {
-    std::cout << "Loading .pal gnuplot colormap from " << filepath << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Loading .pal gnuplot colormap from " + filepath, PC3::CLIO::Control::Info ) << std::endl;
     for ( int o = 0; o < repetitions; o++ ) {
         std::ifstream file( filepath );
         std::string str;

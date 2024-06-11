@@ -2,7 +2,7 @@
 
 #include <filesystem>
 #include "system/filehandler.hpp"
-#include "misc/commandline_input.hpp"
+#include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
 #include "omp.h"
 
@@ -17,36 +17,35 @@ PC3::FileHandler::FileHandler( int argc, char** argv ) : FileHandler() {
 
 void PC3::FileHandler::init( int argc, char** argv ) {
     int index = 0;
-    if ( ( index = findInArgv( "--path", argc, argv ) ) != -1 )
-        outputPath = getNextStringInput( argv, argc, "path", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--path", argc, argv ) ) != -1 )
+        outputPath = PC3::CLIO::getNextStringInput( argv, argc, "path", ++index );
     if ( outputPath.back() != '/' )
         outputPath += "/";
 
-    if ( ( index = findInArgv( "--name", argc, argv ) ) != -1 )
-        outputName = getNextStringInput( argv, argc, "name", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--name", argc, argv ) ) != -1 )
+        outputName = PC3::CLIO::getNextStringInput( argv, argc, "name", ++index );
 
     // Colormap
-    if ( ( index = findInArgv( "--cmap", argc, argv ) ) != -1 ) {
-        color_palette = getNextStringInput( argv, argc, "cmap", ++index );
-        color_palette_phase = getNextStringInput( argv, argc, "cmap", index );
+    if ( ( index = PC3::CLIO::findInArgv( "--cmap", argc, argv ) ) != -1 ) {
+        color_palette = PC3::CLIO::getNextStringInput( argv, argc, "cmap", ++index );
+        color_palette_phase = PC3::CLIO::getNextStringInput( argv, argc, "cmap", index );
     }
 
     // Creating output directory.
     try {
         std::filesystem::create_directories( outputPath );
-        std::cout << "Successfully created directory " << outputPath << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Successfully created directory '" + outputPath + "'", PC3::CLIO::Control::Info) << std::endl;
     } catch ( std::filesystem::filesystem_error& e ) {
-        std::cout << EscapeSequence::RED << "Error creating directory " << outputPath << ": " << e.what() << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint(  "Error creating directory '" + outputPath + "'", PC3::CLIO::Control::FullError ) << std::endl;
     }
 
     // Create timeoutput subdirectory if --historyMatrix is passed.
-    if ( findInArgv( "--historyMatrix", argc, argv ) != -1 ) {
+    if ( PC3::CLIO::findInArgv( "--historyMatrix", argc, argv ) != -1 ) {
         try {
             std::filesystem::create_directories( outputPath + "timeoutput" );
-            std::cout << "Successfully created sub directory " << outputPath + "timeoutput" << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Successfully created sub-directory '" + outputPath + "timeoutput'", PC3::CLIO::Control::Info) << std::endl;
         } catch ( std::filesystem::filesystem_error& e ) {
-            std::cout << EscapeSequence::RED << "Error creating directory " << outputPath + "timeoutput"
-                      << ": " << e.what() << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint(  "Error creating directory '" + outputPath + "timeoutput'", PC3::CLIO::Control::FullError ) << std::endl;
         }
     }
 }
@@ -71,7 +70,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::co
     Type::real re, im;
     if ( not filein.is_open() ) {
 #pragma omp critical
-        std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Unable to load '" + filepath + "'", PC3::CLIO::Control::FullWarning ) << std::endl;
         return false;
     }
     // Header
@@ -98,7 +97,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::co
             }
     }
     filein.close();
-    std::cout << "Loaded " << i << " elements from '" << filepath << "'" << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Loaded " + std::to_string(i) + " elements from '" + filepath + "'", PC3::CLIO::Control::Success) << std::endl;
     return true;
 }
 
@@ -111,7 +110,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::re
     Type::real val;
     if ( not filein.is_open() ) {
 #pragma omp critical
-        std::cout << EscapeSequence::YELLOW << "Warning: Unable to load '" << filepath << "'" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint(  "Unable to load '" + filepath + "'", PC3::CLIO::Control::FullWarning ) << std::endl;
         return false;
     }
 
@@ -132,13 +131,13 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::re
         }
     }
     filein.close();
-    std::cout << "Loaded " << i << " elements from " << filepath << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Loaded " + std::to_string(i) + " elements from '" + filepath + "'", PC3::CLIO::Control::Success) << std::endl;
     return true;
 }
 
 void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,unsigned  int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name ) {
     if ( !out.is_open() ) {
-        std::cout << "File '" << name << "' is not open!" << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PC3::CLIO::Control::Error ) << std::endl;
         return;
     }
     // Header
@@ -164,8 +163,7 @@ void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,unsigned 
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) / increment << " elements to '" << toPath( name ) << "'."
-              << "\n";
+    std::cout << PC3::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.", PC3::CLIO::Control::Success ) << std::endl;
 }
 
 void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,unsigned  int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out ) {
@@ -182,7 +180,7 @@ void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, const un
 
 void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer,unsigned  int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name ) {
     if ( !out.is_open() ) {
-        std::cout << "File " << name << " is not open!" << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PC3::CLIO::Control::Error ) << std::endl;
         return;
     }
     // Header
@@ -200,7 +198,7 @@ void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer,unsigned  in
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << "Output " << ( row_stop - row_start ) * ( col_stop - col_start ) / increment << " elements to '" << toPath( name ) << "'." << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.", PC3::CLIO::Control::Success ) << std::endl;
 }
 void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer,unsigned  int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );

@@ -4,7 +4,7 @@
 #include <random>
 #include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
-#include "misc/commandline_input.hpp"
+#include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
 #include "omp.h"
@@ -15,43 +15,43 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
 
     // Structure
     p.use_twin_mode = false;
-    if ( ( index = findInArgv( "-tetm", argc, argv ) ) != -1 ) {
+    if ( ( index = PC3::CLIO::findInArgv( "-tetm", argc, argv ) ) != -1 ) {
         p.use_twin_mode = true;
     }
 
-    if ( ( index = findInArgv( "--gammaC", argc, argv ) ) != -1 )
-        p.gamma_c = getNextInput( argv, argc, "gamma_c", ++index );
-    if ( ( index = findInArgv( "--gammaR", argc, argv ) ) != -1 )
-        p.gamma_r = getNextInput( argv, argc, "gamma_r", ++index );
-    if ( ( index = findInArgv( "--gc", argc, argv ) ) != -1 )
-        p.g_c = getNextInput( argv, argc, "g_c", ++index );
-    if ( ( index = findInArgv( "--gr", argc, argv ) ) != -1 )
-        p.g_r = getNextInput( argv, argc, "g_r", ++index );
-    if ( ( index = findInArgv( "--R", argc, argv ) ) != -1 ) {
-        p.R = getNextInput( argv, argc, "R", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--gammaC", argc, argv ) ) != -1 )
+        p.gamma_c = PC3::CLIO::getNextInput( argv, argc, "gamma_c", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--gammaR", argc, argv ) ) != -1 )
+        p.gamma_r = PC3::CLIO::getNextInput( argv, argc, "gamma_r", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--gc", argc, argv ) ) != -1 )
+        p.g_c = PC3::CLIO::getNextInput( argv, argc, "g_c", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--gr", argc, argv ) ) != -1 )
+        p.g_r = PC3::CLIO::getNextInput( argv, argc, "g_r", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--R", argc, argv ) ) != -1 ) {
+        p.R = PC3::CLIO::getNextInput( argv, argc, "R", ++index );
     }
-    if ( ( index = findInArgv( "--L", argc, argv ) ) != -1 ) {
-        p.L_x = getNextInput( argv, argc, "L", ++index );
-        p.L_y = getNextInput( argv, argc, "L", index );
+    if ( ( index = PC3::CLIO::findInArgv( "--L", argc, argv ) ) != -1 ) {
+        p.L_x = PC3::CLIO::getNextInput( argv, argc, "L", ++index );
+        p.L_y = PC3::CLIO::getNextInput( argv, argc, "L", index );
     }
-    if ( ( index = findInArgv( "--g_pm", argc, argv ) ) != -1 ) {
-        p.g_pm = getNextInput( argv, argc, "gm", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--g_pm", argc, argv ) ) != -1 ) {
+        p.g_pm = PC3::CLIO::getNextInput( argv, argc, "gm", ++index );
     }
-    if ( ( index = findInArgv( "--deltaLT", argc, argv ) ) != -1 ) {
-        p.delta_LT = getNextInput( argv, argc, "deltaLT", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--deltaLT", argc, argv ) ) != -1 ) {
+        p.delta_LT = PC3::CLIO::getNextInput( argv, argc, "deltaLT", ++index );
     }
 
     omp_max_threads = 4;
-    if ( ( index = findInArgv( "--threads", argc, argv ) ) != -1 )
-        omp_max_threads = (int)getNextInput( argv, argc, "threads", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--threads", argc, argv ) ) != -1 )
+        omp_max_threads = (int)PC3::CLIO::getNextInput( argv, argc, "threads", ++index );
     omp_set_num_threads( omp_max_threads );
 
-    if ( ( index = findInArgv( "--blocksize", argc, argv ) ) != -1 )
-        block_size = (int)getNextInput( argv, argc, "block_size", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--blocksize", argc, argv ) ) != -1 )
+        block_size = (int)PC3::CLIO::getNextInput( argv, argc, "block_size", ++index );
 
-    if ( ( index = findInArgv( "--output", argc, argv ) ) != -1 ) {
+    if ( ( index = PC3::CLIO::findInArgv( "--output", argc, argv ) ) != -1 ) {
         output_keys.clear();
-        auto output_string = getNextStringInput( argv, argc, "output", ++index );
+        auto output_string = PC3::CLIO::getNextStringInput( argv, argc, "output", ++index );
         // Split output_string at ","
         for ( auto range : output_string | std::views::split( ',' ) ) {
             std::string split_str;
@@ -64,84 +64,84 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     }
 
     // Numerik
-    if ( ( index = findInArgv( "--N", argc, argv ) ) != -1 ) {
-        p.N_x = (int)getNextInput( argv, argc, "N_x", ++index );
-        p.N_y = (int)getNextInput( argv, argc, "N_y", index );
+    if ( ( index = PC3::CLIO::findInArgv( "--N", argc, argv ) ) != -1 ) {
+        p.N_x = (int)PC3::CLIO::getNextInput( argv, argc, "N_x", ++index );
+        p.N_y = (int)PC3::CLIO::getNextInput( argv, argc, "N_y", index );
     }
     p.N2 = p.N_x * p.N_y;
     p.dV = p.L_x * p.L_y / p.N2;
 
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = false;
-    if ( findInArgv( "-nosfml", argc, argv ) != -1 )
+    if ( PC3::CLIO::findInArgv( "-nosfml", argc, argv ) != -1 )
         disableRender = true;
 
-    if ( ( index = findInArgv( "--tmax", argc, argv ) ) != -1 )
-        t_max = getNextInput( argv, argc, "s_t_max", ++index );
-    if ( ( index = findInArgv( "--tstep", argc, argv ) ) != -1 ) {
-        p.dt = getNextInput( argv, argc, "t_step", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--tmax", argc, argv ) ) != -1 )
+        t_max = PC3::CLIO::getNextInput( argv, argc, "s_t_max", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--tstep", argc, argv ) ) != -1 ) {
+        p.dt = PC3::CLIO::getNextInput( argv, argc, "t_step", ++index );
         do_overwrite_dt = false;
-        std::cout << EscapeSequence::YELLOW << "Overwritten (initial) dt to " << p.dt << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Overwritten (initial) dt to " + PC3::CLIO::to_str(p.dt), PC3::CLIO::Control::Warning) << std::endl;
     }
-    if ( ( index = findInArgv( "--tol", argc, argv ) ) != -1 ) {
-        tolerance = getNextInput( argv, argc, "tol", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--tol", argc, argv ) ) != -1 ) {
+        tolerance = PC3::CLIO::getNextInput( argv, argc, "tol", ++index );
     }
-    if ( ( index = findInArgv( "--rk45dt", argc, argv ) ) != -1 ) {
-        dt_min = getNextInput( argv, argc, "dt_min", ++index );
-        dt_max = getNextInput( argv, argc, "dt_max", index );
+    if ( ( index = PC3::CLIO::findInArgv( "--rk45dt", argc, argv ) ) != -1 ) {
+        dt_min = PC3::CLIO::getNextInput( argv, argc, "dt_min", ++index );
+        dt_max = PC3::CLIO::getNextInput( argv, argc, "dt_max", index );
     }
 
-    if ( ( index = findInArgv( "--fftEvery", argc, argv ) ) != -1 ) {
-        fft_every = getNextInput( argv, argc, "fft_every", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--fftEvery", argc, argv ) ) != -1 ) {
+        fft_every = PC3::CLIO::getNextInput( argv, argc, "fft_every", ++index );
     }
 
     // Choose the iterator
     iterator = Iterator::RK4;
-    if ( ( index = findInArgv( "-rk45", argc, argv ) ) != -1 ) {
-        std::cout << EscapeSequence::RED << "Currently not implemented. Using default iterator." << EscapeSequence::RESET << std::endl;
+    if ( ( index = PC3::CLIO::findInArgv( "-rk45", argc, argv ) ) != -1 ) {
+        std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
         //iterator = Iterator::RK45;
     }
-    if ( ( index = findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
-        std::cout << EscapeSequence::RED << "Currently not implemented. Using default iterator." << EscapeSequence::RESET << std::endl;
+    if ( ( index = PC3::CLIO::findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
+        std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
         //iterator = Iterator::SSFM;
     }
-    if ( ( index = findInArgv( "--iterator", argc, argv ) ) != -1 ) {
-        std::string it = getNextStringInput( argv, argc, "iterator", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--iterator", argc, argv ) ) != -1 ) {
+        std::string it = PC3::CLIO::getNextStringInput( argv, argc, "iterator", ++index );
         if (not iterator_map.count(it)) {
-            std::cout << EscapeSequence::RED << "Invalid iterator specified. Using default iterator." << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Invalid iterator specified. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
         } else {
             iterator = iterator_map[ it ];
         }
-        std::cout << EscapeSequence::RED << "Currently not implemented. Using default iterator." << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
         iterator = Iterator::RK4;
     }
 
     // Imaginary Time Propagation
     imaginary_time = false;
-    if ( ( index = findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
+    if ( ( index = PC3::CLIO::findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
         imaginary_time = true;
     }
 
-    if ( ( index = findInArgv( "--initRandom", argc, argv ) ) != -1 ) {
+    if ( ( index = PC3::CLIO::findInArgv( "--initRandom", argc, argv ) ) != -1 ) {
         randomly_initialize_system = true;
-        random_system_amplitude = getNextInput( argv, argc, "random_system_amplitude", ++index );
+        random_system_amplitude = PC3::CLIO::getNextInput( argv, argc, "random_system_amplitude", ++index );
         random_seed = std::random_device{}();
-        auto str_seed = getNextStringInput( argv, argc, "random_seed", index );
+        auto str_seed = PC3::CLIO::getNextStringInput( argv, argc, "random_seed", index );
         if ( str_seed != "random" ) {
             random_seed = (unsigned int)std::stod( str_seed );
-            std::cout << EscapeSequence::YELLOW << "Overwritten random seed to " << random_seed << EscapeSequence::RESET << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Overwritten random seed to " + std::to_string(random_seed), PC3::CLIO::Control::Info ) << std::endl;
         }
     }
 
-    if ( ( index = findInArgv( "--dw", argc, argv ) ) != -1 ) {
-        p.stochastic_amplitude = getNextInput( argv, argc, "dw", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--dw", argc, argv ) ) != -1 ) {
+        p.stochastic_amplitude = PC3::CLIO::getNextInput( argv, argc, "dw", ++index );
     }
 
     history_output_n = 1000u;
     history_y = 0;
-    if ( ( index = findInArgv( "--history", argc, argv ) ) != -1 ) {
-        history_y = (unsigned int)getNextInput( argv, argc, "history_output_x", ++index );
-        history_output_n = (unsigned int)getNextInput( argv, argc, "history_output_n", index );
+    if ( ( index = PC3::CLIO::findInArgv( "--history", argc, argv ) ) != -1 ) {
+        history_y = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_output_x", ++index );
+        history_output_n = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_output_n", index );
     }
     history_matrix_output_increment = 1u;
     history_matrix_start_x = 0;
@@ -149,23 +149,23 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     history_matrix_end_x = p.N_x;
     history_matrix_end_y = p.N_y;
     do_output_history_matrix = false;
-    if ( ( index = findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
-        history_matrix_start_x = (unsigned int)getNextInput( argv, argc, "history_matrix_start_x", ++index );
-        history_matrix_end_x = (unsigned int)getNextInput( argv, argc, "history_matrix_end_x", index );
-        history_matrix_start_y = (unsigned int)getNextInput( argv, argc, "history_matrix_start_y", index );
-        history_matrix_end_y = (unsigned int)getNextInput( argv, argc, "history_matrix_end_y", index );
-        history_matrix_output_increment = (unsigned int)getNextInput( argv, argc, "history_matrix_output_increment", index );
+    if ( ( index = PC3::CLIO::findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
+        history_matrix_start_x = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_x", ++index );
+        history_matrix_end_x = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_x", index );
+        history_matrix_start_y = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_y", index );
+        history_matrix_end_y = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_y", index );
+        history_matrix_output_increment = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_output_increment", index );
         do_output_history_matrix = true;
     }
 
-    if ( ( index = findInArgv( "--outEvery", argc, argv ) ) != -1 )
-        output_every = getNextInput( argv, argc, "output_every", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--outEvery", argc, argv ) ) != -1 )
+        output_every = PC3::CLIO::getNextInput( argv, argc, "output_every", ++index );
 
     p.periodic_boundary_x = false;
     p.periodic_boundary_y = false;
-    if ( ( index = findInArgv( "--boundary", argc, argv ) ) != -1 ) {
-        auto boundary_x = getNextStringInput( argv, argc, "boundary_x", ++index );
-        auto boundary_y = getNextStringInput( argv, argc, "boundary_y", index );
+    if ( ( index = PC3::CLIO::findInArgv( "--boundary", argc, argv ) ) != -1 ) {
+        auto boundary_x = PC3::CLIO::getNextStringInput( argv, argc, "boundary_x", ++index );
+        auto boundary_y = PC3::CLIO::getNextStringInput( argv, argc, "boundary_y", index );
         if ( boundary_x == "periodic" ) {
             p.periodic_boundary_x = true;
         }
@@ -176,28 +176,28 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
 
     // Initialize t_0 as 0.
     p.t = 0.0;
-    if ( ( index = findInArgv( "--t0", argc, argv ) ) != -1 ) {
-        p.t = getNextInput( argv, argc, "t0", ++index );
-        std::cout << EscapeSequence::YELLOW << "Overwritten (initial) t to " << p.t << EscapeSequence::RESET << std::endl;
+    if ( ( index = PC3::CLIO::findInArgv( "--t0", argc, argv ) ) != -1 ) {
+        p.t = PC3::CLIO::getNextInput( argv, argc, "t0", ++index );
+        std::cout << PC3::CLIO::prettyPrint( "Overwritten (initial) t to " + PC3::CLIO::to_str( p.t ), PC3::CLIO::Control::Warning ) << std::endl;
     }
 
     // Even though one probably shouldn't do this, here we read the electron charge, hbar and electron mass from the commandline
-    if ( ( index = findInArgv( "--hbar", argc, argv ) ) != -1 ) {
-        p.h_bar = getNextInput( argv, argc, "hbar", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--hbar", argc, argv ) ) != -1 ) {
+        p.h_bar = PC3::CLIO::getNextInput( argv, argc, "hbar", ++index );
     }
-    if ( ( index = findInArgv( "--e", argc, argv ) ) != -1 ) {
-        p.e_e = getNextInput( argv, argc, "e", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--e", argc, argv ) ) != -1 ) {
+        p.e_e = PC3::CLIO::getNextInput( argv, argc, "e", ++index );
     }
-    if ( ( index = findInArgv( "--me", argc, argv ) ) != -1 ) {
-        p.m_e = getNextInput( argv, argc, "me", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--me", argc, argv ) ) != -1 ) {
+        p.m_e = PC3::CLIO::getNextInput( argv, argc, "me", ++index );
     }
     // We can also directly set h_bar_scaled, which will result in hbar, e and me to be ignored
-    if ( ( index = findInArgv( "--hbarscaled", argc, argv ) ) != -1 ) {
-        p.h_bar_s = getNextInput( argv, argc, "hbars", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--hbarscaled", argc, argv ) ) != -1 ) {
+        p.h_bar_s = PC3::CLIO::getNextInput( argv, argc, "hbars", ++index );
     }
     // Same goes for the scaled mass.
-    if ( ( index = findInArgv( "--meff", argc, argv ) ) != -1 )
-        p.m_eff = getNextInput( argv, argc, "m_eff", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--meff", argc, argv ) ) != -1 )
+        p.m_eff = PC3::CLIO::getNextInput( argv, argc, "m_eff", ++index );
 
     //////////////////////////////
     // Custom Read-Ins go here! //

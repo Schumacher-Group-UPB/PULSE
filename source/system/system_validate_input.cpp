@@ -1,15 +1,11 @@
 #include "system/system_parameters.hpp"
 #include "misc/escape_sequences.hpp"
-
-#define VALIDATE( condition, variable, message ) \
-    if ( not ( condition ) ) { \
-        std::cout << EscapeSequence::YELLOW << "Warning: " << variable << " = " << message << EscapeSequence::RESET << std::endl; \
-    }
+#include "misc/commandline_io.hpp"
 
 void PC3::SystemParameters::validateInputs() {
     // Warnings
     if (output_every < 2*p.dt) {
-        std::cout << EscapeSequence::YELLOW << "Output Interval = " << output_every << " is very small!\nThis may lead to slower runtimes due to extensive caching." << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Output Interval = " + PC3::CLIO::to_str( output_every ) + " is very small! This may lead to slower runtimes due to extensive caching.", PC3::CLIO::Control::Warning ) << std::endl;
     }
     // TODO.
     // Also: make sure Envelopes are constructed using try:catch blocks. if pc3 tries to read an envelope but fails, it should display a bright yellow message
@@ -19,41 +15,41 @@ void PC3::SystemParameters::validateInputs() {
     bool valid = true;
 
     if ( p.N_x <= 0 or p.N_y <= 0 ) {
-        std::cout << EscapeSequence::YELLOW << "N = " << p.N_x << ", " << p.N_y << " cannot be negative!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "N = " + PC3::CLIO::to_str( p.N_x ) + ", " + PC3::CLIO::to_str( p.N_y ) + " cannot be negative!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;
     }
 
     if ( p.N_x % 2 != 0 or p.N_y % 2) {
-        std::cout << EscapeSequence::YELLOW << "Input Dimensions have to be even!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Input Dimensions have to be even!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;    
     }
 
     if (t_max < 0) {
-        std::cout << EscapeSequence::YELLOW << "t_max = " << t_max << " cannot be negative!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "t_max = " + PC3::CLIO::to_str( t_max ) + " cannot be negative!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;
     }
     if (p.dt <= 0) {
-        std::cout << EscapeSequence::YELLOW << "dt = " << p.dt << " cannot be negative or zero!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "dt = " + PC3::CLIO::to_str( p.dt ) + " cannot be negative or zero!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;
     }
     if ( p.dt > t_max)  {
-        std::cout << EscapeSequence::YELLOW << "dt = " << p.dt << " cannot be larger than t_max = " << t_max << "!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "dt = " + PC3::CLIO::to_str( p.dt ) + " cannot be larger than t_max = " + PC3::CLIO::to_str( t_max ) + "!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;
     }
     if (dt_max < 0) {
-        std::cout << EscapeSequence::YELLOW << "dt_max = " << dt_max << " cannot be negative!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "dt_max = " + PC3::CLIO::to_str( dt_max ) + " cannot be negative!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;
     }
     if (dt_min < 0) {
-        std::cout << EscapeSequence::YELLOW << "dt_min = " << dt_min << " cannot be negative!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "dt_min = " + PC3::CLIO::to_str( dt_min ) + " cannot be negative!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;
     }
     if (abs( p.dt > 1.1*magic_timestep )) {
-        std::cout << EscapeSequence::YELLOW << "dt = " << p.dt << " is very large! Is this intended?" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "dt = " + PC3::CLIO::to_str( p.dt ) + " is very large! Is this intended?", PC3::CLIO::Control::Warning) << std::endl;
     }
 
     if (not valid) {
-        std::cout << EscapeSequence::RED << "Invalid input! Exitting!" << EscapeSequence::RESET << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Invalid input! Exitting!", PC3::CLIO::Control::FullError ) << std::endl;
         exit( 1 );
     }
 }

@@ -7,6 +7,7 @@
 #include "misc/helperfunctions.hpp"
 #include "solver/gpu_solver.hpp"
 #include "misc/escape_sequences.hpp"
+#include "misc/commandline_io.hpp"
 
 void PC3::Solver::initializeHostMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "--------------------------- Initializing Host Matrices ----------------------------" << EscapeSequence::RESET << std::endl;
@@ -16,7 +17,7 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     // ==================================================
     // =................ Initial States ................=
     // ==================================================
-    std::cout << "Initializing Host Matrices..." << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Initializing Host Matrices...", PC3::CLIO::Control::Info ) << std::endl;
 
     Envelope::Dimensions dim{ system.p.N_x, system.p.N_y, system.p.L_x, system.p.L_y, system.p.dx, system.p.dy };
 
@@ -45,45 +46,45 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     // ==================================================
     // =................ Pump Envelopes ................=
     // ==================================================
-    std::cout << "Initializing Pump Envelopes..." << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Initializing Pump Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     for ( int i = 0; i < system.pump.groupSize(); i++ ) {
         system.pump.calculate( system.filehandler, matrix.pump_plus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Plus, dim );
         if ( system.p.use_twin_mode ) {
             system.pump.calculate( system.filehandler, matrix.pump_minus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Minus, dim );
         }
     }
-    std::cout << EscapeSequence::GRAY << "Pump Groups: " << system.pump.groupSize() << EscapeSequence::RESET << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Succesfull, designated number of pump groups: " + std::to_string(system.pump.groupSize()), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success ) << std::endl;
 
     // ==================================================
     // =............. Potential Envelopes ..............=
     // ==================================================
-    std::cout << "Initializing Potential Envelopes..." << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Initializing Potential Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     for ( int i = 0; i < system.potential.groupSize(); i++ ) {
         system.potential.calculate( system.filehandler, matrix.potential_plus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Plus, dim );
         if ( system.p.use_twin_mode ) {
             system.potential.calculate( system.filehandler, matrix.potential_minus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Minus, dim );
         }
     }
-    std::cout << EscapeSequence::GRAY << "Potential Groups: " << system.potential.groupSize() << EscapeSequence::RESET << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Succesfull, designated number of potential groups: " + std::to_string(system.potential.groupSize()), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success ) << std::endl;
 
     // ==================================================
     // =............... Pulse Envelopes ................=
     // ==================================================
-    std::cout << "Initializing Pulse Envelopes..." << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Initializing Pulse Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     for ( int i = 0; i < system.pulse.groupSize(); i++ ) {
         system.pulse.calculate( system.filehandler, matrix.pulse_plus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Plus, dim );
         if ( system.p.use_twin_mode ) {
             system.pulse.calculate( system.filehandler, matrix.pulse_minus.getHostPtr() + i * system.p.N2, i, PC3::Envelope::Polarization::Minus, dim );
         }
     }
-    std::cout << EscapeSequence::GRAY << "Pulse Groups: " << system.pulse.groupSize() << EscapeSequence::RESET << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Succesfull, designated number of pulse groups: " + std::to_string(system.pulse.groupSize()), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success ) << std::endl;
 
     // ==================================================
     // =................. FFT Envelopes ................=
     // ==================================================
-    std::cout << "Initializing FFT Envelopes..." << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Initializing FFT Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     if ( system.fft_mask.size() == 0 ) {
-        std::cout << "No fft mask provided." << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "No fft mask provided.", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Warning ) << std::endl;
     } else {
         system.fft_mask.calculate( system.filehandler, matrix.fft_mask_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim, 1.0 /* Default if no mask is applied */ );
         if ( system.p.use_twin_mode ) {
@@ -98,7 +99,7 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
 }
 
 void PC3::Solver::initializeDeviceMatricesFromHost() {
-    std::cout << "Initializing Device Matrices..." << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Initializing Device Matrices...", PC3::CLIO::Control::Info ) << std::endl;
 
     // Initialize the Oscillation KernelParameters
     dev_pulse_oscillation.construct( system.pulse );

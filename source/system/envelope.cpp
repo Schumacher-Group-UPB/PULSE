@@ -1,5 +1,5 @@
 #include "cuda/typedef.cuh"
-#include "misc/commandline_input.hpp"
+#include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
 #include "system/envelope.hpp"
 #include "system/filehandler.hpp"
@@ -119,51 +119,53 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
     int index = 0;
     PC3::Envelope ret;
 
-    while ( ( index = findInArgv( "--" + key, argc, argv, index ) ) != -1 ) {
+    while ( ( index = PC3::CLIO::findInArgv( "--" + key, argc, argv, index ) ) != -1 ) {
         // Spacial Component
-
+        std::cout << PC3::CLIO::prettyPrint( "Parsing envelope '" + key + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // If first argument is "load", save the next argument as the path to the file to load!
-        if ( getNextStringInput( argv, argc, key + "_load", ++index ) == "load" ) {
-            auto path = getNextStringInput( argv, argc, key + "_path", index );
-            std::cout << "Loading envelope from file: " << path << std::endl;
+        if ( PC3::CLIO::getNextStringInput( argv, argc, key + "_load", ++index ) == "load" ) {
+            auto path = PC3::CLIO::getNextStringInput( argv, argc, key + "_path", index );
+            std::cout << PC3::CLIO::prettyPrint( "Queuing envelope '" + key + "' to be loaded from file: '" + path + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
             // Ampltitude.
-            PC3::Type::real amp = getNextInput( argv, argc, key + "_amp", index );
+            PC3::Type::real amp = PC3::CLIO::getNextInput( argv, argc, key + "_amp", index );
             // Behaviour
-            auto sbehavior = getNextStringInput( argv, argc, key + "_behaviour", index );
+            auto sbehavior = PC3::CLIO::getNextStringInput( argv, argc, key + "_behaviour", index );
             // Polarization
-            auto spol = getNextStringInput( argv, argc, key + "_pol", index );
+            auto spol = PC3::CLIO::getNextStringInput( argv, argc, key + "_pol", index );
             ret.addSpacial( path, amp, sbehavior, spol );
         } else {
             index--;
             // Ampltitude.
-            PC3::Type::real amp = getNextInput( argv, argc, key + "_amp", index );
+            PC3::Type::real amp = PC3::CLIO::getNextInput( argv, argc, key + "_amp", index );
             // Behaviour
-            auto sbehavior = getNextStringInput( argv, argc, key + "_behaviour", index );
+            auto sbehavior = PC3::CLIO::getNextStringInput( argv, argc, key + "_behaviour", index );
             // Width
-            PC3::Type::real width_x = getNextInput( argv, argc, key + "_width_x", index );
-            PC3::Type::real width_y = getNextInput( argv, argc, key + "_width_y", index );
+            PC3::Type::real width_x = PC3::CLIO::getNextInput( argv, argc, key + "_width_x", index );
+            PC3::Type::real width_y = PC3::CLIO::getNextInput( argv, argc, key + "_width_y", index );
             // X Position
-            PC3::Type::real pos_x = getNextInput( argv, argc, key + "_X", index );
+            PC3::Type::real pos_x = PC3::CLIO::getNextInput( argv, argc, key + "_X", index );
             // Y Position
-            PC3::Type::real pos_y = getNextInput( argv, argc, key + "_Y", index );
+            PC3::Type::real pos_y = PC3::CLIO::getNextInput( argv, argc, key + "_Y", index );
 
             // Polarization
-            auto spol = getNextStringInput( argv, argc, key + "_pol", index );
+            auto spol = PC3::CLIO::getNextStringInput( argv, argc, key + "_pol", index );
 
             // Exponent
-            PC3::Type::real exponent = getNextInput( argv, argc, key + "_exponent", index );
+            PC3::Type::real exponent = PC3::CLIO::getNextInput( argv, argc, key + "_exponent", index );
 
             // Charge
-            auto sm = getNextStringInput( argv, argc, key + "_m", index );
+            auto sm = PC3::CLIO::getNextStringInput( argv, argc, key + "_m", index );
 
             // Type
-            auto stype = getNextStringInput( argv, argc, key + "_type", index );
+            auto stype = PC3::CLIO::getNextStringInput( argv, argc, key + "_type", index );
 
             ret.addSpacial( amp, width_x, width_y, pos_x, pos_y, exponent, stype, spol, sbehavior, sm );
         }
 
+        std::cout << PC3::CLIO::prettyPrint( "Added Spacial Component to Envelope '" + key + "'", PC3::CLIO::Control::Success | PC3::CLIO::Control::Secondary ) << std::endl;
+
         // If the next argument is "osc", then we read the temporal component if time is not false
-        auto next = getNextStringInput( argv, argc, key + "_next", index );
+        auto next = PC3::CLIO::getNextStringInput( argv, argc, key + "_next", index );
 
         if ( not time or next != "osc" ) {
             ret.addTemporal( 0, 1E20, 0 );
@@ -172,10 +174,11 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         }
 
         // Temporal Component
-        PC3::Type::real t0 = getNextInput( argv, argc, key + "_t0", index );
-        PC3::Type::real freq = getNextInput( argv, argc, key + "_freq", index );
-        PC3::Type::real sigma = getNextInput( argv, argc, key + "_sigma", index );
+        PC3::Type::real t0 = PC3::CLIO::getNextInput( argv, argc, key + "_t0", index );
+        PC3::Type::real freq = PC3::CLIO::getNextInput( argv, argc, key + "_freq", index );
+        PC3::Type::real sigma = PC3::CLIO::getNextInput( argv, argc, key + "_sigma", index );
         ret.addTemporal( t0, sigma, freq );
+        std::cout << PC3::CLIO::prettyPrint( "Added Temporal Component to Envelope '" + key + "'", PC3::CLIO::Control::Success | PC3::CLIO::Control::Secondary ) << std::endl;
     }
 
     // If no envelope was passed, we add a default time envelope. This ensures the constructor of the solver's
@@ -307,15 +310,15 @@ std::string PC3::Envelope::toString() const {
             if ( load_path[i] == "" ) {
                 os << b << "  Envelope " << i << ":" << std::endl
                    << "    " << b << "Generated from Parameters:" << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Type: ", s_type[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Polarization: ", s_pol[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << unifyLength( "Behavior: ", s_behavior[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl;
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Type: ", s_type[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Polarization: ", s_pol[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Behavior: ", s_behavior[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl;
             } else {
                 os << b << "  Envelope " << i << ":" << std::endl
                    << b << EscapeSequence::GRAY << "     Loaded from: " << load_path[i] << EscapeSequence::RESET << std::endl

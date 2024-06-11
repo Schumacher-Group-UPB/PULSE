@@ -2,6 +2,7 @@
 #include "kernel/kernel_fft.cuh"
 #include "system/system_parameters.hpp"
 #include "solver/gpu_solver.hpp"
+#include "misc/commandline_io.hpp"
 
 #ifdef USE_CPU
 
@@ -38,7 +39,7 @@
 
         if (not isInitialized) {
             if ( cufftPlan2d( &plan, N_x, N_y, FFTPLAN ) != CUFFT_SUCCESS ) {
-                std::cout << "Error Creating CUDA FFT Plan!" << std::endl;
+                std::cout << PC3::CLIO::prettyPrint( "Error Creating CUDA FFT Plan!", PC3::CLIO::Control::FullError ) << std::endl;
                 return plan;
             }
             isInitialized = true;

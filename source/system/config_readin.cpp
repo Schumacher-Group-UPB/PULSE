@@ -1,6 +1,6 @@
 #include <filesystem>
 #include "system/filehandler.hpp"
-#include "misc/commandline_input.hpp"
+#include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
 
 std::vector<char*> PC3::readConfigFromFile(int argc, char** argv) {
@@ -12,16 +12,16 @@ std::vector<char*> PC3::readConfigFromFile(int argc, char** argv) {
         buffer.push_back( argv[i] );
     }
 
-    if ( ( index = findInArgv( "--config", argc, argv ) ) == -1 ) 
+    if ( ( index = PC3::CLIO::findInArgv( "--config", argc, argv ) ) == -1 ) 
         return buffer;
 
 
-    while ((config = getNextStringInput( argv, argc, "config", ++index ) ) != "") {
-        std::cout << "Reading configs from file: '" << config << "'" << std::endl;
+    while ((config = PC3::CLIO::getNextStringInput( argv, argc, "config", ++index ) ) != "") {
+        std::cout << PC3::CLIO::prettyPrint( "Reading configs from file: '" + config + "'", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl;
     
         // If config file exists, read all lines, split all lines and store them in the argv array
         if ( not std::filesystem::exists( config ) ) {
-            std::cout << "Config file " << config << " does not exist." << std::endl;
+            std::cout <<  PC3::CLIO::prettyPrint( "Config file '" + config + "' does not exist. Skipping.", PC3::CLIO::Control::FullWarning ) << std::endl;
             return buffer;
         }
 
