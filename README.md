@@ -38,7 +38,7 @@ Download the precompiled PULSE executable from [here](https://github.com/AG-Schu
 You are now ready to run PULSE for the first time. Copy and execute the following command in your console:
 
 ```sh
-./main_tutorial.exe[.o] --N 400 400 --L 40 40 --boundary zero zero --tmax 1000 --initialState 0.1 add 70 70 0 0 plus 1 0 gauss+noDivide --gammaC 0.15 --pump 100 add 4.5 4.5 0 0 both 1 none gauss+noDivide+ring --outEvery 5 --path output\
+./pulse.exe[.o] --N 400 400 --L 40 40 --boundary zero zero --tmax 1000 --initialState 0.1 add 70 70 0 0 plus 1 0 gauss+noDivide --gammaC 0.15 --pump 100 add 4.5 4.5 0 0 both 1 none gauss+noDivide+ring --outEvery 5 --path output\
 ```
 
 This command will:
@@ -50,7 +50,7 @@ This command will:
 - Create a ring-shaped pump (`--pump`).
 - Set the data output rate to every 5 picoseconds (`--outEvery`) and specify the output directory (`--path output`).
 
-For further details on the command syntax, use `./main_tutorial.exe[.o] --help`.
+For further details on the command syntax, use `./pulse.exe[.o] --help`.
 
 #### 4. Review Results
 
@@ -121,15 +121,6 @@ ARCH=xy
 ```
 
 when using the Makefile, where xy is your CC, is most beneficial.
-
-# Getting Started
-P.U.L.S.E. uses single and double hyphen commandline arguments with multiple parameters per argument. Use
-
-```
-./main.exe[.o] --help
-```
-
-to get an overview of the available arguments. Also, look into [the shell launchscript](/launch.sh) for a detailed commented parameterset.
 
 # Current Issues
 
