@@ -15,11 +15,57 @@ If you are on Windows it is required to install some kind of UNIX based software
 You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path if you want to compile PULSE yourself.
 Also, make sure to check the C++ Desktop Development section in the VS installer! Then, add [cl.exe](https://stackoverflow.com/questions/7865432/command-line-compile-using-cl-exe) to your [path](https://stackoverflow.com/questions/9546324/adding-a-directory-to-the-path-environment-variable-in-windows)
 
-# Build
+# Getting Started with PULSE
+
+To successfully execute a precompiled version of PULSE for the first time, follow the steps outlined below:
+
+#### 1. Verify Your Hardware
+
+PULSE is designed to run exclusively on Nvidia GPUs. Verify your hardware to ensure compatibility:
+
+- **Windows**: Open the Start menu, type "Device Manager," and press Enter to launch the Control Panel. Expand the "Display adapters" section to see your GPU listed. Right-click on the listed GPU and select "Properties" to view the manufacturer details if necessary.
+- **Linux**: Use the command `lspci` to identify the GPU.
+
+#### 2. Download and Prepare PULSE
+
+Download the precompiled PULSE executable from [here](https://github.com/AG-Schumacher-UPB/PULSE/releases). This version supports single-precision float operations on your GPU and includes the SFML multimedia library for visualization.
+
+1. Place the downloaded executable into an empty directory on your system.
+2. Open a console window and navigate to your newly created PULSE directory.
+
+#### 3. Execute PULSE
+
+You are now ready to run PULSE for the first time. Copy and execute the following command in your console:
+
+```sh
+./main_tutorial.exe[.o] --N 400 400 --L 40 40 --boundary zero zero --tmax 1000 --initialState 0.1 add 70 70 0 0 plus 1 0 gauss+noDivide --gammaC 0.15 --pump 100 add 4.5 4.5 0 0 both 1 none gauss+noDivide+ring --outEvery 5 --path output\
+```
+
+This command will:
+
+- Execute PULSE on a 400x400 grid with zero boundary conditions for a real-space grid of 40x40 micrometers.
+- Evolve the system for 1 ns (`--tmax`).
+- Use PULSE-predefined pump and initial conditions, defining the initial state as a vortex with topological charge +1 (`--initialState`).
+- Set the polariton loss rate of the condensate to 0.15 (`--gammaC`).
+- Create a ring-shaped pump (`--pump`).
+- Set the data output rate to every 5 picoseconds (`--outEvery`) and specify the output directory (`--path output`).
+
+For further details on the command syntax, use `./main_tutorial.exe[.o] --help`.
+
+#### 4. Review Results
+
+Upon successful execution, the time-evolution will be displayed. After the program completes, it will print a summary of the process. The output directory will contain the desired results.
+
+Congratulations on performing your first GPU-accelerated calculation using PULSE. For a comprehensive introduction to all other features of PULSE, please refer to the extended documentation.
+
+# Build PULSE yourself
+
+If you desire custom modifications to the code, or none of the precompiled versions work for you, you may as well build PULSE yourself. We use a simple Makefile to create binaries for either Windows or Linux.
+
 ### Build with SFML rendering
 1 -  Clone the repository using
 ```    
-    git clone --recursive https://github.com/davidbauch/PC3 
+    git clone --recursive https://github.com/AG-Schumacher-UPB/PULSE
 ``` 
 This will also download the SFML repository. I suggest also downloading a precompiled version of the library using the link at the top.
 
