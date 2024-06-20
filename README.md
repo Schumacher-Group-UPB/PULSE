@@ -42,7 +42,7 @@ Download MSYS2 [here](https://www.msys2.org/) and install it.
 
 Open your Enviroment Variables
 
--**Windows**: Right-click on Start then click on "System" in the context menu. Click "Advanced system settings" and go to "Advanced" tab. Now click Enviroment Variables. Here, double-click on Path in the lower section. Click on new to add to your path.
+- **Windows**: Right-click on Start then click on "System" in the context menu. Click "Advanced system settings" and go to "Advanced" tab. Now click Enviroment Variables. Here, double-click on Path in the lower section. Click on new to add to your path.
 
 Now you need to find the path to your cl.exe of Visual Studio and nvcc.exe for CUDA, if you have not changed the preset path during installation you should find your executable at the same location as marked orange in the screenshot.
 ![image](https://github.com/AG-Schumacher-UPB/PULSE/assets/139117697/127b096e-1f0d-4bda-ac54-a41305891785)
