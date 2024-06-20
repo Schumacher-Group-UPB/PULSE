@@ -26,14 +26,39 @@ PULSE is designed to run exclusively on Nvidia GPUs. Verify your hardware to ens
 - **Windows**: Open the Start menu, type "Device Manager," and press Enter to launch the Control Panel. Expand the "Display adapters" section to see your GPU listed. Right-click on the listed GPU and select "Properties" to view the manufacturer details if necessary.
 - **Linux**: Use the command `lspci` to identify the GPU.
 
-#### 2. Download and Prepare PULSE
+#### Steps 2 - 4 will give you detailed instructions on how to install the mandatory requirements. If you have already installed them or do not need help, please continue with step 5.
+
+#### 2. Install Visual Studio Microsoft (Windows) or the GNU Compiler GCC (linux)
+
+Select the right software for your operating system. Download and install it. If you are installing Microsoft Visual Studios, make sure you check "C++ Desktop Development section" during the installation process (see Screenshot). **Do not make any changes to the installation path for Visual Studio!**
+![image](https://github.com/AG-Schumacher-UPB/PULSE/assets/139117697/9f6fed2a-ce10-49d9-8a23-3bf5c37b91b0)
+
+#### 3. Install CUDA and MSYS2
+
+Download the latest CUDA-Version [here](https://developer.nvidia.com/cuda-downloads) and follow the instructions given. **Do not make any changes to the installation path for CUDA!**
+Download MSYS2 [here](https://www.msys2.org/) and install it.
+
+#### 4. Add the new executables to your path
+
+Open your Enviroment Variables
+
+- **Windows**: Right-click on Start-button then click on "System" in the context menu. Click "Advanced system settings" and go to "Advanced" tab. Now click Enviroment Variables. Here, double-click on "Path" in the lower section. Click on new to add to your path.
+
+Now you need to find the path to your cl.exe of Visual Studio and nvcc.exe for CUDA, if you have not changed the preset path during installation you should find your executable at the same location as marked orange in the screenshot.
+![image](https://github.com/AG-Schumacher-UPB/PULSE/assets/139117697/127b096e-1f0d-4bda-ac54-a41305891785)
+
+Note that in your case the version-number in the path (\14.37.32822\ for VS and \v12.3\ for CUDA) can be different.
+
+#### Great! That was the hardest part. Now you can continue with executing PULSE for the very first time.
+
+#### 5. Download and Prepare PULSE
 
 Download the precompiled PULSE executable from [here](https://github.com/AG-Schumacher-UPB/PULSE/releases). This version supports single-precision float operations on your GPU and includes the SFML multimedia library for visualization.
 
 1. Place the downloaded executable into an empty directory on your system.
 2. Open a console window and navigate to your newly created PULSE directory.
 
-#### 3. Execute PULSE
+#### 6. Execute PULSE
 
 You are now ready to run PULSE for the first time. Copy and execute the following command in your console:
 
@@ -52,11 +77,13 @@ This command will:
 
 For further details on the command syntax, use `./pulse.exe[.o] --help`.
 
-#### 4. Review Results
+#### 7. Review Results
 
 Upon successful execution, the time-evolution will be displayed. After the program completes, it will print a summary of the process. The output directory will contain the desired results.
 
 Congratulations on performing your first GPU-accelerated calculation using PULSE. For a comprehensive introduction to all other features of PULSE, please refer to the extended documentation.
+
+If you want to compile your own (modified) version of PULSE please read on.
 
 # Build PULSE yourself
 
@@ -274,3 +301,5 @@ You can of course also load external .txt matrices using the regular envelope sy
 # TODO
 - Better Benchmarking
 - Display Examples with Videos / Gifs
+- Split-step Fourier method as an alternative to RK4
+- Imaginary time algorithm
