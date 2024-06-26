@@ -34,7 +34,7 @@ class SystemParameters {
         Type::real m_e, h_bar, e_e, h_bar_s, m_eff, m_eff_scaled;
         
         // System Variables
-        Type::real L_x, L_y, dx, dy, dV, stochastic_amplitude;
+        Type::real L_x, L_y, dx, dy, dV, stochastic_amplitude, one_over_dx2, one_over_dy2, m2_over_dx2_p_dy2;
         Type::real gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
         
         // Complex Scaled Values

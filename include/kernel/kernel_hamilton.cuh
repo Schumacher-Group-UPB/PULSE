@@ -128,10 +128,52 @@ PULSE_DEVICE PULSE_INLINE Type::complex lower_left_neighbour_periodic( Type::com
     return vector[index];
 }
 
-PULSE_DEVICE void scalar(Type::complex& regular, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x = false, const bool periodic_y = false);
+PULSE_DEVICE PULSE_INLINE Type::complex scalar_neighbours( Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real one_over_dx2, const Type::real one_over_dy2, const bool periodic_x, const bool periodic_y ) {
+    Type::complex vertical, horizontal;
+    if (periodic_x) {
+        horizontal = left_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + right_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );
+    } else {
+        horizontal = left_neighbour( vector, index, row, col, 1, N_x, N_y ) + right_neighbour( vector, index, row, col, 1, N_x, N_y );
+    }
+    if (periodic_y) {
+        vertical = upper_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );
+    } else {
+        vertical = upper_neighbour( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour( vector, index, row, col, 1, N_x, N_y );
+    }
+    return vertical*one_over_dy2 + horizontal*one_over_dx2;
+}
 
-PULSE_DEVICE void tetm_plus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x = false, const bool periodic_y = false );
+PULSE_DEVICE PULSE_INLINE void tetm_plus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x, const bool periodic_y ) {
+    Type::complex vertical, horizontal;
+    if (periodic_y) {
+        vertical = upper_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );
+    } else {
+        vertical = upper_neighbour( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour( vector, index, row, col, 1, N_x, N_y );
+    }
+    if (periodic_x) {
+        horizontal = left_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + right_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );
+        cross = horizontal/dx/dx - vertical/dy/dy + Type::complex(0.0,-0.5)/dx/dy * ( -lower_right_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + lower_left_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + upper_right_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) - upper_left_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) );
+    } else {
+        horizontal = left_neighbour( vector, index, row, col, 1, N_x, N_y ) + right_neighbour( vector, index, row, col, 1, N_x, N_y );
+        cross = horizontal/dx/dx - vertical/dy/dy + Type::complex(0.0,-0.5)/dx/dy * ( -right_neighbour( vector, index - N_x, row - 1, col, 1, N_x, N_y ) + left_neighbour( vector, index - N_x, row - 1, col, 1, N_x, N_y ) + right_neighbour( vector, index + N_x, row + 1, col, 1, N_x, N_y ) - left_neighbour( vector, index + N_x, row + 1, col, 1, N_x, N_y ) );
+    }
+    regular += vertical/dy/dy + horizontal/dx/dx;
+}
 
-PULSE_DEVICE void tetm_minus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x = false, const bool periodic_y = false );
-
+PULSE_DEVICE PULSE_INLINE void tetm_minus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x, const bool periodic_y ) {
+    Type::complex vertical, horizontal;
+    if (periodic_y) {
+        vertical = upper_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );
+    } else {
+        vertical = upper_neighbour( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour( vector, index, row, col, 1, N_x, N_y );
+    }
+    if (periodic_x) {
+        horizontal = left_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + right_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );
+        cross = horizontal/dx/dx - vertical/dy/dy + Type::complex(0.0,0.5)/dx/dy * ( -lower_right_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + lower_left_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + upper_right_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) - upper_left_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) );
+    } else {
+        horizontal = left_neighbour( vector, index, row, col, 1, N_x, N_y ) + right_neighbour( vector, index, row, col, 1, N_x, N_y );
+        cross = horizontal/dx/dx - vertical/dy/dy + Type::complex(0.0,0.5)/dx/dy * ( -right_neighbour( vector, index - N_x, row - 1, col, 1, N_x, N_y ) + left_neighbour( vector, index - N_x, row - 1, col, 1, N_x, N_y ) + right_neighbour( vector, index + N_x, row + 1, col, 1, N_x, N_y ) - left_neighbour( vector, index + N_x, row + 1, col, 1, N_x, N_y ) );
+    }
+    regular += vertical/dy/dy + horizontal/dx/dx;
+}
 } // namespace PC3::Kernel::Hamilton

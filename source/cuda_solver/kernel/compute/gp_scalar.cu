@@ -7,15 +7,18 @@
  * The differential equation for this model reduces to
  * ...
  */
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p_in, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {
     
+    LOCAL_SHARE_STRUCT( SystemParameters::KernelParameters, p_in, p );
+
     OVERWRITE_THREAD_INDEX( i );
 
-    Type::complex hamilton;
-    PC3::Kernel::Hamilton::scalar( hamilton, io.in_wf_plus, i, i / p.N_x /*Row*/, i % p.N_x /*Col*/, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
-    
     const Type::complex in_wf = io.in_wf_plus[i];
     const Type::complex in_rv = io.in_rv_plus[i];
+
+    Type::complex hamilton = p.m2_over_dx2_p_dy2 * in_wf;
+    hamilton += PC3::Kernel::Hamilton::scalar_neighbours( io.in_wf_plus, i, i / p.N_x /*Row*/, i % p.N_x /*Col*/, p.N_x, p.N_y, p.one_over_dx2, p.one_over_dy2, p.periodic_boundary_x, p.periodic_boundary_y );
+
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
     
     // MARK: Wavefunction

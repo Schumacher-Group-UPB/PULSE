@@ -2,23 +2,29 @@
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p_in, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {
+    
+    LOCAL_SHARE_STRUCT( SystemParameters::KernelParameters, p_in, p );
+    
     OVERWRITE_THREAD_INDEX( i );
 
     const int row = i / p.N_x;
     const int col = i % p.N_x;
 
-    Type::complex hamilton_regular_plus, hamilton_regular_minus, hamilton_cross_plus, hamilton_cross_minus;
+    const auto in_wf_plus = io.in_wf_plus[i];
+    const auto in_wf_minus = io.in_wf_minus[i];
+
+    Type::complex hamilton_regular_plus = p.m2_over_dx2_p_dy2 * in_wf_plus;
+    Type::complex hamilton_regular_minus = p.m2_over_dx2_p_dy2 * in_wf_minus;
+    Type::complex hamilton_cross_plus, hamilton_cross_minus;
     PC3::Kernel::Hamilton::tetm_plus( hamilton_regular_plus, hamilton_cross_minus, io.in_wf_plus, i, row, col, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
     PC3::Kernel::Hamilton::tetm_minus( hamilton_regular_minus, hamilton_cross_plus, io.in_wf_minus, i, row, col, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
 
-    const auto in_wf_plus = io.in_wf_plus[i];
     const auto in_rv_plus = io.in_rv_plus[i];
-    const auto in_wf_minus = io.in_wf_minus[i];
     const auto in_rv_minus = io.in_rv_minus[i];
     const Type::real in_psi_plus_norm = CUDA::abs2( in_wf_plus );
     const Type::real in_psi_minus_norm = CUDA::abs2( in_wf_minus );
-
+ 
     // MARK: Wavefunction Plus
     Type::complex result = p.minus_i_over_h_bar_s * p.m_eff_scaled * hamilton_regular_plus;
     

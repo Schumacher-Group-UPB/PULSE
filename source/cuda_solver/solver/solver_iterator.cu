@@ -398,9 +398,6 @@ bool PC3::Solver::iterate( ) {
     else 
         iterateSplitStepFourier( block_size, grid_size );
 
-    // Syncronize
-    //CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
-    
     // Increase t.
     system.p.t = system.p.t + system.p.dt;
 
@@ -416,6 +413,4 @@ bool PC3::Solver::iterate( ) {
     applyFFTFilter( block_size, grid_size, system.fft_mask.size() > 0 );
 
     return true;
-    // Syncronize
-    //CHECK_CUDA_ERROR( cudaDeviceSynchronize(), "Sync" );
 }
