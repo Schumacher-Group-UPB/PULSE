@@ -143,7 +143,7 @@ PULSE_DEVICE PULSE_INLINE Type::complex scalar_neighbours( Type::complex* __rest
     return vertical*one_over_dy2 + horizontal*one_over_dx2;
 }
 
-PULSE_DEVICE PULSE_INLINE void tetm_plus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x, const bool periodic_y ) {
+PULSE_DEVICE PULSE_INLINE void tetm_neighbours_plus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x, const bool periodic_y ) {
     Type::complex vertical, horizontal;
     if (periodic_y) {
         vertical = upper_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );
@@ -160,7 +160,7 @@ PULSE_DEVICE PULSE_INLINE void tetm_plus( Type::complex& regular, Type::complex&
     regular += vertical/dy/dy + horizontal/dx/dx;
 }
 
-PULSE_DEVICE PULSE_INLINE void tetm_minus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x, const bool periodic_y ) {
+PULSE_DEVICE PULSE_INLINE void tetm_neighbours_minus( Type::complex& regular, Type::complex& cross, Type::complex* __restrict__ vector, int index, const int row, const int col, const int N_x, const int N_y, const Type::real dx, const Type::real dy, const bool periodic_x, const bool periodic_y ) {
     Type::complex vertical, horizontal;
     if (periodic_y) {
         vertical = upper_neighbour_periodic( vector, index, row, col, 1, N_x, N_y ) + lower_neighbour_periodic( vector, index, row, col, 1, N_x, N_y );

@@ -17,8 +17,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
     Type::complex hamilton_regular_plus = p.m2_over_dx2_p_dy2 * in_wf_plus;
     Type::complex hamilton_regular_minus = p.m2_over_dx2_p_dy2 * in_wf_minus;
     Type::complex hamilton_cross_plus, hamilton_cross_minus;
-    PC3::Kernel::Hamilton::tetm_plus( hamilton_regular_plus, hamilton_cross_minus, io.in_wf_plus, i, row, col, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
-    PC3::Kernel::Hamilton::tetm_minus( hamilton_regular_minus, hamilton_cross_plus, io.in_wf_minus, i, row, col, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
+    PC3::Kernel::Hamilton::tetm_neighbours_plus( hamilton_regular_plus, hamilton_cross_minus, io.in_wf_plus, i, row, col, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
+    PC3::Kernel::Hamilton::tetm_neighbours_minus( hamilton_regular_minus, hamilton_cross_plus, io.in_wf_minus, i, row, col, p.N_x, p.N_y, p.dx, p.dy, p.periodic_boundary_x, p.periodic_boundary_y );
 
     const auto in_rv_plus = io.in_rv_plus[i];
     const auto in_rv_minus = io.in_rv_minus[i];

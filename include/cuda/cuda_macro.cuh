@@ -33,8 +33,6 @@
         }
 
 #else
-    // Why do we include cstring here? I don't remember haha.
-    #include <cstring>
     // On the CPU, the check for CUDA errors does nothing
     #define CHECK_CUDA_ERROR( func, msg )
     // On the CPU, the Kernel call does not execute a parallel GPU Kernel. Instead,
@@ -42,8 +40,11 @@
     // the Kernel in parallel on the CPU. 
     #define CALL_KERNEL( func, name, grid, block, ... )                                                                                                 \
         {                                                                                                                                               \
-            _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( int i = 0; i < system.p.N_x*system.p.N_y; ++i ) { \
-                    func( i, __VA_ARGS__ );                                                                                                             \
+            _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( size_t i = 0; i < system.p.N_y; ++i ) {           \
+                for ( size_t j = 0; j < system.p.N_x; ++j ) {                                                                                           \
+                    const size_t index = i * system.p.N_x + j;                                                                                          \
+                    func( index, __VA_ARGS__ );                                                                                                         \
+                }                                                                                                                                       \
             }                                                                                                                                           \
         }
     // Partially calls a Kernel with less threads. Stream does nothing here.

@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <cstring>
 #include "system/filehandler.hpp"
 #include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
