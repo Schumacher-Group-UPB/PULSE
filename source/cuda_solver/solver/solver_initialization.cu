@@ -23,10 +23,12 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
 
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
     system.initial_state.calculate( system.filehandler, matrix.initial_state_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
-    std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( Type::complex& z ) mutable { z = z + matrix.initial_state_plus[i]; i++; } );
+    system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
+    //std::ranges::for_each( matrix.initial_state_plus.getHostPtr(), matrix.initial_state_plus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( Type::complex& z ) mutable { z = z + matrix.initial_state_plus[i]; i++; } );
     if ( system.p.use_twin_mode ) {
         system.initial_state.calculate( system.filehandler, matrix.initial_state_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
-        std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( Type::complex& z ) mutable { z = z + matrix.initial_state_minus[i]; i++; } );
+        system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
+        //std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( Type::complex& z ) mutable { z = z + matrix.initial_state_minus[i]; i++; } );
     }
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
     if ( system.randomly_initialize_system ) {
@@ -38,10 +40,6 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
         if ( system.p.use_twin_mode )
             std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
     }
-
-    // TODO: Hier: Übergebene pumps (system.pump, .pulse, .potential) nach osc parametern sortieren und gruppieren!
-    //  Matrix matrix.pump_plus ->HostPtr std::vector<Matrix>
-    //  für jeden gruppe envelope ausrechnen und in matrix.pump_plus pushenHostPtr
 
     // ==================================================
     // =................ Pump Envelopes ................=
@@ -108,6 +106,7 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
 
     // Copy Initial State to wavefunction
     matrix.wavefunction_plus.setTo( matrix.initial_state_plus );
+    matrix.reservoir_plus.setTo( matrix.initial_reservoir_plus );
 
 // Check once of the reservoir is zero.
 // If yes, then the reservoir may not be avaluated.
@@ -139,6 +138,7 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
 
     // Copy Initial State to wavefunction
     matrix.wavefunction_minus.setTo( matrix.initial_state_minus );
+    matrix.reservoir_minus.setTo( matrix.initial_reservoir_minus );
 
 // Check once of the reservoir is zero.
 // If yes, then the reservoir may not be avaluated.

@@ -1,6 +1,6 @@
 #include "cuda/typedef.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
-#include "kernel/kernel_fft.cuh"
+#include "kernel/kernel_compute.cuh"
 
 PULSE_GLOBAL void PC3::Kernel::kernel_make_fft_visible( int i, Type::complex* input, Type::complex* output, const unsigned int N ) {
     GET_THREAD_INDEX( i, N );

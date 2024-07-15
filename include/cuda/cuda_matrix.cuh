@@ -279,6 +279,19 @@ class CUDAMatrix : CUDAMatrixBase {
     }
 
     /**
+     * Fill Matrix with set value. From host-side only.
+     * If the matrix is also on the device, synchronize the data.
+     */
+    CUDAMatrix<T>& fill( T value ) {
+        if ( not is_on_host )
+            return *this;
+        std::fill( host_data.begin(), host_data.end(), value );
+        if ( is_on_device )
+            hostToDeviceSync();
+        return *this;
+    }
+
+    /**
      * Synchronize the Host and Device matrices and copies to host data to the device data.
      * This functions usually doesn't have to be called manually by the user. Instead, is called automatically
      * depending on which access methods are called by the user. This function also constructs the device

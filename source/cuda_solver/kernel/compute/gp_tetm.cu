@@ -1,4 +1,4 @@
-#include "kernel/kernel_runge_function.cuh"
+#include "kernel/kernel_compute.cuh"
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 

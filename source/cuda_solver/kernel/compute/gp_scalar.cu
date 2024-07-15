@@ -1,4 +1,4 @@
-#include "kernel/kernel_runge_function.cuh"
+#include "kernel/kernel_compute.cuh"
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
@@ -75,11 +75,13 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixCo
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {
     
     OVERWRITE_THREAD_INDEX( i );
-    size_t row = i / p.N_x;
-    size_t col = i % p.N_x;
+
+    // We do some weird looking casting to avoid intermediate casts to size_t
+    Type::real row = Type::real(size_t(i / p.N_x));
+    Type::real col = Type::real(size_t(i % p.N_x));
     
-    Type::real k_x = 3.1415926535 * Type::real(col <= p.N_x/2 ? col : -p.N_x + col)/p.L_x;
-    Type::real k_y = 3.1415926535 * Type::real(row <= p.N_y/2 ? row : -p.N_y + row)/p.L_y;
+    const Type::real k_x = 3.1415926535 * Type::real(col <= p.N_x/2 ? col : -Type::real(p.N_x) + col)/p.L_x;
+    const Type::real k_y = 3.1415926535 * Type::real(row <= p.N_y/2 ? row : -Type::real(p.N_y) + row)/p.L_y;
 
     Type::real linear = p.h_bar_s/2.0/p.m_eff * (k_x*k_x + k_y*k_y);
     io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(p.N2) * CUDA::exp( p.minus_i * linear * p.dt / Type::real(2.0) );
@@ -93,8 +95,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
     
     // MARK: Wavefunction
-    Type::complex result = {p.g_c * in_psi_norm,0.0};
-    result += p.minus_i*p.h_bar_s * Type::real(0.5) * p.gamma_c;
+    Type::complex result = {p.g_c * in_psi_norm, -p.h_bar_s * Type::real(0.5) * p.gamma_c};
 
     for (int k = 0; k < oscillation_potential.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
@@ -102,7 +103,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
         result += potential;
     }
 
-    io.out_wf_plus[i] = in_wf * CUDA::exp(p.minus_i_over_h_bar_s * result * p.dt);;
+    io.out_wf_plus[i] = in_wf * CUDA::exp(p.minus_i_over_h_bar_s * result * p.dt);
 }
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {

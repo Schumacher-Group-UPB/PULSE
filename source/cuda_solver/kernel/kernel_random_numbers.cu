@@ -1,5 +1,5 @@
 #include "cuda/typedef.cuh"
-#include "kernel/kernel_random_numbers.cuh"
+#include "kernel/kernel_compute.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
 PULSE_GLOBAL void PC3::Kernel::initialize_random_number_generator( int i, unsigned int seed, Type::cuda_random_state* state, const unsigned int N) {

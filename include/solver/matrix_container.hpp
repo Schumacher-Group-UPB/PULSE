@@ -16,8 +16,10 @@ namespace PC3 {
 */
 
 #define MATRIX_LIST \
-    DEFINE_MATRIX(Type::complex, initial_state_plus, 1, true) \
-    DEFINE_MATRIX(Type::complex, initial_state_minus, 1, use_twin_mode) \
+    DEFINE_MATRIX(Type::complex, initial_state_plus, 1, false) \
+    DEFINE_MATRIX(Type::complex, initial_state_minus, 1, false) \
+    DEFINE_MATRIX(Type::complex, initial_reservoir_plus, 1, false) \
+    DEFINE_MATRIX(Type::complex, initial_reservoir_minus, 1, false) \
     DEFINE_MATRIX(Type::complex, wavefunction_plus, 1, true) \
     DEFINE_MATRIX(Type::complex, wavefunction_minus, 1, use_twin_mode) \
     DEFINE_MATRIX(Type::complex, reservoir_plus, 1, true) \
@@ -52,19 +54,15 @@ namespace PC3 {
     DEFINE_MATRIX(Type::complex, k4_wavefunction_minus, 1, use_twin_mode) \
     DEFINE_MATRIX(Type::complex, k4_reservoir_plus, 1, true) \
     DEFINE_MATRIX(Type::complex, k4_reservoir_minus, 1, use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, k5_wavefunction_plus, 1, use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k5_wavefunction_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k5_reservoir_plus, 1, use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k5_reservoir_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k6_wavefunction_plus, 1, use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k6_wavefunction_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k6_reservoir_plus, 1, use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k6_reservoir_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k7_wavefunction_plus, 1, use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k7_wavefunction_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k7_reservoir_plus, 1, use_rk_45) \
-    DEFINE_MATRIX(Type::complex, k7_reservoir_minus, 1, use_twin_mode and use_rk_45) \
-    DEFINE_MATRIX(Type::real, rk_error, 1, use_rk_45) \
+    DEFINE_MATRIX(Type::complex, k5_wavefunction_plus, 1, true) \
+    DEFINE_MATRIX(Type::complex, k5_wavefunction_minus, 1, use_twin_mode and true) \
+    DEFINE_MATRIX(Type::complex, k5_reservoir_plus, 1, true) \
+    DEFINE_MATRIX(Type::complex, k5_reservoir_minus, 1, use_twin_mode and true) \
+    DEFINE_MATRIX(Type::complex, k6_wavefunction_plus, 1, true) \
+    DEFINE_MATRIX(Type::complex, k6_wavefunction_minus, 1, use_twin_mode and true) \
+    DEFINE_MATRIX(Type::complex, k6_reservoir_plus, 1, true) \
+    DEFINE_MATRIX(Type::complex, k6_reservoir_minus, 1, use_twin_mode and true) \
+    DEFINE_MATRIX(Type::real, rk_error, 1, true) \
     DEFINE_MATRIX(Type::complex, random_number, 1, true) \
     DEFINE_MATRIX(Type::cuda_random_state, random_state, 1, true) \
     DEFINE_MATRIX(Type::complex, snapshot_wavefunction_plus, 1, false) \
@@ -100,8 +98,10 @@ struct MatrixContainer {
         #define DEFINE_MATRIX(type, name, size_scaling, condition_for_construction) \
             name.constructHost( N_x, N_y * size_scaling, #name); \
             if (condition_for_construction) \
-                name.constructDevice( N_x, N_y * size_scaling, #name);
-            MATRIX_LIST
+                name.constructDevice( N_x, N_y * size_scaling, #name); 
+            //if (not std::is_same<type, Type::cuda_random_state>::value) \
+            //    name.fill(type(0.0));
+        MATRIX_LIST
         #undef X
      }
 

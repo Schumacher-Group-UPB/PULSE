@@ -98,12 +98,12 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     // Choose the iterator
     iterator = Iterator::RK4;
     if ( ( index = PC3::CLIO::findInArgv( "-rk45", argc, argv ) ) != -1 ) {
-        std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
-        //iterator = Iterator::RK45;
+        //std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
+        iterator = Iterator::RK45;
     }
     if ( ( index = PC3::CLIO::findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
-        std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
-        //iterator = Iterator::SSFM;
+        //std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
+        iterator = Iterator::SSFM;
     }
     if ( ( index = PC3::CLIO::findInArgv( "--iterator", argc, argv ) ) != -1 ) {
         std::string it = PC3::CLIO::getNextStringInput( argv, argc, "iterator", ++index );
@@ -211,8 +211,9 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     pulse = PC3::Envelope::fromCommandlineArguments( argc, argv, "pulse", true /* Can have oscillation component */ );
     // FFT Mask
     fft_mask = PC3::Envelope::fromCommandlineArguments( argc, argv, "fftMask", false );
-    // Initial State
+    // Initial State and Reservoir
     initial_state = PC3::Envelope::fromCommandlineArguments( argc, argv, "initialState", false );
+    initial_reservoir = PC3::Envelope::fromCommandlineArguments( argc, argv, "initialReservoir", false );
 
     ///////////////////////////////////////
     // Custom Envelope Read-Ins go here! //

@@ -42,8 +42,10 @@ void PC3::Solver::outputInitialMatrices() {
     std::cout << "--------------------------- Outputting Initial Matrices ---------------------------" << std::endl;
     auto header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t);
     // Output Matrices to file
-    if ( system.doOutput( "all", "mat", "initial_plus", "initial" ) )
-        system.filehandler.outputMatrixToFile( matrix.initial_state_plus.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "initial_condition_plus" );
+    if ( system.doOutput( "all", "mat", "initial_plus", "initial" ) ) {
+        system.filehandler.outputMatrixToFile( matrix.initial_state_plus.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "initial_wavefunction_plus" );
+        system.filehandler.outputMatrixToFile( matrix.initial_reservoir_plus.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "initial_reservoir_plus" );
+    }
     if ( system.doOutput( "all", "mat", "pump_plus", "pump" ) )
         for (int i = 0; i < system.pump.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);
@@ -72,8 +74,10 @@ void PC3::Solver::outputInitialMatrices() {
     if (not system.p.use_twin_mode )
         return;
 
-    if ( system.doOutput( "all", "mat", "initial_minus", "initial" ) )
-        system.filehandler.outputMatrixToFile( matrix.initial_state_minus.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "initial_condition_minus" );
+    if ( system.doOutput( "all", "mat", "initial_minus", "initial" ) ) {
+        system.filehandler.outputMatrixToFile( matrix.initial_state_minus.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "initial_wavefunctions_minus" );
+        system.filehandler.outputMatrixToFile( matrix.initial_reservoir_minus.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "initial_reservoir_minus" );
+    }    
     if ( system.doOutput( "all", "mat", "pump_minus", "pump" ) )
         for (int i = 0; i < system.pump.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);

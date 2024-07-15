@@ -134,7 +134,7 @@ void initSFMLWindow( PC3::Solver& solver ) {
 
 int __local_inset = 0;
 
-std::vector<std::string> subplot_names{ "FFT - ", "Wavefunction K1 - ", "Wavefunction K2 - ", "Wavefunction K3 - ", "Wavefunction K4 - ",
+std::vector<std::string> subplot_names{ "FFT - ", "Wavefunction K1 - ", "Wavefunction K2 - ", "Wavefunction K3 - ", "Wavefunction K4 - ", 
                                         "Reservoir K1 - ", "Reservoir K2 - ", "Reservoir K3 - ", "Reservoir K4 - ", "Pump - ", "Pulse - ", "Potential - ", "RandomNumber - " };
 
 bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed_time, size_t iterations ) {
@@ -252,10 +252,10 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
 
     if ( b_reset_to_initial.isToggled() ) {
         solver.matrix.wavefunction_plus.setTo( solver.matrix.initial_state_plus ).hostToDeviceSync();
-        solver.matrix.reservoir_plus.setTo( solver.matrix.initial_state_plus ).hostToDeviceSync();
+        solver.matrix.reservoir_plus.setTo( solver.matrix.initial_reservoir_plus ).hostToDeviceSync();
         if ( solver.system.p.use_twin_mode ) {
             solver.matrix.wavefunction_minus.setTo( solver.matrix.initial_state_minus ).hostToDeviceSync();
-            solver.matrix.reservoir_minus.setTo( solver.matrix.initial_state_minus ).hostToDeviceSync();
+            solver.matrix.reservoir_minus.setTo( solver.matrix.initial_reservoir_minus ).hostToDeviceSync();
         }
         solver.system.p.t = 0.0;
         std::cout << PC3::CLIO::prettyPrint( "Reset to Initial!", PC3::CLIO::Control::Info ) << std::endl;

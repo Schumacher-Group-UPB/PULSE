@@ -99,7 +99,7 @@ class SystemParameters {
     std::vector<std::string> output_keys;
 
     // Envelope ReadIns
-    PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;
+    PC3::Envelope pulse, pump, mask, initial_state, initial_reservoir, fft_mask, potential;
     bool evaluate_reservoir_kernel = false;
     bool evaluate_pulse_kernel = false;
     bool evaluate_potential_kernel = false;

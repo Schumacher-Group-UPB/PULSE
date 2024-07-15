@@ -122,9 +122,11 @@ class Solver {
 
     void finalize();
 
+    // TODO: grid and block size can be system (or solver) variables
     void iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_size );
     void iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size );
     void iterateSplitStepFourier( dim3 block_size, dim3 grid_size );
+    void iterateImaginaryTimePropagation( dim3 block_size, dim3 grid_size );
     bool iterate();
 
     void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );
@@ -139,10 +141,9 @@ class Solver {
 
     void cacheValues();
     void cacheMatrices();
-
-    void normalizeImaginaryTimePropagation( MatrixContainer::Pointers device_pointers, SystemParameters::KernelParameters p, dim3 block_size, dim3 grid_size );
 };
 
+// TODO: move these to a Header that makes sense
 namespace CUDA {
 
     PULSE_HOST_DEVICE static PULSE_INLINE Type::complex gaussian_complex_oscillator( Type::real t, Type::real t0, Type::real sigma, Type::real freq ) {
@@ -154,5 +155,20 @@ namespace CUDA {
     }
 
 } // namespace CUDA
+
+// Helper macro to choose the correct runge function
+#define RUNGE_FUNCTION_GP (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
+
+// Helper Macro to iterate a specific RK K
+#define CALCULATE_K( index, time, input_wavefunction, input_reservoir ) \
+CALL_KERNEL( \
+    RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size,  \
+    time, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers, \
+    {  \
+        device_pointers.input_wavefunction##_plus, device_pointers.input_wavefunction##_minus, device_pointers.input_reservoir##_plus, device_pointers.input_reservoir##_minus, \
+        device_pointers.k##index##_wavefunction_plus, device_pointers.k##index##_wavefunction_minus, device_pointers.k##index##_reservoir_plus, device_pointers.k##index##_reservoir_minus \
+    } \
+);
+
 
 } // namespace PC3

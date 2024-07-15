@@ -183,17 +183,20 @@ void PC3::SystemParameters::printSummary( std::map<std::string, std::vector<doub
     std::cout << "Device Used: " << EscapeSequence::BOLD << EscapeSequence::YELLOW << "CPU" << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::GRAY << "  CPU cores utilized: " << omp_max_threads << EscapeSequence::RESET << std::endl;
 #else
+// The Headers required for this come from system_parameters.hpp->typedef.cuh
     int nDevices;
-    cudaGetDeviceCount( &nDevices );
+    cudaGetDeviceCount( &nDevices ); 
     int device;
     cudaGetDevice( &device );
     cudaDeviceProp prop;
     cudaGetDeviceProperties( &prop, device );
     std::cout << "Device Used: " << EscapeSequence::GREEN << EscapeSequence::BOLD << prop.name << EscapeSequence::RESET << std::endl;
-    std::cout << EscapeSequence::GRAY << "  Memory Clock Rate (MHz): " << prop.memoryClockRate / 1024 << std::endl;
+    std::cout << EscapeSequence::GRAY << "  Memory Clock Rate (GHz): " << prop.memoryClockRate / 1024.0 / 1024.0 << std::endl;
     std::cout << "  Peak Memory Bandwidth (GB/s): " << 2.0 * prop.memoryClockRate * ( prop.memoryBusWidth / 8 ) / 1.0e6 << std::endl;
     std::cout << "  Total global memory (GB): " << (float)( prop.totalGlobalMem ) / 1024.0 / 1024.0 / 1024.0 << std::endl;
-    std::cout << "  Warp-size: " << prop.warpSize << EscapeSequence::RESET << std::endl;
+    std::cout << "  Warp-size: " << prop.warpSize << std::endl;
+    std::cout << "  CUDA Cores: " << prop.multiProcessorCount * _ConvertSMVer2Cores( prop.major, prop.minor ) << std::endl;
+    std::cout << "  GPU Clock Rate (GHz): " << prop.clockRate / 1024.0 / 1024.0 << EscapeSequence::RESET << std::endl;
 #endif
     std::cout << EscapeSequence::BOLD << PC3::CLIO::fillLine( console_width, '=' ) << EscapeSequence::RESET << std::endl;
 }
