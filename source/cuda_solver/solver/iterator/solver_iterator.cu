@@ -14,7 +14,7 @@
 * We dont need this variable anywhere else, so we just create it
 * locally to this file here.
 */
-PC3::Type::real cached_t = 0.0;
+PC3::Type::real fft_cached_t = 0.0;
 bool first_time = true;
 
 /**
@@ -47,18 +47,18 @@ bool PC3::Solver::iterate( ) {
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate( block_size, grid_size );
 
-    // Increase t.
+    // Increase t. 
     system.p.t = system.p.t + system.p.dt;
-
+    
     // For statistical purposes, increase the iteration counter
     system.iteration++;
 
     // FFT Guard 
-    if ( system.p.t - cached_t < system.fft_every )
+    if ( system.p.t - fft_cached_t < system.fft_every )
         return true;
 
     // Calculate the FFT
-    cached_t = system.p.t; 
+    fft_cached_t = system.p.t; 
     applyFFTFilter( block_size, grid_size, system.fft_mask.size() > 0 );
 
     return true;
