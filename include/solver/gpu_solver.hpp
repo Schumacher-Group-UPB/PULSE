@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <map>
+#include <functional>
 #include "cuda/typedef.cuh"
 #include "cuda/cuda_matrix.cuh"
 #include "cuda/cuda_macro.cuh"
@@ -122,11 +123,24 @@ class Solver {
 
     void finalize();
 
-    // TODO: grid and block size can be system (or solver) variables
-    void iterateFixedTimestepRungeKutta( dim3 block_size, dim3 grid_size );
+    void iterateFixedTimestepRungeKutta3( dim3 block_size, dim3 grid_size );
+    void iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size );
     void iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size );
     void iterateSplitStepFourier( dim3 block_size, dim3 grid_size );
     void iterateImaginaryTimePropagation( dim3 block_size, dim3 grid_size );
+
+    struct iteratorFunction {
+        int k_max;
+        std::function<void( dim3, dim3 )> iterate;
+    };
+    std::map<std::string, iteratorFunction> iterator = {
+        { "rk3", { 3, std::bind( &Solver::iterateFixedTimestepRungeKutta3, this, std::placeholders::_1, std::placeholders::_2 ) } },
+        { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this, std::placeholders::_1, std::placeholders::_2 ) } },
+        { "rk45", { 6, std::bind( &Solver::iterateVariableTimestepRungeKutta, this, std::placeholders::_1, std::placeholders::_2 ) } },
+        { "ssfm", { 2, std::bind( &Solver::iterateSplitStepFourier, this, std::placeholders::_1, std::placeholders::_2 ) } },
+        { "itp", { 1, std::bind( &Solver::iterateImaginaryTimePropagation, this, std::placeholders::_1, std::placeholders::_2 ) } }
+    };
+
     bool iterate();
 
     void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );

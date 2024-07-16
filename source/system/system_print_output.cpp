@@ -157,16 +157,14 @@ void PC3::SystemParameters::printSummary( std::map<std::string, std::vector<doub
     double total = PC3::TimeIt::totalRuntime();
     std::cout << "Total Runtime: " << total << "s --> " << ( total / p.t * 1E3 ) << "ms/ps --> " << ( p.t / total ) << "ps/s --> " << ( total / iteration ) << "s/it" << std::endl;
     std::cout << EscapeSequence::BOLD << PC3::CLIO::centerString( " Infos ", console_width, '-' ) << EscapeSequence::RESET << std::endl;
-    if ( iterator == Iterator::RK4 ) {
-        std::cout << "Calculations done using the fixed timestep RK4 solver" << std::endl;
-    } else if ( iterator == Iterator::RK45 ) {
-        std::cout << "Calculations done using the variable timestep RK45 solver" << std::endl;
+    
+    std::cout << "Calculations done using the '" << iterator << "' solver" << std::endl;
+    if ( iterator == "rk45" ) {
         std::cout << " = Tolerance used: " << tolerance << std::endl;
         std::cout << " = dt_max used: " << dt_max << std::endl;
         std::cout << " = dt_min used: " << dt_min << std::endl;
-    } else if ( iterator == Iterator::SSFM ) {
-        std::cout << "Calculations done using the Split-Step Fourier Method" << std::endl;
     }
+
     std::cout << "Calculated until t = " << p.t << "ps" << std::endl;
     if ( fft_mask.size() > 0 )
         std::cout << "Applying FFT every " << fft_every << " ps" << std::endl;

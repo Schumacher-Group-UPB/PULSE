@@ -120,3 +120,5 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
     io.out_rv_minus[i] = result;
 
 }
+
+// TODO: SSFM partials for this kernel

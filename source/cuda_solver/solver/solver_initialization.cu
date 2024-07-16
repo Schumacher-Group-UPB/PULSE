@@ -11,8 +11,15 @@
 
 void PC3::Solver::initializeHostMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "--------------------------- Initializing Host Matrices ----------------------------" << EscapeSequence::RESET << std::endl;
+    
+    // Check wether or not the selected solver is available. If not, fallback to RK4
+    if ( not iterator.count( system.iterator ) ) {
+        std::cout << PC3::CLIO::prettyPrint( "Selected iterator not available. Falling back to RK4.", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Warning ) << std::endl;
+        system.iterator = "rk4";
+    }
+
     // First, construct all required host matrices
-    matrix.constructAll( system.p.N_x, system.p.N_y, system.p.use_twin_mode, system.iterator == SystemParameters::Iterator::RK45 /* Use RK45 */, system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
+    matrix.constructAll( system.p.N_x, system.p.N_y, system.p.use_twin_mode, iterator[system.iterator].k_max , system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // ==================================================
     // =................ Initial States ................=

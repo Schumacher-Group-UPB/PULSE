@@ -1,3 +1,4 @@
+#include "cuda/typedef.cuh"
 
 #ifdef USE_CUDA
     #include <thrust/reduce.h>
@@ -9,7 +10,6 @@
 #include <omp.h>
 
 // Include Cuda Kernel headers
-#include "cuda/typedef.cuh"
 #include "kernel/kernel_compute.cuh"
 #include "system/system_parameters.hpp"
 #include "misc/helperfunctions.hpp"
@@ -67,6 +67,13 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = matrix.pointers();
+    // Same IO every time except for error kernel
+    Kernel::InputOutput io = { 
+        device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, 
+        device_pointers.reservoir_plus, device_pointers.reservoir_minus, 
+        device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, 
+        device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus 
+    };
 
     // The CPU should briefly evaluate wether the stochastic kernel is used
     bool evaluate_stochastic = system.evaluateStochastic();
@@ -76,6 +83,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     auto pump_pointers = dev_pump_oscillation.pointers();
     auto potential_pointers = dev_potential_oscillation.pointers();
 
+    auto cf = RKCoefficients::DP();
 
     // The delta time is either real or imaginary, depending on the system configuration
     //Type::complex delta_time = system.imaginary_time ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
@@ -92,88 +100,94 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         auto p = system.kernel_parameters;
 
         CALCULATE_K( 1, p.t, wavefunction, reservoir );
-
+        
         CALL_KERNEL(
-            PC3::Kernel::RK45::runge_sum_to_input_of_k2, "Sum for K2", grid_size, block_size, 
-            p.dt, device_pointers, p
+            Kernel::RK::runge_sum_to_input_kw, "Sum for K1", grid_size, block_size,
+            p.dt, device_pointers, p, io,
+            { cf.b11 }
+        );
+        
+        CALCULATE_K( 2, p.t + cf.a2 * p.dt, buffer_wavefunction, buffer_reservoir );
+        
+        CALL_KERNEL(
+            Kernel::RK::runge_sum_to_input_kw, "Sum for K2", grid_size, block_size,
+            p.dt, device_pointers, p, io,
+            { cf.b21, cf.b22 }
         );
 
-        CALCULATE_K( 2, p.t + RKCoefficients::a2 * p.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 3, p.t + cf.a3 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
-            PC3::Kernel::RK45::runge_sum_to_input_of_k3, "Sum for K3", grid_size, block_size, 
-            p.dt, device_pointers, p
+            Kernel::RK::runge_sum_to_input_kw, "Sum for K3", grid_size, block_size,
+            p.dt, device_pointers, p, io,
+            { cf.b31, cf.b32, cf.b33 }
         );
 
 
-        CALCULATE_K( 3, p.t + RKCoefficients::a3 * p.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 4, p.t + cf.a4 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
-            PC3::Kernel::RK45::runge_sum_to_input_of_k4, "Sum for K4", grid_size, block_size, 
-            p.dt, device_pointers, p
+            Kernel::RK::runge_sum_to_input_kw, "Sum for K4", grid_size, block_size,
+            p.dt, device_pointers, p, io,
+            { cf.b41, cf.b42, cf.b43, cf.b44 }
         );
 
-        CALCULATE_K( 4, p.t + RKCoefficients::a4 * p.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 5, p.t + cf.a5 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         CALL_KERNEL(
-            PC3::Kernel::RK45::runge_sum_to_input_of_k5, "Sum for K5", grid_size, block_size, 
-            p.dt, device_pointers, p
+            Kernel::RK::runge_sum_to_input_kw, "Sum for K5", grid_size, block_size,
+            p.dt, device_pointers, p, io,
+            { cf.b51, cf.b52, cf.b53, cf.b54, cf.b55 }
         );
 
-        CALCULATE_K( 5, p.t + RKCoefficients::a5 * p.dt, buffer_wavefunction, buffer_reservoir );
-
-        CALL_KERNEL(
-            PC3::Kernel::RK45::runge_sum_to_input_of_k6, "Sum for K6", grid_size, block_size, 
-            p.dt, device_pointers, p
-        );
-
-        CALCULATE_K( 6, p.t + RKCoefficients::a6 * p.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 6, p.t + cf.a6 * p.dt, buffer_wavefunction, buffer_reservoir );
 
         // Final Result is in the buffer_ arrays.
         CALL_KERNEL(
-            PC3::Kernel::RK45::runge_sum_to_final, "Final Sum", grid_size, block_size, 
-            p.dt, device_pointers, p
+            Kernel::RK::runge_sum_to_input_kw, "Sum for K6", grid_size, block_size,
+            p.dt, device_pointers, p, io,
+            { cf.b61, cf.b62, cf.b63, cf.b64, cf.b65, cf.b66 }
         );
 
-        // CALL_KERNEL(
-        //     PC3::Kernel::RK45::runge_sum_final_error, "Final Sum Error", grid_size, block_size, 
-        //     p.dt, device_pointers, p
-        // );
+        CALL_KERNEL(
+            Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size,
+            p.dt, device_pointers, p,
+            { cf.e7 /* WF */, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
+        );
 
-        // #ifdef USE_CUDA
-        //     Type::real final_error = thrust::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), 0.0, thrust::plus<Type::real>() );
-        //     Type::real sum_abs2 = thrust::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), square_reduction(), 0.0, thrust::plus<Type::real>() );
-        // #else
-        //     Type::real final_error = std::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), 0.0, std::plus<Type::real>() );
-        //     Type::real sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), 0.0, std::plus<Type::real>(), square_reduction() );
-        // #endif
+        #ifdef USE_CUDA
+            Type::complex error = thrust::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), Type::complex(0.0), thrust::plus<Type::complex>() );
+            Type::real sum_abs2 = thrust::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), square_reduction(), Type::real(0.0), thrust::plus<Type::real>() );
+        #else
+            Type::complex error = std::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), Type::complex(0.0), std::plus<Type::complex>() );
+            Type::real sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), Type::real(0.0), std::plus<Type::real>(), square_reduction() );
+        #endif
+        // TODO: maybe go back to using max since thats faster
+        //auto plus_max = std::get<1>( minmax( matrix.wavefunction_plus.getDevicePtr(), p.N_x * p.N_y, true /*Device Pointer*/ ) );
+        Type::real final_error = CUDA::abs(error) / sum_abs2;
 
-        // // TODO: maybe go back to using max since thats faster
-        // //auto plus_max = std::get<1>( minmax( matrix.wavefunction_plus.getDevicePtr(), p.N_x * p.N_y, true /*Device Pointer*/ ) );
-        // final_error = final_error / sum_abs2;
-
-        // // Calculate dh
-        // Type::real dh = std::pow<Type::real>( system.tolerance / 2. / std::max<Type::real>( final_error, 1E-15 ), 0.25 );
-        // // Check if dh is nan
-        // if ( std::isnan( dh ) ) {
-        //     dh = 1.0;
-        // }
-        // if ( std::isnan( final_error ) )
-        //     dh = 0.5;
+        
+        // Calculate dh
+        Type::real dh = std::pow<Type::real>( system.tolerance / 2. / std::max<Type::real>( final_error, 1E-15 ), 0.25 );
+        // Check if dh is nan
+        if ( std::isnan( dh ) ) {
+            dh = 1.0;
+        }
+        if ( std::isnan( final_error ) )
+            dh = 0.5;
         
         //  Set new timestep
-        //system.p.dt = std::min<Type::real>(p.dt * dh, system.dt_max);
-        //if ( dh < 1.0 )
-        //   //system.p.dt = std::max<Type::real>( p.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
-        //   p.dt -= system.dt_min;
-        //else
-        //   //system.p.dt = std::min<Type::real>( p.dt + system.dt_min * std::floor( dh ), system.dt_max );
-        //   p.dt += system.dt_min;
+        system.p.dt = std::min<Type::real>(p.dt * dh, system.dt_max);
+        if ( dh < 1.0 )
+           //system.p.dt = std::max<Type::real>( p.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
+           p.dt -= system.dt_min;
+        else
+           //system.p.dt = std::min<Type::real>( p.dt + system.dt_min * std::floor( dh ), system.dt_max );
+           p.dt += system.dt_min;
 
         // Make sure to also update dt from p
-        //system.kernel_parameters.dt = p.dt;
-        double final_error = 0;
-        //normalizeImaginaryTimePropagation(device_pointers, p, block_size, grid_size);
+        system.kernel_parameters.dt = p.dt;
+        
 
         // Accept step if error is below tolerance
         if ( final_error < system.tolerance ) {

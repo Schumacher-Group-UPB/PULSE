@@ -57,7 +57,7 @@ PC3::SystemParameters::SystemParameters() {
     omp_max_threads = omp_get_max_threads();
 
     // Default Solver is RK4
-    iterator = Iterator::RK4;
+    iterator = "rk4";
 
     // Output of Variables
     output_keys = { "mat", "scalar" };

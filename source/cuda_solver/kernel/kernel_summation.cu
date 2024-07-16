@@ -1,131 +1,111 @@
+#include "cuda/typedef.cuh"
 #include "kernel/kernel_compute.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-/**
- * The Summation Kernels take an additional dt argument although dt is already included in the System::KernelParameters struct.
- * This is because we want to be able to set the dt to a complex value to enable imaginary time propagation of the system.
-*/
-// MARK: - DP 4/5th Order
-
-PULSE_GLOBAL void PC3::Kernel::RK45::runge_sum_to_input_of_k2( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
+// Summs one K
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_ki( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io ) {
     OVERWRITE_THREAD_INDEX(i);
 
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + RKCoefficients::b11 * dt * dev_ptrs.k1_wavefunction_plus[i];
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + RKCoefficients::b11 * dt * dev_ptrs.k1_reservoir_plus[i];
+    io.out_wf_plus[i] = dev_ptrs.wavefunction_plus[i] + dt * io.in_wf_plus[i];
+    io.out_rv_plus[i] = dev_ptrs.reservoir_plus[i] + dt * io.in_rv_plus[i];
     if ( not p.use_twin_mode ) 
         return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + RKCoefficients::b11 * dt * dev_ptrs.k1_wavefunction_minus[i];
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + RKCoefficients::b11 * dt * dev_ptrs.k1_reservoir_minus[i];
+    io.out_wf_minus[i] = dev_ptrs.wavefunction_minus[i] + dt * io.in_wf_minus[i];
+    io.out_rv_minus[i] = dev_ptrs.reservoir_minus[i] + dt * io.in_rv_minus[i];
 }
 
-PULSE_GLOBAL void PC3::Kernel::RK45::runge_sum_to_input_of_k3( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
+// Sums all Ks with weights. Oh yes, this looks terrible. For this to be pretty, we would need to create 
+// yet another struct that holds all the buffers in an array. OR: we do the smart thing and restructure
+// the original dev_ptrs struct to hold all the buffers in an array. This would make the code much more
+// readable and maintainable. TODO
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io, RK::Weights weights ) {
     OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + dt*(RKCoefficients::b21 * dev_ptrs.k1_wavefunction_plus[i] + RKCoefficients::b22 * dev_ptrs.k2_wavefunction_plus[i]);
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + dt*(RKCoefficients::b21 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::b22 * dev_ptrs.k2_reservoir_plus[i]);
+    Type::complex wf = 0.0;
+    Type::complex rv = 0.0;
+    for (int n = weights.start; n < weights.n; n++) {
+        const auto w = weights.weights[n];
+        switch (n) { 
+            case 0: wf += w * dev_ptrs.k1_wavefunction_plus[i]; rv += w * dev_ptrs.k1_reservoir_plus[i]; break;
+            case 1: wf += w * dev_ptrs.k2_wavefunction_plus[i]; rv += w * dev_ptrs.k2_reservoir_plus[i]; break;
+            case 2: wf += w * dev_ptrs.k3_wavefunction_plus[i]; rv += w * dev_ptrs.k3_reservoir_plus[i]; break;
+            case 3: wf += w * dev_ptrs.k4_wavefunction_plus[i]; rv += w * dev_ptrs.k4_reservoir_plus[i]; break;
+            case 4: wf += w * dev_ptrs.k5_wavefunction_plus[i]; rv += w * dev_ptrs.k5_reservoir_plus[i]; break;
+            case 5: wf += w * dev_ptrs.k6_wavefunction_plus[i]; rv += w * dev_ptrs.k6_reservoir_plus[i]; break;
+            case 6: wf += w * dev_ptrs.k7_wavefunction_plus[i]; rv += w * dev_ptrs.k7_reservoir_plus[i]; break;
+            case 7: wf += w * dev_ptrs.k8_wavefunction_plus[i]; rv += w * dev_ptrs.k8_reservoir_plus[i]; break;
+            case 8: wf += w * dev_ptrs.k9_wavefunction_plus[i]; rv += w * dev_ptrs.k9_reservoir_plus[i]; break;
+            case 9: wf += w * dev_ptrs.k10_wavefunction_plus[i]; rv += w * dev_ptrs.k10_reservoir_plus[i]; break;
+        }
+    }
+    
+    io.out_wf_plus[i] = io.in_wf_plus[i] + dt * wf;
+    io.out_rv_plus[i] = io.in_rv_plus[i] + dt * rv;
     if ( not p.use_twin_mode ) 
         return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + dt*(RKCoefficients::b21 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::b22 * dev_ptrs.k2_wavefunction_minus[i]);
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + dt*(RKCoefficients::b21 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::b22 * dev_ptrs.k2_reservoir_minus[i]);
+    
+    wf = 0.0;
+    rv = 0.0;
+    for (int n = weights.start; n < weights.n; n++) {
+        const auto w = weights.weights[n];
+        switch (n) {
+            case 0: wf += w * dev_ptrs.k1_wavefunction_minus[i]; rv += w * dev_ptrs.k1_reservoir_minus[i]; break;
+            case 1: wf += w * dev_ptrs.k2_wavefunction_minus[i]; rv += w * dev_ptrs.k2_reservoir_minus[i]; break;
+            case 2: wf += w * dev_ptrs.k3_wavefunction_minus[i]; rv += w * dev_ptrs.k3_reservoir_minus[i]; break;
+            case 3: wf += w * dev_ptrs.k4_wavefunction_minus[i]; rv += w * dev_ptrs.k4_reservoir_minus[i]; break;
+            case 4: wf += w * dev_ptrs.k5_wavefunction_minus[i]; rv += w * dev_ptrs.k5_reservoir_minus[i]; break;
+            case 5: wf += w * dev_ptrs.k6_wavefunction_minus[i]; rv += w * dev_ptrs.k6_reservoir_minus[i]; break;
+            case 6: wf += w * dev_ptrs.k7_wavefunction_minus[i]; rv += w * dev_ptrs.k7_reservoir_minus[i]; break;
+            case 7: wf += w * dev_ptrs.k8_wavefunction_minus[i]; rv += w * dev_ptrs.k8_reservoir_minus[i]; break;
+            case 8: wf += w * dev_ptrs.k9_wavefunction_minus[i]; rv += w * dev_ptrs.k9_reservoir_minus[i]; break;
+            case 9: wf += w * dev_ptrs.k10_wavefunction_minus[i]; rv += w * dev_ptrs.k10_reservoir_minus[i]; break;
+        }
+    }
+    
+    io.out_wf_minus[i] = io.in_wf_minus[i] + dt * wf;
+    io.out_rv_minus[i] = io.in_rv_minus[i] + dt * rv;
 }
 
-PULSE_GLOBAL void PC3::Kernel::RK45::runge_sum_to_input_of_k4( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
 
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + dt*(RKCoefficients::b31 * dev_ptrs.k1_wavefunction_plus[i] + RKCoefficients::b32 * dev_ptrs.k2_wavefunction_plus[i] + RKCoefficients::b33 * dev_ptrs.k3_wavefunction_plus[i]);
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + dt*(RKCoefficients::b31 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::b32 * dev_ptrs.k2_reservoir_plus[i] + RKCoefficients::b33 * dev_ptrs.k3_reservoir_plus[i]);
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, RK::Weights weights ) {
+    OVERWRITE_THREAD_INDEX(i);
+    // The first weigth is for the input wavefunction, the rest are for the Ks
+    Type::complex wf = weights.weights[0] * dev_ptrs.buffer_wavefunction_plus[i];
+    for (int n = 1; n < weights.n; n++) {
+        const auto w = weights.weights[n];
+        switch (n) { 
+            case 1: wf += w * dev_ptrs.k1_wavefunction_plus[i]; break;
+            case 2: wf += w * dev_ptrs.k2_wavefunction_plus[i]; break;
+            case 3: wf += w * dev_ptrs.k3_wavefunction_plus[i]; break;
+            case 4: wf += w * dev_ptrs.k4_wavefunction_plus[i]; break;
+            case 5: wf += w * dev_ptrs.k5_wavefunction_plus[i]; break;
+            case 6: wf += w * dev_ptrs.k6_wavefunction_plus[i]; break;
+            case 7: wf += w * dev_ptrs.k7_wavefunction_plus[i]; break;
+            case 8: wf += w * dev_ptrs.k8_wavefunction_plus[i]; break;
+            case 9: wf += w * dev_ptrs.k9_wavefunction_plus[i]; break;
+            case 10: wf += w * dev_ptrs.k10_wavefunction_plus[i]; break;
+        }
+    }
+    
+    dev_ptrs.rk_error[i] = CUDA::abs2(dt * wf);
     if ( not p.use_twin_mode ) 
         return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + dt*(RKCoefficients::b31 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::b32 * dev_ptrs.k2_wavefunction_minus[i] + RKCoefficients::b33 * dev_ptrs.k3_wavefunction_minus[i]);
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + dt*(RKCoefficients::b31 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::b32 * dev_ptrs.k2_reservoir_minus[i] + RKCoefficients::b33 * dev_ptrs.k3_reservoir_minus[i]);
-}
-
-PULSE_GLOBAL void PC3::Kernel::RK45::runge_sum_to_input_of_k5( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + dt*(RKCoefficients::b41 * dev_ptrs.k1_wavefunction_plus[i] + RKCoefficients::b42 * dev_ptrs.k2_wavefunction_plus[i] + RKCoefficients::b43 * dev_ptrs.k3_wavefunction_plus[i] + RKCoefficients::b44 * dev_ptrs.k4_wavefunction_plus[i]);
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + dt*(RKCoefficients::b41 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::b42 * dev_ptrs.k2_reservoir_plus[i] + RKCoefficients::b43 * dev_ptrs.k3_reservoir_plus[i] + RKCoefficients::b44 * dev_ptrs.k4_reservoir_plus[i]);
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + dt*(RKCoefficients::b41 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::b42 * dev_ptrs.k2_wavefunction_minus[i] + RKCoefficients::b43 * dev_ptrs.k3_wavefunction_minus[i] + RKCoefficients::b44 * dev_ptrs.k4_wavefunction_minus[i]);
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + dt*(RKCoefficients::b41 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::b42 * dev_ptrs.k2_reservoir_minus[i] + RKCoefficients::b43 * dev_ptrs.k3_reservoir_minus[i] + RKCoefficients::b44 * dev_ptrs.k4_reservoir_minus[i]);
-}
-
-PULSE_GLOBAL void PC3::Kernel::RK45::runge_sum_to_input_of_k6( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + dt*(RKCoefficients::b51 * dev_ptrs.k1_wavefunction_plus[i] + RKCoefficients::b52 * dev_ptrs.k2_wavefunction_plus[i] + RKCoefficients::b53 * dev_ptrs.k3_wavefunction_plus[i] + RKCoefficients::b54 * dev_ptrs.k4_wavefunction_plus[i] + RKCoefficients::b55 * dev_ptrs.k5_wavefunction_plus[i]);
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + dt*(RKCoefficients::b51 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::b52 * dev_ptrs.k2_reservoir_plus[i] + RKCoefficients::b53 * dev_ptrs.k3_reservoir_plus[i] + RKCoefficients::b54 * dev_ptrs.k4_reservoir_plus[i] + RKCoefficients::b55 * dev_ptrs.k5_reservoir_plus[i]);
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + dt*(RKCoefficients::b51 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::b52 * dev_ptrs.k2_wavefunction_minus[i] + RKCoefficients::b53 * dev_ptrs.k3_wavefunction_minus[i] + RKCoefficients::b54 * dev_ptrs.k4_wavefunction_minus[i] + RKCoefficients::b55 * dev_ptrs.k5_wavefunction_minus[i]);
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + dt*(RKCoefficients::b51 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::b52 * dev_ptrs.k2_reservoir_minus[i] + RKCoefficients::b53 * dev_ptrs.k3_reservoir_minus[i] + RKCoefficients::b54 * dev_ptrs.k4_reservoir_minus[i] + RKCoefficients::b55 * dev_ptrs.k5_reservoir_minus[i]);
-}
-
-// TODO: Merge sum_to_final and error summation into one kernel
-PULSE_GLOBAL void PC3::Kernel::RK45::runge_sum_to_final( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + dt*(RKCoefficients::b61 * dev_ptrs.k1_wavefunction_plus[i] + RKCoefficients::b63 * dev_ptrs.k3_wavefunction_plus[i] + RKCoefficients::b64 * dev_ptrs.k4_wavefunction_plus[i] + RKCoefficients::b65 * dev_ptrs.k5_wavefunction_plus[i] + RKCoefficients::b66 * dev_ptrs.k6_wavefunction_plus[i]);
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + dt*(RKCoefficients::b61 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::b63 * dev_ptrs.k3_reservoir_plus[i] + RKCoefficients::b64 * dev_ptrs.k4_reservoir_plus[i] + RKCoefficients::b65 * dev_ptrs.k5_reservoir_plus[i] + RKCoefficients::b66 * dev_ptrs.k6_reservoir_plus[i]);
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + dt*(RKCoefficients::b61 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::b63 * dev_ptrs.k3_wavefunction_minus[i] + RKCoefficients::b64 * dev_ptrs.k4_wavefunction_minus[i] + RKCoefficients::b65 * dev_ptrs.k5_wavefunction_minus[i] + RKCoefficients::b66 * dev_ptrs.k6_wavefunction_minus[i]);
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + dt*(RKCoefficients::b61 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::b63 * dev_ptrs.k3_reservoir_minus[i] + RKCoefficients::b64 * dev_ptrs.k4_reservoir_minus[i] + RKCoefficients::b65 * dev_ptrs.k5_reservoir_minus[i] + RKCoefficients::b66 * dev_ptrs.k6_reservoir_minus[i]);
-}
-PULSE_GLOBAL void PC3::Kernel::RK45::runge_sum_final_error( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.rk_error[i] = CUDA::abs2( dt * ( RKCoefficients::e1 * dev_ptrs.k1_wavefunction_plus[i] + RKCoefficients::e3 * dev_ptrs.k3_wavefunction_plus[i] + RKCoefficients::e4 * dev_ptrs.k4_wavefunction_plus[i] + RKCoefficients::e5 * dev_ptrs.k5_wavefunction_plus[i] + RKCoefficients::e6 * dev_ptrs.k6_wavefunction_plus[i] + RKCoefficients::e7 * dev_ptrs.buffer_wavefunction_plus[i] ) );
-    //dev_ptrs.rk_error[i] += CUDA::abs2( dt * ( RKCoefficients::e1 * dev_ptrs.k1_reservoir_plus[i] + RKCoefficients::e3 * dev_ptrs.k3_reservoir_plus[i] + RKCoefficients::e4 * dev_ptrs.k4_reservoir_plus[i] + RKCoefficients::e5 * dev_ptrs.k5_reservoir_plus[i] + RKCoefficients::e6 * dev_ptrs.k6_reservoir_plus[i] + RKCoefficients::e7 * dev_ptrs.buffer_reservoir_plus[i] ) );
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.rk_error[i] += CUDA::abs2( dt * ( RKCoefficients::e1 * dev_ptrs.k1_wavefunction_minus[i] + RKCoefficients::e3 * dev_ptrs.k3_wavefunction_minus[i] + RKCoefficients::e4 * dev_ptrs.k4_wavefunction_minus[i] + RKCoefficients::e5 * dev_ptrs.k5_wavefunction_minus[i] + RKCoefficients::e6 * dev_ptrs.k6_wavefunction_minus[i] + RKCoefficients::e7 * dev_ptrs.buffer_wavefunction_minus[i] ) );
-    //dev_ptrs.rk_error[i] += CUDA::abs2( dt * ( RKCoefficients::e1 * dev_ptrs.k1_reservoir_minus[i] + RKCoefficients::e3 * dev_ptrs.k3_reservoir_minus[i] + RKCoefficients::e4 * dev_ptrs.k4_reservoir_minus[i] + RKCoefficients::e5 * dev_ptrs.k5_reservoir_minus[i] + RKCoefficients::e6 * dev_ptrs.k6_reservoir_minus[i] + RKCoefficients::e7 * dev_ptrs.buffer_reservoir_minus[i] ) );
-}
-
-// MARK: - Runge-Kutta 4th Order
-
-PULSE_GLOBAL void PC3::Kernel::RK4::runge_sum_to_input_k2( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + Type::real(0.5)*dt * dev_ptrs.k1_wavefunction_plus[i];
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + Type::real(0.5)*dt * dev_ptrs.k1_reservoir_plus[i];
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + Type::real(0.5)*dt * dev_ptrs.k1_wavefunction_minus[i];
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + Type::real(0.5)*dt * dev_ptrs.k1_reservoir_minus[i];
-}
-
-PULSE_GLOBAL void PC3::Kernel::RK4::runge_sum_to_input_k3( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + Type::real(0.5)*dt * dev_ptrs.k2_wavefunction_plus[i];
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + Type::real(0.5)*dt * dev_ptrs.k2_reservoir_plus[i];
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + Type::real(0.5)*dt * dev_ptrs.k2_wavefunction_minus[i];
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + Type::real(0.5)*dt * dev_ptrs.k2_reservoir_minus[i];
-}
-
-PULSE_GLOBAL void PC3::Kernel::RK4::runge_sum_to_input_k4( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + dt * dev_ptrs.k3_wavefunction_plus[i];
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + dt * dev_ptrs.k3_reservoir_plus[i];
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + dt * dev_ptrs.k3_wavefunction_minus[i];
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + dt * dev_ptrs.k3_reservoir_minus[i];
-}
-
-PULSE_GLOBAL void PC3::Kernel::RK4::runge_sum_to_final( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p ) {
-    OVERWRITE_THREAD_INDEX(i);
-
-    dev_ptrs.buffer_wavefunction_plus[i] = dev_ptrs.wavefunction_plus[i] + dt / Type::real(6.0) * ( dev_ptrs.k1_wavefunction_plus[i] + Type::real(2.0) * dev_ptrs.k2_wavefunction_plus[i] + Type::real(2.0) * dev_ptrs.k3_wavefunction_plus[i] + dev_ptrs.k4_wavefunction_plus[i] );
-    dev_ptrs.buffer_reservoir_plus[i] = dev_ptrs.reservoir_plus[i] + dt / Type::real(6.0) * ( dev_ptrs.k1_reservoir_plus[i] + Type::real(2.0) * dev_ptrs.k2_reservoir_plus[i] + Type::real(2.0) * dev_ptrs.k3_reservoir_plus[i] + dev_ptrs.k4_reservoir_plus[i] );
-    if ( not p.use_twin_mode ) 
-        return;
-    dev_ptrs.buffer_wavefunction_minus[i] = dev_ptrs.wavefunction_minus[i] + dt / Type::real(6.0) * ( dev_ptrs.k1_wavefunction_minus[i] + Type::real(2.0) * dev_ptrs.k2_wavefunction_minus[i] + Type::real(2.0) * dev_ptrs.k3_wavefunction_minus[i] + dev_ptrs.k4_wavefunction_minus[i] );
-    dev_ptrs.buffer_reservoir_minus[i] = dev_ptrs.reservoir_minus[i] + dt / Type::real(6.0) * ( dev_ptrs.k1_reservoir_minus[i] + Type::real(2.0) * dev_ptrs.k2_reservoir_minus[i] + Type::real(2.0) * dev_ptrs.k3_reservoir_minus[i] + dev_ptrs.k4_reservoir_minus[i] );
+    
+    wf = weights.weights[0] * dev_ptrs.buffer_wavefunction_minus[i];
+    for (int n = 1; n < weights.n; n++) {
+        const auto w = weights.weights[n];
+        switch (n) {
+            case 1: wf += w * dev_ptrs.k1_wavefunction_minus[i]; break;
+            case 2: wf += w * dev_ptrs.k2_wavefunction_minus[i]; break;
+            case 3: wf += w * dev_ptrs.k3_wavefunction_minus[i]; break;
+            case 4: wf += w * dev_ptrs.k4_wavefunction_minus[i]; break;
+            case 5: wf += w * dev_ptrs.k5_wavefunction_minus[i]; break;
+            case 6: wf += w * dev_ptrs.k6_wavefunction_minus[i]; break;
+            case 7: wf += w * dev_ptrs.k7_wavefunction_minus[i]; break;
+            case 8: wf += w * dev_ptrs.k8_wavefunction_minus[i]; break;
+            case 9: wf += w * dev_ptrs.k9_wavefunction_minus[i]; break;
+            case 10: wf += w * dev_ptrs.k10_wavefunction_minus[i]; break;
+        }
+    }
+    
+    dev_ptrs.rk_error[i] += p.i*CUDA::abs2(dt * wf);
 }

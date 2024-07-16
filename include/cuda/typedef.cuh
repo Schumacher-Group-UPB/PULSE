@@ -155,6 +155,7 @@ namespace PC3::CUDA {
         using std::pow;
         using std::sin;
         using std::cos;
+        using std::abs;
     #else
         using thrust::exp;
         using thrust::sqrt;
@@ -166,6 +167,7 @@ namespace PC3::CUDA {
         using thrust::pow;
         using thrust::sin;
         using thrust::cos;
+        using thrust::abs;
     #endif
 
 } // namespace PC3::CUDA

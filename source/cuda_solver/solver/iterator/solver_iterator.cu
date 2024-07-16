@@ -44,12 +44,8 @@ bool PC3::Solver::iterate( ) {
         std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
     }
     
-    if ( system.iterator == SystemParameters::Iterator::RK4 )
-        iterateFixedTimestepRungeKutta( block_size, grid_size );
-    else if ( system.iterator == SystemParameters::Iterator::RK45 )
-        iterateVariableTimestepRungeKutta( block_size, grid_size );
-    else 
-        iterateSplitStepFourier( block_size, grid_size );
+    // Iterate RK4(45)/ssfm/itp
+    iterator[system.iterator].iterate( block_size, grid_size );
 
     // Increase t.
     system.p.t = system.p.t + system.p.dt;

@@ -76,13 +76,7 @@ class SystemParameters {
     // Periodic Boundary Conditions
     bool periodic_boundary_x, periodic_boundary_y;
 
-    enum class Iterator {
-        RK4, // 4th Order Runge-Kutta
-        RK45, // 4th Order Runge-Kutta with 5th Order Error Estimation
-        SSFM, // Split-Step Fourier Method
-    } iterator;
-    // Helper Map for the string -> Iterator conversion
-    std::map<std::string, Iterator> iterator_map = { { "RK4", Iterator::RK4 }, { "RK45", Iterator::RK45 }, { "SSFM", Iterator::SSFM } };
+    std::string iterator;
 
     // Seed for random number generator
     unsigned int random_seed;
@@ -93,7 +87,6 @@ class SystemParameters {
     Type::real output_every;
 
     bool do_overwrite_dt;
-    bool imaginary_time;
 
     // Output of Variables
     std::vector<std::string> output_keys;

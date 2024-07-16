@@ -96,30 +96,21 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     }
 
     // Choose the iterator
-    iterator = Iterator::RK4;
+    iterator = "rk4";
     if ( ( index = PC3::CLIO::findInArgv( "-rk45", argc, argv ) ) != -1 ) {
         //std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
-        iterator = Iterator::RK45;
+        iterator = "rk45";
     }
     if ( ( index = PC3::CLIO::findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
         //std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
-        iterator = Iterator::SSFM;
+        iterator = "ssfm";
+    }
+    if ( ( index = PC3::CLIO::findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
+        iterator = "itp";
     }
     if ( ( index = PC3::CLIO::findInArgv( "--iterator", argc, argv ) ) != -1 ) {
         std::string it = PC3::CLIO::getNextStringInput( argv, argc, "iterator", ++index );
-        if (not iterator_map.count(it)) {
-            std::cout << PC3::CLIO::prettyPrint( "Invalid iterator specified. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
-        } else {
-            iterator = iterator_map[ it ];
-        }
-        std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
-        iterator = Iterator::RK4;
-    }
-
-    // Imaginary Time Propagation
-    imaginary_time = false;
-    if ( ( index = PC3::CLIO::findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
-        imaginary_time = true;
+        iterator = it;
     }
 
     if ( ( index = PC3::CLIO::findInArgv( "--initRandom", argc, argv ) ) != -1 ) {
