@@ -57,7 +57,6 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixCo
         const int offset = k * p.N_x * p.N_y;
         result += dev_ptrs.pump_plus[i+offset] * CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
     }
-    result += dev_ptrs.pump_plus[i];
 
     // MARK: Stochastic-2
     if (p.stochastic_amplitude > 0.0)
@@ -92,6 +91,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
     OVERWRITE_THREAD_INDEX( i );
     
     const Type::complex in_wf = io.in_wf_plus[i];
+    const Type::complex in_rv = io.in_rv_plus[i];
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
     
     // MARK: Wavefunction
@@ -103,7 +103,19 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
         result += potential;
     }
 
+    result += p.g_r * in_rv;
+    result += p.i * p.h_bar_s * Type::real(0.5) * p.R * in_rv;
+
     io.out_wf_plus[i] = in_wf * CUDA::exp(p.minus_i_over_h_bar_s * result * p.dt);
+
+    // MARK: Reservoir
+    result = -p.gamma_r * in_rv;
+    result -= p.R * in_psi_norm * in_rv;
+    for (int k = 0; k < oscillation_pump.n; k++) {
+        const int offset = k * p.N_x * p.N_y;
+        result += dev_ptrs.pump_plus[i+offset] * CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
+    }
+    io.out_rv_plus[i] = in_rv + result * p.dt;
 }
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {
