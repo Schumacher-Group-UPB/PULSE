@@ -72,9 +72,9 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     p.dV = p.L_x * p.L_y / p.N2;
 
     // We can also disable to SFML renderer by using the --nosfml flag.
-    disableRender = false;
-    if ( PC3::CLIO::findInArgv( "-nosfml", argc, argv ) != -1 )
-        disableRender = true;
+    disableRender = true;
+    if ( PC3::CLIO::findInArgv( "-nosfml", argc, argv ) == -1 )
+        disableRender = false;
 
     if ( ( index = PC3::CLIO::findInArgv( "--tmax", argc, argv ) ) != -1 )
         t_max = PC3::CLIO::getNextInput( argv, argc, "s_t_max", ++index );
