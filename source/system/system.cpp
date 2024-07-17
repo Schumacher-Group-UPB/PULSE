@@ -83,8 +83,8 @@ void PC3::SystemParameters::calculateAuto() {
     // effective mass, the magic timestep will be scaled accordingly.
     const auto dt_scaling_factor = p.m_e / p.e_e * 1E8 / p.m_eff;
     // Calculate dx and dt
-    p.dx = 2.0 * p.L_x / ( p.N_x - 1 ); 
-    p.dy = 2.0 * p.L_y / ( p.N_y - 1 ); 
+    p.dx = p.L_x / ( p.N_x - 1 ); 
+    p.dy = p.L_y / ( p.N_y - 1 ); 
     p.one_over_dx2 = Type::real(1.0) / ( p.dx * p.dx );
     p.one_over_dy2 = Type::real(1.0) / ( p.dy * p.dy );
     p.m2_over_dx2_p_dy2 = Type::real(-2.0) * ( p.one_over_dx2 + p.one_over_dy2);

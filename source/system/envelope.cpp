@@ -221,8 +221,8 @@ void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3:
                     continue;
 
                 // Calculate X,Y in the grid space
-                auto cx = -dim.L_x + dim.dx * col;
-                auto cy = -dim.L_y + dim.dy * row;
+                auto cx = -dim.L_x/2.0 + dim.dx * col;
+                auto cy = -dim.L_y/2.0 + dim.dy * row;
                 // If type contains "local", use local coordinates instead
                 if ( type[c] & PC3::Envelope::Type::Local ) {
                     cx = -1.0 + 2.0 * col / ( dim.N_x - 1 );

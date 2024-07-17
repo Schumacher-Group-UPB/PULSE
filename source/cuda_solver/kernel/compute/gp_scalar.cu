@@ -79,8 +79,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Type::r
     Type::real row = Type::real(size_t(i / p.N_x));
     Type::real col = Type::real(size_t(i % p.N_x));
     
-    const Type::real k_x = 3.1415926535 * Type::real(col <= p.N_x/2 ? col : -Type::real(p.N_x) + col)/p.L_x;
-    const Type::real k_y = 3.1415926535 * Type::real(row <= p.N_y/2 ? row : -Type::real(p.N_y) + row)/p.L_y;
+    const Type::real k_x = 2.0*3.1415926535 * Type::real(col <= p.N_x/2 ? col : -Type::real(p.N_x) + col)/p.L_x;
+    const Type::real k_y = 2.0*3.1415926535 * Type::real(row <= p.N_y/2 ? row : -Type::real(p.N_y) + row)/p.L_y;
 
     Type::real linear = p.h_bar_s/2.0/p.m_eff * (k_x*k_x + k_y*k_y);
     io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(p.N2) * CUDA::exp( p.minus_i * linear * p.dt / Type::real(2.0) );
