@@ -73,8 +73,10 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
 
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = true;
+    #ifdef SFML_RENDER
     if ( PC3::CLIO::findInArgv( "-nosfml", argc, argv ) == -1 )
         disableRender = false;
+    #endif
 
     if ( ( index = PC3::CLIO::findInArgv( "--tmax", argc, argv ) ) != -1 )
         t_max = PC3::CLIO::getNextInput( argv, argc, "s_t_max", ++index );
