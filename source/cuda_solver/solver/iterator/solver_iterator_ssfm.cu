@@ -67,8 +67,8 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
         Kernel::Compute::gp_scalar_independent, "independent", grid_size, block_size, 
         p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
         { 
-            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.discard, device_pointers.discard,
-            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.discard, device_pointers.discard
+            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
+            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus
         }
     );
     // Buffer now holds the new result

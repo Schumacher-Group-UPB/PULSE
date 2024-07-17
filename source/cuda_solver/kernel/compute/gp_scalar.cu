@@ -45,7 +45,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixCo
     // MARK: Stochastic
     if (p.stochastic_amplitude > 0.0) {
         const Type::complex dw = dev_ptrs.random_number[i] * CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (Type::real(4.0) * p.dV) );
-        result -= p.minus_i_over_h_bar_s * p.g_c * in_wf / p.dV - dw / p.dt;
+        result -= p.minus_i_over_h_bar_s * p.g_c * in_wf / p.dV - dw; // / p.dt
     }
     
     io.out_wf_plus[i] = result;
@@ -106,6 +106,12 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
     result += p.g_r * in_rv;
     result += p.i * p.h_bar_s * Type::real(0.5) * p.R * in_rv;
 
+    // MARK: Stochastic
+    if (p.stochastic_amplitude > 0.0) {
+        const Type::complex dw = dev_ptrs.random_number[i] * CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (Type::real(4.0) * p.dV) );
+        result -= p.g_c / p.dV;
+    }
+
     io.out_wf_plus[i] = in_wf * CUDA::exp(p.minus_i_over_h_bar_s * result * p.dt);
 
     // MARK: Reservoir
@@ -115,6 +121,9 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
         const int offset = k * p.N_x * p.N_y;
         result += dev_ptrs.pump_plus[i+offset] * CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
     }
+    // MARK: Stochastic-2
+    if (p.stochastic_amplitude > 0.0)
+        result += p.R * in_rv / p.dV;
     io.out_rv_plus[i] = in_rv + result * p.dt;
 }
 
@@ -129,6 +138,10 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Type::real
         const Type::complex pulse = dev_ptrs.pulse_plus[i+offset];
         result += p.minus_i_over_h_bar_s * p.dt * pulse * CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
     }
-
+    if (p.stochastic_amplitude > 0.0) {
+        const Type::complex in_rv = io.in_rv_plus[i];
+        const Type::complex dw = dev_ptrs.random_number[i] * CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (Type::real(4.0) * p.dV) );
+        result += dw;
+    }
     io.out_wf_plus[i] = io.in_wf_plus[i] + result;
 }

@@ -85,16 +85,6 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
     auto cf = RKCoefficients::DP();
 
-    // The delta time is either real or imaginary, depending on the system configuration
-    //Type::complex delta_time = system.imaginary_time ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
-
-    // If required, calculate new set of random numbers.
-    if (evaluate_stochastic)
-    CALL_KERNEL(
-        PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
-    );
-
     do {
         // We snapshot here to make sure that the dt is updated
         auto p = system.kernel_parameters;

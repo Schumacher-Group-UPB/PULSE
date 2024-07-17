@@ -7,7 +7,7 @@ namespace PC3 {
 /**
 * DEFINE_MATRIX(type, name, size_scaling, index_for_initialization)
 * type: The type of the matrix (Type::real, Type::complex, etc.)
-* in_ptr_struct: If true, this matrix will be included in the pointer struct and can be accessed from the kernels
+* in_ptr_struct: If true, this matrix will be included in the pointer struct and can be accessed from the kernels: TODO
 * name: The name of the matrix
 * size_scaling: The scaling factor for the size of the matrix
 * condition_for_construction: if false, neither the host nor the device matrices are constructed

@@ -35,16 +35,6 @@ void PC3::Solver::iterateFixedTimestepRungeKutta3( dim3 block_size, dim3 grid_si
     auto pump_pointers = dev_pump_oscillation.pointers();
     auto potential_pointers = dev_potential_oscillation.pointers();
 
-    // The delta time is either real or imaginary, depending on the system configuration
-    //Type::complex delta_time = system.imaginary_time ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
-
-    // If required, calculate new set of random numbers.
-    if (evaluate_stochastic)
-    CALL_KERNEL(
-        PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
-        device_pointers.random_state, device_pointers.random_number, p.N_x*p.N_y, system.p.stochastic_amplitude*std::sqrt(p.dt), system.p.stochastic_amplitude*std::sqrt(p.dt)
-    );
-
     CALCULATE_K( 1, p.t, wavefunction, reservoir );
  
     CALL_KERNEL(
