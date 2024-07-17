@@ -45,7 +45,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixCo
     // MARK: Stochastic
     if (p.stochastic_amplitude > 0.0) {
         const Type::complex dw = dev_ptrs.random_number[i] * CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (Type::real(4.0) * p.dV) );
-        result -= p.minus_i_over_h_bar_s * p.g_c * in_wf / p.dV - dw; // / p.dt
+        result -= p.minus_i_over_h_bar_s * p.g_c * in_wf / p.dV - dw / p.dt;
     }
     
     io.out_wf_plus[i] = result;
