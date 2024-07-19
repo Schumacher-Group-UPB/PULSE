@@ -95,6 +95,7 @@ void PC3::SystemParameters::printHelp() {
               << PC3::CLIO::unifyLength( "--pump", "Spatial and Temporal ~cos(wt)", "" ) << std::endl
               << PC3::CLIO::unifyLength( "--potential", "Spatial and Temporal ~cos(wt)", "" ) << std::endl
               << PC3::CLIO::unifyLength( "--initialState", "Spatial", "" ) << std::endl
+              << PC3::CLIO::unifyLength( "--initialReservoir", "Spatial", "" ) << std::endl
               << PC3::CLIO::unifyLength( "--pulse", "Spatial and Temporal ~exp(iwt)", "" ) << std::endl
               << PC3::CLIO::unifyLength( "--fftMask", "Spatial", "" ) << std::endl
               << "Additional Parameters:" << std::endl
