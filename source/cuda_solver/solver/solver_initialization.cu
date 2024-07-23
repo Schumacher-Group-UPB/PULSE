@@ -106,38 +106,14 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
 void PC3::Solver::initializeDeviceMatricesFromHost() {
     std::cout << PC3::CLIO::prettyPrint( "Initializing Device Matrices...", PC3::CLIO::Control::Info ) << std::endl;
 
-    // Initialize the Oscillation KernelParameters
-    dev_pulse_oscillation.construct( system.pulse );
-    dev_pump_oscillation.construct( system.pump );
-    dev_potential_oscillation.construct( system.potential );
+    // Initialize the solver's temporal envelope vectors
+    dev_pulse_oscillation.amp.construct( system.pulse.groupSize(), 1, "Temporal Envelope Pulse" );
+    dev_potential_oscillation.amp.construct( system.potential.groupSize(), 1, "Temporal Envelope Potential" );
+    dev_pump_oscillation.amp.construct( system.pump.groupSize(), 1, "Temporal Envelope Pump" );
 
     // Copy Initial State to wavefunction
     matrix.wavefunction_plus.setTo( matrix.initial_state_plus );
     matrix.reservoir_plus.setTo( matrix.initial_reservoir_plus );
-
-// Check once of the reservoir is zero.
-// If yes, then the reservoir may not be avaluated.
-#pragma omp parallel for
-    for ( int i = 0; i < system.p.N_x * system.p.N_y; i++ ) {
-        if ( CUDA::abs2( matrix.reservoir_plus[i] ) != 0.0 ) {
-            system.evaluate_reservoir_kernel = true;
-        }
-        for ( int g = 0; g < system.pump.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pump_plus[i + g * system.p.N2] ) != 0.0 ) {
-                system.evaluate_reservoir_kernel = true;
-            }
-        }
-        for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pulse_plus[i + g * system.p.N2] ) != 0.0 ) {
-                system.evaluate_pulse_kernel = true;
-            }
-        }
-        for ( int g = 0; g < system.potential.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.potential_plus[i + g * system.p.N2] ) != 0.0 ) {
-                system.evaluate_potential_kernel = true;
-            }
-        }
-    }
 
     // TE/TM Guard
     if ( not system.p.use_twin_mode )
@@ -146,28 +122,4 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
     // Copy Initial State to wavefunction
     matrix.wavefunction_minus.setTo( matrix.initial_state_minus );
     matrix.reservoir_minus.setTo( matrix.initial_reservoir_minus );
-
-// Check once of the reservoir is zero.
-// If yes, then the reservoir may not be avaluated.
-#pragma omp parallel for
-    for ( int i = 0; i < system.p.N_x * system.p.N_y; i++ ) {
-        if ( CUDA::abs2( matrix.reservoir_minus[i] ) != 0.0 ) {
-            system.evaluate_reservoir_kernel = true;
-        }
-        for ( int g = 0; g < system.pump.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pump_minus[i + g * system.p.N2] ) != 0.0 ) {
-                system.evaluate_reservoir_kernel = true;
-            }
-        }
-        for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.pulse_minus[i + g * system.p.N2] ) != 0.0 ) {
-                system.evaluate_pulse_kernel = true;
-            }
-        }
-        for ( int g = 0; g < system.potential.groupSize(); g++ ) {
-            if ( CUDA::abs2( matrix.potential_minus[i + g * system.p.N2] ) != 0.0 ) {
-                system.evaluate_potential_kernel = true;
-            }
-        }
-    }
 }

@@ -50,7 +50,15 @@ bool PC3::Solver::iterate( ) {
             device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
         );
     }
-    
+
+    // Update the temporal envelopes
+    system.pulse.updateTemporal( system.p.t );
+    system.potential.updateTemporal( system.p.t );
+    system.pump.updateTemporal( system.p.t );
+    // And update the solver struct accordingly
+    dev_pulse_oscillation.amp.setTo( system.pulse.temporal_envelope );
+    dev_potential_oscillation.amp.setTo( system.potential.temporal_envelope );
+    dev_pump_oscillation.amp.setTo( system.pump.temporal_envelope );
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate( block_size, grid_size );
 

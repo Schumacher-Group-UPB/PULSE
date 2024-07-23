@@ -74,6 +74,9 @@ class FileHandler {
     void outputMatrixToFile( const Type::real* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out );
     void outputMatrixToFile( const Type::real* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name );
 
+    std::vector<std::vector<Type::real>> loadListFromFile( const std::string& path, const std::string& name );
+    void outputListToFile( const std::string& path, std::vector<std::vector<Type::real>>& data, const std::string& name );
+
     void init( int argc, char** argv );
 };
 

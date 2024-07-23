@@ -124,25 +124,6 @@ PC3::SystemParameters::SystemParameters( int argc, char** argv ) : SystemParamet
     filehandler.init( argc, argv );
 }
 
-bool PC3::SystemParameters::evaluatePulse() {
-    if (not evaluate_pulse_kernel)
-        return false;
-    bool evaluate_pulse = false;
-    for ( int c = 0; c < pulse.t0.size(); c++ ) {
-        const auto t0 = pulse.t0[c];
-        const auto sigma = pulse.sigma[c];
-        if ( t0 - 5. * sigma < p.t && p.t < t0 + 5. * sigma ) {
-            evaluate_pulse = true;
-            break;
-        }
-    }
-    return evaluate_pulse;
-}
-
-bool PC3::SystemParameters::evaluateReservoir() {
-    return evaluate_reservoir_kernel;
-}
-
 bool PC3::SystemParameters::evaluateStochastic() {
     return p.stochastic_amplitude != 0.0;
 }

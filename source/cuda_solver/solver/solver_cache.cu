@@ -21,24 +21,24 @@ void PC3::Solver::cacheValues() {
     //matrix.wavefunction_plus_history.emplace_back( cut_p );
 
     // Output Pulse, Pump and Potential Envelope functions to cache_map_scalar
-    for (int i = 0; i < dev_pulse_oscillation.n; i++) {
-        if (not dev_pulse_oscillation.active[i])
+    for (int g = 0; g < system.pulse.groupSize(); g++) {
+        if ( system.pulse.temporal[g] & PC3::Envelope::Temporal::Constant )
             continue;
-        Type::complex pulse = PC3::CUDA::gaussian_complex_oscillator(system.p.t, dev_pulse_oscillation.t0[i], dev_pulse_oscillation.sigma[i], dev_pulse_oscillation.freq[i]);
-        cache_map_scalar["pulse_"+std::to_string(i)+"_real"].push_back( PC3::CUDA::real(pulse) );
-        cache_map_scalar["pulse_"+std::to_string(i)+"_imag"].push_back( PC3::CUDA::imag(pulse) );
+        Type::complex pulse = system.pulse.temporal_envelope[g];
+        cache_map_scalar["pulse_"+std::to_string(g)+"_real"].push_back( PC3::CUDA::real(pulse) );
+        cache_map_scalar["pulse_"+std::to_string(g)+"_imag"].push_back( PC3::CUDA::imag(pulse) );
     }
-    for (int i = 0; i < dev_pump_oscillation.n; i++) {
-        if (not dev_pump_oscillation.active[i])
+    for (int g = 0; g < system.pump.groupSize(); g++) {
+        if ( system.pump.temporal[g] & PC3::Envelope::Temporal::Constant )
             continue;
-        Type::real pump = PC3::CUDA::gaussian_oscillator(system.p.t, dev_pump_oscillation.t0[i], dev_pump_oscillation.sigma[i], dev_pump_oscillation.freq[i]);
-        cache_map_scalar["pump_"+std::to_string(i)].push_back( PC3::CUDA::real(pump) );
+        Type::real pump = PC3::CUDA::real(system.pump.temporal_envelope[g]);
+        cache_map_scalar["pump_"+std::to_string(g)].push_back( PC3::CUDA::real(pump) );
     }
-    for (int i = 0; i < dev_potential_oscillation.n; i++) {
-        if (not dev_potential_oscillation.active[i])
+    for (int g = 0; g < system.potential.groupSize(); g++) {
+        if ( system.potential.temporal[g] & PC3::Envelope::Temporal::Constant )
             continue;
-        Type::real potential = PC3::CUDA::gaussian_oscillator(system.p.t, dev_potential_oscillation.t0[i], dev_potential_oscillation.sigma[i], dev_potential_oscillation.freq[i]);
-        cache_map_scalar["potential_"+std::to_string(i)].push_back( PC3::CUDA::real(potential) );
+        Type::real potential = PC3::CUDA::real(system.potential.temporal_envelope[g]);
+        cache_map_scalar["potential_"+std::to_string(g)].push_back( PC3::CUDA::real(potential) );
     }
 
     // TE/TM Guard

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "cuda/typedef.cuh"
 #include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
@@ -59,27 +60,26 @@ void PC3::Envelope::addSpacial( PC3::Type::real amp, PC3::Type::real width_x, PC
 
 void PC3::Envelope::addSpacial( const std::string& path, PC3::Type::real amp, const std::string& s_behaviour, const std::string& s_pol ) {
     this->amp.push_back( amp );
-    this->width_x.push_back( 0 );
-    this->width_y.push_back( 0 );
-    this->x.push_back( 0 );
-    this->y.push_back( 0 );
-    this->exponent.push_back( 0 );
-    this->s_type.push_back( "" );
-    this->type.push_back( Type::Gauss );
+    width_x.push_back( 0 );
+    width_y.push_back( 0 );
+    x.push_back( 0 );
+    y.push_back( 0 );
+    exponent.push_back( 0 );
+    s_type.push_back( "" );
+    type.push_back( Type::Gauss );
     this->s_pol.push_back( s_pol );
     auto pol = _cast_string_list_to_enum<Polarization>( s_pol, "+", PolarizationFromString );
     this->pol.push_back( pol );
     this->s_behavior.push_back( s_behaviour );
     auto behavior = _cast_string_list_to_enum<Behavior>( s_behaviour, "+", BehaviorFromString );
     this->behavior.push_back( behavior );
-    this->m.emplace_back( 0 );
-    this->load_path.push_back( path );
+    m.emplace_back( 0 );
+    load_path.push_back( path );
 }
 
-#include <iostream>
-void PC3::Envelope::addTemporal( PC3::Type::real t0, PC3::Type::real sigma, PC3::Type::real freq ) {
+void PC3::Envelope::addTemporal( PC3::Type::real t0, PC3::Type::real sigma, PC3::Type::real freq, const std::string& s_temp ) {
     // Create the temporal grouping identifier
-    std::string group_identifier = std::to_string( t0 ) + std::to_string( sigma ) + std::to_string( freq );
+    std::string group_identifier = std::to_string( t0 ) + std::to_string( sigma ) + std::to_string( freq ) + s_temp;
 
     // If the group identifier is not present in the map, add it and the temporal components
     if ( not str_to_group_identifier.count( group_identifier ) ) {
@@ -87,6 +87,30 @@ void PC3::Envelope::addTemporal( PC3::Type::real t0, PC3::Type::real sigma, PC3:
         this->t0.push_back( t0 );
         this->sigma.push_back( sigma );
         this->freq.push_back( freq );
+        this->s_temp.push_back( s_temp );
+        auto temp = _cast_string_list_to_enum<Temporal>( s_temp, "+", TemporalFromString );
+        temporal.push_back( temp );
+        // Add Dummy to path
+        load_path_temporal.push_back( "" );
+    }
+
+    // Add the group identifier to the group_identifier vector
+    this->group_identifier.push_back( str_to_group_identifier[group_identifier] );
+}
+
+void PC3::Envelope::addTemporal( const std::string& path ) {
+    // Create the temporal grouping identifier
+    std::string group_identifier = path;
+
+    // If the group identifier is not present in the map, add it and the temporal components
+    if ( not str_to_group_identifier.count( group_identifier ) ) {
+        str_to_group_identifier[group_identifier] = str_to_group_identifier.size();
+        t0.push_back( 0 );
+        sigma.push_back( 0 );
+        freq.push_back( 0 );
+        s_temp.push_back( "loaded" );
+        temporal.push_back( Temporal::Loaded );
+        load_path_temporal.push_back( path );
     }
 
     // Add the group identifier to the group_identifier vector
@@ -101,7 +125,7 @@ int PC3::Envelope::size() const {
 // that are present in the envelope. The return value is at least 1 to ensure at
 // least one matrix is generated. Maybe this will change later.
 int PC3::Envelope::groupSize() const {
-    return CUDA::max<int>( 1, str_to_group_identifier.size() );
+    return CUDA::max<int>( 0, str_to_group_identifier.size() );
 }
 
 // Returns the size of a specific group. This is the number of spacial components
@@ -167,25 +191,30 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         // If the next argument is "osc", then we read the temporal component if time is not false
         auto next = PC3::CLIO::getNextStringInput( argv, argc, key + "_next", index );
 
-        if ( not time or next != "osc" ) {
-            ret.addTemporal( 0, 1E20, 0 );
+        if ( not time or next != "time" ) {
+            ret.addTemporal( 0, 0, 0, "constant" );
             index--;
             continue;
         }
-
-        // Temporal Component
-        PC3::Type::real t0 = PC3::CLIO::getNextInput( argv, argc, key + "_t0", index );
-        PC3::Type::real freq = PC3::CLIO::getNextInput( argv, argc, key + "_freq", index );
-        PC3::Type::real sigma = PC3::CLIO::getNextInput( argv, argc, key + "_sigma", index );
-        ret.addTemporal( t0, sigma, freq );
-        std::cout << PC3::CLIO::prettyPrint( "Added Temporal Component to Envelope '" + key + "'", PC3::CLIO::Control::Success | PC3::CLIO::Control::Secondary ) << std::endl;
+        if ( PC3::CLIO::getNextStringInput( argv, argc, key + "_load", index ) == "load" ) {
+            auto path = PC3::CLIO::getNextStringInput( argv, argc, key + "_path", index );
+            std::cout << PC3::CLIO::prettyPrint( "Queuing temporal envelope '" + key + "' to be loaded from file: '" + path + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+            ret.addTemporal( path );
+        } else {
+            index--;
+            // Temporal Component
+            PC3::Type::real t0, sigma, freq;
+            auto s_type = PC3::CLIO::getNextStringInput( argv, argc, key + "_type", index );
+            t0 = PC3::CLIO::getNextInput( argv, argc, key + "_t0", index );
+            sigma = PC3::CLIO::getNextInput( argv, argc, key + "_sigma", index );
+            freq = PC3::CLIO::getNextInput( argv, argc, key + "_freq", index );
+            ret.addTemporal( t0, sigma, freq, s_type );
+            std::cout << PC3::CLIO::prettyPrint( "Added Temporal Component '" + s_type + "' to Envelope '" + key + "'", PC3::CLIO::Control::Success | PC3::CLIO::Control::Secondary ) << std::endl;
+        }
     }
 
-    // If no envelope was passed, we add a default time envelope. This ensures the constructor of the solver's
-    // oscillation struct does not fail and can copy at least one temporal component, even if its not used.
-    if ( ret.size() == 0 ) {
-        ret.addTemporal( 0, 1E20, 0 );
-    }
+    // Finally, intiialize the temporal envelope vector using the group size.
+    ret.temporal_envelope = std::vector<PC3::Type::complex>( ret.groupSize(), 1.0 );
 
     return ret;
 }
@@ -289,26 +318,32 @@ std::string PC3::Envelope::toString() const {
     auto gs = groupSize();
     std::string b = "";
     if ( gs > 1 ) {
-        os << " Groups: " << gs << std::endl;
+        os << " Temporal Groups: " << gs << std::endl;
         b = "  ";
     }
     for ( int g = 0; g < groupSize(); g++ ) {
         if ( gs > 1 ) {
-            os << "  Group: " << g << " - contains " << sizeOfGroup( g );
+            os << "  Temporal Group: " << g << " - contains " << sizeOfGroup( g );
             if ( sizeOfGroup( g ) == 1 )
-                os << " Envelope." << std::endl;
+                os << " Spatial Envelope." << std::endl;
             else
-                os << " Envelopes." << std::endl;
+                os << " Spatial Envelopes." << std::endl;
         }
-        if ( t0[g] == 0 and sigma[g] > 1e19 and freq[g] == 0 )
+        if ( temporal[g] & PC3::Envelope::Temporal::Constant )
             os << b << "  Constant Temporal Envelope" << std::endl;
-        else
-            os << b << "  t0 = " << t0[g] << ", sigma = " << sigma[g] << ", freq = " << freq[g] << std::endl;
+        else if ( temporal[g] & PC3::Envelope::Temporal::Loaded )
+            os << b << "  Loaded Temporal Envelope from '" << load_path_temporal[g] << "'" << std::endl;
+        else if ( temporal[g] & PC3::Envelope::Temporal::IExp )
+            os << b << "  Temporal Envelope: IExp with t0 = " << t0[g] << ", sigma = " << sigma[g] << ", freq = " << freq[g] << std::endl;
+        else if ( temporal[g] & PC3::Envelope::Temporal::Cos )
+            os << b << "  Temporal Envelope: Cos with t0 = " << t0[g] << ", sigma = " << sigma[g] << ", freq = " << freq[g] << std::endl;
+        else if ( temporal[g] & PC3::Envelope::Temporal::Gauss )
+            os << b << "  Temporal Envelope: Gauss with t0 = " << t0[g] << ", sigma = " << sigma[g] << ", power = " << freq[g] << std::endl;
         for ( int i = 0; i < size(); i++ ) {
             if ( group_identifier[i] != g )
                 continue;
             if ( load_path[i] == "" ) {
-                os << b << "  Envelope " << i << ":" << std::endl
+                os << b << "  Spatial Envelope " << i << ":" << std::endl
                    << "    " << b << "Generated from Parameters:" << std::endl
                    << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
                    << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
@@ -329,4 +364,40 @@ std::string PC3::Envelope::toString() const {
         }
     }
     return os.str();
+}
+
+void PC3::Envelope::updateTemporal( const PC3::Type::real t ) {
+    // Iterate only over the group size, as the temporal envelope is the same for all envelopes in the group.
+    for (int g = 0; g < groupSize(); g++) {
+        temporal_envelope[g] = 1.0;
+        // If the envelope is constant, skip
+        if ( temporal[g] & PC3::Envelope::Temporal::Constant )
+            continue;
+        // If the envelope is loaded, interpolate between cached points
+        if ( temporal[g] & PC3::Envelope::Temporal::Loaded ) {
+            // If index is equal to the last element, we use the last element as the envelope
+            if ( t > temporal_time_points[g][0].back() ) {
+                temporal_envelope[g] = PC3::Type::complex( temporal_time_points[g][1].back(), temporal_time_points[g][2].back() );
+                continue;
+            }
+            // Find the closest time points to t using std::lower_bound
+            auto it = std::lower_bound( temporal_time_points[g][0].begin(), temporal_time_points[g][0].end(), t );
+            // We use points[t]-points[t-1] to interpolate, hence we limit the index to 1:points.size()-1
+            size_t index = std::min<size_t>( std::max<size_t>( 1, std::distance( temporal_time_points[g][0].begin(), it ) ),temporal_time_points[g][0].size()-1 );
+            // Interpolate between the two closest points
+            const auto t1 = temporal_time_points[g][0][index-1];
+            const auto t2 = temporal_time_points[g][0][index];
+            const auto v1 = PC3::Type::complex( temporal_time_points[g][1][index-1], temporal_time_points[g][2][index-1] );
+            const auto v2 = PC3::Type::complex( temporal_time_points[g][1][index], temporal_time_points[g][2][index] );
+            temporal_envelope[g] = v1 + ( v2 - v1 ) * ( t - t1 ) / ( t2 - t1 );
+        }
+        // Else, calculate iexp, cos or gaussian envelope
+        if ( temporal[g] & PC3::Envelope::Temporal::IExp ) {
+            temporal_envelope[g] = gaussian_complex_oscillator( t, t0[g], sigma[g], freq[g] );
+        } else if ( temporal[g] & PC3::Envelope::Temporal::Cos ) {
+            temporal_envelope[g] = gaussian_oscillator( t, t0[g], sigma[g], freq[g] );
+        } else if ( temporal[g] & PC3::Envelope::Temporal::Gauss ) {
+            temporal_envelope[g] = gaussian_envelope( t, t0[g], sigma[g], freq[g] );
+        }
+    }
 }

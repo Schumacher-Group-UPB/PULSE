@@ -33,38 +33,17 @@ class Solver {
     PC3::SystemParameters& system;
     PC3::FileHandler& filehandler;
 
-    // TODO: Move these into one single float buffer.
-    struct Oscillation {
-        PC3::CUDAMatrix<Type::real> t0;
-        PC3::CUDAMatrix<Type::real> freq;
-        PC3::CUDAMatrix<Type::real> sigma;
-        std::vector<bool> active;
-        unsigned int n;
+    // TODO: remove
+    struct TemporalEvelope {
+        PC3::CUDAMatrix<Type::complex> amp;
 
         struct Pointers {
-            Type::real* t0;
-            Type::real* freq;
-            Type::real* sigma;
+            Type::complex* amp;
             unsigned int n;
         };
 
-        void construct( Envelope& envelope) {
-            const auto n = envelope.groupSize();
-            t0.construct( n, 1, "oscillation_t0" ).setTo( envelope.t0 );
-            freq.construct( n, 1, "oscillation_freq" ).setTo( envelope.freq );
-            sigma.construct( n, 1, "oscillation_sigma" ).setTo( envelope.sigma );
-            this->n = n;
-            for (int i = 0; i < n; i++) {
-                bool is_active = true;
-                if ( envelope.t0.data()[i] == 0.0 && envelope.freq.data()[i] == 0.0 && envelope.sigma.data()[i] > 1E11 ) {
-                    is_active = false;
-                }
-                active.push_back( is_active );
-            } 
-        }
-
         Pointers pointers() {
-            return Pointers{ t0.getDevicePtr(), freq.getDevicePtr(), sigma.getDevicePtr(), n };
+            return Pointers{ amp.getDevicePtr(), amp.getTotalSize() };
         }
     } dev_pulse_oscillation, dev_pump_oscillation, dev_potential_oscillation;
 
@@ -73,9 +52,6 @@ class Solver {
 
     // Cache Maps
     std::map<std::string, std::vector<Type::real>> cache_map_scalar;
-    //std::vector<std::vector<Type::complex>> wavefunction_plus_history, wavefunction_minus_history;
-    //std::vector<Type::real> wavefunction_max_plus, wavefunction_max_minus;
-    //std::vector<Type::real> times;
 
     Solver( PC3::SystemParameters& system ) : system( system ), filehandler( system.filehandler ) {
         std::cout << PC3::CLIO::prettyPrint( "Creating Solver...", PC3::CLIO::Control::Info ) << std::endl;
@@ -87,29 +63,8 @@ class Solver {
         // Copy remaining stuff to Device.
         initializeDeviceMatricesFromHost();
 
-        // Set Pump, Potential and Pulse n to zero if they are not evaluated
-        if (not system.evaluate_reservoir_kernel) {
-            std::cout << PC3::CLIO::prettyPrint( "Reservoir is not evaluated, setting n to zero.", PC3::CLIO::Control::Info ) << std::endl;
-            dev_pump_oscillation.n = 0;
-        }
-        if (not system.evaluate_potential_kernel) {
-            std::cout << PC3::CLIO::prettyPrint( "Potential is not evaluated, setting n to zero.", PC3::CLIO::Control::Info ) << std::endl;
-            dev_potential_oscillation.n = 0;
-        } 
-        if (not system.evaluate_pulse_kernel) {
-            std::cout << PC3::CLIO::prettyPrint( "Pulse is not evaluated, setting n to zero.", PC3::CLIO::Control::Info ) << std::endl;
-            dev_pulse_oscillation.n = 0;
-        }
     }
     
-    // Functions the global kernel can do
-
-    /**
-     * Initializes the FFT Mask device cache matrices.
-     * If twin_system is used, initializes the _plus and _minus components of
-     * the mask. If not, only initializes the _plus component.
-     * Excepts the system host components to be initialized.
-     */
     void initializeHostMatricesFromSystem();               // Evaluates the envelopes and initializes the host matrices
     void initializeDeviceMatricesFromHost();               // Transfers the host matrices to their device equivalents
 
@@ -156,19 +111,6 @@ class Solver {
     void cacheValues();
     void cacheMatrices();
 };
-
-// TODO: move these to a Header that makes sense
-namespace CUDA {
-
-    PULSE_HOST_DEVICE static PULSE_INLINE Type::complex gaussian_complex_oscillator( Type::real t, Type::real t0, Type::real sigma, Type::real freq ) {
-        return CUDA::exp( -Type::complex(( t - t0 )*( t - t0 ) / ( Type::real(2.0)*sigma*sigma ), freq * ( t - t0 )) );
-    }
-    PULSE_HOST_DEVICE static PULSE_INLINE Type::real gaussian_oscillator( Type::real t, Type::real t0, Type::real sigma, Type::real freq ) {
-        const auto p = ( t - t0 )/sigma;
-        return std::exp( -0.5*p*p ) * (1.0 + std::cos( freq * ( t - t0 ) ))/2.0;
-    }
-
-} // namespace CUDA
 
 // Helper macro to choose the correct runge function
 #define RUNGE_FUNCTION_GP (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)

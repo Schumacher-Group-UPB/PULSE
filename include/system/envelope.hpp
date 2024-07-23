@@ -7,18 +7,20 @@
 #include <bit>
 
 #include "cuda/typedef.cuh"
+#include "misc/commandline_io.hpp"
 
 namespace PC3 {
 
+// TODO: Because the envelope calculation is now fully cpu sided, use a vector of structs instead of a struct of vectors to store the envelope parameters
 class Envelope {
     public:
     // Parameters to Construct the Envelope from
     std::vector<PC3::Type::real> amp, width_x, width_y, x, y, exponent;
     std::vector<int> m;
     std::vector<PC3::Type::real> freq, sigma, t0;
-    std::vector<std::string> s_type, s_pol, s_behavior;
+    std::vector<std::string> s_type, s_pol, s_behavior, s_temp;
     // Or path to load the matrix from
-    std::vector<std::string> load_path;
+    std::vector<std::string> load_path, load_path_temporal;
     // Either way, all of these vectors should have the same length
 
     // Identifier for temporal grouping
@@ -28,6 +30,10 @@ class Envelope {
     std::map<std::string, int> str_to_group_identifier;
     // Helper to load cache matrices from paths
     std::vector<std::unique_ptr<PC3::Type::complex[]>> cache;
+    // Temporal Envelope. This will be recalculated every timestep
+    std::vector<PC3::Type::complex> temporal_envelope;
+    // Points for interpolation
+    std::vector<std::vector<std::vector<Type::real>>> temporal_time_points; // TODO: Read Points and interpolate between them
 
     enum class Type : unsigned int {
         Gauss = 1, // Gaussian Envelope
@@ -53,6 +59,15 @@ class Envelope {
         Complex = 1 << 4,
     };
     std::vector<Behavior> behavior;
+    
+    enum class Temporal : unsigned int {
+        IExp = 1,
+        Cos = 1 << 1,
+        Gauss = 1 << 2,
+        Constant = 1 << 3,
+        Loaded = 1 << 4,
+    };
+    std::vector<Temporal> temporal;
 
     static inline std::map<std::string, Behavior> BehaviorFromString = {
         { "add", Behavior::Add },
@@ -73,12 +88,20 @@ class Envelope {
         { "noDivide", Type::NoDivide },
         { "local", Type::Local },
     };
+    static inline std::map<std::string, Temporal> TemporalFromString = {
+        { "gauss" , Temporal::Gauss },
+        { "iexp", Temporal::IExp },
+        { "osc", Temporal::IExp },
+        { "cos", Temporal::Cos },
+        { "constant", Temporal::Constant },
+    };
 
     static inline int AllGroups = -1;
 
     void addSpacial(PC3::Type::real amp, PC3::Type::real width_x, PC3::Type::real width_y, PC3::Type::real x, PC3::Type::real y, PC3::Type::real exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m);
     void addSpacial(const std::string& path, PC3::Type::real amp, const std::string& s_behaviour, const std::string& s_pol);
-    void addTemporal(PC3::Type::real t0, PC3::Type::real sigma, PC3::Type::real freq);
+    void addTemporal(PC3::Type::real t0, PC3::Type::real sigma, PC3::Type::real freq, const std::string& s_temp);
+    void addTemporal(const std::string& path);
     int size() const;
     int groupSize() const;
     int sizeOfGroup(int g) const;
@@ -92,9 +115,23 @@ class Envelope {
     void calculate( PC3::Type::real* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0 );
     void calculate( PC3::Type::complex* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0 );
 
+    // Evaluates all the current temporal envelopes and stores them in the temporal_envelope vector
+    void updateTemporal( const PC3::Type::real t );
+
     // We use template functions here to avoid circular dependencies
     template <class FH>
     void prepareCache(FH& filehandler, const Dimensions& dim) {
+        // Load Temporal Components
+        temporal_time_points = std::vector<std::vector<std::vector<PC3::Type::real>>>( load_path_temporal.size() );
+        for ( int c = 0; c < load_path_temporal.size(); c++ ) {
+            if ( load_path_temporal[c] == "" )
+                continue;
+            temporal_time_points[c] = filehandler.loadListFromFile( load_path_temporal[c], "temporal" );
+            if (temporal_time_points[c].size() != 3) {
+                std::cout << PC3::CLIO::prettyPrint( "Error: Temporal envelope must have 3 columns: time, real, imag. PULSE will most likely crash!", PC3::CLIO::Control::FullWarning ) << std::endl;
+            }
+        }
+        // Load Spatial Components
         if ( cache.size() > 0 )
             return;
         for ( int c = 0; c < load_path.size(); c++ ) {
@@ -111,6 +148,10 @@ class Envelope {
         calculate( buffer, group, polarization, dim, default_value_if_no_mask );
     }
 
+    bool readInTemporal( const std::string& key) {
+        return TemporalFromString.find( key ) != TemporalFromString.end();
+    }
+
     static Envelope fromCommandlineArguments( int argc, char** argv, const std::string& key, const bool time );
 
     std::string toString() const;
@@ -118,16 +159,29 @@ class Envelope {
 
 // Overload the bitwise OR (|) operator
 template <typename T>
-typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::Type>::value), T>::type operator|(T lhs, T rhs) {
+typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::Type>::value || std::is_same<T, Envelope::Temporal>::value), T>::type operator|(T lhs, T rhs) {
     using underlying_type = typename std::underlying_type<T>::type;
     return static_cast<T>(static_cast<underlying_type>(lhs) | static_cast<underlying_type>(rhs));
 }
 
 // Overload the bitwise AND (&) operator. Return a boolean, because we dont need the '&' operator for enums
 template <typename T>
-typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::Type>::value), bool>::type operator&(T lhs, T rhs) {
+typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::Type>::value || std::is_same<T, Envelope::Temporal>::value), bool>::type operator&(T lhs, T rhs) {
     using underlying_type = typename std::underlying_type<T>::type;
     return std::has_single_bit<underlying_type>(static_cast<underlying_type>(lhs) & static_cast<underlying_type>(rhs));
 }
+    
+static inline Type::complex gaussian_complex_oscillator( Type::real t, Type::real t0, Type::real sigma, Type::real freq ) {
+    return CUDA::exp( -Type::complex(( t - t0 )*( t - t0 ) / ( Type::real(2.0)*sigma*sigma ), freq * ( t - t0 )) );
+}
+static inline Type::real gaussian_oscillator( Type::real t, Type::real t0, Type::real sigma, Type::real freq ) {
+    const auto p = ( t - t0 )/sigma;
+    return std::exp( -0.5*p*p ) * (1.0 + std::cos( freq * ( t - t0 ) ))/2.0;
+}
+static inline Type::real gaussian_envelope( Type::real t, Type::real t0, Type::real sigma, Type::real power ) {
+    const auto p = ( t - t0 )/sigma;
+    return std::exp( -0.5*std::pow(p*p,power) );
+}
+// ...
 
 } // namespace PC3

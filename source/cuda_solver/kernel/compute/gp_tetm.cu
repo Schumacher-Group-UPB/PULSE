@@ -2,7 +2,7 @@
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p_in, Solver::Oscillation::Pointers oscillation_pulse, Solver::Oscillation::Pointers oscillation_pump, Solver::Oscillation::Pointers oscillation_potential, InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p_in, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io ) {
     
     LOCAL_SHARE_STRUCT( SystemParameters::KernelParameters, p_in, p );
     
@@ -30,7 +30,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
     
     for (int k = 0; k < oscillation_potential.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
-        const Type::complex potential = dev_ptrs.potential_plus[i+offset] * CUDA::gaussian_oscillator(t, oscillation_potential.t0[k], oscillation_potential.sigma[k], oscillation_potential.freq[k]);
+        const Type::complex potential = dev_ptrs.potential_plus[i+offset] * oscillation_potential.amp[k];//CUDA::gaussian_oscillator(t, oscillation_potential.t0[k], oscillation_potential.sigma[k], oscillation_potential.freq[k]);
         result += p.minus_i_over_h_bar_s * potential * in_wf_plus;
     }
 
@@ -46,7 +46,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
     for (int k = 0; k < oscillation_pulse.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
         const Type::complex pulse = dev_ptrs.pulse_plus[i+offset];
-        result += p.one_over_h_bar_s * pulse * CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
+        result += p.one_over_h_bar_s * pulse * oscillation_pulse.amp[k];//CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
     }
 
     // MARK: Stochastic
@@ -62,7 +62,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
 
     for (int k = 0; k < oscillation_pump.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
-        const auto gauss = CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
+        const auto gauss = oscillation_pump.amp[k];//CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
         result += dev_ptrs.pump_plus[i+offset] * gauss;
     }
 
@@ -78,7 +78,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
     
     for (int k = 0; k < oscillation_potential.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
-        const Type::complex potential = dev_ptrs.potential_minus[i+offset] * CUDA::gaussian_oscillator(t, oscillation_potential.t0[k], oscillation_potential.sigma[k], oscillation_potential.freq[k]);
+        const Type::complex potential = dev_ptrs.potential_minus[i+offset] * oscillation_potential.amp[k];//CUDA::gaussian_oscillator(t, oscillation_potential.t0[k], oscillation_potential.sigma[k], oscillation_potential.freq[k]);
         result += p.minus_i_over_h_bar_s * potential * in_wf_minus;
     }
 
@@ -94,7 +94,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
     for (int k = 0; k < oscillation_pulse.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
         const Type::complex pulse = dev_ptrs.pulse_minus[i+offset];
-        result += p.one_over_h_bar_s * pulse * CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
+        result += p.one_over_h_bar_s * pulse * oscillation_pulse.amp[k];//CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
     }
 
     if (p.stochastic_amplitude > 0.0) {
@@ -109,7 +109,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::real t, MatrixCont
 
     for (int k = 0; k < oscillation_pump.n; k++) {
         const size_t offset = k * p.N_x * p.N_y;
-        const auto gauss = CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
+        const auto gauss = oscillation_pump.amp[k];//CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
         result += dev_ptrs.pump_minus[i+offset] * gauss;
     }
 

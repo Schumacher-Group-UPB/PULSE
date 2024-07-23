@@ -212,10 +212,8 @@ void PC3::SystemParameters::printCMD( double complete_duration, double complete_
     std::cout << "    T = " << int( p.t ) << "ps - dt = " << std::setprecision( 2 ) << p.dt << "ps    \n";
     // Progressbar for p.t/t_max
     std::cout << "    Progress:  " << PC3::CLIO::createProgressBar( p.t, t_max, console_width - 30 ) << "    \n";
-    bool evaluate_pulse = evaluatePulse();
-    bool evaluate_reservoir = evaluateReservoir();
     bool evaluate_stochastic = evaluateStochastic();
-    std::cout << "    Current System: " << ( p.use_twin_mode ? "TE/TM" : "Scalar" ) << " - " << ( evaluate_reservoir ? "With Reservoir" : "No Reservoir" ) << " - " << ( evaluate_pulse ? "With Pulse" : "No Pulse" ) << " - " << ( evaluate_stochastic ? "With Stochastic" : "No Stochastic" ) << "    \n";
+    std::cout << "    Current System: " << ( p.use_twin_mode ? "TE/TM" : "Scalar" ) << " - " << ( evaluate_stochastic ? "With Stochastic" : "No Stochastic" ) << "    \n";
     std::cout << "    Runtime: " << int( complete_duration ) << "s, remaining: " << int( complete_duration * ( t_max - p.t ) / p.t ) << "s    \n";
     std::cout << "    Time per ps: " << complete_duration / p.t << "s/ps  -  " << std::setprecision( 3 ) << p.t / complete_duration << "ps/s  -  " << complete_iterations / complete_duration << "it/s    \n";
     std::cout << PC3::CLIO::fillLine( console_width, seperator ) << std::endl;
