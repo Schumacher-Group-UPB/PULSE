@@ -116,8 +116,6 @@ struct MatrixContainer {
         this->use_fft = use_fft;
         this->use_stochastic = use_stochastic;
         #define DEFINE_MATRIX(type, ptrstruct, name, size_scaling, condition_for_construction) \
-            if (condition_for_construction) \
-                std::cout << "Constructing " << #name << " with size " << N_x * N_y * size_scaling << ", size scaling is " << size_scaling << std::endl; \
             name.constructHost( N_x, N_y * size_scaling, #name); \
             if (condition_for_construction) \
                 name.constructDevice( N_x, N_y * size_scaling, #name); 
