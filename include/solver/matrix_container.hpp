@@ -35,10 +35,10 @@ namespace PC3 {
     DEFINE_MATRIX(Type::complex, true, buffer_wavefunction_minus, 1, use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, buffer_reservoir_plus, 1, true) \
     DEFINE_MATRIX(Type::complex, true, buffer_reservoir_minus, 1, use_twin_mode) \
-    DEFINE_MATRIX(Type::real, true, fft_mask_plus, 1, true) \
-    DEFINE_MATRIX(Type::real, true, fft_mask_minus, 1, use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, fft_plus, 1, true) \
-    DEFINE_MATRIX(Type::complex, true, fft_minus, 1, use_twin_mode) \
+    DEFINE_MATRIX(Type::real, true, fft_mask_plus, 1, use_fft) \
+    DEFINE_MATRIX(Type::real, true, fft_mask_minus, 1, use_fft and use_twin_mode) \
+    DEFINE_MATRIX(Type::complex, true, fft_plus, 1, use_fft) \
+    DEFINE_MATRIX(Type::complex, true, fft_minus, 1, use_fft and use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, k1_wavefunction_plus, 1, k_max >= 1) \
     DEFINE_MATRIX(Type::complex, true, k1_wavefunction_minus, 1, k_max >= 1 and use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, k1_reservoir_plus, 1, k_max >= 1) \
@@ -79,9 +79,9 @@ namespace PC3 {
     DEFINE_MATRIX(Type::complex, true, k10_wavefunction_minus, 1, k_max >= 10 and use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, k10_reservoir_plus, 1, k_max >= 10) \
     DEFINE_MATRIX(Type::complex, true, k10_reservoir_minus, 1, k_max >= 10 and use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, rk_error, 1, true) \
-    DEFINE_MATRIX(Type::complex, true, random_number, 1, true) \
-    DEFINE_MATRIX(Type::cuda_random_state, true, random_state, 1, true) \
+    DEFINE_MATRIX(Type::complex, true, rk_error, 1, k_max > 4) \
+    DEFINE_MATRIX(Type::complex, true, random_number, 1, use_stochastic) \
+    DEFINE_MATRIX(Type::cuda_random_state, true, random_state, 1, use_stochastic) \
     DEFINE_MATRIX(Type::complex, false, snapshot_wavefunction_plus, 1, false) \
     DEFINE_MATRIX(Type::complex, false, snapshot_wavefunction_minus, 1, false) \
     DEFINE_MATRIX(Type::complex, false, snapshot_reservoir_plus, 1, false) \
@@ -96,7 +96,7 @@ namespace PC3 {
 struct MatrixContainer {
 
     // Cache triggers
-    bool use_twin_mode;
+    bool use_twin_mode, use_fft, use_stochastic;
     int k_max;
 
     // Declare all matrices using a macro
@@ -110,10 +110,14 @@ struct MatrixContainer {
     // TODO: if reservoir... system.evaluateReservoir() !
 
     // Construction Chain. The Host Matrix is always constructed (who carese about RAM right?) and the device matrix is constructed if the condition is met.
-    void constructAll( const int N_x, const int N_y, bool use_twin_mode, int k_max, const int n_pulses, const int n_pumps, const int n_potentials ) {
+    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses, const int n_pumps, const int n_potentials ) {
         this->use_twin_mode = use_twin_mode;
         this->k_max = k_max;
+        this->use_fft = use_fft;
+        this->use_stochastic = use_stochastic;
         #define DEFINE_MATRIX(type, ptrstruct, name, size_scaling, condition_for_construction) \
+            if (condition_for_construction) \
+                std::cout << "Constructing " << #name << " with size " << N_x * N_y * size_scaling << ", size scaling is " << size_scaling << std::endl; \
             name.constructHost( N_x, N_y * size_scaling, #name); \
             if (condition_for_construction) \
                 name.constructDevice( N_x, N_y * size_scaling, #name); 

@@ -19,7 +19,9 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     }
 
     // First, construct all required host matrices
-    matrix.constructAll( system.p.N_x, system.p.N_y, system.p.use_twin_mode, iterator[system.iterator].k_max , system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
+    bool use_fft = system.fft_every < system.t_max;
+    bool use_stochastic = system.p.stochastic_amplitude > 0.0;
+    matrix.constructAll( system.p.N_x, system.p.N_y, system.p.use_twin_mode, use_fft, use_stochastic, iterator[system.iterator].k_max , system.pulse.groupSize(), system.pump.groupSize(), system.potential.groupSize() );
 
     // ==================================================
     // =................ Initial States ................=

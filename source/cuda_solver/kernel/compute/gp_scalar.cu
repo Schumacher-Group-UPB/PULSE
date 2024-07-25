@@ -55,7 +55,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixCo
     result -= p.R * in_psi_norm * in_rv;
     for (int k = 0; k < oscillation_pump.n; k++) {
         const int offset = k * p.N_x * p.N_y;
-        result += dev_ptrs.pump_plus[i+offset] * oscillation_pump.amp[k];//CUDA::gaussian_oscillator(t, oscillation_pump.t0[k], oscillation_pump.sigma[k], oscillation_pump.freq[k]);
+            result += dev_ptrs.pump_plus[i+offset] * oscillation_pump.amp[k];
     }
 
     // MARK: Stochastic-2
