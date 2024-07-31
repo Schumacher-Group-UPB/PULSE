@@ -25,9 +25,9 @@ OPTIMIZATION = -O3
 # Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
 GCCFLAGS = -std=c++20 -fopenmp -x c++
 ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -diag-suppress 4005 -lstdc++ -rdc=true
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -diag-suppress 4005 -lstdc++ -rdc=true --expt-extended-lambda
 endif
 SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 

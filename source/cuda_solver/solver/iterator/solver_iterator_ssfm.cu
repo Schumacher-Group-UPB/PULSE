@@ -28,8 +28,10 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
     // Liner Half Step
     // Calculate the FFT of Psi
     calculateFFT( device_pointers.wavefunction_plus, device_pointers.k1_wavefunction_plus, FFT::forward );
+    if (system.p.use_twin_mode)
+        calculateFFT( device_pointers.wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::forward );
     CALL_KERNEL(
-        Kernel::Compute::gp_scalar_linear_fourier, "linear_half_step", grid_size, block_size, 
+        RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 
         p.t, dt, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
         { 
             device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.discard, device_pointers.discard,
@@ -38,10 +40,12 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
     );
     // Transform back. K1 now holds the half-stepped wavefunction.
     calculateFFT( device_pointers.k2_wavefunction_plus, device_pointers.k1_wavefunction_plus, FFT::inverse );
+    if (system.p.use_twin_mode)
+        calculateFFT( device_pointers.k2_wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::inverse );
 
     // Nonlinear Full Step
     CALL_KERNEL(
-        Kernel::Compute::gp_scalar_nonlinear, "nonlinear_full_step", grid_size, block_size, 
+        RUNGE_FUNCTION_GP_NONLINEAR, "nonlinear_full_step", grid_size, block_size, 
         p.t, dt, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
         { 
             device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
@@ -53,8 +57,10 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
     // Liner Half Step 
     // Calculate the FFT of Psi
     calculateFFT( device_pointers.k2_wavefunction_plus, device_pointers.k1_wavefunction_plus, FFT::forward );
+    if (system.p.use_twin_mode)
+        calculateFFT( device_pointers.k2_wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::forward );
     CALL_KERNEL(
-        Kernel::Compute::gp_scalar_linear_fourier, "linear_half_step", grid_size, block_size, 
+        RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 
         p.t, dt, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
         { 
             device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.discard, device_pointers.discard,
@@ -63,10 +69,12 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
     );
     // Transform back. K3 now holds the half-stepped wavefunction.
     calculateFFT( device_pointers.k2_wavefunction_plus,  device_pointers.k1_wavefunction_plus, FFT::inverse );
+    if (system.p.use_twin_mode)
+        calculateFFT( device_pointers.k2_wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::inverse );
 
     CALL_KERNEL(
-        Kernel::Compute::gp_scalar_independent, "independent", grid_size, block_size, 
-        p.t, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
+        RUNGE_FUNCTION_GP_INDEPENDENT, "independent", grid_size, block_size, 
+        p.t, dt, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
         { 
             device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
             device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus

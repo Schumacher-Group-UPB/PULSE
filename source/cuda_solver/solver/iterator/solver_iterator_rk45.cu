@@ -17,14 +17,6 @@
 #include "solver/gpu_solver.hpp"
 #include "misc/commandline_io.hpp"
 
-struct square_reduction
-{
-    PULSE_HOST_DEVICE PC3::Type::real operator()(const PC3::Type::complex& x) const { 
-        const PC3::Type::real res = PC3::CUDA::abs2(x);
-        return res; 
-    }
-};
-
 /*
 * This function iterates the Runge Kutta Kernel using a variable time step.
 * A 4th order Runge-Kutta method is used to calculate
@@ -148,10 +140,10 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         #ifdef USE_CUDA
             Type::complex error = thrust::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), Type::complex(0.0), thrust::plus<Type::complex>() );
-            Type::real sum_abs2 = thrust::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), square_reduction(), Type::real(0.0), thrust::plus<Type::real>() );
+            Type::real sum_abs2 = thrust::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), PC3::SquareReduction(), Type::real(0.0), thrust::plus<Type::real>() );
         #else
             Type::complex error = std::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), Type::complex(0.0), std::plus<Type::complex>() );
-            Type::real sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), Type::real(0.0), std::plus<Type::real>(), square_reduction() );
+            Type::real sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), Type::real(0.0), std::plus<Type::real>(), PC3::SquareReduction() );
         #endif
         // TODO: maybe go back to using max since thats faster
         //auto plus_max = std::get<1>( minmax( matrix.wavefunction_plus.getDevicePtr(), p.N_x * p.N_y, true /*Device Pointer*/ ) );

@@ -113,6 +113,9 @@ class Solver {
 
 // Helper macro to choose the correct runge function
 #define RUNGE_FUNCTION_GP (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
+#define RUNGE_FUNCTION_GP_LINEAR (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_linear_fourier : PC3::Kernel::Compute::gp_scalar_linear_fourier)
+#define RUNGE_FUNCTION_GP_NONLINEAR (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_nonlinear : PC3::Kernel::Compute::gp_scalar_nonlinear)
+#define RUNGE_FUNCTION_GP_INDEPENDENT (p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_independent : PC3::Kernel::Compute::gp_scalar_independent)
 
 // Helper Macro to iterate a specific RK K
 #define CALCULATE_K( index, time, input_wavefunction, input_reservoir ) \
@@ -125,5 +128,12 @@ CALL_KERNEL( \
     } \
 );
 
+struct SquareReduction
+{
+    PULSE_HOST_DEVICE PC3::Type::real operator()(const PC3::Type::complex& x) const { 
+        const PC3::Type::real res = PC3::CUDA::abs2(x);
+        return res; 
+    }
+};
 
 } // namespace PC3
