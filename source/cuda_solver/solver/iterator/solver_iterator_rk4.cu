@@ -34,6 +34,7 @@
 void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size ) {
     // This variable contains all the system parameters the kernel could need
     auto p = system.kernel_parameters;
+    Type::complex dt = system.imag_time ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
     
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = matrix.pointers();
@@ -57,7 +58,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_si
  
     CALL_KERNEL(
         Kernel::RK::runge_sum_to_input_kw, "Sum for K4", grid_size, block_size,
-        p.dt, device_pointers, p, io,
+        dt, device_pointers, p, io,
         { 0.5 } // 0.5*dt*K1
     );
 
@@ -65,7 +66,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_si
 
     CALL_KERNEL(
         Kernel::RK::runge_sum_to_input_kw, "Sum for K3", grid_size, block_size,
-        p.dt, device_pointers, p, io,
+        dt, device_pointers, p, io,
         { 0.0, 0.5 } // 0.5*dt*K2
     );
 
@@ -73,7 +74,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_si
 
     CALL_KERNEL(
         Kernel::RK::runge_sum_to_input_kw, "Sum for K4", grid_size, block_size,
-        p.dt, device_pointers, p, io,
+        dt, device_pointers, p, io,
         { 0.0, 0.0, 1.0 } // dt*K3
     );
 
@@ -81,7 +82,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_si
 
     CALL_KERNEL(
         Kernel::RK::runge_sum_to_input_kw, "Final Sum", grid_size, block_size,
-        p.dt, device_pointers, p, io,
+        dt, device_pointers, p, io,
         { 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 } // RK Final Weights
     );
 

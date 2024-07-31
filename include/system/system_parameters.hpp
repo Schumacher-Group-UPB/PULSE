@@ -86,7 +86,7 @@ class SystemParameters {
     bool do_output_history_matrix;
     Type::real output_every;
 
-    bool do_overwrite_dt;
+    bool do_overwrite_dt, imag_time;
 
     // Output of Variables
     std::vector<std::string> output_keys;

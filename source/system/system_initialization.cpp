@@ -92,6 +92,10 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         dt_min = PC3::CLIO::getNextInput( argv, argc, "dt_min", ++index );
         dt_max = PC3::CLIO::getNextInput( argv, argc, "dt_max", index );
     }
+    imag_time = false;
+    if ( ( index = PC3::CLIO::findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
+        imag_time = true;
+    }
 
     if ( ( index = PC3::CLIO::findInArgv( "--fftEvery", argc, argv ) ) != -1 ) {
         fft_every = PC3::CLIO::getNextInput( argv, argc, "fft_every", ++index );
@@ -106,9 +110,6 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     if ( ( index = PC3::CLIO::findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
         //std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
         iterator = "ssfm";
-    }
-    if ( ( index = PC3::CLIO::findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
-        iterator = "itp";
     }
     if ( ( index = PC3::CLIO::findInArgv( "--iterator", argc, argv ) ) != -1 ) {
         std::string it = PC3::CLIO::getNextStringInput( argv, argc, "iterator", ++index );

@@ -82,7 +82,7 @@ class Solver {
     void iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size );
     void iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size );
     void iterateSplitStepFourier( dim3 block_size, dim3 grid_size );
-    void iterateImaginaryTimePropagation( dim3 block_size, dim3 grid_size );
+    void normalizeImaginaryTimePropagation( dim3 block_size, dim3 grid_size );
 
     struct iteratorFunction {
         int k_max;
@@ -92,8 +92,7 @@ class Solver {
         { "rk3", { 3, std::bind( &Solver::iterateFixedTimestepRungeKutta3, this, std::placeholders::_1, std::placeholders::_2 ) } },
         { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this, std::placeholders::_1, std::placeholders::_2 ) } },
         { "rk45", { 6, std::bind( &Solver::iterateVariableTimestepRungeKutta, this, std::placeholders::_1, std::placeholders::_2 ) } },
-        { "ssfm", { 2, std::bind( &Solver::iterateSplitStepFourier, this, std::placeholders::_1, std::placeholders::_2 ) } },
-        { "itp", { 1, std::bind( &Solver::iterateImaginaryTimePropagation, this, std::placeholders::_1, std::placeholders::_2 ) } }
+        { "ssfm", { 2, std::bind( &Solver::iterateSplitStepFourier, this, std::placeholders::_1, std::placeholders::_2 ) } }
     };
 
     bool iterate();

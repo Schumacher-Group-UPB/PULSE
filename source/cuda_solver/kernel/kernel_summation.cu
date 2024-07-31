@@ -3,7 +3,7 @@
 #include "kernel/kernel_index_overwrite.cuh"
 
 // Summs one K
-PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_ki( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_ki( int i, Type::complex dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io ) {
     OVERWRITE_THREAD_INDEX(i);
 
     io.out_wf_plus[i] = dev_ptrs.wavefunction_plus[i] + dt * io.in_wf_plus[i];
@@ -18,7 +18,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_ki( int i, Type::real dt, 
 // yet another struct that holds all the buffers in an array. OR: we do the smart thing and restructure
 // the original dev_ptrs struct to hold all the buffers in an array. This would make the code much more
 // readable and maintainable. TODO
-PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io, RK::Weights weights ) {
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Type::complex dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io, RK::Weights weights ) {
     OVERWRITE_THREAD_INDEX(i);
     Type::complex wf = 0.0;
     Type::complex rv = 0.0;
@@ -66,7 +66,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Type::real dt, 
 }
 
 
-PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, RK::Weights weights ) {
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::complex dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, RK::Weights weights ) {
     OVERWRITE_THREAD_INDEX(i);
     // The first weigth is for the input wavefunction, the rest are for the Ks
     Type::complex wf = weights.weights[0] * dev_ptrs.buffer_wavefunction_plus[i];

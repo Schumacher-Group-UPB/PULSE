@@ -38,9 +38,9 @@ namespace PC3::Kernel {
                 }
             }
         };
-        PULSE_GLOBAL void runge_sum_to_input_ki( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io );
-        PULSE_GLOBAL void runge_sum_to_input_kw( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io, RK::Weights weights );
-        PULSE_GLOBAL void runge_sum_to_error( int i, Type::real dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, RK::Weights weights );
+        PULSE_GLOBAL void runge_sum_to_input_ki( int i, Type::complex dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io );
+        PULSE_GLOBAL void runge_sum_to_input_kw( int i, Type::complex dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, InputOutput io, RK::Weights weights );
+        PULSE_GLOBAL void runge_sum_to_error( int i, Type::complex dt, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, RK::Weights weights );
     } // namespace RK
 
     namespace Compute {
@@ -48,13 +48,11 @@ namespace PC3::Kernel {
         PULSE_GLOBAL void gp_tetm( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io );
         PULSE_GLOBAL void gp_scalar( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io );
 
-        PULSE_GLOBAL void gp_scalar_linear_fourier( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io );
-        PULSE_GLOBAL void gp_scalar_nonlinear( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io );
+        PULSE_GLOBAL void gp_scalar_linear_fourier( int i, Type::real t, Type::complex dtc, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io );
+        PULSE_GLOBAL void gp_scalar_nonlinear( int i, Type::real t, Type::complex dtc, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io );
         PULSE_GLOBAL void gp_scalar_independent( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io );
 
     } // namespace Compute
-
-    //PULSE_GLOBAL void normalize_imaginary_time_propagation(int i, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Type::complex normalization_wavefunction, Type::complex normalization_reservoir);
 
     PULSE_GLOBAL void initialize_random_number_generator(int i, unsigned int seed, Type::cuda_random_state* state, const unsigned int N);
     PULSE_GLOBAL void generate_random_numbers(int i, Type::cuda_random_state* state, Type::complex* buffer, const unsigned int N, const Type::real real_amp, const Type::real imag_amp);

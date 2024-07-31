@@ -11,6 +11,8 @@
 
 #include "misc/helperfunctions.hpp"
 
+// BIG TODO: WTF is this? Rework this. The device_pointer flag is not required if we use thrust:: vectors anyways.
+
 std::tuple<PC3::Type::real, PC3::Type::real> PC3::CUDA::minmax( PC3::Type::complex* buffer, int size, bool device_pointer ) {
     #ifdef USE_CUDA
     if ( device_pointer ) {

@@ -62,6 +62,10 @@ bool PC3::Solver::iterate( ) {
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate( block_size, grid_size );
 
+    // Call the normalization for imaginary time propagation if required
+    if (system.imag_time) 
+        normalizeImaginaryTimePropagation( block_size, grid_size );
+
     // Increase t. 
     system.p.t = system.p.t + system.p.dt;
     

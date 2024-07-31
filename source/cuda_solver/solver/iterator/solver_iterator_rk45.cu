@@ -88,12 +88,13 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     do {
         // We snapshot here to make sure that the dt is updated
         auto p = system.kernel_parameters;
+        Type::complex dt = system.imag_time ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
 
         CALCULATE_K( 1, p.t, wavefunction, reservoir );
         
         CALL_KERNEL(
             Kernel::RK::runge_sum_to_input_kw, "Sum for K1", grid_size, block_size,
-            p.dt, device_pointers, p, io,
+            dt, device_pointers, p, io,
             { cf.b11 }
         );
         
@@ -101,7 +102,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         
         CALL_KERNEL(
             Kernel::RK::runge_sum_to_input_kw, "Sum for K2", grid_size, block_size,
-            p.dt, device_pointers, p, io,
+            dt, device_pointers, p, io,
             { cf.b21, cf.b22 }
         );
 
@@ -109,7 +110,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALL_KERNEL(
             Kernel::RK::runge_sum_to_input_kw, "Sum for K3", grid_size, block_size,
-            p.dt, device_pointers, p, io,
+            dt, device_pointers, p, io,
             { cf.b31, cf.b32, cf.b33 }
         );
 
@@ -118,7 +119,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALL_KERNEL(
             Kernel::RK::runge_sum_to_input_kw, "Sum for K4", grid_size, block_size,
-            p.dt, device_pointers, p, io,
+            dt, device_pointers, p, io,
             { cf.b41, cf.b42, cf.b43, cf.b44 }
         );
 
@@ -126,7 +127,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         CALL_KERNEL(
             Kernel::RK::runge_sum_to_input_kw, "Sum for K5", grid_size, block_size,
-            p.dt, device_pointers, p, io,
+            dt, device_pointers, p, io,
             { cf.b51, cf.b52, cf.b53, cf.b54, cf.b55 }
         );
 
@@ -135,13 +136,13 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         // Final Result is in the buffer_ arrays.
         CALL_KERNEL(
             Kernel::RK::runge_sum_to_input_kw, "Sum for K6", grid_size, block_size,
-            p.dt, device_pointers, p, io,
+            dt, device_pointers, p, io,
             { cf.b61, cf.b62, cf.b63, cf.b64, cf.b65, cf.b66 }
         );
 
         CALL_KERNEL(
             Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size,
-            p.dt, device_pointers, p,
+            dt, device_pointers, p,
             { cf.e7 /* WF */, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
         );
 

@@ -71,7 +71,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::real t, MatrixCo
  * Fourier Method (SSFM)
 */
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Type::real t, Type::complex dtc, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io ) {
     
     OVERWRITE_THREAD_INDEX( i );
 
@@ -83,10 +83,10 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Type::r
     const Type::real k_y = 2.0*3.1415926535 * Type::real(row <= p.N_y/2 ? row : -Type::real(p.N_y) + row)/p.L_y;
 
     Type::real linear = p.h_bar_s/2.0/p.m_eff * (k_x*k_x + k_y*k_y);
-    io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(p.N2) * CUDA::exp( p.minus_i * linear * p.dt / Type::real(2.0) );
+    io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(p.N2) * CUDA::exp( p.minus_i * linear * dtc / Type::real(2.0) );
 }
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t, Type::complex dtc, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io ) {
     
     OVERWRITE_THREAD_INDEX( i );
     
@@ -112,7 +112,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
         result -= p.g_c / p.dV;
     }
 
-    io.out_wf_plus[i] = in_wf * CUDA::exp(p.minus_i_over_h_bar_s * result * p.dt);
+    io.out_wf_plus[i] = in_wf * CUDA::exp(p.minus_i_over_h_bar_s * result * dtc);
 
     // MARK: Reservoir
     result = -p.gamma_r * in_rv;
@@ -124,7 +124,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Type::real t
     // MARK: Stochastic-2
     if (p.stochastic_amplitude > 0.0)
         result += p.R * in_rv / p.dV;
-    io.out_rv_plus[i] = in_rv + result * p.dt;
+    io.out_rv_plus[i] = in_rv + result * dtc;
 }
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Type::real t, MatrixContainer::Pointers dev_ptrs, SystemParameters::KernelParameters p, Solver::TemporalEvelope::Pointers oscillation_pulse, Solver::TemporalEvelope::Pointers oscillation_pump, Solver::TemporalEvelope::Pointers oscillation_potential, InputOutput io ) {
