@@ -15,7 +15,7 @@
 void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
     
     auto p = system.kernel_parameters;
-    Type::complex dt = system.imag_time ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
+    Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
     
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = matrix.pointers();
@@ -77,7 +77,7 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
         p.t, dt, device_pointers, p, pulse_pointers, pump_pointers, potential_pointers,
         { 
             device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
-            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus
+            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.discard, device_pointers.discard
         }
     );
     // Buffer now holds the new result

@@ -34,7 +34,7 @@
 void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size ) {
     // This variable contains all the system parameters the kernel could need
     auto p = system.kernel_parameters;
-    Type::complex dt = system.imag_time ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
+    Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
     
     // This variable contains all the device pointers the kernel could need
     auto device_pointers = matrix.pointers();

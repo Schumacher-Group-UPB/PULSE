@@ -92,9 +92,9 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         dt_min = PC3::CLIO::getNextInput( argv, argc, "dt_min", ++index );
         dt_max = PC3::CLIO::getNextInput( argv, argc, "dt_max", index );
     }
-    imag_time = false;
-    if ( ( index = PC3::CLIO::findInArgv( "-imagTime", argc, argv ) ) != -1 ) {
-        imag_time = true;
+    imag_time_amplitude = 0.0;
+    if ( ( index = PC3::CLIO::findInArgv( "--imagTime", argc, argv ) ) != -1 ) {
+        imag_time_amplitude = PC3::CLIO::getNextInput( argv, argc, "imag_time_amplitude", ++index );
     }
 
     if ( ( index = PC3::CLIO::findInArgv( "--fftEvery", argc, argv ) ) != -1 ) {

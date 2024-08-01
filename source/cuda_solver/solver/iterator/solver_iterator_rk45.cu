@@ -80,7 +80,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
     do {
         // We snapshot here to make sure that the dt is updated
         auto p = system.kernel_parameters;
-        Type::complex dt = system.imag_time ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
+        Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
 
         CALCULATE_K( 1, p.t, wavefunction, reservoir );
         

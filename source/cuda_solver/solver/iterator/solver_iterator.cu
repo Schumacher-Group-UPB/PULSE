@@ -63,7 +63,7 @@ bool PC3::Solver::iterate( ) {
     iterator[system.iterator].iterate( block_size, grid_size );
 
     // Call the normalization for imaginary time propagation if required
-    if (system.imag_time) 
+    if (system.imag_time_amplitude != 0.0) 
         normalizeImaginaryTimePropagation( block_size, grid_size );
 
     // Increase t. 

@@ -138,6 +138,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Type::real
         const Type::complex pulse = dev_ptrs.pulse_plus[i+offset];
         result += p.minus_i_over_h_bar_s * dtc * pulse * oscillation_pulse.amp[k]; //CUDA::gaussian_complex_oscillator(t, oscillation_pulse.t0[k], oscillation_pulse.sigma[k], oscillation_pulse.freq[k]);
     }
+    
+    // MARK: Stochastic
     if (p.stochastic_amplitude > 0.0) {
         const Type::complex in_rv = io.in_rv_plus[i];
         const Type::complex dw = dev_ptrs.random_number[i] * CUDA::sqrt( ( p.R * in_rv + p.gamma_c ) / (Type::real(4.0) * p.dV) );
