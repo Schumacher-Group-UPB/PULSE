@@ -67,12 +67,13 @@ void PC3::SystemParameters::printHelp() {
               << PC3::CLIO::unifyLength( "Flag", "Inputs", "Description" ) << std::endl
               << PC3::CLIO::unifyLength( "--N", "<int> <int>", "Grid Dimensions (N x N). Standard is " + std::to_string( p.N_x ) + " x " + std::to_string( p.N_y ) ) << std::endl
               << PC3::CLIO::unifyLength( "--tstep", "<double>", "Timestep, standard is magic-timestep = " + PC3::CLIO::to_str( magic_timestep ) + "ps" ) << std::endl
-              << PC3::CLIO::unifyLength( "--iterator", "<string>", "RK4, RK45 or SSFM" ) << std::endl
-              << PC3::CLIO::unifyLength( "-rk45", "no arguments", "Use RK45" ) << std::endl
-              << PC3::CLIO::unifyLength( "--rk45dt", "<double> <double>", "dt_min and dt_max for the RK45 method" ) << std::endl
-              << PC3::CLIO::unifyLength( "-ssfm", "no arguments", "Use SSFM" ) << std::endl
-              << PC3::CLIO::unifyLength( "--tol", "<double>", "RK45 Tolerance, standard is " + PC3::CLIO::to_str( tolerance ) + " ps" ) << std::endl
               << PC3::CLIO::unifyLength( "--tmax", "<double>", "Timelimit, standard is " + PC3::CLIO::to_str( t_max ) + " ps" ) << std::endl
+              << PC3::CLIO::unifyLength( "--iterator", "<string>", "RK4, RK45 or SSFM" ) << std::endl
+              << PC3::CLIO::unifyLength( "-rk45", "no arguments", "Shortcut to use RK45" ) << std::endl
+              << PC3::CLIO::unifyLength( "--rk45dt", "<double> <double>", "dt_min and dt_max for the RK45 method" ) << std::endl
+              << PC3::CLIO::unifyLength( "--tol", "<double>", "RK45 Tolerance, standard is " + PC3::CLIO::to_str( tolerance ) + " ps" ) << std::endl
+              << PC3::CLIO::unifyLength( "-ssfm", "no arguments", "Shortcut to use SSFM" ) << std::endl
+              << PC3::CLIO::unifyLength( "--imagTime", "<double>", "Use imaginary time propagation with a given norm. Currently only works in conjunction with -ssfm/--iterator ssfm" ) << std::endl
               << PC3::CLIO::unifyLength( "--boundary", "<string> <string>", "Boundary conditions for x and y. Is either 'periodic' or 'zero'." ) << std::endl;
     std::cout << PC3::CLIO::fillLine( console_width, seperator ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "System Parameters", "", "" ) << std::endl
@@ -89,8 +90,8 @@ void PC3::SystemParameters::printHelp() {
     std::cout << PC3::CLIO::fillLine( console_width, seperator ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "Envelopes.", "", "" ) << std::endl
               << PC3::CLIO::unifyLength( "Envelopes are passed using either their spatial and temporal characteristics, or by loading an external file. Syntax:", "", "" ) << std::endl
-              << PC3::CLIO::unifyLength( "--envelope", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string> osc <double> <double> <double>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring), [t0, frequency, sigma]. 'osc' signals the temporal envelope, which can be omitted for constant envelope. If 'time' is given: kind (gauss: ~cos(wt), cos: ~cos(wt), iexp: ~exp(iwt),) t0, frequency, sigma" ) << std::endl
-              << PC3::CLIO::unifyLength( "--envelope", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string> time load <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring), [t0, frequency, sigma]. 'osc' signals the temporal envelope, which can be omitted for constant envelope. If 'time' is given: path" ) << std::endl
+              << PC3::CLIO::unifyLength( "--envelope", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string> time <double> <double> <double>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring), [t0, frequency, sigma]. 'time' signals the temporal envelope, which can be omitted for constant envelope. If 'time' is given: kind (gauss: ~cos(wt), cos: ~cos(wt), iexp: ~exp(iwt),) t0, frequency, sigma" ) << std::endl
+              << PC3::CLIO::unifyLength( "--envelope", "<double> <string> <double> <double> <double> <double> <string> <double> <double> <string> time load <string>", "amplitude, behaviour (add,multiply,replace,adaptive,complex), widthX, widthY, posX, posY, pol (plus,minus,both), exponent, charge, type (gauss, ring), [t0, frequency, sigma]. 'time' signals the temporal envelope, which can be omitted for constant envelope. If 'time' is given: path" ) << std::endl
               << PC3::CLIO::unifyLength( "--envelope", "load <string> <double> <string> <string> time <string> <double> <double> <double>", "path, amplitude, behaviour (add,multiply,replace,adaptive,complex), pol (plus,minus,both)." ) << std::endl
               << PC3::CLIO::unifyLength( "--envelope", "load <string> <double> <string> <string> time load <string> ", "path, amplitude, behaviour (add,multiply,replace,adaptive,complex), pol (plus,minus,both). For time: path" ) << std::endl
               << "Possible Envelopes include:" << std::endl
