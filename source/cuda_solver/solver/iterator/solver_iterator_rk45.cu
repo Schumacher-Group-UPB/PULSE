@@ -53,27 +53,11 @@
 * @param system The system to iterate
 * @param evaluate_pulse If true, the pulse is evaluated at the current time step
 */
+
 void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size ) {
+
     // Accept current step?
     bool accept = false;
-
-    // This variable contains all the device pointers the kernel could need
-    auto device_pointers = matrix.pointers();
-    // Same IO every time except for error kernel
-    Kernel::InputOutput io = { 
-        device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, 
-        device_pointers.reservoir_plus, device_pointers.reservoir_minus, 
-        device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, 
-        device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus 
-    };
-
-    // The CPU should briefly evaluate wether the stochastic kernel is used
-    bool evaluate_stochastic = system.evaluateStochastic();
-
-    // Pointers to Oscillation Parameters
-    auto pulse_pointers = dev_pulse_oscillation.pointers();
-    auto pump_pointers = dev_pump_oscillation.pointers();
-    auto potential_pointers = dev_potential_oscillation.pointers();
 
     auto cf = RKCoefficients::DP();
 
@@ -82,61 +66,48 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         auto p = system.kernel_parameters;
         Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
 
-        CALCULATE_K( 1, p.t, wavefunction, reservoir );
-        
-        CALL_KERNEL(
-            Kernel::RK::runge_sum_to_input_kw, "Sum for K1", grid_size, block_size,
-            dt, device_pointers, p, io,
-            { cf.b11 }
-        );
-        
-        CALCULATE_K( 2, p.t + cf.a2 * p.dt, buffer_wavefunction, buffer_reservoir );
-        
-        CALL_KERNEL(
-            Kernel::RK::runge_sum_to_input_kw, "Sum for K2", grid_size, block_size,
-            dt, device_pointers, p, io,
-            { cf.b21, cf.b22 }
-        );
+        updateKernelArguments( system.p.t, dt );
 
-        CALCULATE_K( 3, p.t + cf.a3 * p.dt, buffer_wavefunction, buffer_reservoir );
+        MERGED_CALL(
 
-        CALL_KERNEL(
-            Kernel::RK::runge_sum_to_input_kw, "Sum for K3", grid_size, block_size,
-            dt, device_pointers, p, io,
-            { cf.b31, cf.b32, cf.b33 }
-        );
+            CALCULATE_K( 1, wavefunction, reservoir );
+            
+            INTERMEDIATE_SUM_K( 1, cf.b11 );
+            
+            CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir );
+            
+            INTERMEDIATE_SUM_K( 2, cf.b21, cf.b22 );
 
+            CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir );
 
-        CALCULATE_K( 4, p.t + cf.a4 * p.dt, buffer_wavefunction, buffer_reservoir );
+            INTERMEDIATE_SUM_K( 3, cf.b31, cf.b32, cf.b33 );
 
-        CALL_KERNEL(
-            Kernel::RK::runge_sum_to_input_kw, "Sum for K4", grid_size, block_size,
-            dt, device_pointers, p, io,
-            { cf.b41, cf.b42, cf.b43, cf.b44 }
-        );
+            CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir );
 
-        CALCULATE_K( 5, p.t + cf.a5 * p.dt, buffer_wavefunction, buffer_reservoir );
+            INTERMEDIATE_SUM_K( 4, cf.b41, cf.b42, cf.b43, cf.b44 );
 
-        CALL_KERNEL(
-            Kernel::RK::runge_sum_to_input_kw, "Sum for K5", grid_size, block_size,
-            dt, device_pointers, p, io,
-            { cf.b51, cf.b52, cf.b53, cf.b54, cf.b55 }
-        );
+            CALCULATE_K( 5, buffer_wavefunction, buffer_reservoir );
 
-        CALCULATE_K( 6, p.t + cf.a6 * p.dt, buffer_wavefunction, buffer_reservoir );
+            INTERMEDIATE_SUM_K( 5, cf.b51, cf.b52, cf.b53, cf.b54, cf.b55 );
 
-        // Final Result is in the buffer_ arrays.
-        CALL_KERNEL(
-            Kernel::RK::runge_sum_to_input_kw, "Sum for K6", grid_size, block_size,
-            dt, device_pointers, p, io,
-            { cf.b61, cf.b62, cf.b63, cf.b64, cf.b65, cf.b66 }
-        );
+            CALCULATE_K( 6, buffer_wavefunction, buffer_reservoir );
 
-        CALL_KERNEL(
-            Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size,
-            dt, device_pointers, p,
-            { cf.e7 /* WF */, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
-        );
+            // Final Result is in the buffer_ arrays.
+            FINAL_SUM_K( cf.b61, cf.b62, cf.b63, cf.b64, cf.b65, cf.b66 );
+
+            CALL_KERNEL(
+                Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size, stream, // MERGED_CALL creates a stream variable
+                kernel_arguments, 
+                {
+                    kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, 
+                    kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, 
+                    kernel_arguments.dev_ptrs.buffer_wavefunction_plus, kernel_arguments.dev_ptrs.buffer_wavefunction_minus, 
+                    kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus
+                },
+                { cf.e7 /* WF */, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
+            );
+            
+        )
 
         #ifdef USE_CUDA
             Type::complex error = thrust::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), Type::complex(0.0), thrust::plus<Type::complex>() );

@@ -32,62 +32,34 @@
  */
 
 void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size ) {
-    // This variable contains all the system parameters the kernel could need
-    auto p = system.kernel_parameters;
-    Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
+
+    Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
+
+    updateKernelArguments( system.p.t, dt );
+
+    MERGED_CALL(
+    //cudaStream_t stream = 0;
     
-    // This variable contains all the device pointers the kernel could need
-    auto device_pointers = matrix.pointers();
-    // Same IO every time
-    Kernel::InputOutput io = { 
-        device_pointers.wavefunction_plus, device_pointers.wavefunction_minus, 
-        device_pointers.reservoir_plus, device_pointers.reservoir_minus, 
-        device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, 
-        device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus 
-    };
+        CALCULATE_K( 1, wavefunction, reservoir );
+    
+        INTERMEDIATE_SUM_K( 1, 0.5 ); 
 
-    // The CPU should briefly evaluate wether the stochastic kernel is used
-    bool evaluate_stochastic = system.evaluateStochastic();
-
-    // Pointers to Oscillation Parameters
-    auto pulse_pointers = dev_pulse_oscillation.pointers();
-    auto pump_pointers = dev_pump_oscillation.pointers();
-    auto potential_pointers = dev_potential_oscillation.pointers();
-
-    CALCULATE_K( 1, p.t, wavefunction, reservoir );
+        CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir );
  
-    CALL_KERNEL(
-        Kernel::RK::runge_sum_to_input_kw, "Sum for K4", grid_size, block_size,
-        dt, device_pointers, p, io,
-        { 0.5 } // 0.5*dt*K1
-    );
+        INTERMEDIATE_SUM_K( 2, 0.0, 0.5 );
 
-    CALCULATE_K( 2, p.t + 0.5 * p.dt, buffer_wavefunction, buffer_reservoir );
+        CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir);
 
-    CALL_KERNEL(
-        Kernel::RK::runge_sum_to_input_kw, "Sum for K3", grid_size, block_size,
-        dt, device_pointers, p, io,
-        { 0.0, 0.5 } // 0.5*dt*K2
-    );
+        INTERMEDIATE_SUM_K( 3, 0.0, 0.0, 1.0 );
 
-    CALCULATE_K( 3, p.t + 0.5 * p.dt, buffer_wavefunction, buffer_reservoir);
+        CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir);
 
-    CALL_KERNEL(
-        Kernel::RK::runge_sum_to_input_kw, "Sum for K4", grid_size, block_size,
-        dt, device_pointers, p, io,
-        { 0.0, 0.0, 1.0 } // dt*K3
-    );
+        FINAL_SUM_K( 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 );
 
-    CALCULATE_K( 4, p.t + p.dt, buffer_wavefunction, buffer_reservoir);
-
-    CALL_KERNEL(
-        Kernel::RK::runge_sum_to_input_kw, "Final Sum", grid_size, block_size,
-        dt, device_pointers, p, io,
-        { 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 } // RK Final Weights
-    );
+    )
 
     // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
-    swapBuffers();
+    //swapBuffers();
     
     return;
 }

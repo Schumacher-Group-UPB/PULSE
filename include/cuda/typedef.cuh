@@ -82,7 +82,7 @@ namespace PC3::Type {
     #define PULSE_DEVICE
     #define PULSE_HOST
     #define PULSE_GLOBAL
-    #define PULSE_RESTRICT
+    #define PULSE_RESTRICT __restrict
 #else
     // Define PULSE_INLINE as nvcc's __inline__ when using the GPU
     #define PULSE_INLINE __inline__

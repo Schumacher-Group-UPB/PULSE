@@ -7,7 +7,7 @@ namespace PC3::Kernel {
     // If the GPU is used, overwrite the current index with the gpu thread index.
     #define OVERWRITE_THREAD_INDEX( i ) \
         i += blockIdx.x * blockDim.x + threadIdx.x; \
-        if (i >= p.N2) return;
+        if (i >= args.p.N2) return;
     #define GENERATE_THREAD_INDEX( N ) \
         int i = blockIdx.x * blockDim.x + threadIdx.x; \
         if (i >= N) return;

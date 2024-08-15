@@ -132,7 +132,7 @@ struct MatrixContainer {
         #undef X
 
         // Nullptr
-        const std::nullptr_t discard = nullptr;
+        std::nullptr_t discard = nullptr;
     };
 
     Pointers pointers() {

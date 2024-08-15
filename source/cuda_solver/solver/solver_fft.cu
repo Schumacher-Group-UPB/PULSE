@@ -69,7 +69,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
 
     // For now, we shift, transform, shift the results. TODO: Move this into one function without shifting
     // Shift FFT to center k = 0
-    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 0, // 0 = default stream 
         matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y 
     );
 
@@ -77,7 +77,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     if ( system.p.use_twin_mode ) {
         calculateFFT( matrix.wavefunction_minus.getDevicePtr(), matrix.fft_minus.getDevicePtr(), FFT::forward );
         
-        CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Minus", grid_size, block_size, 
+        CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Minus", grid_size, block_size, 0, // 0 = default stream 
             matrix.fft_minus.getDevicePtr(), system.p.N_x, system.p.N_y 
         );
     }
@@ -86,12 +86,12 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
         return;
     
     // Apply the FFT Mask Filter
-    CALL_KERNEL(PC3::Kernel::kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 
+    CALL_KERNEL(PC3::Kernel::kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream 
         matrix.fft_plus.getDevicePtr(), matrix.fft_mask_plus.getDevicePtr(), system.p.N_x*system.p.N_y
     );
     
     // Undo the shift
-    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 0, // 0 = default stream 
          matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y 
     );
 
@@ -99,7 +99,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     calculateFFT(  matrix.fft_plus.getDevicePtr(), matrix.wavefunction_plus.getDevicePtr(), FFT::inverse );
     
     // Shift FFT Once again for visualization
-    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Shift Plus", grid_size, block_size, 0, // 0 = default stream 
         matrix.fft_plus.getDevicePtr(), system.p.N_x, system.p.N_y 
     );
     
@@ -107,17 +107,17 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     if (not system.p.use_twin_mode)
         return;
 
-    CALL_KERNEL(PC3::Kernel::kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 
+    CALL_KERNEL(PC3::Kernel::kernel_mask_fft, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream 
         matrix.fft_minus.getDevicePtr(), matrix.fft_mask_minus.getDevicePtr(), system.p.N_x*system.p.N_y 
     );
 
-    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 0, // 0 = default stream 
         matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y 
     );
     
     calculateFFT( matrix.fft_minus.getDevicePtr(), matrix.wavefunction_minus.getDevicePtr(), FFT::inverse );
 
-    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 
+    CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 0, // 0 = default stream 
         matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y 
     );
 

@@ -40,13 +40,13 @@ bool PC3::Solver::iterate( ) {
         if (first_time) {
             first_time = false;
             CALL_KERNEL(
-                    PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size,
+                    PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0,
                     system.random_seed, device_pointers.random_state, system.p.N_x*system.p.N_y
                 );
             std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
         }
         CALL_KERNEL(
-            PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size,
+            PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0,
             device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
         );
     }
@@ -59,6 +59,7 @@ bool PC3::Solver::iterate( ) {
     dev_pulse_oscillation.amp.setTo( system.pulse.temporal_envelope );
     dev_potential_oscillation.amp.setTo( system.potential.temporal_envelope );
     dev_pump_oscillation.amp.setTo( system.pump.temporal_envelope );
+    
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate( block_size, grid_size );
 

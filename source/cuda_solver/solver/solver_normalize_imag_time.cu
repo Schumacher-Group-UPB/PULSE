@@ -16,8 +16,8 @@ void PC3::Solver::normalizeImaginaryTimePropagation( dim3 block_size, dim3 grid_
     
     // Calculate min and max values
     #ifdef USE_CPU
-        Type::real sum_psi_plus = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), PC3::SquareReduction(), Type::real(0.0), std::plus<Type::real>() );
-        Type::real sum_res_plus = std::transform_reduce( matrix.reservoir_plus.dbegin(), matrix.reservoir_plus.dend(), PC3::SquareReduction(), Type::real(0.0), std::plus<Type::real>() );
+        Type::real sum_psi_plus = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), Type::real(0.0), std::plus<Type::real>(), PC3::SquareReduction() );
+        Type::real sum_res_plus = std::transform_reduce( matrix.reservoir_plus.dbegin(), matrix.reservoir_plus.dend(), Type::real(0.0), std::plus<Type::real>(), PC3::SquareReduction() );
     #else
         Type::real sum_psi_plus = thrust::transform_reduce( matrix.wavefunction_plus.dbegin(),matrix.wavefunction_plus.dend(), PC3::SquareReduction(), Type::real(0.0), thrust::plus<Type::real>() );
         Type::real sum_res_plus = thrust::transform_reduce( matrix.reservoir_plus.dbegin(),matrix.reservoir_plus.dend(), PC3::SquareReduction(), Type::real(0.0), thrust::plus<Type::real>() );
@@ -44,8 +44,8 @@ void PC3::Solver::normalizeImaginaryTimePropagation( dim3 block_size, dim3 grid_
 
     // Calculate min and max values
     #ifdef USE_CPU
-        Type::real sum_psi_minus = std::transform_reduce( matrix.wavefunction_minus.dbegin(), matrix.wavefunction_minus.dend(), PC3::SquareReduction(), Type::real(0.0), std::plus<Type::real>() );
-        Type::real sum_res_minus = std::transform_reduce( matrix.reservoir_minus.dbegin(), matrix.reservoir_minus.dend(), PC3::SquareReduction(), Type::real(0.0), std::plus<Type::real>() );
+        Type::real sum_psi_minus = std::transform_reduce( matrix.wavefunction_minus.dbegin(), matrix.wavefunction_minus.dend(), Type::real(0.0), std::plus<Type::real>(), PC3::SquareReduction() );
+        Type::real sum_res_minus = std::transform_reduce( matrix.reservoir_minus.dbegin(), matrix.reservoir_minus.dend(), Type::real(0.0), std::plus<Type::real>(), PC3::SquareReduction() );
     #else
         Type::real sum_psi_minus = thrust::transform_reduce( matrix.wavefunction_minus.dbegin(),matrix.wavefunction_minus.dend(), PC3::SquareReduction(), Type::real(0.0), thrust::plus<Type::real>() );
         Type::real sum_res_minus = thrust::transform_reduce( matrix.reservoir_minus.dbegin(),matrix.reservoir_minus.dend(), PC3::SquareReduction(), Type::real(0.0), thrust::plus<Type::real>() );
