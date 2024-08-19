@@ -92,17 +92,18 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
             CALCULATE_K( 6, buffer_wavefunction, buffer_reservoir );
 
-            // Final Result is in the buffer_ arrays.
             FINAL_SUM_K( cf.b61, cf.b62, cf.b63, cf.b64, cf.b65, cf.b66 );
 
+            // TODO: swapBuffers funktioniert auf grund des graph cachings nicht mehr. deswegen: hier einfach den fehler ausrechnen, und wenn der klein genug ist, dann
+            // Psi next ins richtige Psi schreiben! dann spart man sich sogar die redundante rechnung falls psi nicht akzeptiert wird.
             CALL_KERNEL(
-                Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size, stream, // MERGED_CALL creates a stream variable
+                Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size, stream, // MERGED_CALL creates a static stream variable
                 kernel_arguments, 
                 {
                     kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, 
                     kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, 
-                    kernel_arguments.dev_ptrs.buffer_wavefunction_plus, kernel_arguments.dev_ptrs.buffer_wavefunction_minus, 
-                    kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus
+                    kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard, 
+                    kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard
                 },
                 { cf.e7 /* WF */, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
             );

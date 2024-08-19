@@ -42,8 +42,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Solver::KernelArgument
     
     // MARK: Stochastic
     if (args.p.stochastic_amplitude > 0.0) {
-        const Type::complex dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * in_rv + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
-        result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf / args.p.dV - dw / args.p.dt;
+        result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf / args.p.dV;
     }
     
     io.out_wf_plus[i] = result;

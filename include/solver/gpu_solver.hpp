@@ -75,6 +75,11 @@ class Solver {
     } kernel_arguments;
 
     void updateKernelArguments( Type::complex t, Type::complex dt ) {
+        kernel_arguments.pulse_pointers = dev_pulse_oscillation.pointers();
+        kernel_arguments.pump_pointers = dev_pump_oscillation.pointers();
+        kernel_arguments.potential_pointers = dev_potential_oscillation.pointers();
+        kernel_arguments.dev_ptrs = matrix.pointers();
+        kernel_arguments.p = system.kernel_parameters;
         kernel_arguments.t = t;
         kernel_arguments.dt = dt;
     }
@@ -91,12 +96,6 @@ class Solver {
         outputInitialMatrices();
         // Copy remaining stuff to Device.
         initializeDeviceMatricesFromHost();
-
-        kernel_arguments.pulse_pointers = dev_pulse_oscillation.pointers();
-        kernel_arguments.pump_pointers = dev_pump_oscillation.pointers();
-        kernel_arguments.potential_pointers = dev_potential_oscillation.pointers();
-        kernel_arguments.dev_ptrs = matrix.pointers();
-        kernel_arguments.p = system.kernel_parameters;
     }
 
     void initializeHostMatricesFromSystem();               // Evaluates the envelopes and initializes the host matrices
@@ -157,29 +156,34 @@ class Solver {
 #define CALCULATE_K( index, input_wavefunction, input_reservoir ) \
 CALL_KERNEL( \
     RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size, stream,  \
-    kernel_arguments, {      \
-kernel_arguments.dev_ptrs.input_wavefunction##_plus, kernel_arguments.dev_ptrs.input_wavefunction##_minus, kernel_arguments.dev_ptrs.input_reservoir##_plus, kernel_arguments.dev_ptrs.input_reservoir##_minus, \
-kernel_arguments.dev_ptrs.k##index##_wavefunction_plus, kernel_arguments.dev_ptrs.k##index##_wavefunction_minus, kernel_arguments.dev_ptrs.k##index##_reservoir_plus, kernel_arguments.dev_ptrs.k##index##_reservoir_minus \
-} \
+    kernel_arguments, \
+    {      \
+        kernel_arguments.dev_ptrs.input_wavefunction##_plus, kernel_arguments.dev_ptrs.input_wavefunction##_minus, kernel_arguments.dev_ptrs.input_reservoir##_plus, kernel_arguments.dev_ptrs.input_reservoir##_minus, \
+        kernel_arguments.dev_ptrs.k##index##_wavefunction_plus, kernel_arguments.dev_ptrs.k##index##_wavefunction_minus, kernel_arguments.dev_ptrs.k##index##_reservoir_plus, kernel_arguments.dev_ptrs.k##index##_reservoir_minus \
+    } \
 );
 
 #define INTERMEDIATE_SUM_K( index, ... ) \
 CALL_KERNEL( \
     Kernel::RK::runge_sum_to_input_kw, "Sum for K"#index, grid_size, block_size, stream, \
-    kernel_arguments, {kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
-            kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
-            kernel_arguments.dev_ptrs.buffer_wavefunction_plus, kernel_arguments.dev_ptrs.buffer_wavefunction_minus, \
-            kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus },\
+    kernel_arguments, { \
+        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
+        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
+        kernel_arguments.dev_ptrs.buffer_wavefunction_plus, kernel_arguments.dev_ptrs.buffer_wavefunction_minus, \
+        kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus \
+    },\
     {__VA_ARGS__} \
 );
 
 #define FINAL_SUM_K( ... ) \
 CALL_KERNEL( \
     Kernel::RK::runge_sum_to_input_kw, "Sum for Psi", grid_size, block_size, stream, \
-    kernel_arguments, {kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
-            kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
-            kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
-            kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus },\
+    kernel_arguments, { \
+        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
+        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
+        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
+        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus \
+    },\
     {__VA_ARGS__} \
 );
 
