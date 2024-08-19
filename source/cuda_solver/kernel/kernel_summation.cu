@@ -24,7 +24,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
     Type::complex rv = 0.0;
     Type::complex dw = 0.0;
     if (args.p.stochastic_amplitude > 0.0) {
-        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs. + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
+        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_plus[i] + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
     }
     for (int n = weights.start; n < weights.n; n++) {
         const auto w = weights.weights[n];
@@ -52,7 +52,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
     wf = 0.0;
     rv = 0.0;
     if (args.p.stochastic_amplitude > 0.0) {
-        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs. + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
+        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_minus[i] + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
     }
     for (int n = weights.start; n < weights.n; n++) {
         const auto w = weights.weights[n];
