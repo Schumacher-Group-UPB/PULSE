@@ -52,7 +52,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Solver::KernelArguments 
     // MARK: Stochastic
     if (args.p.stochastic_amplitude > 0.0) {
         const Type::complex dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * in_rv_plus + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
-        result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf_plus / args.p.dV - dw / args.p.dt;
+        result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf_plus / args.p.dV;
     }
 
     io.out_wf_plus[i] = result;
@@ -99,7 +99,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Solver::KernelArguments 
 
     if (args.p.stochastic_amplitude > 0.0) {
         const Type::complex dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * in_rv_minus + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
-        result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf_minus / args.p.dV - dw / args.p.dt;
+        result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf_minus / args.p.dV;
     }
 
     io.out_wf_minus[i] = result;

@@ -2,7 +2,7 @@
 #include "kernel/kernel_compute.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-// Summs one K
+// Summs one K. TODO: remove, redundant
 PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_ki( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     OVERWRITE_THREAD_INDEX(i);
 
@@ -22,8 +22,12 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
     OVERWRITE_THREAD_INDEX(i);
     Type::complex wf = 0.0;
     Type::complex rv = 0.0;
+    Type::complex dw = 0.0;
+    if (args.p.stochastic_amplitude > 0.0) {
+        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_plus[i] + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
+    }
     for (int n = weights.start; n < weights.n; n++) {
-        const auto w = weights.weights[n];
+        const Type::real w = weights.weights[n];
         switch (n) { 
             case 0: wf += w * args.dev_ptrs.k1_wavefunction_plus[i]; rv += w * args.dev_ptrs.k1_reservoir_plus[i]; break;
             case 1: wf += w * args.dev_ptrs.k2_wavefunction_plus[i]; rv += w * args.dev_ptrs.k2_reservoir_plus[i]; break;
@@ -36,6 +40,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
             case 8: wf += w * args.dev_ptrs.k9_wavefunction_plus[i]; rv += w * args.dev_ptrs.k9_reservoir_plus[i]; break;
             case 9: wf += w * args.dev_ptrs.k10_wavefunction_plus[i]; rv += w * args.dev_ptrs.k10_reservoir_plus[i]; break;
         }
+        wf += w*dw / args.dt;
     }
     
     io.out_wf_plus[i] = io.in_wf_plus[i] + args.dt * wf;
@@ -46,8 +51,11 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
     
     wf = 0.0;
     rv = 0.0;
+    if (args.p.stochastic_amplitude > 0.0) {
+        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_minus[i] + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
+    }
     for (int n = weights.start; n < weights.n; n++) {
-        const auto w = weights.weights[n];
+        const Type::real w = weights.weights[n];
         switch (n) {
             case 0: wf += w * args.dev_ptrs.k1_wavefunction_minus[i]; rv += w * args.dev_ptrs.k1_reservoir_minus[i]; break;
             case 1: wf += w * args.dev_ptrs.k2_wavefunction_minus[i]; rv += w * args.dev_ptrs.k2_reservoir_minus[i]; break;
@@ -60,6 +68,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
             case 8: wf += w * args.dev_ptrs.k9_wavefunction_minus[i]; rv += w * args.dev_ptrs.k9_reservoir_minus[i]; break;
             case 9: wf += w * args.dev_ptrs.k10_wavefunction_minus[i]; rv += w * args.dev_ptrs.k10_reservoir_minus[i]; break;
         }
+        wf += w*dw / args.dt;
     }
     
     io.out_wf_minus[i] = io.in_wf_minus[i] + args.dt * wf;

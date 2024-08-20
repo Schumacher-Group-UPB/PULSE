@@ -38,8 +38,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_si
     updateKernelArguments( system.p.t, dt );
 
     MERGED_CALL(
-    //cudaStream_t stream = 0;
-    
+
         CALCULATE_K( 1, wavefunction, reservoir );
     
         INTERMEDIATE_SUM_K( 1, 0.5 ); 
@@ -57,9 +56,6 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_si
         FINAL_SUM_K( 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 );
 
     )
-
-    // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
-    //swapBuffers();
     
     return;
 }
