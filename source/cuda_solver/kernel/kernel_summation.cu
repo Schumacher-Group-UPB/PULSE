@@ -24,7 +24,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
     Type::complex rv = 0.0;
     Type::complex dw = 0.0;
     if (args.p.stochastic_amplitude > 0.0) {
-        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_plus[i] + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
+        dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
     }
     for (int n = weights.start; n < weights.n; n++) {
         const Type::real w = weights.weights[n];
@@ -68,11 +68,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Solver::KernelA
             case 8: wf += w * args.dev_ptrs.k9_wavefunction_minus[i]; rv += w * args.dev_ptrs.k9_reservoir_minus[i]; break;
             case 9: wf += w * args.dev_ptrs.k10_wavefunction_minus[i]; rv += w * args.dev_ptrs.k10_reservoir_minus[i]; break;
         }
-<<<<<<< HEAD
-        wf += w*dw / args.dt;
-=======
-        wf += w*dw;
->>>>>>> f10c49a134447439b5f25fd062f290d11aae7261
+        wf += w*dw / p.dt;
     }
     
     io.out_wf_minus[i] = io.in_wf_minus[i] + args.dt * wf;
