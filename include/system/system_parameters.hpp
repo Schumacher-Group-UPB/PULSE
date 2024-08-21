@@ -82,8 +82,10 @@ class SystemParameters {
     unsigned int random_seed;
     
     // History Output
-    unsigned int history_output_n, history_y, history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
+    size_t history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
     bool do_output_history_matrix;
+    size_t output_history_matrix_every; // Scales outEvery for the history matrices with this value
+    Type::real output_history_start_time; // Only output history matrices after this time
     Type::real output_every;
 
     bool do_overwrite_dt;

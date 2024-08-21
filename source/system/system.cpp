@@ -85,6 +85,7 @@ void PC3::SystemParameters::calculateAuto() {
     // Calculate dx and dt
     p.dx = p.L_x / ( p.N_x - 1 ); 
     p.dy = p.L_y / ( p.N_y - 1 ); 
+    p.dV = p.dx * p.dy; // Volume element
     p.one_over_dx2 = Type::real(1.0) / ( p.dx * p.dx );
     p.one_over_dy2 = Type::real(1.0) / ( p.dy * p.dy );
     p.m2_over_dx2_p_dy2 = Type::real(-2.0) * ( p.one_over_dx2 + p.one_over_dy2);

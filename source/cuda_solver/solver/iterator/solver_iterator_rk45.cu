@@ -55,7 +55,8 @@
 */
 
 void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size ) {
-
+}
+ /*
     // Accept current step?
     bool accept = false;
 
@@ -105,7 +106,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
                     kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard, 
                     kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard
                 },
-                { cf.e7 /* WF */, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
+                { cf.e7, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
             );
             
         )
@@ -118,7 +119,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             Type::real sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), Type::real(0.0), std::plus<Type::real>(), PC3::SquareReduction() );
         #endif
         // TODO: maybe go back to using max since thats faster
-        //auto plus_max = std::get<1>( minmax( matrix.wavefunction_plus.getDevicePtr(), p.N_x * p.N_y, true /*Device Pointer*/ ) );
+        //auto plus_max = std::get<1>( minmax( matrix.wavefunction_plus.getDevicePtr(), p.N_x * p.N_y, true ) );
         Type::real final_error = CUDA::abs(error) / sum_abs2;
 
         
@@ -152,3 +153,4 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
         }
     } while ( !accept );
 }
+*/

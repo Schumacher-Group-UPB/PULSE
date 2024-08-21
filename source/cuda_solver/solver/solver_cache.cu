@@ -14,11 +14,6 @@ void PC3::Solver::cacheValues() {
     const auto [min_plus, max_plus] = CUDA::minmax( matrix.wavefunction_plus.getDevicePtr(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
     cache_map_scalar["min_plus"].emplace_back( min_plus );
     cache_map_scalar["max_plus"].emplace_back( max_plus );
-    //matrix.wavefunction_max_plus.emplace_back( max_plus );
-    // DEPRECATED: Cuts. Use history instead.
-    // Cut at Y = 0
-    //auto cut_p = matrix.wavefunction_plus.sliceDevice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
-    //matrix.wavefunction_plus_history.emplace_back( cut_p );
 
     // Output Pulse, Pump and Potential Envelope functions to cache_map_scalar
     for (int g = 0; g < system.pulse.groupSize(); g++) {
@@ -49,9 +44,6 @@ void PC3::Solver::cacheValues() {
     const auto [min_minus, max_minus] = CUDA::minmax( matrix.wavefunction_minus.getDevicePtr(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
     cache_map_scalar["min_minus"].emplace_back( min_minus );
     cache_map_scalar["max_minus"].emplace_back( max_minus );
-    //matrix.wavefunction_max_minus.emplace_back( max_minus );
-    //auto cut_m = matrix.wavefunction_minus.sliceDevice( system.p.N_x * system.p.N_y / 2, system.p.N_x );
-    //matrix.wavefunction_minus_history.emplace_back( cut_m );
 }
 
 void PC3::Solver::cacheToFiles() {
@@ -71,46 +63,22 @@ void PC3::Solver::cacheToFiles() {
     }
     file_max.close();
 
-    // Guard when not outputting history
-    // DEPRECATED: Cuts. Use history instead.
-    //if ( not system.doOutput( "all", "mat", "history" ) )
-    //    return;
-    //auto& file_history_plus = filehandler.getFile( "history_plus" );
-    //const auto interval_time = CUDA::max<unsigned int>( 1u, matrix.wavefunction_plus_history.size() / system.history_output_n );
-    //const auto interval_x = CUDA::max<unsigned int>( 1u, matrix.wavefunction_plus_history.front().size() / system.history_output_n );
-    //for ( unsigned int i = 0; i < matrix.wavefunction_plus_history.size(); i += interval_time ) {
-    //    std::cout << "Writing history " << i << " of " << matrix.wavefunction_max_plus.size() << "\r";
-    //    for ( int k = 0; k < matrix.wavefunction_plus_history.front().size(); k += interval_x ) {
-    //        const auto current_plus = matrix.wavefunction_plus_history[i][k];
-    //        file_history_plus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
-    //    }
-    //    file_history_plus << "\n";
-    //}
-    //file_history_plus.close();
-
-    // TE/TM Guard
-    //if ( not system.p.use_twin_mode )
-    //    return;
-    //auto& file_history_minus = filehandler.getFile( "history_minus" );
-    //for ( unsigned int i = 0; i < matrix.wavefunction_minus_history.size(); i += interval_time ) {
-    //    std::cout << "Writing history " << i << " of " << matrix.wavefunction_max_minus.size() << "\r";
-    //    for ( int k = 0; k < matrix.wavefunction_minus_history.front().size(); k += interval_x ) {
-    //        const auto current_plus = matrix.wavefunction_minus_history[i][k];
-    //        file_history_minus << i << " " << k << " " << CUDA::real( current_plus ) << " " << CUDA::imag( current_plus ) << "\n";
-    //    }
-    //    file_history_minus << "\n";
-    //}
-    //file_history_minus.close();
 }
 
 // TODO: Support Multiple History Outputs, and also support piping them into a single file.
 // something like "append" mode, that doesnt open a new file but instead appends to the existing one.
-size_t _local_file_out_counter = 0;
+size_t _local_history_output_counter = 1; // output_history_matrix_every
 void PC3::Solver::cacheMatrices() {
-    if (not system.do_output_history_matrix)
+    if (not system.do_output_history_matrix) // Don't output history matrix
         return;
-    std::string suffix = "_"+std::to_string(_local_file_out_counter);
-    _local_file_out_counter++;
+    if ( system.p.t < system.output_history_start_time ) // Start time not reached
+        return;
+    if (_local_history_output_counter < system.output_history_matrix_every) { // Not yet time to output
+        _local_history_output_counter++;
+        return;
+    }
+    std::string suffix = "_"+std::to_string(system.p.t);
+    _local_history_output_counter = 1;
     outputMatrices( system.history_matrix_start_x, system.history_matrix_end_x, system.history_matrix_start_y, system.history_matrix_end_y, system.history_matrix_output_increment, suffix, "timeoutput/" );
 }
 

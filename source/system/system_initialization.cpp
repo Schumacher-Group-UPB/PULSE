@@ -71,6 +71,8 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     p.N2 = p.N_x * p.N_y;
     p.dV = p.L_x * p.L_y / p.N2;
 
+    std::cout << "DV = " << p.dV << std::endl;
+
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = true;
     #ifdef SFML_RENDER
@@ -131,18 +133,17 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         p.stochastic_amplitude = PC3::CLIO::getNextInput( argv, argc, "dw", ++index );
     }
 
-    history_output_n = 1000u;
-    history_y = 0;
-    if ( ( index = PC3::CLIO::findInArgv( "--history", argc, argv ) ) != -1 ) {
-        history_y = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_output_x", ++index );
-        history_output_n = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_output_n", index );
-    }
+    if ( ( index = PC3::CLIO::findInArgv( "--outEvery", argc, argv ) ) != -1 )
+        output_every = PC3::CLIO::getNextInput( argv, argc, "output_every", ++index );
+
     history_matrix_output_increment = 1u;
     history_matrix_start_x = 0;
     history_matrix_start_y = 0;
     history_matrix_end_x = p.N_x;
     history_matrix_end_y = p.N_y;
     do_output_history_matrix = false;
+    output_history_matrix_every = 1;
+    output_history_start_time = 0.0;
     if ( ( index = PC3::CLIO::findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
         history_matrix_start_x = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_x", ++index );
         history_matrix_end_x = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_x", index );
@@ -151,9 +152,10 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         history_matrix_output_increment = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_output_increment", index );
         do_output_history_matrix = true;
     }
-
-    if ( ( index = PC3::CLIO::findInArgv( "--outEvery", argc, argv ) ) != -1 )
-        output_every = PC3::CLIO::getNextInput( argv, argc, "output_every", ++index );
+    if ( ( index = PC3::CLIO::findInArgv( "--historyTime", argc, argv ) ) != -1 ) {
+        output_history_start_time = PC3::CLIO::getNextInput( argv, argc, "history_time", ++index );
+        output_history_matrix_every = size_t(PC3::CLIO::getNextInput( argv, argc, "history_time_every", index ));
+    }
 
     p.periodic_boundary_x = false;
     p.periodic_boundary_y = false;

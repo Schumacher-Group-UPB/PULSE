@@ -41,9 +41,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Solver::KernelArgument
     }
     
     // MARK: Stochastic
-    if (args.p.stochastic_amplitude > 0.0) {
+    if (args.p.stochastic_amplitude > 0.0)
         result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf / args.p.dV;
-    }
     
     io.out_wf_plus[i] = result;
     
@@ -58,6 +57,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Solver::KernelArgument
     // MARK: Stochastic-2
     if (args.p.stochastic_amplitude > 0.0)
         result += args.p.R * in_rv / args.p.dV;
+    
     io.out_rv_plus[i] = result;
 
 }
