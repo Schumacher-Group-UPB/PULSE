@@ -1,13 +1,16 @@
 #pragma once
 #include "cuda/typedef.cuh"
 #include "kernel_coefficients_dormand_prince.cuh"
-#include "solver/matrix_container.hpp"
 #include "solver/gpu_solver.hpp"
-#include "system/system_parameters.hpp"
+
+/**
+ * Contains the Kernels required for the Runge Kutta Solver
+ * These Kernels rely on Solver::KernelArguments and Solver::InputOutput
+ * to access the necessary data.
+ */
 
 namespace PC3::Kernel {
 
-    // Generalized Ki summation. If no specialized kernel is required (like for RK45) this one can be used instead.
     namespace RK {
         // Weights for up to 10 ks
         struct Weights { 
@@ -26,16 +29,18 @@ namespace PC3::Kernel {
                 }
             }
         };
-        PULSE_GLOBAL void runge_sum_to_input_ki( int i, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void runge_sum_to_input_kw( int i, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
-        PULSE_GLOBAL void runge_sum_to_error( int i, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
+        PULSE_GLOBAL void runge_sum_to_input_ki( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void runge_sum_to_input_kw( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
+        PULSE_GLOBAL void runge_sum_to_error( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
     } // namespace RK
 
     namespace Compute {
 
-        PULSE_GLOBAL void gp_tetm( int i, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void gp_scalar( int i, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_tetm( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_scalar( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io );
 
+        // These kernels operate on a full grid and do not require subgrid information.
+        // The matrices are initialized with subgridsize 1 and no halo.
         PULSE_GLOBAL void gp_scalar_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io );
         PULSE_GLOBAL void gp_scalar_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io );
         PULSE_GLOBAL void gp_scalar_independent( int i, Solver::KernelArguments args, Solver::InputOutput io );

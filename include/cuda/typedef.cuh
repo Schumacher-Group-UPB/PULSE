@@ -67,11 +67,13 @@ namespace PC3::Type {
         using device_vector = thrust::device_vector<T>;
     #endif
 
-    // Random Generator States
+    // Random Generator States and Streams
     #ifdef USE_CPU
         using cuda_random_state = std::mt19937;
+        using stream_t = int;
     #else
         using cuda_random_state = curandState;
+        using stream_t = cudaStream_t;
     #endif
 }
 

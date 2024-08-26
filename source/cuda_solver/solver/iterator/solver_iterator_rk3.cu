@@ -14,7 +14,7 @@
  */
 
 void PC3::Solver::iterateFixedTimestepRungeKutta3( dim3 block_size, dim3 grid_size ) {
-    
+    /*
     Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
 
     updateKernelArguments( system.p.t, dt );
@@ -33,7 +33,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta3( dim3 block_size, dim3 grid_si
     
         FINAL_SUM_K( 1.0/6.0, 4.0/6.0, 1.0/6.0 );
     )
-
+    */
     // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
     //swapBuffers();
     

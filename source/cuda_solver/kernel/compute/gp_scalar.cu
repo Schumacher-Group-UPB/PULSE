@@ -7,15 +7,15 @@
  * The differential equation for this model reduces to
  * ...
  */
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
 
-    OVERWRITE_THREAD_INDEX( i );
+    GENERATE_SUBGRID_INDEX(i, current_halo);
 
     const Type::complex in_wf = io.in_wf_plus[i];
     const Type::complex in_rv = io.in_rv_plus[i];
 
     Type::complex hamilton = args.p.m2_over_dx2_p_dy2 * in_wf;
-    hamilton += PC3::Kernel::Hamilton::scalar_neighbours( io.in_wf_plus, i, i / args.p.N_x /*Row*/, i % args.p.N_x /*Col*/, args.p.N_x, args.p.N_y, args.p.one_over_dx2, args.p.one_over_dy2, args.p.periodic_boundary_x, args.p.periodic_boundary_y );
+    //hamilton += PC3::Kernel::Hamilton::scalar_neighbours( io.in_wf_plus, i, i / args.p.N_x /*Row*/, i % args.p.N_x /*Col*/, args.p.N_x, args.p.N_y, args.p.one_over_dx2, args.p.one_over_dy2, args.p.periodic_boundary_x, args.p.periodic_boundary_y );
 
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
     
@@ -70,7 +70,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Solver::KernelArgument
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     
-    OVERWRITE_THREAD_INDEX( i );
+    GET_THREAD_INDEX( i, args.p.N2 );
 
     // We do some weird looking casting to avoid intermediate casts to size_t
     Type::real row = Type::real(size_t(i / args.p.N_x));
@@ -85,7 +85,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Solver:
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     
-    OVERWRITE_THREAD_INDEX( i );
+    GET_THREAD_INDEX( i, args.p.N2 );
     
     const Type::complex in_wf = io.in_wf_plus[i];
     const Type::complex in_rv = io.in_rv_plus[i];
@@ -126,7 +126,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Solver::Kern
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     
-    OVERWRITE_THREAD_INDEX( i );
+    GET_THREAD_INDEX( i, args.p.N2 );
     Type::complex result = {0.0,0.0};
 
     // MARK: Pulse

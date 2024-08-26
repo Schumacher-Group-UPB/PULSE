@@ -2,10 +2,10 @@
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
     
     //LOCAL_SHARE_STRUCT( SystemParameters::KernelParameters, p_in, p );
-    
+    /*
     OVERWRITE_THREAD_INDEX( i );
 
     const int row = i / args.p.N_x;
@@ -118,7 +118,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Solver::KernelArguments 
         result += args.p.R * in_rv_minus / args.p.dV;
 
     io.out_rv_minus[i] = result;
-
+*/
 }
 
 /**
@@ -128,7 +128,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Solver::KernelArguments 
 */
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
-    
+    /*
     OVERWRITE_THREAD_INDEX( i );
 
     // We do some weird looking casting to avoid intermediate casts to size_t
@@ -141,10 +141,11 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_linear_fourier( int i, Solver::K
     Type::real linear = args.p.h_bar_s/2.0/args.p.m_eff * (k_x*k_x + k_y*k_y);
     io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(args.p.N2) * CUDA::exp( args.p.minus_i * linear * args.dt / Type::real(2.0) );
     io.out_wf_minus[i] = io.in_wf_minus[i] / Type::real(args.p.N2) * CUDA::exp( args.p.minus_i * linear * args.dt / Type::real(2.0) );
+    */
 }
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
-    
+    /*
     OVERWRITE_THREAD_INDEX( i );
     
     const Type::complex in_wf_plus = io.in_wf_plus[i];
@@ -223,10 +224,11 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::Kernel
     if (args.p.stochastic_amplitude > 0.0)
         result += args.p.R * in_rv_minus / args.p.dV;
     io.out_rv_minus[i] = in_rv_minus + result * args.dt;
+    */
 }
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
-    
+    /*
     OVERWRITE_THREAD_INDEX( i );
 
     // MARK: Plus
@@ -260,4 +262,5 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::Kern
         result += dw;
     }
     io.out_wf_minus[i] = io.in_wf_minus[i] + result;
+    */
 }

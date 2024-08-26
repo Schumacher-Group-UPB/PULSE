@@ -31,9 +31,11 @@ bool PC3::Solver::iterate( ) {
     if ( system.p.t >= system.t_max )
         return false;
 
+
     dim3 block_size( system.block_size, 1 );
     dim3 grid_size( ( system.p.N_x*system.p.N_y + block_size.x ) / block_size.x, 1 );
-    
+
+    /*    
     // If required, calculate new set of random numbers.
     if (system.evaluateStochastic()) {
         auto device_pointers = matrix.pointers();
@@ -50,15 +52,21 @@ bool PC3::Solver::iterate( ) {
             device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
         );
     }
+    */
 
+    // TODO: Merhe these device arrays with the kernelParameters struct.
+    // should be easily possible because the sizes of the arrays are known at launch
+    // which means we can allocate the memory in the kernelParameters struct
     // Update the temporal envelopes
     system.pulse.updateTemporal( system.p.t );
     system.potential.updateTemporal( system.p.t );
     system.pump.updateTemporal( system.p.t );
     // And update the solver struct accordingly
-    dev_pulse_oscillation.amp.setTo( system.pulse.temporal_envelope );
-    dev_potential_oscillation.amp.setTo( system.potential.temporal_envelope );
-    dev_pump_oscillation.amp.setTo( system.pump.temporal_envelope );
+    std::cout << "AAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+    dev_pulse_oscillation.amp = system.pulse.temporal_envelope;
+    dev_potential_oscillation.amp = system.potential.temporal_envelope;
+    dev_pump_oscillation.amp = system.pump.temporal_envelope;
+    std::cout << "BBBBBBBBBBBBBBBBBBBBBBB" << std::endl;
     
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate( block_size, grid_size );

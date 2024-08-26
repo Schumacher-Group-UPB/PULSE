@@ -1,5 +1,48 @@
 #pragma once
 
+// Helper Macro to iterate a specific RK K
+#define CALCULATE_K( index, input_wavefunction, input_reservoir ) \
+{ \
+const size_t current_halo = system.p.halo_size - index; \
+CALL_KERNEL( \
+    RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size, stream,  \
+    current_halo, kernel_arguments, \
+    {      \
+        kernel_arguments.dev_ptrs.input_wavefunction##_plus, kernel_arguments.dev_ptrs.input_wavefunction##_minus, kernel_arguments.dev_ptrs.input_reservoir##_plus, kernel_arguments.dev_ptrs.input_reservoir##_minus, \
+        kernel_arguments.dev_ptrs.k##index##_wavefunction_plus, kernel_arguments.dev_ptrs.k##index##_wavefunction_minus, kernel_arguments.dev_ptrs.k##index##_reservoir_plus, kernel_arguments.dev_ptrs.k##index##_reservoir_minus \
+    } \
+); \
+};
+
+#define INTERMEDIATE_SUM_K( index, ... ) \
+{ \
+const size_t current_halo = system.p.halo_size - index; \
+CALL_KERNEL( \
+    Kernel::RK::runge_sum_to_input_kw, "Sum for K"#index, grid_size, block_size, stream, \
+    current_halo, kernel_arguments, { \
+        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
+        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
+        kernel_arguments.dev_ptrs.buffer_wavefunction_plus, kernel_arguments.dev_ptrs.buffer_wavefunction_minus, \
+        kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus \
+    },\
+    {__VA_ARGS__} \
+); \
+};
+
+#define FINAL_SUM_K( ... ) \
+{ \
+CALL_KERNEL( \
+    Kernel::RK::runge_sum_to_input_kw, "Sum for Psi", grid_size, block_size, stream, \
+    0, kernel_arguments, { \
+        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
+        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
+        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
+        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus \
+    },\
+    {__VA_ARGS__} \
+); \
+};
+
 #ifdef USE_CUDA
     // Execudes a CUDA Command, checks for the latest error and prints it
     // This is technically not a requirement, but usually good practice
@@ -20,15 +63,6 @@
         {                                               \
             func<<<grid, block, 0, stream>>>( 0, __VA_ARGS__ );    \
         }
-    
-    // Partially Calls a Kernel with less threads, thus only executing the 
-    // Kernel on a subset of indices. A CUDA stream can be passed, theoretically
-    // enabling the parallel execution of Kernels. The range of the subset executed
-    // is determinded by the grid and block sizes.
-    #define CALL_PARTIAL_KERNEL( func, name, grid, block, start, stream, ... ) \
-        {                                                                      \
-            func<<<grid, block, 0, stream>>>( start, __VA_ARGS__ );            \
-        }
     // Wraps the successive calls to the CUDA Kernels into a single CUDA Graph.
     #define MERGED_CALL(content) \
         {                           \
@@ -36,10 +70,15 @@
             static cudaGraph_t graph; \
             static cudaGraphExec_t instance; \
             static cudaStream_t stream; \
+            dim3 block( system.block_size, 1 ); \
+            dim3 grid( ( system.p.N_x*system.p.N_y + block_size.x ) / block_size.x, 1 ); \
             if ( !cuda_graph_created ) { \
                 cudaStreamCreate( &stream ); \
                 cudaStreamBeginCapture( stream, cudaStreamCaptureModeGlobal ); \
-                content; \
+                for (size_t subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++) { \
+                    updateKernelArguments(subgrid); \
+                    content; \
+                } \
                 cudaStreamEndCapture( stream, &graph ); \
                 cudaGraphInstantiate( &instance, graph, NULL, NULL, 0 ); \
                 cuda_graph_created = true; \
@@ -48,7 +87,6 @@
                 CHECK_CUDA_ERROR( cudaGraphLaunch( instance, stream ), "graph launch" ); \
             } \
         }
-
 #else
     // On the CPU, the check for CUDA errors does nothing
     #define CHECK_CUDA_ERROR( func, msg )
@@ -58,23 +96,15 @@
     #include <functional> 
     #define CALL_KERNEL( func, name, grid, block, stream, ... )                                                                                                 \
         {                                                                                                                                                \
-            std::function exec_func = func;                                                                                                                                            \
-            _Pragma( "omp parallel for schedule(static) num_threads(system.omp_max_threads)" ) for ( size_t i = 0; i < system.p.N_y; ++i ) {           \
-                for ( size_t j = 0; j < system.p.N_x; ++j ) {                                                                                           \
-                    const size_t index = i * system.p.N_x + j;                                                                                          \
-                    exec_func( index, __VA_ARGS__ );                                                                                                         \
-                }                                                                                                                                       \
-            }                                                                                                                                           \
-        }
-    // Partially calls a Kernel with less threads. Stream does nothing here.
-    // The range of the subset executed is also determiend by the grid and block sizes.
-    #define CALL_PARTIAL_KERNEL( func, name, grid, block, start, stream, ... )                                                                  \
-        {                                                                                                                                       \
-            std::function exec_func = func;                                                                                                                                            \
-            size_t total_threads = gridDim.x * gridDim.y * gridDim.z * blockDim.x * blockDim.y * blockDim.z;                                    \
-            _Pragma( "omp parallel for schedule(dynamic) num_threads(system.omp_max_threads)" ) for ( int i = start; i < total_threads; ++i ) { \
-                    exec_func( i, __VA_ARGS__ );                                                                                                     \
-            }                                                                                                                                   \
+            auto exec_func = func;                                                                                                                                            \
+            _Pragma( "omp parallel for schedule(static) num_threads(system.omp_max_threads)" ) \
+            for (size_t subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++)  \
+                for ( size_t i = 0; i < system.p.subgrid_N_y; ++i ) {           \
+                    for ( size_t j = 0; j < system.p.subgrid_N_x; ++j ) {                                                                                            \
+                        const size_t index = i * system.p.subgrid_N_x + j;                                                                                          \
+                        exec_func( index, subgrid, __VA_ARGS__ );                                                                                                         \
+                    }                                                                                                                                   \
+                }                                                                                                                                           \
         }
     // Merges the Kernel calls into a single function call. This is not required on the CPU.
     #define MERGED_CALL(content) content
@@ -139,4 +169,11 @@
         {                           \
             free( ptr );            \
         }
+#endif
+
+// Helper to retrieve the raw device pointer. When using nvcc and thrust, we need a raw pointer cast.
+#ifdef USECPU
+    #define GET_RAW_PTR( vec ) vec.data()
+#else
+    #define GET_RAW_PTR( vec ) thrust::raw_pointer_cast( vec.data() )
 #endif

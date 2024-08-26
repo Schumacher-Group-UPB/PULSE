@@ -2,9 +2,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
 #include "cuda/typedef.cuh"
 #include "cuda/cuda_macro.cuh"
+#include "kernel/kernel_halo.cuh"
 #include "misc/escape_sequences.hpp"
 #include "cuda/cuda_matrix_base.hpp"
 #include "misc/commandline_io.hpp"
@@ -15,6 +17,10 @@ namespace PC3 {
  * @brief CUDA Wrapper for a matrix
  * Handles memory management and host-device synchronization when
  * using the getDevicePtr() and getHostPtr() functions.
+ * 
+ * NEW: The main purpose of this class remains the communication between
+ * the full size host matrices (NxN) and the device matrices, which are halo'ed
+ * and may be composed of multiple MxM subgrids, each with its own device pointer.
  *
  * @tparam T either Type::real or Type::complex
  */
@@ -23,18 +29,34 @@ class CUDAMatrix : CUDAMatrixBase {
    private:
     // Rows and Cols of the Matrix. These can be different, so rows =/= cols
     unsigned int rows, cols;
+    unsigned int subgrid_rows, subgrid_cols, subgrid_rows_with_halo, subgrid_cols_with_halo;
     // The total Size of the Matrix = rows*cols. Used for allocation purposes.
-    unsigned int total_size;
+    unsigned int total_size_host;
+    unsigned int total_size_device;
+    // The number of subgrids the device matrix is composed of
+    unsigned int subgrids_per_dim;
+    unsigned int total_num_subgrids; // = subgrids_per_dim * subgrids_per_dim;
+    unsigned int subgrid_size; // = subgrid_rows * subgrid_cols;
+    unsigned int subgrid_size_with_halo; // = subgrid_rows_with_halo * subgrid_cols_with_halo;
+    // The size of the halo around each subgrid
+    unsigned int halo_size;
     // Name of the Matrix. Mostly used for debugging purposes.
     std::string name;
 
     // Device Vector. When using nvcc, this is a thrust::device_vector. When using gcc, this is a std::vector
-    Type::device_vector<T> device_data;
+    Type::host_vector<Type::device_vector<T>> device_data;
+    Type::device_vector<T*> subgrid_pointers_device;
     // Host Vector. When using nvcc, this is a thrust::host_vector. When using gcc, this is a std::vector
     Type::host_vector<T> host_data;
 
+    // Static buffer for the full size device matrix. This is used when the full grid is required on the device, for example
+    // when doing a FFT or when synchronizing the device with the host matrices. We specifically use a map here to allow
+    // for multiple sizes of matrices.
+    inline static std::map<size_t,Type::device_vector<T>> device_data_full;
+
     // Size of this Matrix. Mostly used for debugging and the Summary    
-    double size_in_mb;
+    double size_in_mb_host;
+    double size_in_mb_device;
 
     // On Device and On Host flags. Matrices always have both a host and a device pointer, but host and device
     // Memory can be individually reserved. This class will manage the transfer and synchronization between
@@ -48,19 +70,22 @@ class CUDAMatrix : CUDAMatrixBase {
         name = "unnamed";
         rows = 0;
         cols = 0;
-        total_size = 0;
+        total_size_host = 0;
+        total_size_device = 0;
         is_on_device = false;
         is_on_host = false;
         host_is_ahead = false;
     };
 
-    CUDAMatrix( CUDAMatrix& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), device_data( other.device_data ), host_data( other.host_data ) {
-        other.total_size = 0;
+    CUDAMatrix( CUDAMatrix& other ) : rows( other.rows ), cols( other.cols ), total_size_host( other.total_size_host ), total_size_device( other.total_size_device ), name( other.name ), device_data( other.device_data ), host_data( other.host_data ) {
+        other.total_size_host = 0;
+        other.total_size_device = 0;
         other.cols = 0;
         other.rows = 0;
     }
-    CUDAMatrix( CUDAMatrix&& other ) : rows( other.rows ), cols( other.cols ), total_size( other.total_size ), name( other.name ), device_data( other.device_data ), host_data( other.host_data ) {
-        other.total_size = 0;
+    CUDAMatrix( CUDAMatrix&& other ) : rows( other.rows ), cols( other.cols ), total_size_host( other.total_size_host ), total_size_device( other.total_size_device ), name( other.name ), device_data( other.device_data ), host_data( other.host_data ) {
+        other.total_size_host = 0;
+        other.total_size_device = 0;
         other.cols = 0;
         other.rows = 0;
     }
@@ -147,10 +172,10 @@ class CUDAMatrix : CUDAMatrixBase {
      */
     CUDAMatrix<T>& destroy_host() {
         // If the host data is already destroyed, do nothing
-        if ( host_data.empty() or rows == 0 or cols == 0 or total_size == 0 )
+        if ( host_data.empty() or rows == 0 or cols == 0 or total_size_host == 0 )
             return *this;
         // Subtract the current size of this host matrix from the global matrix size
-        global_total_host_mb -= size_in_mb;
+        global_total_host_mb -= size_in_mb_host;
         // Log this action. Mostly for simple debugging.
         if ( global_matrix_creation_log )
             std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string(rows) + "x" + std::to_string(rows) + " matrix '" + name + "' from host, total allocated host space: " + std::to_string(global_total_host_mb) + " MB.", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
@@ -168,10 +193,10 @@ class CUDAMatrix : CUDAMatrixBase {
     */
     CUDAMatrix<T>& destroy_device() {
         // If the device data is already destroyed, do nothing
-        if ( device_data.empty() or rows == 0 or cols == 0 or total_size == 0 )
+        if ( device_data.empty() or rows == 0 or cols == 0 or total_size_device == 0 )
             return *this;
         // Subtract the current size of this device matrix from the global matrix size
-        global_total_device_mb -= size_in_mb;
+        global_total_device_mb -= size_in_mb_device;
         // Log this action. Mostly for simple debugging.
         if ( global_matrix_creation_log )
             std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string(rows) + "x" + std::to_string(cols) + " matrix '" + name + "' from device, total allocated device space: " + std::to_string(global_total_device_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
@@ -191,30 +216,55 @@ class CUDAMatrix : CUDAMatrixBase {
         destroy_device();
     }
 
+    void calculateSizes() {
+        total_size_host = rows * cols;
+        size_in_mb_host = total_size_host * sizeof( T ) / 1024.0 / 1024.0;
+        total_size_device = (rows+2*halo_size) * (cols+2*halo_size);
+        size_in_mb_device = total_size_device * sizeof( T ) / 1024.0 / 1024.0;
+        subgrid_rows = rows / subgrids_per_dim;
+        subgrid_rows_with_halo = subgrid_rows + 2*halo_size;
+        subgrid_cols = cols / subgrids_per_dim;
+        subgrid_cols_with_halo = subgrid_cols + 2*halo_size;
+        total_num_subgrids = subgrids_per_dim * subgrids_per_dim;
+        subgrid_size = subgrid_rows * subgrid_cols;
+        subgrid_size_with_halo = subgrid_rows_with_halo * subgrid_cols_with_halo;
+    }
+
     /**
      * Constructs the Device Matrix vector. This function only allocates the memory and does not copy any data.
      * @return: ptr to this matrix.
     */
-    CUDAMatrix<T>& constructDevice( unsigned int rows, unsigned int cols, const std::string& name ) {
-        // Calculate the total size of this matrix as well as its size in bytes
-        total_size = rows * cols;
-        size_in_mb = total_size * sizeof( T ) / 1024.0 / 1024.0;
-        // Add the size to the global counter for the device sizes and update the maximum encountered memory size
-        global_total_device_mb += size_in_mb;
-        global_total_device_mb_max = std::max( global_total_device_mb, global_total_device_mb_max );
-        // Set the name, the rows and the cols of this object to the parameters passed.
+    CUDAMatrix<T>& constructDevice( unsigned int rows, unsigned int cols, unsigned int subgrids_per_dim, unsigned int halo_size, const std::string& name ) {
         this->name = name;
         this->rows = rows;
         this->cols = cols;
+        this->subgrids_per_dim = subgrids_per_dim;
+        this->halo_size = halo_size;
+        // Calculate the total size of this matrix as well as its size in bytes
+        calculateSizes();
+        // Add the size to the global counter for the device sizes and update the maximum encountered memory size
+        global_total_device_mb += size_in_mb_device;
+        global_total_device_mb_max = std::max( global_total_device_mb, global_total_device_mb_max );
         // Log this action.
         if ( global_matrix_creation_log )
-            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string(size_in_mb) + " MB for " + std::to_string(rows) + "x" + std::to_string(cols) + " device matrix '" + name + "', total allocated device space: " + std::to_string(global_total_device_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string(size_in_mb_device) + " MB for " + std::to_string(rows) + "x" + std::to_string(cols) + " device matrix '" + name + "' with halo " + std::to_string(halo_size) + " and " + std::to_string(total_num_subgrids) + " total subgrids, total allocated device space: " + std::to_string(global_total_device_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Reserve space on the device. When using nvcc, this allocates device memory on the GPU using thrust. When using gcc, this allocates memory for the CPU using std::vector.
-        device_data.resize( total_size );
+        // We use the [..] operator for device arrays provided by thrust, which is slow but we only do it when initializing the matrix.
+        subgrid_pointers_device = Type::device_vector<T*>( total_num_subgrids );
+        for (int i = 0; i < total_num_subgrids; i++) {
+            device_data.push_back( Type::device_vector<T>( total_size_device ) );        
+            subgrid_pointers_device[i] = thrust::raw_pointer_cast( device_data.back().data() );
+        }
+        if (not device_data_full.count(total_size_device)) {
+            if (global_matrix_creation_log)
+                std::cout << PC3::CLIO::prettyPrint( "Full grid buffer for size " + std::to_string(total_size_device) + " not found, creating new buffer.", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+            device_data_full[total_size_device] = Type::device_vector<T>( total_size_host );
+        }
         // This matrix is now on device
         is_on_device = true;
         // And the Device Matrix is now ahead of the host matrix
         host_is_ahead = false;
+        std::cout << "DONE!" << std::endl;
         // Return pointer to this
         return *this;
     }
@@ -223,29 +273,31 @@ class CUDAMatrix : CUDAMatrixBase {
      * Alias for constructDevice( rows, cols, name ) using root_size = rows*cols
     */
     CUDAMatrix<T>& constructDevice( unsigned int root_size, const std::string& name ) {
-        return constructDevice( root_size, root_size, name );
+        return constructDevice( root_size, root_size, 1, 0, name );
     }
 
     /**
      * Constructs the Host Matrix vector. This function only allocates the memory and does not copy any data.
      * @return: ptr to this matrix.
     */
-    CUDAMatrix<T>& constructHost( unsigned int rows, unsigned int cols, const std::string& name = "unnamed" ) {
-        // Calculate the total size of this matrix as well as its size in bytes
-        total_size = rows * cols;
-        size_in_mb = total_size * sizeof( T ) / 1024.0 / 1024.0;
-        // Add the size to the global counter for the host sizes and update the maximum encountered memory size
-        global_total_host_mb += size_in_mb;
-        global_total_host_mb_max = std::max( global_total_host_mb, global_total_host_mb_max );
-        // Set the name, the rows and the cols of this object to the parameters passed.
+    CUDAMatrix<T>& constructHost( unsigned int rows, unsigned int cols, unsigned int subgrids_per_dim, unsigned int halo_size, const std::string& name = "unnamed" ) {
         this->name = name;
         this->rows = rows;
         this->cols = cols;
+        this->subgrids_per_dim = subgrids_per_dim;
+        this->halo_size = halo_size;
+        // Calculate the total size of this matrix as well as its size in bytes
+        calculateSizes();
+        // Calculate the total size of this matrix as well as its size in bytes
+        size_in_mb_host = total_size_host * sizeof( T ) / 1024.0 / 1024.0;
+        // Add the size to the global counter for the host sizes and update the maximum encountered memory size
+        global_total_host_mb += size_in_mb_host;
+        global_total_host_mb_max = std::max( global_total_host_mb, global_total_host_mb_max );
         // Log this action.
         if ( global_matrix_creation_log )
-            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string(size_in_mb) + " MB for " + std::to_string(rows) + "x" + std::to_string(cols) + " host matrix '" + name + "', total allocated host space: " + std::to_string(global_total_host_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string(size_in_mb_host) + " MB for " + std::to_string(rows) + "x" + std::to_string(cols) + " host matrix '" + name + "', total allocated host space: " + std::to_string(global_total_host_mb) + " MB." , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Reserve space on the device. When using nvcc, this allocates device memory on the GPU using thrust. When using gcc, this allocates memory for the CPU using std::vector.
-        host_data.resize( total_size );
+        host_data.resize( total_size_host );
         // This Matrix is now on the host
         is_on_host = true;
         // The Host Matrix is now ahead of the device matrix
@@ -258,16 +310,17 @@ class CUDAMatrix : CUDAMatrixBase {
      * Alias for constructHost( rows, cols, name ) using root_size = rows*cols
     */
     CUDAMatrix<T>& constructHost( unsigned int root_size, const std::string& name = "unnamed" ) {
-        return constructHost( root_size, root_size, name );
+        return constructHost( root_size, root_size, 1, 0, name );
     }
 
     /**
      * Constructs both the Host and the Device Matrices.
      * This overwrites the name and the sizes, but we dont care.
+     * This function also assumes no subgrids and no halo size.
     */
-    CUDAMatrix<T>& construct( unsigned int rows, unsigned int cols, const std::string& name = "unnamed" ) {
-        constructDevice( rows, cols, name );
-        constructHost( rows, cols, name );
+    CUDAMatrix<T>& construct( unsigned int rows, unsigned int cols, unsigned int subgrids_per_dim, unsigned int halo_size, const std::string& name = "unnamed" ) {
+        constructDevice( rows, cols, subgrids_per_dim, halo_size, name );
+        constructHost( rows, cols, subgrids_per_dim, halo_size, name );
         return *this;
     }
 
@@ -275,7 +328,7 @@ class CUDAMatrix : CUDAMatrixBase {
      * Alias for construct( rows, cols, name ) using root_size = rows*cols
     */
     CUDAMatrix<T>& construct( unsigned int root_size, const std::string& name = "unnamed" ) {
-        return construct( root_size, root_size, name );
+        return construct( root_size, root_size, 1, 0, name );
     }
 
     /**
@@ -297,20 +350,32 @@ class CUDAMatrix : CUDAMatrixBase {
      * depending on which access methods are called by the user. This function also constructs the device
      * matrix if that has not been done yet. This allows the user to create host matrices and only create
      * the corresponding device matrix when it is needed.
+     * NEW: This function now also handles to synchronization between subgrids on the device and the full size host matrix.
     */
     CUDAMatrix<T>& hostToDeviceSync() {
         // If the matrix is not on host and thus, has to be empty, do nothing
         if (not is_on_host)
             return *this;
         // If the matrix does not exist on device yet, create it from host parameters
-        if ( not is_on_device and total_size > 0 )
-            constructDevice( rows, cols, name );
+        if ( not is_on_device and total_size_device > 0 )
+            constructDevice( rows, cols, subgrids_per_dim, halo_size, name );
         // Log this action
         if ( global_matrix_transfer_log )
             std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string(rows) + "x" + std::to_string(cols) + " matrix to device matrix '" + name + "'" , PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Because we use std::vectors for host and device when using gcc, and thrust::host_vector and thrust::device_vector when using nvcc, we
         // can just call device_data = host_data and std:: or thrust:: will take care of the rest. Internally, this will memcopy in both cases.
-        device_data = host_data;
+        // Because we merge subgrids, we have to copy the full matrix to the device_data_full buffer and then
+        // call toSubgrids() to copy the data to the subgrids.
+        // If the subgrid size is 1 and the halo_size is zero, we can just copy the full matrix to the device data
+        if (subgrid_size == 1 and halo_size == 0) {
+            device_data[0] = host_data;
+        } else {
+            std::cout << "COPYING FULL MATRIX TO DEVICE" << std::endl;
+            device_data_full[total_size_host] = host_data;
+            std::cout << "CALLING SUBGRIDS" << std::endl;
+            toSubgrids();
+            std::cout << "DONE" << std::endl;
+        }
         // The Device Matrix is now ahead of the Host matrix
         host_is_ahead = false;
         // Return this pointer.
@@ -329,14 +394,20 @@ class CUDAMatrix : CUDAMatrixBase {
         if (not is_on_device)
             return *this;
         // If the matrix does not exist on host yet, create it from device parameters
-        if ( not is_on_host and total_size > 0 )
-            constructHost( rows, cols, name );
+        if ( not is_on_host and total_size_device > 0 )
+            constructHost( rows, cols, subgrids_per_dim, halo_size, name );
         // Log this data
         if ( global_matrix_transfer_log )
             std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string(rows) + "x" + std::to_string(cols) + " matrix from device matrix '" + name + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
         // Because we use std::vectors for host and device when using gcc, and thrust::host_vector and thrust::device_vector when using nvcc, we
         // can just call host_data = device_data and std:: or thrust:: will take care of the rest. Internally, this will memcopy in both cases.
-        host_data = device_data;
+        // If the subgrid size is 1 and the halo_size is zero, we can just copy the device matrix to the host data
+        if (subgrid_size == 1 and halo_size == 0) {
+            host_data = device_data[0];
+        } else {
+            toFull();
+            host_data = device_data_full[total_size_host];
+        }
         // The Host Matrix is now ahead of the device matrix
         host_is_ahead = true;
         // Return this pointer
@@ -347,6 +418,7 @@ class CUDAMatrix : CUDAMatrixBase {
      * Swaps the pointers of the CUDAMatrix objects, as long as their sizes match.
      * This calls std::swap on the host and device vectors. Using nvcc or gcc, this will
      * simply switch the data pointers and not copy any data.
+       DEPRECATED; TODO: REMOVE
     */
     void swap( CUDAMatrix<T>& other ) {
         if ( rows != other.rows or cols != other.cols )
@@ -355,75 +427,39 @@ class CUDAMatrix : CUDAMatrixBase {
         std::swap( host_data, other.host_data );
     }
 
-    /**
-     * Helper Enum for direction of slicing data. 
-     * Right now, only column slicing is supported.
-    */
-    enum class Direction {
-        ROW,
-        COLUMN
-    };
-
-    /**
-     * Slice the host data and return the slice
-     * @param start: the starting point in the buffer. This is a scalar value and not a row/col.
-     * This means slice() copies not a row or col, but starts somewhere in the matrix and then copies
-     * [size] values.
-     * @param size: the number of values to copy
-     * @return: a host_vector of size [size]
-    */
-    Type::host_vector<T> slice( const int start, const int size, Direction direction = Direction::ROW ) {
-        // Create a temporary buffer that will hold the slice
-        Type::host_vector<T> buffer_out( size );
-        // Because we use either a thrust::host_vector or a std::vector, we can just call std::copy on the iterators.
-        std::copy( host_data.begin() + start, host_data.begin() + start + size, buffer_out.begin() );
-        // And return the final buffer
-        return buffer_out;
-    }
-
-    /**
-     * Slice the device data and return the slice.
-     * @param start: the starting point in the buffer. This is a scalar value and not a row/col.
-     * This means slice() copies not a row or col, but starts somewhere in the matrix and then copies
-     * [size] values.
-     * @param size: the number of values to copy
-     * @return: a host_vector of size [size]
-    */
-    std::vector<T> sliceDevice( const int start, const int size, Direction direction = Direction::ROW ) {
-        // Create a temporary buffer that will hold the slice
-        Type::host_vector<T> buffer_out( size );
-        // In this case, we need to use std::copy for gcc and thrust::copy for nvcc.
-        #ifdef USE_CPU
-            std::copy( device_data.begin() + start, device_data.begin() + start + size, buffer_out.begin() );
-        #else
-            thrust::copy( device_data.begin() + start, device_data.begin() + start + size, buffer_out.begin() );
-        #endif
-        // And return the final buffer
-        return buffer_out;
-    }
 
     /**
      * Returns the total size of this matrix.
     */
     inline unsigned int getTotalSize() const {
-        return total_size;
+        return total_size_host;
     }
 
     /**
      * Returns the raw pointer to the device memory. This is used in the Kernels, because they 
      * cannot directly work with std::vector or thrust::device_vectors.
+     * NEW: For a subgrid size of 1, the device pointer is a single pointer directly to the data.
+     *      For a subgrid size > 1, the device pointer is a pointer to a subgrid
     */
-    inline T* getDevicePtr() {
+    inline T* getDevicePtr(unsigned int subgrid = 0) {
         // If the host is ahead, synchronize first
         if ( host_is_ahead )
             hostToDeviceSync();
         // Return .data() if using gcc, and a raw_pointer_cast if using gcc.
         #ifdef USE_CPU
-            return device_data.data();
+            return device_data.at(subgrid).data();
         #else
             // Get the smart pointer from device_data.data() and convert it into a raw pointer
-            return thrust::raw_pointer_cast( device_data.data() );
+            return thrust::raw_pointer_cast( device_data[subgrid].data() );
         #endif
+    }
+
+    /**
+     * Returns a vector of device pointers
+     * @return T** - Pointer to the device pointers
+    */
+    inline auto getSubgridDevicePtrs() {
+        return thrust::raw_pointer_cast( subgrid_pointers_device.data() );
     }
 
     /**
@@ -448,15 +484,62 @@ class CUDAMatrix : CUDAMatrixBase {
         return host_data;
    }
 
+    CUDAMatrix<T>& toFull( PC3::Type::stream_t stream = 0 ) {
+        // Copy all device data to the full static device_data_full buffer
+        // and return this object so we can chain this function like
+        // matrix.toFull().fullMatrixBegin(); and so on
+        // This function will copy the data within the respective halos, if they exist,
+        // to the full matrix. 
+        dim3 block_size( 256, 1 );
+        dim3 grid_size( ( rows*cols + block_size.x ) / block_size.x, 1 );
+        auto fullgrid_dev_ptr = thrust::raw_pointer_cast( device_data_full[total_size_host].data() );
+        auto dev_ptrs = getSubgridDevicePtrs();
+        if (global_matrix_transfer_log)
+            std::cout << PC3::CLIO::prettyPrint( "Copying subgrids to full grid buffer for matrix '" + name + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+        CALL_KERNEL(PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:"+name, grid_size, block_size, stream, cols, rows, subgrids_per_dim, subgrid_cols, subgrid_rows, halo_size, fullgrid_dev_ptr, dev_ptrs);
+        return *this;
+    }
+
+    CUDAMatrix<T>& toSubgrids( PC3::Type::stream_t stream = 0 ) {
+        // Copy all device data of the full static device_data_full buffer
+        // to the subgrids and return this object so we can chain this function like
+        // matrix.toSubgrids().getDevicePtr(0); and so on.
+        // This function will copy the data within the full matrix to the respective subgrid
+        // centers. the halos will remain unsynchronized
+        dim3 block_size( 256, 1 );
+        dim3 grid_size( ( rows*cols + block_size.x ) / block_size.x, 1 );
+        auto fullgrid_dev_ptr = fullMatrixPointer();
+        auto dev_ptrs = getSubgridDevicePtrs();
+        if (global_matrix_transfer_log)
+            std::cout << PC3::CLIO::prettyPrint( "Copying full grid buffer to subgrids for matrix '" + name + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+        CALL_KERNEL(PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:"+name, grid_size, block_size, stream, cols, rows, subgrids_per_dim, subgrid_cols, subgrid_rows, halo_size, fullgrid_dev_ptr, dev_ptrs);
+        return *this;
+    }
+
+    // Only call these after toFull()
+    T* fullMatrixPointer() {
+        return thrust::raw_pointer_cast(device_data_full[total_size_host].data());
+    }
+    
+    auto fullMatrixBegin() {
+        return device_data_full[total_size_host].begin();
+    }
+    auto fullMatrixEnd() {
+        return device_data_full[total_size_host].end();
+    }
+
+    // TODO: wie genau macht man das jetzt mit der subgrid synchro? kernel um einzelne subgrids in großes gridbuffer zu kopieren?
+    // dann hier: dbegin() -> copy to static buffer -> return buffer adress
+
     /**
      * .begin() and .end() iterators for the device and host data.
      * These can be used functions like thrust::reduce or std::reduce
     */
     inline auto dbegin() {
-        return device_data.begin();
+        return fullMatrixBegin();
     }
     inline auto dend() {
-        return device_data.end();
+        return fullMatrixEnd();
     }
     inline auto hbegin() {
         return host_data.begin();
@@ -487,8 +570,8 @@ class CUDAMatrix : CUDAMatrixBase {
     inline T operator()( int row, int column ) {
         return getHostPtr()[row * rows + column];
     }
-    inline T deviceAt(int index) const {
-        return device_data[index];
+    inline T deviceAt(int index, const size_t subgrid = 0) const {
+        return device_data[subgrid][index];
     }
 };
 

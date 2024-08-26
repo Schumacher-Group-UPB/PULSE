@@ -55,7 +55,6 @@ int main( int argc, char* argv[] ) {
     double complete_duration = 0.;
     size_t out_every_iterations = 1;
     PC3::Type::real dt = system.p.dt;
-
     // Main Loop
     while ( system.p.t < system.t_max and running ) {
         TimeThis(

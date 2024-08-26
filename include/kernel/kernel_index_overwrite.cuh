@@ -5,9 +5,11 @@ namespace PC3::Kernel {
 
 #ifdef USE_CUDA
     // If the GPU is used, overwrite the current index with the gpu thread index.
-    #define OVERWRITE_THREAD_INDEX( i ) \
-        i += blockIdx.x * blockDim.x + threadIdx.x; \
-        if (i >= args.p.N2) return;
+    #define GENERATE_SUBGRID_INDEX(i, ch) \
+        size_t r = i / (args.p.subgrid_N_x + 2*ch); \
+        size_t c = i % (args.p.subgrid_N_x + 2*ch); \
+        i = (args.p.subgrid_N_x + 2*args.p.halo_size)*(r+args.p.halo_size-ch) + args.p.halo_size - ch + c; \
+        if (i >= args.p.subgrid_N2) return;
     #define GENERATE_THREAD_INDEX( N ) \
         int i = blockIdx.x * blockDim.x + threadIdx.x; \
         if (i >= N) return;
@@ -22,9 +24,12 @@ namespace PC3::Kernel {
         } \
         __syncthreads();
 #else
-
+    #define GENERATE_SUBGRID_INDEX(i, ch) \
+        size_t r = i / (args.p.subgrid_N_x + 2*ch); \
+        size_t c = i % (args.p.subgrid_N_x + 2*ch); \
+        i = (args.p.subgrid_N_x + 2*args.p.halo_size)*(r+args.p.halo_size-ch) + args.p.halo_size - ch + c; \
+        if (i >= args.p.subgrid_N2) return;
     // Else the macro is empty.
-    #define OVERWRITE_THREAD_INDEX( i )
     #define GENERATE_THREAD_INDEX( N ) \
         int i = 0;
     #define GET_THREAD_INDEX( i, N )

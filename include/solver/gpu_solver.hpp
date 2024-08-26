@@ -9,7 +9,7 @@
 #include "kernel/kernel_fft.cuh"
 #include "system/system_parameters.hpp"
 #include "system/filehandler.hpp"
-#include "solver/matrix_container.hpp"
+#include "solver/matrix_container.cuh"
 #include "misc/escape_sequences.hpp"
 
 namespace PC3 {
@@ -33,16 +33,17 @@ class Solver {
     PC3::SystemParameters& system;
     PC3::FileHandler& filehandler;
 
+    // TODO: amp zu Type::device_vector. cudamatrix not needed
     struct TemporalEvelope {
-        PC3::CUDAMatrix<Type::complex> amp;
+        PC3::Type::device_vector<Type::complex> amp;
 
         struct Pointers {
             Type::complex* amp;
-            unsigned int n;
+            size_t n;
         };
 
         Pointers pointers() {
-            return Pointers{ amp.getDevicePtr(), amp.getTotalSize() };
+            return Pointers{ GET_RAW_PTR(amp), amp.size() };
         }
     } dev_pulse_oscillation, dev_pump_oscillation, dev_potential_oscillation;
 
@@ -74,14 +75,14 @@ class Solver {
         Type::complex t; // t is set explicitely
     } kernel_arguments;
 
-    void updateKernelArguments( Type::complex t, Type::complex dt ) {
+    void updateKernelArguments(const size_t subgrid) {
         kernel_arguments.pulse_pointers = dev_pulse_oscillation.pointers();
         kernel_arguments.pump_pointers = dev_pump_oscillation.pointers();
         kernel_arguments.potential_pointers = dev_potential_oscillation.pointers();
-        kernel_arguments.dev_ptrs = matrix.pointers();
+        kernel_arguments.dev_ptrs = matrix.pointers(subgrid);
         kernel_arguments.p = system.kernel_parameters;
-        kernel_arguments.t = t;
-        kernel_arguments.dt = dt;
+        kernel_arguments.t = system.p.t; // Stuff like this doesnt work. change to passing a reference to the cuda graph!
+        kernel_arguments.dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0); // This is also fixed. Problem: updateing dt in main loop does not change this dt!
     }
 
     // Cache Maps
@@ -151,41 +152,6 @@ class Solver {
 #define RUNGE_FUNCTION_GP_LINEAR (system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_linear_fourier : PC3::Kernel::Compute::gp_scalar_linear_fourier)
 #define RUNGE_FUNCTION_GP_NONLINEAR (system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_nonlinear : PC3::Kernel::Compute::gp_scalar_nonlinear)
 #define RUNGE_FUNCTION_GP_INDEPENDENT (system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_independent : PC3::Kernel::Compute::gp_scalar_independent)
-
-// Helper Macro to iterate a specific RK K
-#define CALCULATE_K( index, input_wavefunction, input_reservoir ) \
-CALL_KERNEL( \
-    RUNGE_FUNCTION_GP, "K"#index, grid_size, block_size, stream,  \
-    kernel_arguments, \
-    {      \
-        kernel_arguments.dev_ptrs.input_wavefunction##_plus, kernel_arguments.dev_ptrs.input_wavefunction##_minus, kernel_arguments.dev_ptrs.input_reservoir##_plus, kernel_arguments.dev_ptrs.input_reservoir##_minus, \
-        kernel_arguments.dev_ptrs.k##index##_wavefunction_plus, kernel_arguments.dev_ptrs.k##index##_wavefunction_minus, kernel_arguments.dev_ptrs.k##index##_reservoir_plus, kernel_arguments.dev_ptrs.k##index##_reservoir_minus \
-    } \
-);
-
-#define INTERMEDIATE_SUM_K( index, ... ) \
-CALL_KERNEL( \
-    Kernel::RK::runge_sum_to_input_kw, "Sum for K"#index, grid_size, block_size, stream, \
-    kernel_arguments, { \
-        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
-        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
-        kernel_arguments.dev_ptrs.buffer_wavefunction_plus, kernel_arguments.dev_ptrs.buffer_wavefunction_minus, \
-        kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus \
-    },\
-    {__VA_ARGS__} \
-);
-
-#define FINAL_SUM_K( ... ) \
-CALL_KERNEL( \
-    Kernel::RK::runge_sum_to_input_kw, "Sum for Psi", grid_size, block_size, stream, \
-    kernel_arguments, { \
-        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
-        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, \
-        kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, \
-        kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus \
-    },\
-    {__VA_ARGS__} \
-);
 
 struct SquareReduction
 {

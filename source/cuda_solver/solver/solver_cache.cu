@@ -11,7 +11,7 @@ void PC3::Solver::cacheValues() {
     //matrix.times.emplace_back( system.p.t );
 
     // Min and Max
-    const auto [min_plus, max_plus] = CUDA::minmax( matrix.wavefunction_plus.getDevicePtr(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
+    const auto [min_plus, max_plus] = CUDA::minmax( matrix.wavefunction_plus.toFull().fullMatrixPointer(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
     cache_map_scalar["min_plus"].emplace_back( min_plus );
     cache_map_scalar["max_plus"].emplace_back( max_plus );
 
@@ -41,7 +41,7 @@ void PC3::Solver::cacheValues() {
         return;
 
     // Same for _minus component if use_twin_mode is true
-    const auto [min_minus, max_minus] = CUDA::minmax( matrix.wavefunction_minus.getDevicePtr(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
+    const auto [min_minus, max_minus] = CUDA::minmax( matrix.wavefunction_minus.toFull().fullMatrixPointer(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
     cache_map_scalar["min_minus"].emplace_back( min_minus );
     cache_map_scalar["max_minus"].emplace_back( max_minus );
 }

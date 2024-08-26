@@ -13,7 +13,7 @@
  * Split Step Fourier Method
  */
 void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
-    
+    /*
     Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
 
     auto device_pointers = matrix.pointers();
@@ -79,5 +79,5 @@ void PC3::Solver::iterateSplitStepFourier( dim3 block_size, dim3 grid_size ) {
 
     // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
     swapBuffers();
-
+    */
 }

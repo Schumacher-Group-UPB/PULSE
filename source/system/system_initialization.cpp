@@ -68,10 +68,15 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         p.N_x = (int)PC3::CLIO::getNextInput( argv, argc, "N_x", ++index );
         p.N_y = (int)PC3::CLIO::getNextInput( argv, argc, "N_y", index );
     }
-    p.N2 = p.N_x * p.N_y;
-    p.dV = p.L_x * p.L_y / p.N2;
+    p.subgrids_x = 1;
+    p.subgrids_y = 1;
+    p.halo_size = 4;
+    p.subgrid_N_x = p.N_x;
+    p.subgrid_N_y = p.N_y;
 
-    std::cout << "DV = " << p.dV << std::endl;
+    std::cout << "Subgrid Configuration: " << p.subgrids_x << "x" << p.subgrids_y << std::endl;
+    std::cout << "Subgrid Size: " << p.subgrid_N_x << "x" << p.subgrid_N_y << std::endl;
+    std::cout << "Halo Size: " << p.halo_size << std::endl;
 
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = true;
@@ -194,6 +199,9 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     // Same goes for the scaled mass.
     if ( ( index = PC3::CLIO::findInArgv( "--meff", argc, argv ) ) != -1 )
         p.m_eff = PC3::CLIO::getNextInput( argv, argc, "m_eff", ++index );
+
+    // Solver Halo and Subgrid configuration
+    
 
     //////////////////////////////
     // Custom Read-Ins go here! //

@@ -63,7 +63,7 @@
  * to a cached filter mask, which itself will be shifted.
  */
 void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask ) {
-    
+    /*
     // Calculate the actual FFTs
     calculateFFT( matrix.wavefunction_plus.getDevicePtr(), matrix.fft_plus.getDevicePtr(), FFT::forward );
 
@@ -120,7 +120,7 @@ void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_ma
     CALL_KERNEL( PC3::Kernel::fft_shift_2D, "FFT Minus Plus", grid_size, block_size, 0, // 0 = default stream 
         matrix.fft_minus.getDevicePtr(), system.p.N_x,system.p.N_y 
     );
-
+    */
 }
 
 void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir ) {

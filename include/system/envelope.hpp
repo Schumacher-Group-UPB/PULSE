@@ -31,7 +31,7 @@ class Envelope {
     // Helper to load cache matrices from paths
     std::vector<std::unique_ptr<PC3::Type::complex[]>> cache;
     // Temporal Envelope. This will be recalculated every timestep
-    std::vector<PC3::Type::complex> temporal_envelope;
+    PC3::Type::host_vector<PC3::Type::complex> temporal_envelope;
     // Points for interpolation
     std::vector<std::vector<std::vector<Type::real>>> temporal_time_points; // TODO: Read Points and interpolate between them
 

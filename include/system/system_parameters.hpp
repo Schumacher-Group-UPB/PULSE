@@ -26,7 +26,11 @@ class SystemParameters {
     struct KernelParameters {
 
         // Size Variables
-        unsigned int N_x, N_y, N2;
+        size_t N_x, N_y, N2;
+        // Subgrid and Halo
+        size_t halo_size;
+        size_t subgrid_N_x, subgrid_N_y, subgrid_N2;
+        size_t subgrids_x, subgrids_y; // For now, subgrids_x = subgrids_y at all times, even if N_x != N_y
         // Time variables
         Type::real t, dt;
         
@@ -61,14 +65,14 @@ class SystemParameters {
     KernelParameters& p = kernel_parameters;
 
     // Numerics
-    unsigned int iteration;
+    size_t iteration;
     bool disableRender;
 
     // RK Solver Variables
     Type::real t_max, dt_max, dt_min, tolerance, fft_every, random_system_amplitude, magic_timestep;
 
     // Kernel Block Size
-    unsigned int block_size, omp_max_threads;
+    size_t block_size, omp_max_threads;
 
     // Initialize the system randomly
     bool randomly_initialize_system;

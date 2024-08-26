@@ -10,6 +10,7 @@ namespace PC3 {
 * in_ptr_struct: If true, this matrix will be included in the pointer struct and can be accessed from the kernels: TODO
 * name: The name of the matrix
 * size_scaling: The scaling factor for the size of the matrix
+* halo: Integer specifying the size of the halo. Most matrices should not have a halo, so halo = 0
 * condition_for_construction: if false, neither the host nor the device matrices are constructed
 * 
 * We use this not-so-pretty macro to define matrices to shorten this file and to 
@@ -35,8 +36,8 @@ namespace PC3 {
     DEFINE_MATRIX(Type::complex, true, buffer_wavefunction_minus, 1, use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, buffer_reservoir_plus, 1, true) \
     DEFINE_MATRIX(Type::complex, true, buffer_reservoir_minus, 1, use_twin_mode) \
-    DEFINE_MATRIX(Type::real, true, fft_mask_plus, 1, use_fft) \
-    DEFINE_MATRIX(Type::real, true, fft_mask_minus, 1, use_fft and use_twin_mode) \
+    DEFINE_MATRIX(Type::real,    true, fft_mask_plus, 1, use_fft) \
+    DEFINE_MATRIX(Type::real,    true, fft_mask_minus, 1, use_fft and use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, fft_plus, 1, use_fft) \
     DEFINE_MATRIX(Type::complex, true, fft_minus, 1, use_fft and use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, k1_wavefunction_plus, 1, k_max >= 1) \
@@ -67,18 +68,6 @@ namespace PC3 {
     DEFINE_MATRIX(Type::complex, true, k7_wavefunction_minus, 1, k_max >= 7 and use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, k7_reservoir_plus, 1, k_max >= 7) \
     DEFINE_MATRIX(Type::complex, true, k7_reservoir_minus, 1, k_max >= 7 and use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, k8_wavefunction_plus, 1, k_max >= 8) \
-    DEFINE_MATRIX(Type::complex, true, k8_wavefunction_minus, 1, k_max >= 8 and use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, k8_reservoir_plus, 1, k_max >= 8) \
-    DEFINE_MATRIX(Type::complex, true, k8_reservoir_minus, 1, k_max >= 8 and use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, k9_wavefunction_plus, 1, k_max >= 9) \
-    DEFINE_MATRIX(Type::complex, true, k9_wavefunction_minus, 1, k_max >= 9 and use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, k9_reservoir_plus, 1, k_max >= 9) \
-    DEFINE_MATRIX(Type::complex, true, k9_reservoir_minus, 1, k_max >= 9 and use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, k10_wavefunction_plus, 1, k_max >= 10) \
-    DEFINE_MATRIX(Type::complex, true, k10_wavefunction_minus, 1, k_max >= 10 and use_twin_mode) \
-    DEFINE_MATRIX(Type::complex, true, k10_reservoir_plus, 1, k_max >= 10) \
-    DEFINE_MATRIX(Type::complex, true, k10_reservoir_minus, 1, k_max >= 10 and use_twin_mode) \
     DEFINE_MATRIX(Type::complex, true, rk_error, 1, k_max > 4) \
     DEFINE_MATRIX(Type::complex, true, random_number, 1, use_stochastic) \
     DEFINE_MATRIX(Type::cuda_random_state, true, random_state, 1, use_stochastic) \
@@ -104,25 +93,28 @@ struct MatrixContainer {
     MATRIX_LIST
     #undef X
 
+    // Halo Map
+    PC3::Type::device_vector<int> halo_map;
+
     // Empty Constructor
     MatrixContainer() = default;
 
-    // TODO: if reservoir... system.evaluateReservoir() !
-
     // Construction Chain. The Host Matrix is always constructed (who carese about RAM right?) and the device matrix is constructed if the condition is met.
-    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses, const int n_pumps, const int n_potentials ) {
+    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses, const int n_pumps, const int n_potentials, const int subgrids, const int halo_size ) {
         this->use_twin_mode = use_twin_mode;
         this->k_max = k_max;
         this->use_fft = use_fft;
         this->use_stochastic = use_stochastic;
         #define DEFINE_MATRIX(type, ptrstruct, name, size_scaling, condition_for_construction) \
-            name.constructHost( N_x, N_y * size_scaling, #name); \
+            name.constructHost( N_x, N_y * size_scaling, subgrids, halo_size, #name); \
             if (condition_for_construction) \
-                name.constructDevice( N_x, N_y * size_scaling, #name); 
-            //if (not std::is_same<type, Type::cuda_random_state>::value) \
-            //    name.fill(type(0.0));
+                name.constructDevice( N_x, N_y * size_scaling, subgrids, halo_size, #name); 
         MATRIX_LIST
         #undef X
+
+        // Construct the halo map. 6*total halo points because we have 6 coordinates for each point
+        const size_t total_halo_points = (N_x+2*halo_size)*(N_y+2*halo_size) - N_x*N_y;
+        halo_map = PC3::Type::device_vector<int>(total_halo_points*6);
      }
 
     struct Pointers {
@@ -131,19 +123,24 @@ struct MatrixContainer {
         MATRIX_LIST
         #undef X
 
+        // Halo Map
+        int* halo_map;
+
         // Nullptr
         std::nullptr_t discard = nullptr;
     };
 
-    Pointers pointers() {
+    Pointers pointers(const size_t subgrid) {
         Pointers ptrs;
         #define DEFINE_MATRIX(type, ptrstruct, name, size_scaling, condition_for_construction) \
             if (condition_for_construction) \
-                ptrs.name = name.getDevicePtr(); \
+                ptrs.name = name.getDevicePtr(subgrid); \
             else \
                 ptrs.name = nullptr;
         MATRIX_LIST
         #undef X
+
+        ptrs.halo_map = GET_RAW_PTR( halo_map );
         
         return ptrs;
     }
