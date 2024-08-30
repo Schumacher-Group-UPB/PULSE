@@ -10,7 +10,7 @@
 // For now, use mutex, making the async call not really async if the matrices are too large.
 std::mutex mtx;
 
-void PC3::Solver::outputMatrices( const unsigned int start_x, const unsigned int end_x, const unsigned int start_y, const unsigned int end_y, const unsigned int increment, const std::string& suffix, const std::string& prefix ) {
+void PC3::Solver::outputMatrices( const Type::uint start_x, const Type::uint end_x, const Type::uint start_y, const Type::uint end_y, const Type::uint increment, const std::string& suffix, const std::string& prefix ) {
     const static std::vector<std::string> fileoutputkeys = { "wavefunction_plus", "wavefunction_minus", "reservoir_plus", "reservoir_minus", "fft_plus", "fft_minus" };
     auto header_information = PC3::FileHandler::Header( system.p.L_x * (end_x-start_x)/system.p.N_x, system.p.L_y* (end_y-start_y)/system.p.N_y, system.p.dx, system.p.dy, system.p.t );
     auto fft_header_information = PC3::FileHandler::Header( -1.0* (end_x-start_x)/system.p.N_x, -1.0* (end_y-start_y)/system.p.N_y, 2.0 / system.p.N_x, 2.0 / system.p.N_y, system.p.t );

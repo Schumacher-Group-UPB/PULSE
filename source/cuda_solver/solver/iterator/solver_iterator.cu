@@ -62,11 +62,9 @@ bool PC3::Solver::iterate( ) {
     system.potential.updateTemporal( system.p.t );
     system.pump.updateTemporal( system.p.t );
     // And update the solver struct accordingly
-    std::cout << "AAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
     dev_pulse_oscillation.amp = system.pulse.temporal_envelope;
     dev_potential_oscillation.amp = system.potential.temporal_envelope;
     dev_pump_oscillation.amp = system.pump.temporal_envelope;
-    std::cout << "BBBBBBBBBBBBBBBBBBBBBBB" << std::endl;
     
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate( block_size, grid_size );

@@ -68,8 +68,8 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         p.N_x = (int)PC3::CLIO::getNextInput( argv, argc, "N_x", ++index );
         p.N_y = (int)PC3::CLIO::getNextInput( argv, argc, "N_y", index );
     }
-    p.subgrids_x = 1;
-    p.subgrids_y = 1;
+    p.subgrids_x = 2;
+    p.subgrids_y = 2;
     p.halo_size = 4;
     p.subgrid_N_x = p.N_x;
     p.subgrid_N_y = p.N_y;
@@ -129,7 +129,7 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         random_seed = std::random_device{}();
         auto str_seed = PC3::CLIO::getNextStringInput( argv, argc, "random_seed", index );
         if ( str_seed != "random" ) {
-            random_seed = (unsigned int)std::stod( str_seed );
+            random_seed = (Type::uint)std::stod( str_seed );
             std::cout << PC3::CLIO::prettyPrint( "Overwritten random seed to " + std::to_string(random_seed), PC3::CLIO::Control::Info ) << std::endl;
         }
     }
@@ -150,16 +150,16 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     output_history_matrix_every = 1;
     output_history_start_time = 0.0;
     if ( ( index = PC3::CLIO::findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
-        history_matrix_start_x = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_x", ++index );
-        history_matrix_end_x = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_x", index );
-        history_matrix_start_y = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_y", index );
-        history_matrix_end_y = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_y", index );
-        history_matrix_output_increment = (unsigned int)PC3::CLIO::getNextInput( argv, argc, "history_matrix_output_increment", index );
+        history_matrix_start_x = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_x", ++index );
+        history_matrix_end_x = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_x", index );
+        history_matrix_start_y = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_y", index );
+        history_matrix_end_y = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_y", index );
+        history_matrix_output_increment = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_output_increment", index );
         do_output_history_matrix = true;
     }
     if ( ( index = PC3::CLIO::findInArgv( "--historyTime", argc, argv ) ) != -1 ) {
         output_history_start_time = PC3::CLIO::getNextInput( argv, argc, "history_time", ++index );
-        output_history_matrix_every = size_t(PC3::CLIO::getNextInput( argv, argc, "history_time_every", index ));
+        output_history_matrix_every = int(PC3::CLIO::getNextInput( argv, argc, "history_time_every", index ));
     }
 
     p.periodic_boundary_x = false;

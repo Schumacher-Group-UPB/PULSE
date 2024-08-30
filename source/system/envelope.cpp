@@ -42,7 +42,7 @@ void PC3::Envelope::addSpacial( PC3::Type::real amp, PC3::Type::real width_x, PC
     this->y.push_back( y );
     this->exponent.push_back( exponent );
     this->s_type.push_back( s_type );
-    auto type = _cast_string_list_to_enum<Type>( s_type, "+", TypeFromString );
+    auto type = _cast_string_list_to_enum<EnvType>( s_type, "+", TypeFromString );
     this->type.push_back( type );
     this->s_pol.push_back( s_pol );
     auto pol = _cast_string_list_to_enum<Polarization>( s_pol, "+", PolarizationFromString );
@@ -66,7 +66,7 @@ void PC3::Envelope::addSpacial( const std::string& path, PC3::Type::real amp, co
     y.push_back( 0 );
     exponent.push_back( 0 );
     s_type.push_back( "" );
-    type.push_back( Type::Gauss );
+    type.push_back( EnvType::Gauss );
     this->s_pol.push_back( s_pol );
     auto pol = _cast_string_list_to_enum<Polarization>( s_pol, "+", PolarizationFromString );
     this->pol.push_back( pol );
@@ -253,7 +253,7 @@ void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3:
                 auto cx = -dim.L_x/2.0 + dim.dx * col;
                 auto cy = -dim.L_y/2.0 + dim.dy * row;
                 // If type contains "local", use local coordinates instead
-                if ( type[c] & PC3::Envelope::Type::Local ) {
+                if ( type[c] & PC3::Envelope::EnvType::Local ) {
                     cx = -1.0 + 2.0 * col / ( dim.N_x - 1 );
                     cy = -1.0 + 2.0 * row / ( dim.N_y - 1 );
                 }
@@ -274,18 +274,18 @@ void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3:
                     // Calculate the exponential function
                     exp_function = std::exp( -std::pow( exp_factor, exponent[c] ) );
                     // If the type is a gaussian outer, we calculate std::exp(...)^N instead of std::exp((...)^N)
-                    if ( type[c] & PC3::Envelope::Type::OuterExponent )
+                    if ( type[c] & PC3::Envelope::EnvType::OuterExponent )
                         exp_function = std::pow( std::exp( -exp_factor ), exponent[c] );
                     // If the shape is a ring, we multiply the exp function with r^2/w^2 again.
                     pre_fractor = 1.0;
-                    if ( type[c] & PC3::Envelope::Type::Ring )
+                    if ( type[c] & PC3::Envelope::EnvType::Ring )
                         pre_fractor = exp_factor;
 
                     // Charge is e^(i*m*phi) where phi is the angle or r = [x,y]
                     charge = CUDA::exp( PC3::Type::complex( 0.0, m[c] * std::atan2( cx - x[c], cy - y[c] ) ) );
 
                     // Default amplitude is A/sqrt(2pi)/w
-                    if ( not( type[c] & PC3::Envelope::Type::NoDivide ) )
+                    if ( not( type[c] & PC3::Envelope::EnvType::NoDivide ) )
                         amplitude = amplitude / CUDA::sqrt<PC3::Type::real>( 2 * 3.1415 * width_x[c] * width_y[c] );
                 }
 

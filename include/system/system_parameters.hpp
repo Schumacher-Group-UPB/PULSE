@@ -26,11 +26,11 @@ class SystemParameters {
     struct KernelParameters {
 
         // Size Variables
-        size_t N_x, N_y, N2;
+        Type::uint N_x, N_y, N2;
         // Subgrid and Halo
-        size_t halo_size;
-        size_t subgrid_N_x, subgrid_N_y, subgrid_N2;
-        size_t subgrids_x, subgrids_y; // For now, subgrids_x = subgrids_y at all times, even if N_x != N_y
+        Type::uint halo_size;
+        Type::uint subgrid_N_x, subgrid_N_y, subgrid_N2;
+        Type::uint subgrids_x, subgrids_y; // For now, subgrids_x = subgrids_y at all times, even if N_x != N_y
         // Time variables
         Type::real t, dt;
         
@@ -65,14 +65,14 @@ class SystemParameters {
     KernelParameters& p = kernel_parameters;
 
     // Numerics
-    size_t iteration;
+    Type::uint iteration;
     bool disableRender;
 
     // RK Solver Variables
     Type::real t_max, dt_max, dt_min, tolerance, fft_every, random_system_amplitude, magic_timestep;
 
     // Kernel Block Size
-    size_t block_size, omp_max_threads;
+    Type::uint block_size, omp_max_threads;
 
     // Initialize the system randomly
     bool randomly_initialize_system;
@@ -83,12 +83,12 @@ class SystemParameters {
     std::string iterator;
 
     // Seed for random number generator
-    unsigned int random_seed;
+    Type::uint random_seed;
     
     // History Output
-    size_t history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
+    Type::uint history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
     bool do_output_history_matrix;
-    size_t output_history_matrix_every; // Scales outEvery for the history matrices with this value
+    Type::uint output_history_matrix_every; // Scales outEvery for the history matrices with this value
     Type::real output_history_start_time; // Only output history matrices after this time
     Type::real output_every;
 

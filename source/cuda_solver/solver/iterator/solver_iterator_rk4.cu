@@ -33,11 +33,10 @@
 
 void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size ) {
 
-    MERGED_CALL(
-
+    SOLVER_SEQUENCE(true /*Capture CUDA Graph*/,
+        
         // Calculate k1 with a halo of 3. This means the input buffer of K1, which is the current Psi, has a halo of 4.
-        CALCULATE_K( 1, wavefunction, reservoir );
-    
+        CALCULATE_K( 1, wavefunction, reservoir ); 
         INTERMEDIATE_SUM_K( 1, 0.5 ); 
 
         // Calculate k2 with a halo of 2. This means the input buffer of K2, which is the current Psi + 0.5 * dt * k1 in the buffer_ variables, has a halo of 3.
@@ -56,6 +55,14 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_si
         FINAL_SUM_K( 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 );
 
     )
-    
+    //matrix.wavefunction_plus.tofile("data/URTEST/TEST_"+std::to_string(system.p.t)+".txt");
+    //matrix.k1_wavefunction_plus.tofile("data/URTEST/TESTK1_"+std::to_string(system.p.t)+".txt");
+    //matrix.k2_wavefunction_plus.tofile("data/URTEST/TESTK2_"+std::to_string(system.p.t)+".txt");
+    //matrix.k3_wavefunction_plus.tofile("data/URTEST/TESTK3_"+std::to_string(system.p.t)+".txt");
+    //matrix.k4_wavefunction_plus.tofile("data/URTEST/TESTK4_"+std::to_string(system.p.t)+".txt");
+    //exit(0);
+    // Wait for 0.5s
+    //std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
+
     return;
 }

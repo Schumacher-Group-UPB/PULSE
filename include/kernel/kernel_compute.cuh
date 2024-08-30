@@ -29,28 +29,27 @@ namespace PC3::Kernel {
                 }
             }
         };
-        PULSE_GLOBAL void runge_sum_to_input_ki( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void runge_sum_to_input_kw( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
-        PULSE_GLOBAL void runge_sum_to_error( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
+        PULSE_GLOBAL void runge_sum_to_input_kw( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
+        PULSE_GLOBAL void runge_sum_to_error( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights );
     } // namespace RK
 
     namespace Compute {
 
-        PULSE_GLOBAL void gp_tetm( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void gp_scalar( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_tetm( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_scalar( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
 
         // These kernels operate on a full grid and do not require subgrid information.
         // The matrices are initialized with subgridsize 1 and no halo.
-        PULSE_GLOBAL void gp_scalar_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void gp_scalar_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void gp_scalar_independent( int i, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void gp_tetm_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void gp_tetm_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io );
-        PULSE_GLOBAL void gp_tetm_independent( int i, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_scalar_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_scalar_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_scalar_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_tetm_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_tetm_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
+        PULSE_GLOBAL void gp_tetm_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io );
 
     } // namespace Compute
 
-    PULSE_GLOBAL void initialize_random_number_generator(int i, unsigned int seed, Type::cuda_random_state* state, const unsigned int N);
-    PULSE_GLOBAL void generate_random_numbers(int i, Type::cuda_random_state* state, Type::complex* buffer, const unsigned int N, const Type::real real_amp, const Type::real imag_amp);
+    PULSE_GLOBAL void initialize_random_number_generator(int i, Type::uint seed, Type::cuda_random_state* state, const Type::uint N);
+    PULSE_GLOBAL void generate_random_numbers(int i, Type::cuda_random_state* state, Type::complex* buffer, const Type::uint N, const Type::real real_amp, const Type::real imag_amp);
 
 } // namespace PC3::Kernel

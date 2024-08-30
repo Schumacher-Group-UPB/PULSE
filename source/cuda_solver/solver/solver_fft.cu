@@ -33,7 +33,7 @@
      * system will forgive us. We could also implement a small wrapper class that
      * holds the plan and calls the destruct method when the class instance is destroyed.
     */
-    static cufftHandle& getFFTPlan( size_t N_x, size_t N_y ) {
+    static cufftHandle& getFFTPlan( PC3::Type::uint N_x, PC3::Type::uint N_y ) {
         static cufftHandle plan = 0;
         static bool isInitialized = false;
 

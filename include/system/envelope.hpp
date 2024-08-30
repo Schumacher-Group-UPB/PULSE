@@ -35,23 +35,23 @@ class Envelope {
     // Points for interpolation
     std::vector<std::vector<std::vector<Type::real>>> temporal_time_points; // TODO: Read Points and interpolate between them
 
-    enum class Type : unsigned int {
+    enum class EnvType : Type::uint {
         Gauss = 1, // Gaussian Envelope
         OuterExponent = 1 << 1, // Exponent is applied to the total envelope and not just the function argument 
         Ring = 1 << 2, // Ring shape is enabled
         NoDivide = 1 << 3, // The Amplitude is NOT devided by sqrt(2*pi)*w 
         Local = 1 << 4 // The grid is treated from -1 to 1 instead of from -xmax to xmax
     };
-    std::vector<Type> type;
+    std::vector<EnvType> type;
 
-    enum class Polarization : unsigned int {
+    enum class Polarization : Type::uint {
         Plus = 1,
         Minus = 1 << 1,
         Both = 3 // Set to three explicitly such that Plus,Minus = Both
     };
     std::vector<Polarization> pol;
 
-    enum class Behavior : unsigned int {
+    enum class Behavior : Type::uint {
         Add = 1,
         Multiply = 1 << 1,
         Replace = 1 << 2,
@@ -60,7 +60,7 @@ class Envelope {
     };
     std::vector<Behavior> behavior;
     
-    enum class Temporal : unsigned int {
+    enum class Temporal : Type::uint {
         IExp = 1,
         Cos = 1 << 1,
         Gauss = 1 << 2,
@@ -81,12 +81,12 @@ class Envelope {
         { "minus", Polarization::Minus },
         { "both", Polarization::Both },
     };
-    static inline std::map<std::string, Type> TypeFromString = {
-        { "gauss" , Type::Gauss },
-        { "outerExponent", Type::OuterExponent },
-        { "ring", Type::Ring },
-        { "noDivide", Type::NoDivide },
-        { "local", Type::Local },
+    static inline std::map<std::string, EnvType> TypeFromString = {
+        { "gauss" , EnvType::Gauss },
+        { "outerExponent", EnvType::OuterExponent },
+        { "ring", EnvType::Ring },
+        { "noDivide", EnvType::NoDivide },
+        { "local", EnvType::Local },
     };
     static inline std::map<std::string, Temporal> TemporalFromString = {
         { "gauss" , Temporal::Gauss },
@@ -107,9 +107,9 @@ class Envelope {
     int sizeOfGroup(int g) const;
 
     struct Dimensions {
-        size_t N_x, N_y;
+        Type::uint N_x, N_y;
         PC3::Type::real L_x,L_y,dx,dy;
-        Dimensions(size_t N_x, size_t N_y, PC3::Type::real L_x, PC3::Type::real L_y, PC3::Type::real dx, PC3::Type::real dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
+        Dimensions(Type::uint N_x, Type::uint N_y, PC3::Type::real L_x, PC3::Type::real L_y, PC3::Type::real dx, PC3::Type::real dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
     };
 
     void calculate( PC3::Type::real* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0 );
@@ -159,14 +159,14 @@ class Envelope {
 
 // Overload the bitwise OR (|) operator
 template <typename T>
-typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::Type>::value || std::is_same<T, Envelope::Temporal>::value), T>::type operator|(T lhs, T rhs) {
+typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::EnvType>::value || std::is_same<T, Envelope::Temporal>::value), T>::type operator|(T lhs, T rhs) {
     using underlying_type = typename std::underlying_type<T>::type;
     return static_cast<T>(static_cast<underlying_type>(lhs) | static_cast<underlying_type>(rhs));
 }
 
 // Overload the bitwise AND (&) operator. Return a boolean, because we dont need the '&' operator for enums
 template <typename T>
-typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::Type>::value || std::is_same<T, Envelope::Temporal>::value), bool>::type operator&(T lhs, T rhs) {
+typename std::enable_if<std::is_enum<T>::value && (std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::EnvType>::value || std::is_same<T, Envelope::Temporal>::value), bool>::type operator&(T lhs, T rhs) {
     using underlying_type = typename std::underlying_type<T>::type;
     return std::has_single_bit<underlying_type>(static_cast<underlying_type>(lhs) & static_cast<underlying_type>(rhs));
 }

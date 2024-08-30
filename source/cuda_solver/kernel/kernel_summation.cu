@@ -1,12 +1,13 @@
 #include "cuda/typedef.cuh"
 #include "kernel/kernel_compute.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
+#include "solver/gpu_solver.hpp"
 
 // Sums all Ks with weights. Oh yes, this looks terrible. For this to be pretty, we would need to create 
 // yet another struct that holds all the buffers in an array. OR: we do the smart thing and restructure
 // the original dev_ptrs struct to hold all the buffers in an array. This would make the code much more
 // readable and maintainable. TODO
-PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights ) {
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights ) {
     GENERATE_SUBGRID_INDEX(i, current_halo);
 
     Type::complex wf = 0.0;
@@ -29,11 +30,11 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, size_t current_
             //case 8: wf += w * args.dev_ptrs.k9_wavefunction_plus[i]; rv += w * args.dev_ptrs.k9_reservoir_plus[i]; break;
             //case 9: wf += w * args.dev_ptrs.k10_wavefunction_plus[i]; rv += w * args.dev_ptrs.k10_reservoir_plus[i]; break;
         }
-        wf += w*dw / args.dt;
+        wf += w*dw / time.dt;
     }
     
-    io.out_wf_plus[i] = io.in_wf_plus[i] + args.dt * wf;
-    io.out_rv_plus[i] = io.in_rv_plus[i] + args.dt * rv;
+    io.out_wf_plus[i] = io.in_wf_plus[i] + time.dt * wf;
+    io.out_rv_plus[i] = io.in_rv_plus[i] + time.dt * rv;
     
     if ( not args.p.use_twin_mode ) 
         return;
@@ -57,15 +58,15 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, size_t current_
             //case 8: wf += w * args.dev_ptrs.k9_wavefunction_minus[i]; rv += w * args.dev_ptrs.k9_reservoir_minus[i]; break;
             //case 9: wf += w * args.dev_ptrs.k10_wavefunction_minus[i]; rv += w * args.dev_ptrs.k10_reservoir_minus[i]; break;
         }
-        wf += w*dw / args.dt;
+        wf += w*dw / time.dt;
     }
     
-    io.out_wf_minus[i] = io.in_wf_minus[i] + args.dt * wf;
-    io.out_rv_minus[i] = io.in_rv_minus[i] + args.dt * rv;
+    io.out_wf_minus[i] = io.in_wf_minus[i] + time.dt * wf;
+    io.out_rv_minus[i] = io.in_rv_minus[i] + time.dt * rv;
 }
 
 
-PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights ) {
+PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights ) {
     GENERATE_SUBGRID_INDEX(i, current_halo);
     
     // The first weigth is for the input wavefunction, the rest are for the Ks
@@ -86,7 +87,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, size_t current_hal
         }
     }
     
-    args.dev_ptrs.rk_error[i] = CUDA::abs2(args.dt * wf);
+    args.dev_ptrs.rk_error[i] = CUDA::abs2(time.dt * wf);
     if ( not args.p.use_twin_mode ) 
         return;
     
@@ -107,5 +108,5 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, size_t current_hal
         }
     }
     
-    args.dev_ptrs.rk_error[i] += args.p.i*CUDA::abs2(args.dt * wf);
+    args.dev_ptrs.rk_error[i] += args.p.i*CUDA::abs2(time.dt * wf);
 }

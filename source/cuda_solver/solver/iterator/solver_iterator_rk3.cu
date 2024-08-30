@@ -19,7 +19,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta3( dim3 block_size, dim3 grid_si
 
     updateKernelArguments( system.p.t, dt );
 
-    MERGED_CALL(
+    SOLVER_SEQUENCE(
 
         CALCULATE_K( 1, wavefunction, reservoir );
     

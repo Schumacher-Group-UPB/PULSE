@@ -67,7 +67,7 @@ void PC3::Solver::cacheToFiles() {
 
 // TODO: Support Multiple History Outputs, and also support piping them into a single file.
 // something like "append" mode, that doesnt open a new file but instead appends to the existing one.
-size_t _local_history_output_counter = 1; // output_history_matrix_every
+PC3::Type::uint _local_history_output_counter = 1; // output_history_matrix_every
 void PC3::Solver::cacheMatrices() {
     if (not system.do_output_history_matrix) // Don't output history matrix
         return;

@@ -20,7 +20,7 @@ void PC3::Solver::iterateNewton( dim3 block_size, dim3 grid_size ) {
 
     updateKernelArguments( system.p.t, dt );
 
-    MERGED_CALL(
+    SOLVER_SEQUENCE(
         CALCULATE_K( 1, wavefunction, reservoir );
         
         FINAL_SUM_K( 1.0 );

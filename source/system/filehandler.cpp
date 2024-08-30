@@ -79,10 +79,10 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::co
     getline( filein, line );
     inputstring = std::istringstream( line );
     // Read SIZE Nx Ny sLx sLy dx dy
-    size_t n_x, n_y;
+    Type::uint n_x, n_y;
     Type::real header;
     inputstring >> line >> line >> n_x >> n_y;
-    size_t N = n_x * n_y;
+    Type::uint N = n_x * n_y;
     while ( getline( filein, line ) ) {
         inputstring = std::istringstream( line );
         // If the line is empty or starts with "#", skip it.
@@ -121,10 +121,10 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::re
     getline( filein, line );
     inputstring = std::istringstream( line );
     // Read SIZE Nx Ny sLx sLy dx dy
-    size_t n_x, n_y;
+    Type::uint n_x, n_y;
     Type::real header;
     inputstring >> line >> line >> n_x >> n_y;
-    size_t N = n_x * n_y;
+    Type::uint N = n_x * n_y;
     while ( getline( filein, line ) ) {
         // If the line is empty or starts with "#", skip it.
         if ( line.size() < 1 or line[0] == '#' )
@@ -139,7 +139,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::re
     return true;
 }
 
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, std::ofstream& out, const std::string& name ) {
     if ( !out.is_open() ) {
         std::cout << PC3::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PC3::CLIO::Control::Error ) << std::endl;
         return;
@@ -170,19 +170,19 @@ void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,unsigned 
     std::cout << PC3::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.", PC3::CLIO::Control::Success ) << std::endl;
 }
 
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer,Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, col_start, col_stop, row_start, row_stop, N_x, N_y, increment, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, 0, N_x, 0, N_y, N_x, N_y, 1.0, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, std::ofstream& out, const std::string& name ) {
     outputMatrixToFile( buffer, 0, N_x, 0, N_y, N_x, N_y, 1.0, header, out, name );
 }
 
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, std::ofstream& out, const std::string& name ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, std::ofstream& out, const std::string& name ) {
     if ( !out.is_open() ) {
         std::cout << PC3::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PC3::CLIO::Control::Error ) << std::endl;
         return;
@@ -204,15 +204,15 @@ void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, unsigned in
 #pragma omp critical
     std::cout << PC3::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.", PC3::CLIO::Control::Success ) << std::endl;
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, unsigned int col_start, unsigned int col_stop, unsigned int row_start, unsigned int row_stop, const unsigned int N_x, const unsigned int N_y, unsigned int increment, const Header& header, const std::string& out ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, col_start, col_stop, row_start, row_stop, N_x, N_y, increment, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, const std::string& out ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, 0, N_x, 0, N_y, N_x, N_y, 1.0, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, const unsigned int N_x, const unsigned int N_y, const Header& header, std::ofstream& out, const std::string& name ) {
+void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, std::ofstream& out, const std::string& name ) {
     outputMatrixToFile( buffer, 0, N_x, 0, N_y, N_x, N_y, 1.0, header, out, name );
 }
 
@@ -232,7 +232,7 @@ std::vector<std::vector<PC3::Type::real>> PC3::FileHandler::loadListFromFile( co
         if ( line.size() < 1 or line[0] == '#' )
             continue;
         inputstring = std::istringstream( line );
-        size_t col = 0;
+        Type::uint col = 0;
         while ( inputstring >> val ) {
             if ( data.size() <= col )
                 data.push_back( std::vector<Type::real>() );
@@ -252,8 +252,8 @@ void PC3::FileHandler::outputListToFile( const std::string& path, std::vector<st
         std::cout << PC3::CLIO::prettyPrint( "Unable to open '" + path + "' for purpose '" + name + "' for writing!", PC3::CLIO::Control::Error ) << std::endl;
         return;
     }
-    for ( size_t i = 0; i < data[0].size(); i++ ) {
-        for ( size_t j = 0; j < data.size(); j++ ) {
+    for ( Type::uint i = 0; i < data[0].size(); i++ ) {
+        for ( Type::uint j = 0; j < data.size(); j++ ) {
             if ( j >= data.size() )
                 fileout << "NaN ";
                 continue;

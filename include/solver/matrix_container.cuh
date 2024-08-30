@@ -17,6 +17,10 @@ namespace PC3 {
 * make it easier for the user to add new matrices.
 */
 
+// TODO: Alles was kein subgridding braucht sollte keine CUDAMatrix sondern n normaler device_vector sein!
+// FFT, FFTMask, initial_, snapshot_ braucht kein subgridding
+// TODO: Ki, pulse, pump, potential soll in std::vector, raw ptr in device vector.
+
 #define MATRIX_LIST \
     DEFINE_MATRIX(Type::complex, false, initial_state_plus, 1, false) \
     DEFINE_MATRIX(Type::complex, false, initial_state_minus, 1, false) \
@@ -107,13 +111,12 @@ struct MatrixContainer {
         this->use_stochastic = use_stochastic;
         #define DEFINE_MATRIX(type, ptrstruct, name, size_scaling, condition_for_construction) \
             name.constructHost( N_x, N_y * size_scaling, subgrids, halo_size, #name); \
-            if (condition_for_construction) \
-                name.constructDevice( N_x, N_y * size_scaling, subgrids, halo_size, #name); 
+            name.constructDevice( N_x, N_y * size_scaling, subgrids, halo_size, #name); 
         MATRIX_LIST
         #undef X
-
+        // if (condition_for_construction) \
         // Construct the halo map. 6*total halo points because we have 6 coordinates for each point
-        const size_t total_halo_points = (N_x+2*halo_size)*(N_y+2*halo_size) - N_x*N_y;
+        const Type::uint total_halo_points = (N_x+2*halo_size)*(N_y+2*halo_size) - N_x*N_y;
         halo_map = PC3::Type::device_vector<int>(total_halo_points*6);
      }
 
@@ -130,13 +133,10 @@ struct MatrixContainer {
         std::nullptr_t discard = nullptr;
     };
 
-    Pointers pointers(const size_t subgrid) {
+    Pointers pointers(const Type::uint subgrid) {
         Pointers ptrs;
         #define DEFINE_MATRIX(type, ptrstruct, name, size_scaling, condition_for_construction) \
-            if (condition_for_construction) \
-                ptrs.name = name.getDevicePtr(subgrid); \
-            else \
-                ptrs.name = nullptr;
+                ptrs.name = name.getDevicePtr(subgrid);
         MATRIX_LIST
         #undef X
 

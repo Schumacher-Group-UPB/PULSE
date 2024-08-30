@@ -34,8 +34,6 @@
 #endif
 
 #include <cmath>
-    
-#include "cuda/cuda_macro.cuh"
 
 namespace PC3::Type {
 
@@ -53,6 +51,9 @@ namespace PC3::Type {
         // Thurst complex numbers are host and device
         using complex = thrust::complex<real>;
     #endif
+
+    using ulong = size_t;
+    using uint = unsigned int;
 
     // Host and Device Matrix. This is a std::vector when using GCC and a thrust::vector when using nvcc
     #ifdef USE_CPU
@@ -99,7 +100,7 @@ namespace PC3::Type {
 #ifdef USE_CPU
     class dim3 {
         public:
-         int x, y;
+         uint x, y, z;
     };
 #endif
 

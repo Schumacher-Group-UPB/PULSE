@@ -39,6 +39,7 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
         system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
         //std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&, i = 0]( Type::complex& z ) mutable { z = z + matrix.initial_state_minus[i]; i++; } );
     }
+
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
     if ( system.randomly_initialize_system ) {
         // Fill the buffer with random values
@@ -49,7 +50,7 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
         if ( system.p.use_twin_mode )
             std::ranges::for_each( matrix.initial_state_minus.getHostPtr(), matrix.initial_state_minus.getHostPtr() + system.p.N_x * system.p.N_y, [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
     }
-
+    
     // ==================================================
     // =................ Pump Envelopes ................=
     // ==================================================
@@ -85,7 +86,7 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
         }
     }
     std::cout << PC3::CLIO::prettyPrint( "Succesfull, designated number of pulse groups: " + std::to_string(system.pulse.groupSize()), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success ) << std::endl;
-
+    
     // ==================================================
     // =................. FFT Envelopes ................=
     // ==================================================
@@ -106,8 +107,8 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
 }
 
 template <typename T>
-T delta(T soll, T ist) {
-        return soll == ist ? (T)1 : (T)0;
+T delta(T a, T b) {
+        return a == b ? (T)1 : (T)0;
 }
 
 void PC3::Solver::initializeDeviceMatricesFromHost() {
@@ -125,15 +126,15 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
             if (dc == 0 and dr == 0)
                 continue;
 
-            const size_t fr0 = delta(-1,dr)*system.p.subgrid_N_x + (1-delta(-1,dr))*system.p.halo_size;
-            const size_t fr1 = (delta(0,dr)+delta(-1,dr))*system.p.subgrid_N_x + system.p.halo_size + delta(dr,1)*system.p.halo_size; 
-            const size_t fc0 = delta(-1,dc)*system.p.subgrid_N_x + (1-delta(-1,dc))*system.p.halo_size;
-            const size_t fc1 = (delta(0,dc)+delta(-1,dc))*system.p.subgrid_N_x + system.p.halo_size + delta(dc,1)*system.p.halo_size;
+            const Type::uint fr0 = delta(-1,dr)*system.p.subgrid_N_x + (1-delta(-1,dr))*system.p.halo_size;
+            const Type::uint fr1 = (delta(0,dr)+delta(-1,dr))*system.p.subgrid_N_x + system.p.halo_size + delta(dr,1)*system.p.halo_size; 
+            const Type::uint fc0 = delta(-1,dc)*system.p.subgrid_N_x + (1-delta(-1,dc))*system.p.halo_size;
+            const Type::uint fc1 = (delta(0,dc)+delta(-1,dc))*system.p.subgrid_N_x + system.p.halo_size + delta(dc,1)*system.p.halo_size;
 
-            const size_t tr0 = delta(1,dr)*system.p.subgrid_N_x + (1-delta(-1,dr))*system.p.halo_size;
-            const size_t tr1 = (1-delta(-1,dr))*system.p.subgrid_N_x + system.p.halo_size + delta(1,dr)*system.p.halo_size;
-            const size_t tc0 = delta(1,dc)*system.p.subgrid_N_x + (1-delta(-1,dc))*system.p.halo_size; 
-            const size_t tc1 = (1-delta(-1,dc))*system.p.subgrid_N_x + system.p.halo_size + delta(1,dc)*system.p.halo_size;
+            const Type::uint tr0 = delta(1,dr)*system.p.subgrid_N_x + (1-delta(-1,dr))*system.p.halo_size;
+            const Type::uint tr1 = (1-delta(-1,dr))*system.p.subgrid_N_x + system.p.halo_size + delta(1,dr)*system.p.halo_size;
+            const Type::uint tc0 = delta(1,dc)*system.p.subgrid_N_x + (1-delta(-1,dc))*system.p.halo_size; 
+            const Type::uint tc1 = (1-delta(-1,dc))*system.p.subgrid_N_x + system.p.halo_size + delta(1,dc)*system.p.halo_size;
 
             std::cout << "Filling halo point with " << dr << " " << dc << " " << fr0 << " " << fr1 << " " << fc0 << " " << fc1 << " " << tr0 << " " << tr1 << " " << tc0 << " " << tc1 << std::endl;
 
@@ -154,21 +155,7 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
         }
     }
     std::cout << PC3::CLIO::prettyPrint( "Designated number of halo cells: " + std::to_string(halo_map.size()), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success ) << std::endl;
-    // fill existing device matrix matrix.halo_map with the halo map
-    //std::cout << matrix.halo_map.size() << std::endl;
-    //thrust::copy(halo_map.begin(), halo_map.end(), matrix.halo_map.begin());
-    //std::cout << matrix.halo_map[0] << std::endl; // doesnt work either lmao
-    std::cout << "OTHER TEST" << std::endl;
-    //matrix.wavefunction_plus.hostToDeviceSync();
-    //std::cout << "APPEARS TO WORK" << std::endl;
-    //PC3::Type::device_vector<float> test(5);
-    //cudaDeviceSynchronize();
-    //test[2] = 1;
-    std::cout << "DONE!" << std::endl;
-    
-    std::cout << "DONE!" << std::endl;
-    std::cout << "DONE!" << std::endl;
-    std::cout << "DONE!" << std::endl;
+    matrix.halo_map = halo_map;
 
     // TE/TM Guard
     if ( not system.p.use_twin_mode )

@@ -69,7 +69,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
 
         updateKernelArguments( system.p.t, dt );
 
-        MERGED_CALL(
+        SOLVER_SEQUENCE(
 
             CALCULATE_K( 1, wavefunction, reservoir );
             
@@ -98,7 +98,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_
             // TODO: swapBuffers funktioniert auf grund des graph cachings nicht mehr. deswegen: hier einfach den fehler ausrechnen, und wenn der klein genug ist, dann
             // Psi next ins richtige Psi schreiben! dann spart man sich sogar die redundante rechnung falls psi nicht akzeptiert wird.
             CALL_KERNEL(
-                Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size, stream, // MERGED_CALL creates a static stream variable
+                Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size, stream, // SOLVER_SEQUENCE creates a static stream variable
                 kernel_arguments, 
                 {
                     kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, 

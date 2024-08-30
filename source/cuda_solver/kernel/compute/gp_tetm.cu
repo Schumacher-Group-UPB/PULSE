@@ -2,7 +2,7 @@
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     
     //LOCAL_SHARE_STRUCT( SystemParameters::KernelParameters, p_in, p );
     /*
@@ -29,7 +29,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Sol
     Type::complex result = args.p.minus_i_over_h_bar_s * args.p.m_eff_scaled * hamilton_regular_plus;
     
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex potential = args.dev_ptrs.potential_plus[i+offset] * args.potential_pointers.amp[k];
         result += args.p.minus_i_over_h_bar_s * potential * in_wf_plus;
     }
@@ -44,7 +44,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Sol
     
     // MARK: Pulse Plus
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex pulse = args.dev_ptrs.pulse_plus[i+offset];
         result += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
     }
@@ -61,7 +61,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Sol
     result = -( args.p.gamma_r + args.p.R * in_psi_plus_norm ) * in_rv_plus;
 
     for (int k = 0; k < args.pump_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const auto gauss = args.pump_pointers.amp[k];
         result += args.dev_ptrs.pump_plus[i+offset] * gauss;
     }
@@ -77,7 +77,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Sol
     result = args.p.minus_i_over_h_bar_s * args.p.m_eff_scaled * hamilton_regular_minus;
     
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex potential = args.dev_ptrs.potential_minus[i+offset] * args.potential_pointers.amp[k];
         result += args.p.minus_i_over_h_bar_s * potential * in_wf_minus;
     }
@@ -92,7 +92,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Sol
 
     // MARK: Pulse Minus
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex pulse = args.dev_ptrs.pulse_minus[i+offset];
         result += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
     }
@@ -108,7 +108,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Sol
     result = -( args.p.gamma_r + args.p.R * in_psi_minus_norm ) * in_rv_minus;
 
     for (int k = 0; k < args.pump_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const auto gauss = args.pump_pointers.amp[k];
         result += args.dev_ptrs.pump_minus[i+offset] * gauss;
     }
@@ -127,24 +127,24 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, size_t current_halo, Sol
  * Fourier Method (SSFM)
 */
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     /*
     OVERWRITE_THREAD_INDEX( i );
 
-    // We do some weird looking casting to avoid intermediate casts to size_t
-    Type::real row = Type::real(size_t(i / args.p.N_x));
-    Type::real col = Type::real(size_t(i % args.p.N_x));
+    // We do some weird looking casting to avoid intermediate casts to Type::uint
+    Type::real row = Type::real(Type::uint(i / args.p.N_x));
+    Type::real col = Type::real(Type::uint(i % args.p.N_x));
     
     const Type::real k_x = 2.0*3.1415926535 * Type::real(col <= args.p.N_x/2 ? col : -Type::real(args.p.N_x) + col)/args.p.L_x;
     const Type::real k_y = 2.0*3.1415926535 * Type::real(row <= args.p.N_y/2 ? row : -Type::real(args.p.N_y) + row)/args.p.L_y;
 
     Type::real linear = args.p.h_bar_s/2.0/args.p.m_eff * (k_x*k_x + k_y*k_y);
-    io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(args.p.N2) * CUDA::exp( args.p.minus_i * linear * args.dt / Type::real(2.0) );
-    io.out_wf_minus[i] = io.in_wf_minus[i] / Type::real(args.p.N2) * CUDA::exp( args.p.minus_i * linear * args.dt / Type::real(2.0) );
+    io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(args.p.N2) * CUDA::exp( args.p.minus_i * linear * time.dt / Type::real(2.0) );
+    io.out_wf_minus[i] = io.in_wf_minus[i] / Type::real(args.p.N2) * CUDA::exp( args.p.minus_i * linear * time.dt / Type::real(2.0) );
     */
 }
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     /*
     OVERWRITE_THREAD_INDEX( i );
     
@@ -159,7 +159,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::Kernel
     Type::complex result = {args.p.g_c * in_psi_plus_norm, -args.p.h_bar_s * Type::real(0.5) * args.p.gamma_c};
 
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex potential = args.dev_ptrs.potential_plus[i+offset] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
         result += potential;
     }
@@ -176,7 +176,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::Kernel
         result -= args.p.g_c / args.p.dV;
     }
 
-    io.out_wf_plus[i] = in_wf_plus * CUDA::exp(args.p.minus_i_over_h_bar_s * ( result + cross) * args.dt);
+    io.out_wf_plus[i] = in_wf_plus * CUDA::exp(args.p.minus_i_over_h_bar_s * ( result + cross) * time.dt);
 
     // MARK: Reservoir
     result = -args.p.gamma_r * in_rv_plus;
@@ -188,13 +188,13 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::Kernel
     // MARK: Stochastic-2
     if (args.p.stochastic_amplitude > 0.0)
         result += args.p.R * in_rv_plus / args.p.dV;
-    io.out_rv_plus[i] = in_rv_plus + result * args.dt;
+    io.out_rv_plus[i] = in_rv_plus + result * time.dt;
 
     // MARK: Wavefunction Minus
     result = Type::complex(args.p.g_c * in_psi_minus_norm, -args.p.h_bar_s * Type::real(0.5) * args.p.gamma_c);
 
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex potential = args.dev_ptrs.potential_minus[i+offset] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
         result += potential;
     }
@@ -211,7 +211,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::Kernel
         result -= args.p.g_c / args.p.dV;
     }
 
-    io.out_wf_minus[i] = in_wf_minus * CUDA::exp(args.p.minus_i_over_h_bar_s * ( result + cross ) * args.dt);
+    io.out_wf_minus[i] = in_wf_minus * CUDA::exp(args.p.minus_i_over_h_bar_s * ( result + cross ) * time.dt);
 
     // MARK: Reservoir
     result = -args.p.gamma_r * in_rv_minus;
@@ -223,11 +223,11 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::Kernel
     // MARK: Stochastic-2
     if (args.p.stochastic_amplitude > 0.0)
         result += args.p.R * in_rv_minus / args.p.dV;
-    io.out_rv_minus[i] = in_rv_minus + result * args.dt;
+    io.out_rv_minus[i] = in_rv_minus + result * time.dt;
     */
 }
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     /*
     OVERWRITE_THREAD_INDEX( i );
 
@@ -236,9 +236,9 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::Kern
 
     // MARK: Pulse
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex pulse = args.dev_ptrs.pulse_plus[i+offset];
-        result += args.p.minus_i_over_h_bar_s * args.dt * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
+        result += args.p.minus_i_over_h_bar_s * time.dt * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
     }
     if (args.p.stochastic_amplitude > 0.0) {
         const Type::complex in_rv = io.in_rv_plus[i];
@@ -252,9 +252,9 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::Kern
 
     // MARK: Pulse
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const size_t offset = k * args.p.N_x * args.p.N_y;
+        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const Type::complex pulse = args.dev_ptrs.pulse_minus[i+offset];
-        result += args.p.minus_i_over_h_bar_s * args.dt * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
+        result += args.p.minus_i_over_h_bar_s * time.dt * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
     }
     if (args.p.stochastic_amplitude > 0.0) {
         const Type::complex in_rv = io.in_rv_minus[i];
