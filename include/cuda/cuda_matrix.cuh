@@ -477,11 +477,11 @@ class CUDAMatrix : CUDAMatrixBase {
      * cannot directly work with std::vector or thrust::device_vectors.
     */
     inline T* getDevicePtr(Type::uint subgrid = 0) {
+        if (not is_on_device)
+            return nullptr;
         // If the host is ahead, synchronize first
         if ( host_is_ahead )
             hostToDeviceSync();
-        if (not is_on_device)
-            return nullptr;
         return GET_RAW_PTR( device_data[subgrid] );
     }
 

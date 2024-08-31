@@ -13,7 +13,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint current_hal
     const Type::complex in_wf = io.in_wf_plus[i];
     const Type::complex in_rv = io.in_rv_plus[i];
     Type::complex hamilton = args.p.m2_over_dx2_p_dy2 * in_wf;
-    hamilton += (io.in_wf_plus[i + args.p.N_x + 2*args.p.halo_size] + io.in_wf_plus[i - args.p.N_x - 2*args.p.halo_size])*args.p.one_over_dy2 + (io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1])*args.p.one_over_dx2;
+    hamilton += (io.in_wf_plus[i + args.p.subgrid_N_x + 2*args.p.halo_size] + io.in_wf_plus[i - args.p.subgrid_N_x - 2*args.p.halo_size])*args.p.one_over_dy2 + (io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1])*args.p.one_over_dx2;
     //hamilton += PC3::Kernel::Hamilton::scalar_neighbours( io.in_wf_plus, i, i / args.p.N_x /*Row*/, i % args.p.N_x /*Col*/, args.p.N_x, args.p.N_y, args.p.one_over_dx2, args.p.one_over_dy2, args.p.periodic_boundary_x, args.p.periodic_boundary_y );
 
     const Type::real in_psi_norm = CUDA::abs2( in_wf );

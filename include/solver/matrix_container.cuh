@@ -27,8 +27,8 @@ struct MatrixContainer {
 
     // Pump, Pulse and Potential Matrices. These are vectors of CUDAMatrices.
     std::vector<PC3::CUDAMatrix<Type::complex>> pump_plus, pump_minus, pulse_plus, pulse_minus, potential_plus, potential_minus;
-    // Device Vectors holding the respective device pointers for the matrices
-    Type::device_vector<Type::complex*> pump_plus_ptrs, pump_minus_ptrs, pulse_plus_ptrs, pulse_minus_ptrs, potential_plus_ptrs, potential_minus_ptrs;
+    // Device Vectors holding the respective device pointers for the matrices. This is a vector of device vectors, because we need multiple instances of the pointer struct.
+    std::vector<Type::device_vector<Type::complex*>> pump_plus_ptrs, pump_minus_ptrs, pulse_plus_ptrs, pulse_minus_ptrs, potential_plus_ptrs, potential_minus_ptrs;
 
     // FFT Matrices. These are simple device vectors, not CUDAMatrices.
     PC3::Type::device_vector<Type::complex> fft_plus, fft_minus;
@@ -48,7 +48,7 @@ struct MatrixContainer {
     // K Matrices. These are vectors of CUDAMatrices.
     std::vector<PC3::CUDAMatrix<Type::complex>> k_wavefunction_plus, k_wavefunction_minus, k_reservoir_plus, k_reservoir_minus;
     // Device Vectors holding the respective device pointers for the matrices
-    Type::device_vector<Type::complex*> k_wavefunction_plus_ptrs, k_wavefunction_minus_ptrs, k_reservoir_plus_ptrs, k_reservoir_minus_ptrs;
+    std::vector<Type::device_vector<Type::complex*>> k_wavefunction_plus_ptrs, k_wavefunction_minus_ptrs, k_reservoir_plus_ptrs, k_reservoir_minus_ptrs;
 
     // Halo Map
     PC3::Type::device_vector<int> halo_map;
@@ -87,33 +87,60 @@ struct MatrixContainer {
 
         // Pump, Pulse and Potential Matrices
         pump_plus.resize(n_pumps_plus);
-        pump_plus_ptrs = PC3::Type::device_vector<Type::complex*>(n_pumps_plus);
+        pump_plus_ptrs.resize(subgrids_x*subgrids_y);
         for (int i = 0; i < n_pumps_plus; i++) {
             pump_plus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pump_plus_"+std::to_string(i));
         }
-        pulse_plus.resize(n_pumps_plus);
-        for (int i = 0; i < n_pumps_plus; i++) {
+        pulse_plus.resize(n_pulses_plus);
+        pulse_plus_ptrs.resize(subgrids_x*subgrids_y);
+        for (int i = 0; i < n_pulses_plus; i++) {
             pulse_plus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pulse_plus_"+std::to_string(i));
         }
-        pulse_plus_ptrs = PC3::Type::device_vector<Type::complex*>(n_pumps_plus);
         potential_plus.resize(n_potentials_plus);
+        potential_plus_ptrs.resize(subgrids_x*subgrids_y);
         for (int i = 0; i < n_potentials_plus; i++) {
             potential_plus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "potential_plus_"+std::to_string(i));
         }
-        potential_plus_ptrs = PC3::Type::device_vector<Type::complex*>(n_potentials_plus);
+
+        // We then require a device vector of pointers to the respective subgrids of the matrix. We also require this vector for each of the subgrids, resulting in N_subgrids*N_envelope pointers.
+        for (int subgrid = 0; subgrid < subgrids_x*subgrids_y; subgrid++) {
+            pump_plus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(n_pumps_plus);
+            pulse_plus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(n_pulses_plus);
+            potential_plus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(n_potentials_plus);
+            // We can also already fill the device pointers for the matrices, as we know the subgrid size and the number of envelopes.
+            for (auto i = 0; i < pump_plus.size(); i++)
+                pump_plus_ptrs[subgrid][i] = pump_plus[i].getDevicePtr(subgrid);
+            for (auto i = 0; i < pulse_plus.size(); i++) 
+                pulse_plus_ptrs[subgrid][i] = pulse_plus[i].getDevicePtr(subgrid);
+            for (auto i = 0; i < potential_plus.size(); i++)
+                potential_plus_ptrs[subgrid][i] = potential_plus[i].getDevicePtr(subgrid);
+        }
 
         // K Matrices
         k_wavefunction_plus.resize(k_max);
         k_reservoir_plus.resize(k_max);
+        k_wavefunction_plus_ptrs.resize(subgrids_x*subgrids_y);
+        k_reservoir_plus_ptrs.resize(subgrids_x*subgrids_y);
         for (int i = 0; i < k_max; i++) {
             k_wavefunction_plus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_wavefunction_plus_"+std::to_string(i));
             k_reservoir_plus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_reservoir_plus_"+std::to_string(i));
         }
-        k_wavefunction_plus_ptrs = PC3::Type::device_vector<Type::complex*>(k_max);
-        k_reservoir_plus_ptrs = PC3::Type::device_vector<Type::complex*>(k_max);
         // We also need to initialize the CUDAMatrices for the minus components, even if we don't use them. They will only get constructed if the twin mode is enabled.
         k_wavefunction_minus.resize(k_max);
         k_reservoir_minus.resize(k_max);
+        k_wavefunction_minus_ptrs.resize(subgrids_x*subgrids_y);
+        k_reservoir_minus_ptrs.resize(subgrids_x*subgrids_y);
+        
+        // Same for the k matrices. We require a device vector of pointers to the respective subgrids of the matrix. We also require this vector for each of the subgrids, resulting in N_subgrids*k_max pointers.
+        for (int subgrid = 0; subgrid < subgrids_x*subgrids_y; subgrid++) {
+            k_wavefunction_plus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(k_max);
+            k_reservoir_plus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(k_max);
+            // We can also already fill the device pointers for the matrices, as we know the subgrid size and the number of envelopes.
+            for (auto i = 0; i < k_wavefunction_plus.size(); i++) {
+                k_wavefunction_plus_ptrs[subgrid][i] = k_wavefunction_plus[i].getDevicePtr(subgrid);
+                k_reservoir_plus_ptrs[subgrid][i] = k_reservoir_plus[i].getDevicePtr(subgrid);
+            }
+        }
 
         // FFT Matrices
         if (use_fft) {
@@ -148,8 +175,8 @@ struct MatrixContainer {
         MATRIX_LIST
         #undef X
 
-        if (not use_twin_mode)
-            return;
+        //if (not use_twin_mode)
+        //    return;
 
         // MARK: Minus Components
         // ======================================================================================================== //
@@ -166,28 +193,50 @@ struct MatrixContainer {
 
         // Pump, Pulse and Potential Matrices
         pump_minus.resize(n_pumps_minus);
+        pump_minus_ptrs.resize(subgrids_x*subgrids_y);
         for (int i = 0; i < n_pumps_minus; i++) {
             pump_minus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pump_minus_"+std::to_string(i));
         }
-        pump_minus_ptrs = PC3::Type::device_vector<Type::complex*>(n_pumps_minus);
-        pulse_minus.resize(n_pumps_minus);
-        for (int i = 0; i < n_pumps_minus; i++) {
+        pulse_minus.resize(n_pulses_minus);
+        pulse_minus_ptrs.resize(subgrids_x*subgrids_y);
+        for (int i = 0; i < n_pulses_minus; i++) {
             pulse_minus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pulse_minus_"+std::to_string(i));
         }
-        pulse_minus_ptrs = PC3::Type::device_vector<Type::complex*>(n_pumps_minus);
         potential_minus.resize(n_potentials_minus);
+        potential_minus_ptrs.resize(subgrids_x*subgrids_y);
         for (int i = 0; i < n_potentials_minus; i++) {
             potential_minus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "potential_minus_"+std::to_string(i));
         }
-        potential_minus_ptrs = PC3::Type::device_vector<Type::complex*>(n_potentials_minus);
+
+        // We then require a device vector of pointers to the respective subgrids of the matrix. We also require this vector for each of the subgrids, resulting in N_subgrids*N_envelope pointers.
+        for (int subgrid = 0; subgrid < subgrids_x*subgrids_y; subgrid++) {
+            pump_minus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(n_pumps_minus);
+            pulse_minus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(n_pulses_minus);
+            potential_minus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(n_potentials_minus);
+            // We can also already fill the device pointers for the matrices, as we know the subgrid size and the number of envelopes.
+            for (auto i = 0; i < pump_minus.size(); i++)
+                pump_minus_ptrs[subgrid][i] = pump_minus[i].getDevicePtr(subgrid);
+            for (auto i = 0; i < pulse_minus.size(); i++)
+                pulse_minus_ptrs[subgrid][i] = pulse_minus[i].getDevicePtr(subgrid);
+            for (auto i = 0; i < potential_minus.size(); i++)
+                potential_minus_ptrs[subgrid][i] = potential_minus[i].getDevicePtr(subgrid);
+        }
 
         // K Matrices
         for (int i = 0; i < k_max; i++) {
             k_wavefunction_minus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_wavefunction_minus_"+std::to_string(i));
             k_reservoir_minus[i].construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_reservoir_minus_"+std::to_string(i));
         }
-        k_wavefunction_minus_ptrs = PC3::Type::device_vector<Type::complex*>(k_max);
-        k_reservoir_minus_ptrs = PC3::Type::device_vector<Type::complex*>(k_max);
+        // Same for the k matrices. We require a device vector of pointers to the respective subgrids of the matrix. We also require this vector for each of the subgrids, resulting in N_subgrids*k_max pointers.
+        for (int subgrid = 0; subgrid < subgrids_x*subgrids_y; subgrid++) {
+            k_wavefunction_minus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(k_max);
+            k_reservoir_minus_ptrs[subgrid] = PC3::Type::device_vector<Type::complex*>(k_max);
+            // We can also already fill the device pointers for the matrices, as we know the subgrid size and the number of envelopes.
+            for (auto i = 0; i < k_wavefunction_minus.size(); i++) {
+                k_wavefunction_minus_ptrs[subgrid][i] = k_wavefunction_minus[i].getDevicePtr(subgrid);
+                k_reservoir_minus_ptrs[subgrid][i] = k_reservoir_minus[i].getDevicePtr(subgrid);
+            }
+        }
 
         // FFT Matrices
         if (use_fft) {
@@ -261,26 +310,13 @@ struct MatrixContainer {
         ptrs.buffer_reservoir_plus = buffer_reservoir_plus.getDevicePtr(subgrid);
 
         // Pump, Pulse and Potential Matrices
-        for (auto i = 0; i < pump_plus.size(); i++) {
-            pump_plus_ptrs[i] = pump_plus[i].getDevicePtr(subgrid);
-        }
-        ptrs.pump_plus = GET_RAW_PTR( pump_plus_ptrs );
-        for (auto i = 0; i < pulse_plus.size(); i++) {
-            pulse_plus_ptrs[i] = pulse_plus[i].getDevicePtr(subgrid);
-        }
-        ptrs.pulse_plus = GET_RAW_PTR( pulse_plus_ptrs );
-        for (auto i = 0; i < potential_plus.size(); i++) {
-            potential_plus_ptrs[i] = potential_plus[i].getDevicePtr(subgrid);
-        }
-        ptrs.potential_plus = GET_RAW_PTR( potential_plus_ptrs );
+        ptrs.pump_plus = GET_RAW_PTR( pump_plus_ptrs[subgrid] );
+        ptrs.pulse_plus = GET_RAW_PTR( pulse_plus_ptrs[subgrid] );
+        ptrs.potential_plus = GET_RAW_PTR( potential_plus_ptrs[subgrid] );
 
         // K Matrices
-        for (auto i = 0; i < k_wavefunction_plus.size(); i++) {
-            k_wavefunction_plus_ptrs[i] = k_wavefunction_plus[i].getDevicePtr(subgrid);
-            k_reservoir_plus_ptrs[i] = k_reservoir_plus[i].getDevicePtr(subgrid);
-        }
-        ptrs.k_wavefunction_plus = GET_RAW_PTR( k_wavefunction_plus_ptrs );
-        ptrs.k_reservoir_plus = GET_RAW_PTR( k_reservoir_plus_ptrs );
+        ptrs.k_wavefunction_plus = GET_RAW_PTR( k_wavefunction_plus_ptrs[subgrid] );
+        ptrs.k_reservoir_plus = GET_RAW_PTR( k_reservoir_plus_ptrs[subgrid] );
 
         // FFT Matrices
         if (use_fft) {
@@ -307,8 +343,8 @@ struct MatrixContainer {
         #undef X
 
         // MARK: Minus Component
-        if (not use_twin_mode)
-            return ptrs;
+        //if (not use_twin_mode)
+        //    return ptrs;
 
         // Wavefunction and Reservoir Matrices
         ptrs.wavefunction_minus = wavefunction_minus.getDevicePtr(subgrid);
@@ -317,26 +353,13 @@ struct MatrixContainer {
         ptrs.buffer_reservoir_minus = buffer_reservoir_minus.getDevicePtr(subgrid);
 
         // Pump, Pulse and Potential Matrices
-        for (auto i = 0; i < pump_minus.size(); i++) {
-            pump_minus_ptrs[i] = pump_minus[i].getDevicePtr(subgrid);
-        }
-        ptrs.pump_minus = GET_RAW_PTR( pump_minus_ptrs );
-        for (auto i = 0; i < pulse_minus.size(); i++) {
-            pulse_minus_ptrs[i] = pulse_minus[i].getDevicePtr(subgrid);
-        }
-        ptrs.pulse_minus = GET_RAW_PTR( pulse_minus_ptrs );
-        for (auto i = 0; i < potential_minus.size(); i++) {
-            potential_minus_ptrs[i] = potential_minus[i].getDevicePtr(subgrid);
-        }
-        ptrs.potential_minus = GET_RAW_PTR( potential_minus_ptrs );
+        ptrs.pump_minus = GET_RAW_PTR( pump_minus_ptrs[subgrid] );
+        ptrs.pulse_minus = GET_RAW_PTR( pulse_minus_ptrs[subgrid] );
+        ptrs.potential_minus = GET_RAW_PTR( potential_minus_ptrs[subgrid] );
 
         // K Matrices
-        for (auto i = 0; i < k_wavefunction_minus.size(); i++) {
-            k_wavefunction_minus_ptrs[i] = k_wavefunction_minus[i].getDevicePtr(subgrid);
-            k_reservoir_minus_ptrs[i] = k_reservoir_minus[i].getDevicePtr(subgrid);
-        }
-        ptrs.k_wavefunction_minus = GET_RAW_PTR( k_wavefunction_minus_ptrs );
-        ptrs.k_reservoir_minus = GET_RAW_PTR( k_reservoir_minus_ptrs );
+        ptrs.k_wavefunction_minus = GET_RAW_PTR( k_wavefunction_minus_ptrs[subgrid] );
+        ptrs.k_reservoir_minus = GET_RAW_PTR( k_reservoir_minus_ptrs[subgrid] );
 
         // FFT Matrices
         if (use_fft) {

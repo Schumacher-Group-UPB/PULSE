@@ -58,6 +58,8 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::uint current
     
     // The first weigth is for the input wavefunction, the rest are for the Ks
     Type::complex wf = weights.weights[0] * args.dev_ptrs.buffer_wavefunction_plus[i];
+
+    #pragma unroll MAX_K_VECTOR_SIZE
     for (int n = 1; n < weights.n; n++) {
         const auto w = weights.weights[n];
         wf += w * args.dev_ptrs.k_wavefunction_plus[n][i];
@@ -68,6 +70,8 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::uint current
         return;
     
     wf = weights.weights[0] * args.dev_ptrs.buffer_wavefunction_minus[i];
+
+    #pragma unroll MAX_K_VECTOR_SIZE
     for (int n = 1; n < weights.n; n++) {
         const auto w = weights.weights[n];
         wf += w * args.dev_ptrs.k_wavefunction_minus[n][i];

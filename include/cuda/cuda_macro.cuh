@@ -7,6 +7,16 @@
     {                                                                                                                                                                                                                                         \
         const Type::uint current_halo = system.p.halo_size - index;                                                                                                                                                                               \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                                                                                       \
+        std::cout << "Device Pointers in IO: " << std::endl;                                                                                                                                                                                    \
+        std::cout << "Wavefunction Plus: " << matrix.input_wavefunction##_plus.getDevicePtr(subgrid) << std::endl;                                                                                                                             \
+        std::cout << "Wavefunction Minus: " << matrix.input_wavefunction##_minus.getDevicePtr(subgrid) << std::endl;                                                                                                                           \
+        std::cout << "Reservoir Plus: " << matrix.input_reservoir##_plus.getDevicePtr(subgrid) << std::endl;                                                                                                                                   \
+        std::cout << "Reservoir Minus: " << matrix.input_reservoir##_minus.getDevicePtr(subgrid) << std::endl;                                                                                                                                 \
+        std::cout << "K Wavefunction Plus: " << matrix.k_wavefunction_plus[index-1].getDevicePtr(subgrid) << std::endl;                                                                                                                       \
+        std::cout << "K Wavefunction Minus: " << matrix.k_wavefunction_minus[index-1].getDevicePtr(subgrid) << std::endl;                                                                                                                     \
+        std::cout << "K Reservoir Plus: " << matrix.k_reservoir_plus[index-1].getDevicePtr(subgrid) << std::endl;                                                                                                                             \
+        std::cout << "K Reservoir Minus: " << matrix.k_reservoir_minus[index-1].getDevicePtr(subgrid) << std::endl;                                                                                                                           \
+        std::cout << "Launch Parameters: " << current_grid.x << " " << current_grid.y << " " << current_block.x << " " << current_block.y << std::endl;                                                                                      \
         CALL_KERNEL(                                                                                                                                                                                                                          \
             RUNGE_FUNCTION_GP, "K" #index, current_grid, current_block, stream,                                                                                                                                                           \
             current_halo, { system.p.t, system.p.dt }, kernel_arguments,                                                                                                                                                                          \
@@ -61,23 +71,21 @@
             func<<<grid, block, 0, stream>>>( 0, __VA_ARGS__ ); \
         }
 // Wraps the successive calls to the CUDA Kernels into a single CUDA Graph.
-//    std::vector<KernelArguments> kernel_arguments; \
-//            for (Type::uint subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++) { \
-//                kernel_arguments.push_back( updateKernelArguments(subgrid) ); \
-//            }
-
+// Edit: Oh God what a mess.
 #    define SOLVER_SEQUENCE( with_graph, content )                                                                                                        \
         {                                                                                                                                                 \
             static bool cuda_graph_created = false;                                                                                                       \
             static cudaGraph_t graph;                                                                                                                     \
             static cudaGraphExec_t instance;                                                                                                              \
             static cudaStream_t stream;                                                                                                                   \
+            static cudaGraphNode_t* nodes = new cudaGraphNode_t[system.p.subgrids_x*system.p.subgrids_y*MAX_K_VECTOR_SIZE+2];                             \
+            static size_t num_nodes;                                                                                                                      \
             if ( not cuda_graph_created or not with_graph ) {                                                                                             \
-                std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                      \
-                for (Type::uint subgrid = 0; subgrid < system.p.subgrids_x*system.p.subgrids_y; subgrid++) {                                                  \
-                std::cout << PC3::CLIO::prettyPrint( "Generating Kernel Arguments for Subgrid " + std::to_string(subgrid), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
-                    v_kernel_arguments.push_back( generateKernelArguments(subgrid) );                                                                         \
-                }                                                                                                                                             \
+                std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                  \
+                for (Type::uint subgrid = 0; subgrid < system.p.subgrids_x*system.p.subgrids_y; subgrid++) {                                              \
+                    std::cout << PC3::CLIO::prettyPrint( "Generating Kernel Arguments for Subgrid " + std::to_string(subgrid), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
+                    v_kernel_arguments.push_back( generateKernelArguments(subgrid) );                                                                     \
+                }                                                                                                                                         \
                 if ( with_graph ) {                                                                                                                       \
                     cudaStreamCreate( &stream );                                                                                                          \
                     cudaStreamBeginCapture( stream, cudaStreamCaptureModeGlobal );                                                                        \
@@ -87,10 +95,10 @@
                     auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                 \
                     content;                                                                                                                              \
                 }                                                                                                                                         \
-                auto [current_block, current_grid] = getLaunchParameters( matrix.halo_map.size()/6 * system.p.subgrids_x*system.p.subgrids_y );\
+                auto [current_block, current_grid] = getLaunchParameters( matrix.halo_map.size()/6 * system.p.subgrids_x*system.p.subgrids_y );           \
                 CALL_KERNEL(                                                                                                                              \
                     Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, stream,                                              \
-                    system.p.subgrids_x, system.p.subgrids_y, system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, matrix.halo_map.size()/6,                   \
+                    system.p.subgrids_x, system.p.subgrids_y, system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, matrix.halo_map.size()/6,   \
                     system.p.periodic_boundary_x, system.p.periodic_boundary_y, system.p.use_twin_mode,                                                   \
                     matrix.wavefunction_plus.getSubgridDevicePtrs(),matrix.wavefunction_minus.getSubgridDevicePtrs(),                                     \
                     matrix.reservoir_plus.getSubgridDevicePtrs(),matrix.reservoir_minus.getSubgridDevicePtrs(),                                           \
@@ -100,13 +108,24 @@
                     cudaStreamEndCapture( stream, &graph );                                                                                               \
                     cudaGraphInstantiate( &instance, graph, NULL, NULL, 0 );                                                                              \
                     cuda_graph_created = true;                                                                                                            \
-                    cudaGraphNode_t* nodes = nullptr;                                                                                                               \
-                    size_t num_nodes;                                                                                                                     \
                     cudaGraphGetNodes( graph, nodes, &num_nodes );                                                                                        \
                     std::cout << PC3::CLIO::prettyPrint( "CUDA Graph created with " + std::to_string( num_nodes ) + " nodes", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
                 }                                                                                                                                         \
             } else {                                                                                                                                      \
-                CHECK_CUDA_ERROR( cudaGraphLaunch( instance, stream ), "graph launch" );                                                                  \
+                Solver::VKernelArguments v_time = {system.p.t, system.p.dt};                                                                              \
+                if (with_graph) {                                                                                                                         \
+                    for ( Type::uint i = 0; i < num_nodes; i++ ) {                                                                                        \
+                        cudaKernelNodeParams knp;                                                                                                         \
+                        std::cout << PC3::CLIO::prettyPrint( "Getting Kernel Arguments for Node " + std::to_string( i ), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
+                        cudaGraphKernelNodeGetParams( nodes[i], &knp );                                                                                   \
+                        if ( knp.func == (void*)(RUNGE_FUNCTION_GP) ) {                                                                                   \
+                            std::cout << PC3::CLIO::prettyPrint( "Setting Kernel Arguments for Node " + std::to_string( i ), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
+                            knp.kernelParams[2] = &v_time;                                                                                                \
+                            cudaGraphExecKernelNodeSetParams( instance, nodes[i], &knp );                                                                 \
+                        }                                                                                                                                 \
+                    }                                                                                                                                     \
+                }                                                                                                                                         \
+                cudaGraphLaunch( instance, stream );                                                                                                      \
             }                                                                                                                                             \
         }
 #else

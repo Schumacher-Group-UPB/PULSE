@@ -61,6 +61,7 @@ void PC3::Solver::initializeHostMatricesFromSystem() {
     std::cout << PC3::CLIO::prettyPrint( "Initializing Pump Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     for ( int i = 0; i < system.pump.groupSize(); i++ ) {
         system.pump.calculate( system.filehandler, matrix.pump_plus[i].getHostPtr(), i, PC3::Envelope::Polarization::Plus, dim );
+        matrix.pump_plus[i].hostToDeviceSync();
         if ( system.p.use_twin_mode ) {
             system.pump.calculate( system.filehandler, matrix.pump_minus[i].getHostPtr(), i, PC3::Envelope::Polarization::Minus, dim );
         }

@@ -33,25 +33,25 @@
  
 void PC3::Solver::iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size ) {
  
-    SOLVER_SEQUENCE(true /*Capture CUDA Graph*/,      
-               
+    SOLVER_SEQUENCE(true /*Capture CUDA Graph*/,          
+                 
         // Calculate k1 with a halo of 3. This means the input buffer of K1, which is the current Psi, has a halo of 4.
-        CALCULATE_K( 1, wavefunction, reservoir );  
+        CALCULATE_K( 1, wavefunction, reservoir );   
         INTERMEDIATE_SUM_K( 1, 0.5 );  
  
         // Calculate k2 with a halo of 2. This means the input buffer of K2, which is the current Psi + 0.5 * dt * k1 in the buffer_ variables, has a halo of 3.
         CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir ); 
-        INTERMEDIATE_SUM_K( 2, 0.0, 0.5 );
+        INTERMEDIATE_SUM_K( 2, 0.0, 0.5 );  
 
         // Calculate k3 with a halo of 1. This means the input buffer of K3, which is the current Psi + 0.5 * dt * k2 in the buffer_ variables, has a halo of 2.
         CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir);
-        INTERMEDIATE_SUM_K( 3, 0.0, 0.0, 1.0 );
+        INTERMEDIATE_SUM_K( 3, 0.0, 0.0, 1.0 );      
 
         // Calculate k4 with a halo of 0. This means the input buffer of K4, which is the current Psi + dt * k3 in the buffer_ variables, has a halo of 1.
         CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir);
          
         FINAL_SUM_K( 1.0/6.0, 1.0/3.0, 1.0/3.0, 1.0/6.0 );
-
+    
     )
 
     return;
