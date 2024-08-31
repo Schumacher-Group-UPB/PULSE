@@ -3,6 +3,7 @@
 /**
  * This file includes the USE_CPU and USE_CUDA preprocessor macros and should
  * ALWAYS be included as the first file in this project.
+ * This file should also have no additional dependencies from within the project.
 */
 
 #ifdef USE_CPU
@@ -102,6 +103,12 @@ namespace PC3::Type {
         public:
          uint x, y, z;
     };
+#endif
+
+// Maximum size of K Matrix Vectors
+// TODO: if the user choses an iterator with k_max > MAK_K_VECTOR_SIZE, we need to throw an error
+#ifndef MAX_K_VECTOR_SIZE
+    #define MAX_K_VECTOR_SIZE 4
 #endif
 
 /**

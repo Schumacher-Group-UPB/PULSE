@@ -8,10 +8,14 @@
 void PC3::Solver::cacheValues() {
     // System Time
     cache_map_scalar["t"].emplace_back( system.p.t );
-    //matrix.times.emplace_back( system.p.t );
+
+    matrix.wavefunction_plus.deviceToHostSync();
+    matrix.reservoir_plus.deviceToHostSync();
 
     // Min and Max
-    const auto [min_plus, max_plus] = CUDA::minmax( matrix.wavefunction_plus.toFull().fullMatrixPointer(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
+    //const auto [min_plus, max_plus] = CUDA::minmax( matrix.wavefunction_plus.toFull().fullMatrixPointer(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );
+    Type::real min_plus = 0.0;
+    Type::real max_plus = 0.0;
     cache_map_scalar["min_plus"].emplace_back( min_plus );
     cache_map_scalar["max_plus"].emplace_back( max_plus );
 
@@ -39,6 +43,9 @@ void PC3::Solver::cacheValues() {
     // TE/TM Guard
     if ( not system.p.use_twin_mode )
         return;
+
+    matrix.wavefunction_minus.deviceToHostSync();
+    matrix.reservoir_minus.deviceToHostSync();
 
     // Same for _minus component if use_twin_mode is true
     const auto [min_minus, max_minus] = CUDA::minmax( matrix.wavefunction_minus.toFull().fullMatrixPointer(), system.p.N_x * system.p.N_y, true /*Device Pointer*/ );

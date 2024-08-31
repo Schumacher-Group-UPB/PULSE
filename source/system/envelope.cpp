@@ -213,7 +213,7 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         }
     }
 
-    // Finally, intiialize the temporal envelope vector using the group size.
+    // Finally, initialize the temporal envelope vector using the group size.
     ret.temporal_envelope = std::vector<PC3::Type::complex>( ret.groupSize(), 1.0 );
 
     return ret;

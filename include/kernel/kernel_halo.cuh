@@ -45,11 +45,11 @@ namespace PC3::Kernel::Halo {
 
     // This kernel has execution range halo_num*subgrids_x*subgrids_y
     template <typename T>
-    PULSE_GLOBAL void synchronize_halos(int i, Type::uint subgrids_x, Type::uint subgrids_y, Type::uint subgrid_N_x, Type::uint subgrid_N_y, Type::uint halo_size, Type::uint halo_num, bool periodic_boundary_x, bool periodic_boundary_y, T** subgrids, int* subgrid_map) {
-        GET_THREAD_INDEX( i, halo_num );
-        
+    PULSE_GLOBAL void synchronize_halos(int i, Type::uint subgrids_x, Type::uint subgrids_y, Type::uint subgrid_N_x, Type::uint subgrid_N_y, Type::uint halo_size, Type::uint halo_num, bool periodic_boundary_x, bool periodic_boundary_y, bool twin_mode, T** subgrids_wf_plus, T** subgrids_wf_minus, T** subgrids_rv_plus, T** subgrids_rv_minus, int* subgrid_map) {
+        GET_THREAD_INDEX( i, halo_num*subgrids_x*subgrids_y );
+
         const Type::uint sg = i / halo_num; // subgrid index from 0 to subgrids_x*subgrids_y.
-        const Type::uint s = i % halo_num; // subgrid_map index from 0 to 6*halo_num
+        const Type::uint s = i % halo_num; // subgrid_map index from 0 to 6*len(subgrid_map)
     
         const int R = sg / subgrids_y;
         const int C = sg % subgrids_y;
@@ -69,6 +69,11 @@ namespace PC3::Kernel::Halo {
                 return;
         const Type::uint r_new = (R + dr) % subgrids_y;
         const Type::uint c_new = (C + dc) % subgrids_x;
-        subgrids[subgrid][tr*(subgrid_N_x+2*halo_size) + tc] = subgrids[r_new*subgrids_x+c_new][fr*(subgrid_N_x+2*halo_size) + fc];
+        subgrids_wf_plus[subgrid][tr*(subgrid_N_x+2*halo_size) + tc] = subgrids_wf_plus[r_new*subgrids_x+c_new][fr*(subgrid_N_x+2*halo_size) + fc];
+        subgrids_rv_plus[subgrid][tr*(subgrid_N_x+2*halo_size) + tc] = subgrids_rv_plus[r_new*subgrids_x+c_new][fr*(subgrid_N_x+2*halo_size) + fc];
+        if (not twin_mode)
+            return;
+        subgrids_wf_minus[subgrid][tr*(subgrid_N_x+2*halo_size) + tc] = subgrids_wf_minus[r_new*subgrids_x+c_new][fr*(subgrid_N_x+2*halo_size) + fc];
+        subgrids_rv_minus[subgrid][tr*(subgrid_N_x+2*halo_size) + tc] = subgrids_rv_minus[r_new*subgrids_x+c_new][fr*(subgrid_N_x+2*halo_size) + fc];
     }
 } // namespace PC3::Kernel::Halo

@@ -31,9 +31,7 @@ bool PC3::Solver::iterate( ) {
     if ( system.p.t >= system.t_max )
         return false;
 
-
-    dim3 block_size( system.block_size, 1 );
-    dim3 grid_size( ( system.p.N_x*system.p.N_y + block_size.x ) / block_size.x, 1 );
+    auto [block_size, grid_size] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );
 
     /*    
     // If required, calculate new set of random numbers.
@@ -43,13 +41,13 @@ bool PC3::Solver::iterate( ) {
             first_time = false;
             CALL_KERNEL(
                     PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0,
-                    system.random_seed, device_pointers.random_state, system.p.N_x*system.p.N_y
+                    system.random_seed, device_pointers.random_state, system.p.subgrid_N_x*system.p.subgrid_N_y
                 );
             std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
         }
         CALL_KERNEL(
             PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0,
-            device_pointers.random_state, device_pointers.random_number, system.p.N_x*system.p.N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
+            device_pointers.random_state, device_pointers.random_number, system.p.subgrid_N_x*system.p.subgrid_N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
         );
     }
     */

@@ -9,28 +9,21 @@
 // readable and maintainable. TODO
 PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io, RK::Weights weights ) {
     GENERATE_SUBGRID_INDEX(i, current_halo);
-
     Type::complex wf = 0.0;
     Type::complex rv = 0.0;
     Type::complex dw = 0.0;
     if (args.p.stochastic_amplitude > 0.0) {
         dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_plus[i] + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
     }
-    for (int n = weights.start; n < weights.n; n++) {
+
+    #pragma unroll MAX_K_VECTOR_SIZE
+    for (int n = 0; n < weights.n; n++) {
         const Type::real w = weights.weights[n];
-        switch (n) { 
-            case 0: wf += w * args.dev_ptrs.k1_wavefunction_plus[i]; rv += w * args.dev_ptrs.k1_reservoir_plus[i]; break;
-            case 1: wf += w * args.dev_ptrs.k2_wavefunction_plus[i]; rv += w * args.dev_ptrs.k2_reservoir_plus[i]; break;
-            case 2: wf += w * args.dev_ptrs.k3_wavefunction_plus[i]; rv += w * args.dev_ptrs.k3_reservoir_plus[i]; break;
-            case 3: wf += w * args.dev_ptrs.k4_wavefunction_plus[i]; rv += w * args.dev_ptrs.k4_reservoir_plus[i]; break;
-            case 4: wf += w * args.dev_ptrs.k5_wavefunction_plus[i]; rv += w * args.dev_ptrs.k5_reservoir_plus[i]; break;
-            case 5: wf += w * args.dev_ptrs.k6_wavefunction_plus[i]; rv += w * args.dev_ptrs.k6_reservoir_plus[i]; break;
-            case 6: wf += w * args.dev_ptrs.k7_wavefunction_plus[i]; rv += w * args.dev_ptrs.k7_reservoir_plus[i]; break;
-            //case 7: wf += w * args.dev_ptrs.k8_wavefunction_plus[i]; rv += w * args.dev_ptrs.k8_reservoir_plus[i]; break;
-            //case 8: wf += w * args.dev_ptrs.k9_wavefunction_plus[i]; rv += w * args.dev_ptrs.k9_reservoir_plus[i]; break;
-            //case 9: wf += w * args.dev_ptrs.k10_wavefunction_plus[i]; rv += w * args.dev_ptrs.k10_reservoir_plus[i]; break;
-        }
+        if (w == 0.0) 
+            continue;
+        wf += w * args.dev_ptrs.k_wavefunction_plus[n][i]; 
         wf += w*dw / time.dt;
+        rv += w * args.dev_ptrs.k_reservoir_plus[n][i];
     }
     
     io.out_wf_plus[i] = io.in_wf_plus[i] + time.dt * wf;
@@ -44,21 +37,15 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_input_kw( int i, Type::uint curr
     if (args.p.stochastic_amplitude > 0.0) {
         dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_minus[i] + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
     }
-    for (int n = weights.start; n < weights.n; n++) {
+
+    #pragma unroll MAX_K_VECTOR_SIZE
+    for (int n = 0; n < weights.n; n++) {
         const Type::real w = weights.weights[n];
-        switch (n) {
-            case 0: wf += w * args.dev_ptrs.k1_wavefunction_minus[i]; rv += w * args.dev_ptrs.k1_reservoir_minus[i]; break;
-            case 1: wf += w * args.dev_ptrs.k2_wavefunction_minus[i]; rv += w * args.dev_ptrs.k2_reservoir_minus[i]; break;
-            case 2: wf += w * args.dev_ptrs.k3_wavefunction_minus[i]; rv += w * args.dev_ptrs.k3_reservoir_minus[i]; break;
-            case 3: wf += w * args.dev_ptrs.k4_wavefunction_minus[i]; rv += w * args.dev_ptrs.k4_reservoir_minus[i]; break;
-            case 4: wf += w * args.dev_ptrs.k5_wavefunction_minus[i]; rv += w * args.dev_ptrs.k5_reservoir_minus[i]; break;
-            case 5: wf += w * args.dev_ptrs.k6_wavefunction_minus[i]; rv += w * args.dev_ptrs.k6_reservoir_minus[i]; break;
-            case 6: wf += w * args.dev_ptrs.k7_wavefunction_minus[i]; rv += w * args.dev_ptrs.k7_reservoir_minus[i]; break;
-            //case 7: wf += w * args.dev_ptrs.k8_wavefunction_minus[i]; rv += w * args.dev_ptrs.k8_reservoir_minus[i]; break;
-            //case 8: wf += w * args.dev_ptrs.k9_wavefunction_minus[i]; rv += w * args.dev_ptrs.k9_reservoir_minus[i]; break;
-            //case 9: wf += w * args.dev_ptrs.k10_wavefunction_minus[i]; rv += w * args.dev_ptrs.k10_reservoir_minus[i]; break;
-        }
+        if (w == 0.0) 
+            continue;
+        wf += w * args.dev_ptrs.k_wavefunction_minus[n][i]; 
         wf += w*dw / time.dt;
+        rv += w * args.dev_ptrs.k_reservoir_minus[n][i];
     }
     
     io.out_wf_minus[i] = io.in_wf_minus[i] + time.dt * wf;
@@ -73,18 +60,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::uint current
     Type::complex wf = weights.weights[0] * args.dev_ptrs.buffer_wavefunction_plus[i];
     for (int n = 1; n < weights.n; n++) {
         const auto w = weights.weights[n];
-        switch (n) { 
-            case 1: wf += w * args.dev_ptrs.k1_wavefunction_plus[i]; break;
-            case 2: wf += w * args.dev_ptrs.k2_wavefunction_plus[i]; break;
-            case 3: wf += w * args.dev_ptrs.k3_wavefunction_plus[i]; break;
-            case 4: wf += w * args.dev_ptrs.k4_wavefunction_plus[i]; break;
-            case 5: wf += w * args.dev_ptrs.k5_wavefunction_plus[i]; break;
-            case 6: wf += w * args.dev_ptrs.k6_wavefunction_plus[i]; break;
-            case 7: wf += w * args.dev_ptrs.k7_wavefunction_plus[i]; break;
-            //case 8: wf += w * args.dev_ptrs.k8_wavefunction_plus[i]; break;
-            //case 9: wf += w * args.dev_ptrs.k9_wavefunction_plus[i]; break;
-            //case 10: wf += w * args.dev_ptrs.k10_wavefunction_plus[i]; break;
-        }
+        wf += w * args.dev_ptrs.k_wavefunction_plus[n][i];
     }
     
     args.dev_ptrs.rk_error[i] = CUDA::abs2(time.dt * wf);
@@ -94,18 +70,7 @@ PULSE_GLOBAL void PC3::Kernel::RK::runge_sum_to_error( int i, Type::uint current
     wf = weights.weights[0] * args.dev_ptrs.buffer_wavefunction_minus[i];
     for (int n = 1; n < weights.n; n++) {
         const auto w = weights.weights[n];
-        switch (n) {
-            case 1: wf += w * args.dev_ptrs.k1_wavefunction_minus[i]; break;
-            case 2: wf += w * args.dev_ptrs.k2_wavefunction_minus[i]; break;
-            case 3: wf += w * args.dev_ptrs.k3_wavefunction_minus[i]; break;
-            case 4: wf += w * args.dev_ptrs.k4_wavefunction_minus[i]; break;
-            case 5: wf += w * args.dev_ptrs.k5_wavefunction_minus[i]; break;
-            case 6: wf += w * args.dev_ptrs.k6_wavefunction_minus[i]; break;
-            case 7: wf += w * args.dev_ptrs.k7_wavefunction_minus[i]; break;
-            //case 8: wf += w * args.dev_ptrs.k8_wavefunction_minus[i]; break;
-            //case 9: wf += w * args.dev_ptrs.k9_wavefunction_minus[i]; break;
-            //case 10: wf += w * args.dev_ptrs.k10_wavefunction_minus[i]; break;
-        }
+        wf += w * args.dev_ptrs.k_wavefunction_minus[n][i];
     }
     
     args.dev_ptrs.rk_error[i] += args.p.i*CUDA::abs2(time.dt * wf);

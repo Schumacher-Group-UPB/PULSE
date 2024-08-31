@@ -139,8 +139,10 @@ class Solver {
 
     // The block size is specified by the user in the system.block_size variable.
     // This solver function the calculates the appropriate grid size for the given execution range.
-    dim3 getGridSize( const Type::uint N_x, const Type::uint N_y = 1 ) {
-        return dim3( N_x*N_y, 1, 1 );
+    std::pair<dim3,dim3> getLaunchParameters( const Type::uint N_x, const Type::uint N_y = 1 ) {
+        dim3 block_size = { system.block_size, 1, 1 };
+        dim3 grid_size = { ( N_x * N_y + block_size.x ) / block_size.x, 1, 1 };
+        return { block_size, grid_size };
     }
 
 };

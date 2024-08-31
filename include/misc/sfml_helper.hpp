@@ -46,8 +46,10 @@ BasicWindow& getWindow() {
 std::unique_ptr<Type::real[]> __plotarray;
 template <typename T>
 void plotMatrix( T* buffer, int NX, int NY, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "", bool plot_min_max = true ) {
-    if ( buffer == nullptr )
+    if ( buffer == nullptr ) {
+        std::cout << PC3::CLIO::prettyPrint( "Buffer '"+title+"' is nullptr!", PC3::CLIO::Control::Error ) << std::endl;
         return;
+    }
     Type::real min, max;
     //if constexpr (std::is_same_v<T, Type::real>) {
     //    std::tie(min,max) = PC3::CUDA::minmax( buffer, NX * NY );
@@ -142,21 +144,22 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         return true;
     bool running = getWindow().run();
 
-    Type::complex *inset_plot_array_plus = nullptr, *inset_plot_array_minus = nullptr;
-    if ( __local_inset == 1 ) {
-        std::vector<PC3::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_plus,
-                                                                &solver.matrix.k1_wavefunction_plus, &solver.matrix.k2_wavefunction_plus, &solver.matrix.k3_wavefunction_plus, &solver.matrix.k4_wavefunction_plus,
-                                                                &solver.matrix.k1_reservoir_plus, &solver.matrix.k2_reservoir_plus, &solver.matrix.k3_reservoir_plus, &solver.matrix.k4_reservoir_plus,
-                                                                &solver.matrix.pump_plus, &solver.matrix.pulse_plus, &solver.matrix.potential_plus, &solver.matrix.random_number };
-        inset_plot_array_plus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
-        if ( solver.system.p.use_twin_mode ) {
-            std::vector<PC3::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_minus,
-                                                                    &solver.matrix.k1_wavefunction_minus, &solver.matrix.k2_wavefunction_minus, &solver.matrix.k3_wavefunction_minus, &solver.matrix.k4_wavefunction_minus,
-                                                                    &solver.matrix.k1_reservoir_minus, &solver.matrix.k2_reservoir_minus, &solver.matrix.k3_reservoir_minus, &solver.matrix.k4_reservoir_minus,
-                                                                    &solver.matrix.pump_minus, &solver.matrix.pulse_minus, &solver.matrix.potential_minus, &solver.matrix.random_number };
-            inset_plot_array_minus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
-        }
-    }
+    //Type::complex *inset_plot_array_plus = nullptr, *inset_plot_array_minus = nullptr;
+    //TODO: change to hold a raw pointer to the device memory
+    //if ( __local_inset == 1 ) {
+    //    std::vector<PC3::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_plus,
+    //                                                            &solver.matrix.k1_wavefunction_plus, &solver.matrix.k2_wavefunction_plus, &solver.matrix.k3_wavefunction_plus, &solver.matrix.k4_wavefunction_plus,
+    //                                                            &solver.matrix.k1_reservoir_plus, &solver.matrix.k2_reservoir_plus, &solver.matrix.k3_reservoir_plus, &solver.matrix.k4_reservoir_plus,
+    //                                                            &solver.matrix.pump_plus, &solver.matrix.pulse_plus, &solver.matrix.potential_plus, &solver.matrix.random_number };
+    //    inset_plot_array_plus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
+    //    if ( solver.system.p.use_twin_mode ) {
+    //        std::vector<PC3::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_minus,
+    //                                                                &solver.matrix.k1_wavefunction_minus, &solver.matrix.k2_wavefunction_minus, &solver.matrix.k3_wavefunction_minus, &solver.matrix.k4_wavefunction_minus,
+    //                                                                &solver.matrix.k1_reservoir_minus, &solver.matrix.k2_reservoir_minus, &solver.matrix.k3_reservoir_minus, &solver.matrix.k4_reservoir_minus,
+    //                                                                &solver.matrix.pump_minus, &solver.matrix.pulse_minus, &solver.matrix.potential_minus, &solver.matrix.random_number };
+    //        inset_plot_array_minus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
+    //    }
+    //}
     if ( getWindow().keyPressed( BasicWindow::KEY_i ) ) {
         __local_inset = ( __local_inset + 1 ) % 2;
     }
@@ -169,7 +172,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     bool plot_min_max = cb_min_and_max.isChecked();
     // Plot Plus
     plotMatrix( solver.matrix.wavefunction_plus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
-    plotMatrix( inset_plot_array_plus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
+    //plotMatrix( inset_plot_array_plus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
     plotMatrix( solver.matrix.reservoir_plus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
     PC3::CUDA::angle( solver.matrix.wavefunction_plus.getHostPtr(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
     plotMatrix( __plotarray.get(), solver.system.p.N_x, solver.system.p.N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
@@ -177,7 +180,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     // Plot Minus
     if ( solver.system.p.use_twin_mode ) {
         plotMatrix( solver.matrix.wavefunction_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "Psi- ", plot_min_max );
-        plotMatrix( inset_plot_array_minus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
+        //plotMatrix( inset_plot_array_minus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
         plotMatrix( solver.matrix.reservoir_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "n- ", plot_min_max );
         PC3::CUDA::angle( solver.matrix.wavefunction_minus.getHostPtr(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
         plotMatrix( __plotarray.get(), solver.system.p.N_x, solver.system.p.N_y, 0, solver.system.p.N_y, 1, __local_colorpalette_phase, "ang(Psi-) ", plot_min_max );
@@ -227,11 +230,11 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
 
     if ( b_snapshot.isToggled() ) {
         // Copy the current state of the host wavefunction to the snapshot
-        solver.matrix.snapshot_wavefunction_plus.setTo( solver.matrix.wavefunction_plus );
-        solver.matrix.snapshot_reservoir_plus.setTo( solver.matrix.reservoir_plus );
+        solver.matrix.snapshot_wavefunction_plus = solver.matrix.wavefunction_plus.toFull().getHostData();
+        solver.matrix.snapshot_reservoir_plus = solver.matrix.reservoir_plus.toFull().getHostData();
         if ( solver.system.p.use_twin_mode ) {
-            solver.matrix.snapshot_wavefunction_minus.setTo( solver.matrix.wavefunction_minus );
-            solver.matrix.snapshot_reservoir_minus.setTo( solver.matrix.reservoir_minus );
+            solver.matrix.snapshot_wavefunction_minus = solver.matrix.wavefunction_minus.toFull().getHostData();
+            solver.matrix.snapshot_reservoir_minus = solver.matrix.reservoir_minus.toFull().getHostData();
         }
         snapshot_time = solver.system.p.t;
 

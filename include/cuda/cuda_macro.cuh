@@ -6,35 +6,39 @@
 #define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                                                                                             \
     {                                                                                                                                                                                                                                         \
         const Type::uint current_halo = system.p.halo_size - index;                                                                                                                                                                               \
-        auto current_grid = getGridSize( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                                                                                                                  \
-        dim3 current_block = {system.block_size, 1, 1};\
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                                                                                       \
         CALL_KERNEL(                                                                                                                                                                                                                          \
             RUNGE_FUNCTION_GP, "K" #index, current_grid, current_block, stream,                                                                                                                                                           \
             current_halo, { system.p.t, system.p.dt }, kernel_arguments,                                                                                                                                                                          \
-            { kernel_arguments.dev_ptrs.input_wavefunction##_plus, kernel_arguments.dev_ptrs.input_wavefunction##_minus, kernel_arguments.dev_ptrs.input_reservoir##_plus, kernel_arguments.dev_ptrs.input_reservoir##_minus,                 \
-              kernel_arguments.dev_ptrs.k##index##_wavefunction_plus, kernel_arguments.dev_ptrs.k##index##_wavefunction_minus, kernel_arguments.dev_ptrs.k##index##_reservoir_plus, kernel_arguments.dev_ptrs.k##index##_reservoir_minus } ); \
+            { matrix.input_wavefunction##_plus.getDevicePtr(subgrid), matrix.input_wavefunction##_minus.getDevicePtr(subgrid), matrix.input_reservoir##_plus.getDevicePtr(subgrid), matrix.input_reservoir##_minus.getDevicePtr(subgrid),                 \
+              matrix.k_wavefunction_plus[index-1].getDevicePtr(subgrid), matrix.k_wavefunction_minus[index-1].getDevicePtr(subgrid), matrix.k_reservoir_plus[index-1].getDevicePtr(subgrid), matrix.k_reservoir_minus[index-1].getDevicePtr(subgrid) } ); \
     };
 
 #define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                                                                                                                                                                                                                                                                                                             \
     {                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
         const Type::uint current_halo = system.p.halo_size - index;                                                                                                                                                                                                                                                                                                                                                                                                      \
-        auto current_grid = getGridSize( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                                                                                                                                                                                                                                                                                                                                         \
-        dim3 current_block = {system.block_size, 1, 1};\
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                                                                                       \
         CALL_KERNEL(                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
             Kernel::RK::runge_sum_to_input_kw, "Sum for K" #index, current_grid, current_block, stream,                                                                                                                                                                                                                                                                                                                                                          \
-            current_halo, { system.p.t, system.p.dt }, kernel_arguments, { kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, kernel_arguments.dev_ptrs.buffer_wavefunction_plus, kernel_arguments.dev_ptrs.buffer_wavefunction_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus }, \
+            current_halo, { system.p.t, system.p.dt }, kernel_arguments, { matrix.wavefunction_plus.getDevicePtr(subgrid), matrix.wavefunction_minus.getDevicePtr(subgrid), matrix.reservoir_plus.getDevicePtr(subgrid), matrix.reservoir_minus.getDevicePtr(subgrid), matrix.buffer_wavefunction_plus.getDevicePtr(subgrid), matrix.buffer_wavefunction_minus.getDevicePtr(subgrid), matrix.buffer_reservoir_plus.getDevicePtr(subgrid), matrix.buffer_reservoir_minus.getDevicePtr(subgrid)}, \
             { __VA_ARGS__ } );                                                                                                                                                                                                                                                                                                                                                                                                                                       \
     };
 
 #define FINAL_SUM_K( ... )                                                                                                                                                                                                                                                                                                                                                                                                    \
     {                                                                                                                                                                                                                                                                                                                                                                                                                         \
-        auto current_grid = getGridSize( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                                                                                                                                                                                                                                                                  \
-        dim3 current_block = {system.block_size, 1, 1};\
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                                                       \
         CALL_KERNEL(                                                                                                                                                                                                                                                                                                                                                                                                          \
             Kernel::RK::runge_sum_to_input_kw, "Sum for Psi", current_grid, current_block, stream,                                                                                                                                                                                                                                                                                                                        \
-            0, { system.p.t, system.p.dt }, kernel_arguments, { kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus }, \
+            0, { system.p.t, system.p.dt }, kernel_arguments, { matrix.wavefunction_plus.getDevicePtr(subgrid), matrix.wavefunction_minus.getDevicePtr(subgrid), matrix.reservoir_plus.getDevicePtr(subgrid), matrix.reservoir_minus.getDevicePtr(subgrid), matrix.wavefunction_plus.getDevicePtr(subgrid), matrix.wavefunction_minus.getDevicePtr(subgrid), matrix.reservoir_plus.getDevicePtr(subgrid), matrix.reservoir_minus.getDevicePtr(subgrid) }, \
             { __VA_ARGS__ } );                                                                                                                                                                                                                                                                                                                                                                                                \
     };
+
+// Helper to retrieve the raw device pointer. When using nvcc and thrust, we need a raw pointer cast.
+#ifdef USE_CPU
+#    define GET_RAW_PTR( vec ) vec.data()
+#else
+#    define GET_RAW_PTR( vec ) thrust::raw_pointer_cast( vec.data() )
+#endif
 
 #ifdef USE_CUDA
 // Execudes a CUDA Command, checks for the latest error and prints it
@@ -68,38 +72,43 @@
             static cudaGraph_t graph;                                                                                                                     \
             static cudaGraphExec_t instance;                                                                                                              \
             static cudaStream_t stream;                                                                                                                   \
-            std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                      \
-            for (Type::uint subgrid = 0; subgrid < system.p.subgrids_x*system.p.subgrids_y; subgrid++) {                                                        \
-                v_kernel_arguments.push_back( generateKernelArguments(subgrid) );                                                                         \
-            }                                                                                                                                             \
-            if ( !cuda_graph_created or not with_graph ) {                                                                                                \
+            if ( not cuda_graph_created or not with_graph ) {                                                                                             \
+                std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                      \
+                for (Type::uint subgrid = 0; subgrid < system.p.subgrids_x*system.p.subgrids_y; subgrid++) {                                                  \
+                std::cout << PC3::CLIO::prettyPrint( "Generating Kernel Arguments for Subgrid " + std::to_string(subgrid), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
+                    v_kernel_arguments.push_back( generateKernelArguments(subgrid) );                                                                         \
+                }                                                                                                                                             \
                 if ( with_graph ) {                                                                                                                       \
                     cudaStreamCreate( &stream );                                                                                                          \
                     cudaStreamBeginCapture( stream, cudaStreamCaptureModeGlobal );                                                                        \
                     std::cout << PC3::CLIO::prettyPrint( "Capturing CUDA Graph", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
                 }                                                                                                                                         \
-                for ( Type::uint subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                              \
+                for ( Type::uint subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                          \
                     auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                 \
                     content;                                                                                                                              \
                 }                                                                                                                                         \
-                auto current_grid = getGridSize( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                            \
-                dim3 current_block = {system.block_size, 1, 1};                                                                                           \
+                auto [current_block, current_grid] = getLaunchParameters( matrix.halo_map.size()/6 * system.p.subgrids_x*system.p.subgrids_y );\
                 CALL_KERNEL(                                                                                                                              \
                     Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, stream,                                              \
-                    system.p.subgrids_x, system.p.subgrids_y, system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, matrix.halo_map.size(),     \
-                    system.p.periodic_boundary_x, system.p.periodic_boundary_y, matrix.wavefunction_plus.getSubgridDevicePtrs(),                          \
-                    v_kernel_arguments[0].dev_ptrs.halo_map                                                                                                    \
+                    system.p.subgrids_x, system.p.subgrids_y, system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, matrix.halo_map.size()/6,                   \
+                    system.p.periodic_boundary_x, system.p.periodic_boundary_y, system.p.use_twin_mode,                                                   \
+                    matrix.wavefunction_plus.getSubgridDevicePtrs(),matrix.wavefunction_minus.getSubgridDevicePtrs(),                                     \
+                    matrix.reservoir_plus.getSubgridDevicePtrs(),matrix.reservoir_minus.getSubgridDevicePtrs(),                                           \
+                    GET_RAW_PTR(matrix.halo_map)                                                                                                          \
                 )                                                                                                                                         \
                 if ( with_graph ) {                                                                                                                       \
                     cudaStreamEndCapture( stream, &graph );                                                                                               \
                     cudaGraphInstantiate( &instance, graph, NULL, NULL, 0 );                                                                              \
                     cuda_graph_created = true;                                                                                                            \
+                    cudaGraphNode_t* nodes = nullptr;                                                                                                               \
+                    size_t num_nodes;                                                                                                                     \
+                    cudaGraphGetNodes( graph, nodes, &num_nodes );                                                                                        \
+                    std::cout << PC3::CLIO::prettyPrint( "CUDA Graph created with " + std::to_string( num_nodes ) + " nodes", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
                 }                                                                                                                                         \
             } else {                                                                                                                                      \
                 CHECK_CUDA_ERROR( cudaGraphLaunch( instance, stream ), "graph launch" );                                                                  \
             }                                                                                                                                             \
         }
-
 #else
 // On the CPU, the check for CUDA errors does nothing
 #    define CHECK_CUDA_ERROR( func, msg )
@@ -187,11 +196,4 @@
         {                            \
             free( ptr );             \
         }
-#endif
-
-// Helper to retrieve the raw device pointer. When using nvcc and thrust, we need a raw pointer cast.
-#ifdef USE_CPU
-#    define GET_RAW_PTR( vec ) vec.data()
-#else
-#    define GET_RAW_PTR( vec ) thrust::raw_pointer_cast( vec.data() )
 #endif

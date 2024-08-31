@@ -12,11 +12,11 @@
 namespace PC3::Kernel {
 
     namespace RK {
-        // Weights for up to 10 ks
+        // Weights for up to 4 ks
         struct Weights { 
             int n;
             int start;
-            Type::real weights[10];
+            Type::real weights[MAX_K_VECTOR_SIZE];
             template <typename ...Args>
             Weights( Args... _weights ) : n(sizeof...(_weights)), start(-1) {
                 double _w[] = { _weights... };

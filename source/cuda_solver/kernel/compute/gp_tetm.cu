@@ -29,8 +29,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo,
     Type::complex result = args.p.minus_i_over_h_bar_s * args.p.m_eff_scaled * hamilton_regular_plus;
     
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex potential = args.dev_ptrs.potential_plus[i+offset] * args.potential_pointers.amp[k];
+        const Type::complex potential = args.dev_ptrs.potential_plus[k][i] * args.potential_pointers.amp[k];
         result += args.p.minus_i_over_h_bar_s * potential * in_wf_plus;
     }
 
@@ -44,8 +43,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo,
     
     // MARK: Pulse Plus
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex pulse = args.dev_ptrs.pulse_plus[i+offset];
+        const Type::complex pulse = args.dev_ptrs.pulse_plus[k][i];
         result += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
     }
 
@@ -61,9 +59,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo,
     result = -( args.p.gamma_r + args.p.R * in_psi_plus_norm ) * in_rv_plus;
 
     for (int k = 0; k < args.pump_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const auto gauss = args.pump_pointers.amp[k];
-        result += args.dev_ptrs.pump_plus[i+offset] * gauss;
+        result += args.dev_ptrs.pump_plus[k][i] * gauss;
     }
 
     // MARK: Stochastic-2
@@ -77,8 +74,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo,
     result = args.p.minus_i_over_h_bar_s * args.p.m_eff_scaled * hamilton_regular_minus;
     
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex potential = args.dev_ptrs.potential_minus[i+offset] * args.potential_pointers.amp[k];
+        const Type::complex potential = args.dev_ptrs.potential_minus[k][i] * args.potential_pointers.amp[k];
         result += args.p.minus_i_over_h_bar_s * potential * in_wf_minus;
     }
 
@@ -92,8 +88,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo,
 
     // MARK: Pulse Minus
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex pulse = args.dev_ptrs.pulse_minus[i+offset];
+        const Type::complex pulse = args.dev_ptrs.pulse_minus[k][i];
         result += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
     }
 
@@ -108,9 +103,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo,
     result = -( args.p.gamma_r + args.p.R * in_psi_minus_norm ) * in_rv_minus;
 
     for (int k = 0; k < args.pump_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
         const auto gauss = args.pump_pointers.amp[k];
-        result += args.dev_ptrs.pump_minus[i+offset] * gauss;
+        result += args.dev_ptrs.pump_minus[k][i] * gauss;
     }
 
     // MARK: Stochastic-2
@@ -159,8 +153,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::VKerne
     Type::complex result = {args.p.g_c * in_psi_plus_norm, -args.p.h_bar_s * Type::real(0.5) * args.p.gamma_c};
 
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex potential = args.dev_ptrs.potential_plus[i+offset] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
+        const Type::complex potential = args.dev_ptrs.potential_plus[k][i] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
         result += potential;
     }
 
@@ -183,7 +176,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::VKerne
     result -= args.p.R * in_psi_plus_norm * in_rv_plus;
     for (int k = 0; k < args.pump_pointers.n; k++) {
         const int offset = k * args.p.N_x * args.p.N_y;
-        result += args.dev_ptrs.pump_plus[i+offset] * args.pump_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.pump_pointers.t0[k], args.pump_pointers.sigma[k], args.pump_pointers.freq[k]);
+        result += args.dev_ptrs.pump_plus[k][i] * args.pump_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.pump_pointers.t0[k], args.pump_pointers.sigma[k], args.pump_pointers.freq[k]);
     }
     // MARK: Stochastic-2
     if (args.p.stochastic_amplitude > 0.0)
@@ -194,8 +187,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::VKerne
     result = Type::complex(args.p.g_c * in_psi_minus_norm, -args.p.h_bar_s * Type::real(0.5) * args.p.gamma_c);
 
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex potential = args.dev_ptrs.potential_minus[i+offset] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
+        const Type::complex potential = args.dev_ptrs.potential_minus[k][i] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
         result += potential;
     }
 
@@ -218,7 +210,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_nonlinear( int i, Solver::VKerne
     result -= args.p.R * in_psi_minus_norm * in_rv_minus;
     for (int k = 0; k < args.pump_pointers.n; k++) {
         const int offset = k * args.p.N_x * args.p.N_y;
-        result += args.dev_ptrs.pump_minus[i+offset] * args.pump_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.pump_pointers.t0[k], args.pump_pointers.sigma[k], args.pump_pointers.freq[k]);
+        result += args.dev_ptrs.pump_minus[k][i] * args.pump_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.pump_pointers.t0[k], args.pump_pointers.sigma[k], args.pump_pointers.freq[k]);
     }
     // MARK: Stochastic-2
     if (args.p.stochastic_amplitude > 0.0)
@@ -236,8 +228,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::VKer
 
     // MARK: Pulse
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex pulse = args.dev_ptrs.pulse_plus[i+offset];
+        const Type::complex pulse = args.dev_ptrs.pulse_plus[k][i];
         result += args.p.minus_i_over_h_bar_s * time.dt * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
     }
     if (args.p.stochastic_amplitude > 0.0) {
@@ -252,8 +243,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_independent( int i, Solver::VKer
 
     // MARK: Pulse
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const Type::uint offset = k * args.p.N_x * args.p.N_y;
-        const Type::complex pulse = args.dev_ptrs.pulse_minus[i+offset];
+        const Type::complex pulse = args.dev_ptrs.pulse_minus[k][i];
         result += args.p.minus_i_over_h_bar_s * time.dt * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
     }
     if (args.p.stochastic_amplitude > 0.0) {

@@ -68,11 +68,16 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         p.N_x = (int)PC3::CLIO::getNextInput( argv, argc, "N_x", ++index );
         p.N_y = (int)PC3::CLIO::getNextInput( argv, argc, "N_y", index );
     }
-    p.subgrids_x = 2;
-    p.subgrids_y = 2;
+    p.subgrids_x = 1;
+    p.subgrids_y = 1;
+    if ( ( index = PC3::CLIO::findInArgv( "--subgrids", argc, argv ) ) != -1 ) {
+        p.subgrids_x = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_x", ++index );
+        p.subgrids_y = p.subgrids_x;
+    }
+    // TODO: chose halo size based on iterator. MAYBE: change iterator choosing at compile time? at least for K-mat iterators.
     p.halo_size = 4;
-    p.subgrid_N_x = p.N_x;
-    p.subgrid_N_y = p.N_y;
+    p.subgrid_N_x = p.N_x / p.subgrids_x;
+    p.subgrid_N_y = p.N_y / p.subgrids_y;
 
     std::cout << "Subgrid Configuration: " << p.subgrids_x << "x" << p.subgrids_y << std::endl;
     std::cout << "Subgrid Size: " << p.subgrid_N_x << "x" << p.subgrid_N_y << std::endl;

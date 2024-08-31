@@ -64,6 +64,9 @@
  */
 void PC3::Solver::applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask ) {
     /*
+
+    //TODO: fft = wf_plus.toFull().getDeviceVector(); dann in-place fft. spart buffer!
+    // noch besser: fft = wf_plus.toFull( RAW_PTR(fft) ); dann in-place fft. spart buffer!
     // Calculate the actual FFTs
     calculateFFT( matrix.wavefunction_plus.getDevicePtr(), matrix.fft_plus.getDevicePtr(), FFT::forward );
 
