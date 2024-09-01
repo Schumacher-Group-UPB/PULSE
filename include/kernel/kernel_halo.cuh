@@ -49,10 +49,10 @@ namespace PC3::Kernel::Halo {
         GET_THREAD_INDEX( i, halo_num*subgrids_x*subgrids_y );
 
         const Type::uint sg = i / halo_num; // subgrid index from 0 to subgrids_x*subgrids_y.
-        const Type::uint s = i % halo_num; // subgrid_map index from 0 to 6*len(subgrid_map)
+        const Type::uint s = (i % halo_num)*6; // subgrid_map index from 0 to 6*len(subgrid_map)
     
-        const int R = sg / subgrids_y;
-        const int C = sg % subgrids_y;
+        const int R = sg / subgrids_x;
+        const int C = sg % subgrids_x;
         const Type::uint subgrid = R*subgrids_x + C;
     
         const auto dr = subgrid_map[s];
@@ -67,6 +67,7 @@ namespace PC3::Kernel::Halo {
                 return;
         if (not periodic_boundary_y and (R+dr < 0 or R+dr >= subgrids_y))
                 return;
+
         const Type::uint r_new = (R + dr) % subgrids_y;
         const Type::uint c_new = (C + dc) % subgrids_x;
         subgrids_wf_plus[subgrid][tr*(subgrid_N_x+2*halo_size) + tc] = subgrids_wf_plus[r_new*subgrids_x+c_new][fr*(subgrid_N_x+2*halo_size) + fc];

@@ -134,18 +134,18 @@ void PC3::Solver::initializeDeviceMatricesFromHost() {
             if (dc == 0 and dr == 0)
                 continue;
 
-            const Type::uint fr0 = delta(-1,dr)*system.p.subgrid_N_x + (1-delta(-1,dr))*system.p.halo_size;
-            const Type::uint fr1 = (delta(0,dr)+delta(-1,dr))*system.p.subgrid_N_x + system.p.halo_size + delta(dr,1)*system.p.halo_size; 
+            const Type::uint fr0 = delta(-1,dr)*system.p.subgrid_N_y + (1-delta(-1,dr))*system.p.halo_size;
+            const Type::uint fr1 = (delta(0,dr)+delta(-1,dr))*system.p.subgrid_N_y + system.p.halo_size + delta(dr,1)*system.p.halo_size; 
             const Type::uint fc0 = delta(-1,dc)*system.p.subgrid_N_x + (1-delta(-1,dc))*system.p.halo_size;
             const Type::uint fc1 = (delta(0,dc)+delta(-1,dc))*system.p.subgrid_N_x + system.p.halo_size + delta(dc,1)*system.p.halo_size;
 
-            const Type::uint tr0 = delta(1,dr)*system.p.subgrid_N_x + (1-delta(-1,dr))*system.p.halo_size;
-            const Type::uint tr1 = (1-delta(-1,dr))*system.p.subgrid_N_x + system.p.halo_size + delta(1,dr)*system.p.halo_size;
+            const Type::uint tr0 = delta(1,dr)*system.p.subgrid_N_y + (1-delta(-1,dr))*system.p.halo_size;
+            const Type::uint tr1 = (1-delta(-1,dr))*system.p.subgrid_N_y + system.p.halo_size + delta(1,dr)*system.p.halo_size;
             const Type::uint tc0 = delta(1,dc)*system.p.subgrid_N_x + (1-delta(-1,dc))*system.p.halo_size; 
             const Type::uint tc1 = (1-delta(-1,dc))*system.p.subgrid_N_x + system.p.halo_size + delta(1,dc)*system.p.halo_size;
 
-            for (int i = fr0; i < fr1; i++) {
-                for (int j = fc0; j < fc1; j++) {
+            for (int i = 0; i < fr1-fr0; i++) {
+                for (int j = 0; j < fc1-fc0; j++) {
                     const int from_row = fr0 + i;
                     const int from_col = fc0 + j;
                     const int to_row = tr0 + i;

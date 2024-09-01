@@ -175,8 +175,8 @@ struct MatrixContainer {
         MATRIX_LIST
         #undef X
 
-        //if (not use_twin_mode)
-        //    return;
+        if (not use_twin_mode)
+            return;
 
         // MARK: Minus Components
         // ======================================================================================================== //
@@ -267,10 +267,47 @@ struct MatrixContainer {
         Type::complex** potential_minus = nullptr;
 
         // K Matrices
-        Type::complex** k_wavefunction_plus = nullptr;
-        Type::complex** k_wavefunction_minus = nullptr;
-        Type::complex** k_reservoir_plus = nullptr;
-        Type::complex** k_reservoir_minus = nullptr;
+        Type::complex* k1_wavefunction_plus = nullptr;
+        Type::complex* k1_wavefunction_minus = nullptr;
+        Type::complex* k1_reservoir_plus = nullptr;
+        Type::complex* k1_reservoir_minus = nullptr;
+        Type::complex* k2_wavefunction_plus = nullptr;
+        Type::complex* k2_wavefunction_minus = nullptr;
+        Type::complex* k2_reservoir_plus = nullptr;
+        Type::complex* k2_reservoir_minus = nullptr;
+        Type::complex* k3_wavefunction_plus = nullptr;
+        Type::complex* k3_wavefunction_minus = nullptr;
+        Type::complex* k3_reservoir_plus = nullptr;
+        Type::complex* k3_reservoir_minus = nullptr;
+        Type::complex* k4_wavefunction_plus = nullptr;
+        Type::complex* k4_wavefunction_minus = nullptr;
+        Type::complex* k4_reservoir_plus = nullptr;
+        Type::complex* k4_reservoir_minus = nullptr;
+        Type::complex* k5_wavefunction_plus = nullptr;
+        Type::complex* k5_wavefunction_minus = nullptr;
+        Type::complex* k5_reservoir_plus = nullptr;
+        Type::complex* k5_reservoir_minus = nullptr;
+        Type::complex* k6_wavefunction_plus = nullptr;
+        Type::complex* k6_wavefunction_minus = nullptr;
+        Type::complex* k6_reservoir_plus = nullptr;
+        Type::complex* k6_reservoir_minus = nullptr;
+        Type::complex* k7_wavefunction_plus = nullptr;
+        Type::complex* k7_wavefunction_minus = nullptr;
+        Type::complex* k7_reservoir_plus = nullptr;
+        Type::complex* k7_reservoir_minus = nullptr;
+        Type::complex* k8_wavefunction_plus = nullptr;
+        Type::complex* k8_wavefunction_minus = nullptr;
+        Type::complex* k8_reservoir_plus = nullptr;
+        Type::complex* k8_reservoir_minus = nullptr;
+        Type::complex* k9_wavefunction_plus = nullptr;
+        Type::complex* k9_wavefunction_minus = nullptr;
+        Type::complex* k9_reservoir_plus = nullptr;
+        Type::complex* k9_reservoir_minus = nullptr;
+        Type::complex* k10_wavefunction_plus = nullptr;
+        Type::complex* k10_wavefunction_minus = nullptr;
+        Type::complex* k10_reservoir_plus = nullptr;
+        Type::complex* k10_reservoir_minus = nullptr;
+
 
         // FFT Matrices
         Type::complex* fft_plus = nullptr;
@@ -315,8 +352,48 @@ struct MatrixContainer {
         ptrs.potential_plus = GET_RAW_PTR( potential_plus_ptrs[subgrid] );
 
         // K Matrices
-        ptrs.k_wavefunction_plus = GET_RAW_PTR( k_wavefunction_plus_ptrs[subgrid] );
-        ptrs.k_reservoir_plus = GET_RAW_PTR( k_reservoir_plus_ptrs[subgrid] );
+        //ptrs.k_wavefunction_plus = GET_RAW_PTR( k_wavefunction_plus_ptrs[subgrid] );
+        //ptrs.k_reservoir_plus = GET_RAW_PTR( k_reservoir_plus_ptrs[subgrid] );
+        // Hate the game not the player.
+        int k_max = k_wavefunction_plus.size();
+        ptrs.k1_wavefunction_plus = k_wavefunction_plus[0].getDevicePtr(subgrid);
+        ptrs.k1_reservoir_plus = k_reservoir_plus[0].getDevicePtr(subgrid);
+        if (k_max > 1) {
+            ptrs.k2_wavefunction_plus = k_wavefunction_plus[1].getDevicePtr(subgrid);
+            ptrs.k2_reservoir_plus = k_reservoir_plus[1].getDevicePtr(subgrid);
+        }
+        if (k_max > 2) {
+            ptrs.k3_wavefunction_plus = k_wavefunction_plus[2].getDevicePtr(subgrid);
+            ptrs.k3_reservoir_plus = k_reservoir_plus[2].getDevicePtr(subgrid);
+        }
+        if (k_max > 3) {
+            ptrs.k4_wavefunction_plus = k_wavefunction_plus[3].getDevicePtr(subgrid);
+            ptrs.k4_reservoir_plus = k_reservoir_plus[3].getDevicePtr(subgrid);
+        }
+        if (k_max > 4) {
+            ptrs.k5_wavefunction_plus = k_wavefunction_plus[4].getDevicePtr(subgrid);
+            ptrs.k5_reservoir_plus = k_reservoir_plus[4].getDevicePtr(subgrid);
+        }
+        if (k_max > 5) {
+            ptrs.k6_wavefunction_plus = k_wavefunction_plus[5].getDevicePtr(subgrid);
+            ptrs.k6_reservoir_plus = k_reservoir_plus[5].getDevicePtr(subgrid);
+        }
+        if (k_max > 6) {
+            ptrs.k7_wavefunction_plus = k_wavefunction_plus[6].getDevicePtr(subgrid);
+            ptrs.k7_reservoir_plus = k_reservoir_plus[6].getDevicePtr(subgrid);
+        }
+        if (k_max > 7) {
+            ptrs.k8_wavefunction_plus = k_wavefunction_plus[7].getDevicePtr(subgrid);
+            ptrs.k8_reservoir_plus = k_reservoir_plus[7].getDevicePtr(subgrid);
+        }
+        if (k_max > 8) {
+            ptrs.k9_wavefunction_plus = k_wavefunction_plus[8].getDevicePtr(subgrid);
+            ptrs.k9_reservoir_plus = k_reservoir_plus[8].getDevicePtr(subgrid);
+        }
+        if (k_max > 9) {
+            ptrs.k10_wavefunction_plus = k_wavefunction_plus[9].getDevicePtr(subgrid);
+            ptrs.k10_reservoir_plus = k_reservoir_plus[9].getDevicePtr(subgrid);
+        }
 
         // FFT Matrices
         if (use_fft) {
@@ -343,8 +420,8 @@ struct MatrixContainer {
         #undef X
 
         // MARK: Minus Component
-        //if (not use_twin_mode)
-        //    return ptrs;
+        if (not use_twin_mode)
+            return ptrs;
 
         // Wavefunction and Reservoir Matrices
         ptrs.wavefunction_minus = wavefunction_minus.getDevicePtr(subgrid);
@@ -358,8 +435,46 @@ struct MatrixContainer {
         ptrs.potential_minus = GET_RAW_PTR( potential_minus_ptrs[subgrid] );
 
         // K Matrices
-        ptrs.k_wavefunction_minus = GET_RAW_PTR( k_wavefunction_minus_ptrs[subgrid] );
-        ptrs.k_reservoir_minus = GET_RAW_PTR( k_reservoir_minus_ptrs[subgrid] );
+        //ptrs.k_wavefunction_minus = GET_RAW_PTR( k_wavefunction_minus_ptrs[subgrid] );
+        //ptrs.k_reservoir_minus = GET_RAW_PTR( k_reservoir_minus_ptrs[subgrid] );
+        ptrs.k1_wavefunction_minus = k_wavefunction_minus[0].getDevicePtr(subgrid);
+        ptrs.k1_reservoir_minus = k_reservoir_minus[0].getDevicePtr(subgrid);
+        if (k_max > 1) {
+            ptrs.k2_wavefunction_minus = k_wavefunction_minus[1].getDevicePtr(subgrid);
+            ptrs.k2_reservoir_minus = k_reservoir_minus[1].getDevicePtr(subgrid);
+        }
+        if (k_max > 2) {
+            ptrs.k3_wavefunction_minus = k_wavefunction_minus[2].getDevicePtr(subgrid);
+            ptrs.k3_reservoir_minus = k_reservoir_minus[2].getDevicePtr(subgrid);
+        }
+        if (k_max > 3) {
+            ptrs.k4_wavefunction_minus = k_wavefunction_minus[3].getDevicePtr(subgrid);
+            ptrs.k4_reservoir_minus = k_reservoir_minus[3].getDevicePtr(subgrid);
+        }
+        if (k_max > 4) {
+            ptrs.k5_wavefunction_minus = k_wavefunction_minus[4].getDevicePtr(subgrid);
+            ptrs.k5_reservoir_minus = k_reservoir_minus[4].getDevicePtr(subgrid);
+        }
+        if (k_max > 5) {
+            ptrs.k6_wavefunction_minus = k_wavefunction_minus[5].getDevicePtr(subgrid);
+            ptrs.k6_reservoir_minus = k_reservoir_minus[5].getDevicePtr(subgrid);
+        }
+        if (k_max > 6) {
+            ptrs.k7_wavefunction_minus = k_wavefunction_minus[6].getDevicePtr(subgrid);
+            ptrs.k7_reservoir_minus = k_reservoir_minus[6].getDevicePtr(subgrid);
+        }
+        if (k_max > 7) {
+            ptrs.k8_wavefunction_minus = k_wavefunction_minus[7].getDevicePtr(subgrid);
+            ptrs.k8_reservoir_minus = k_reservoir_minus[7].getDevicePtr(subgrid);
+        }
+        if (k_max > 8) {
+            ptrs.k9_wavefunction_minus = k_wavefunction_minus[8].getDevicePtr(subgrid);
+            ptrs.k9_reservoir_minus = k_reservoir_minus[8].getDevicePtr(subgrid);
+        }
+        if (k_max > 9) {
+            ptrs.k10_wavefunction_minus = k_wavefunction_minus[9].getDevicePtr(subgrid);
+            ptrs.k10_reservoir_minus = k_reservoir_minus[9].getDevicePtr(subgrid);
+        }
 
         // FFT Matrices
         if (use_fft) {

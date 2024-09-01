@@ -438,17 +438,21 @@ class CUDAMatrix : CUDAMatrixBase {
         }
     }
     // output device_vector[0] to file
-    void tofile(std::string path) {
-        std::ofstream file;
-        file.open(path);
-        for (int i = 0; i < subgrid_rows_with_halo; i++) {
-            for (int j = 0; j < subgrid_rows_with_halo; j++) {
-                T v = device_data[0][i*subgrid_cols_with_halo+j];
-                file << CUDA::real(v) << " ";
+    void dumpToFile(std::string path, std::string fp) {
+        for (int r = 0; r < subgrids_y; r++) {
+        for (int c = 0; c < subgrids_x; c++) {
+            std::ofstream file;
+            file.open(path+std::to_string(r)+std::string("_")+std::to_string(c)+std::string("_")+fp+std::string(".txt"));
+            for (int i = 0; i < subgrid_rows_with_halo; i++) {
+                for (int j = 0; j < subgrid_rows_with_halo; j++) {
+                    T v = device_data[r*subgrids_x+c][i*subgrid_cols_with_halo+j];
+                    file << CUDA::real(v) << " ";
+                }
+                file << std::endl;
             }
-            file << std::endl;
+            file.close();   
+            }
         }
-        file.close();
     }
 
     /**
