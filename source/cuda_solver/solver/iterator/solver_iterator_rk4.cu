@@ -7,9 +7,8 @@
 #include "kernel/kernel_halo.cuh"
 #include "system/system_parameters.hpp"
 #include "cuda/cuda_matrix.cuh"
-#include "solver/gpu_solver.hpp" 
+#include "solver/gpu_solver.hpp"
 #include "misc/commandline_io.hpp"
-
 
 /*
  * This function iterates the Runge Kutta Kernel using a fixed time step.
@@ -31,28 +30,29 @@
  * We calculate 4 rows of k1, 3 rows of k2, 2 rows of k3 and 1 row of k4 before the first iteration.
  * Then, we iterate all of the remaining rows after each other, incrementing the buffer for the next iteration.
  */
- 
-void PC3::Solver::iterateFixedTimestepRungeKutta4(  ) {
- 
-    SOLVER_SEQUENCE(true /*Capture CUDA Graph*/,          
-                   
-        // Calculate k1 with a halo of 3. This means the input buffer of K1, which is the current Psi, has a halo of 4.
-        CALCULATE_K( 1, wavefunction, reservoir );      
-        INTERMEDIATE_SUM_K( 1, 0.5f );     
-  
-        // Calculate k2 with a halo of 2. This means the input buffer of K2, which is the current Psi + 0.5 * dt * k1 in the buffer_ variables, has a halo of 3.
-        CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir ); 
-        INTERMEDIATE_SUM_K( 2, 0.0f, 0.5f );   
-  
-        // Calculate k3 with a halo of 1. This means the input buffer of K3, which is the current Psi + 0.5 * dt * k2 in the buffer_ variables, has a halo of 2.
-        CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir);
-        INTERMEDIATE_SUM_K( 3, 0.0f, 0.0f, 1.0f );        
 
-        // Calculate k4 with a halo of 0. This means the input buffer of K4, which is the current Psi + dt * k3 in the buffer_ variables, has a halo of 1.
-        CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir);
-         
-        FINAL_SUM_K( 1.0f/6.0f, 1.0f/3.0f, 1.0f/3.0f, 1.0f/6.0f );
-    
+void PC3::Solver::iterateFixedTimestepRungeKutta4() {
+    SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
+
+                     // Calculate k1 with a halo of 3. This means the input buffer of K1, which is the current Psi, has a halo of 4.
+                     CALCULATE_K( 1, wavefunction, reservoir );
+                     INTERMEDIATE_SUM_K( 1, 0.5f );
+
+                     // Calculate k2 with a halo of 2. This means the input buffer of K2, which is the current Psi + 0.5 * dt * k1 in the buffer_ variables, has a halo of 3.
+                     CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir );
+
+                     INTERMEDIATE_SUM_K( 2, 0.0f, 0.5f );
+
+                     // Calculate k3 with a halo of 1. This means the input buffer of K3, which is the current Psi + 0.5 * dt * k2 in the buffer_ variables, has a halo of 2.
+                     CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir );
+
+                     INTERMEDIATE_SUM_K( 3, 0.0f, 0.0f, 1.0f );
+
+                     // Calculate k4 with a halo of 0. This means the input buffer of K4, which is the current Psi + dt * k3 in the buffer_ variables, has a halo of 1.
+                     CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir );
+
+                     FINAL_SUM_K( 1.0f / 6.0f, 1.0f / 3.0f, 1.0f / 3.0f, 1.0f / 6.0f );
+
     )
     return;
 }

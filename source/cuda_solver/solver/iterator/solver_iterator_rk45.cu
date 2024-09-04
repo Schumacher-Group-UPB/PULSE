@@ -11,6 +11,7 @@
 
 // Include Cuda Kernel headers
 #include "kernel/kernel_compute.cuh"
+#include "kernel/kernel_summation.cuh"
 #include "system/system_parameters.hpp"
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
@@ -53,75 +54,49 @@
 * @param evaluate_pulse If true, the pulse is evaluated at the current time step
 */
 
-void PC3::Solver::iterateVariableTimestepRungeKutta(  ) {
-}
- /*
+void PC3::Solver::iterateVariableTimestepRungeKutta() {
     // Accept current step?
     bool accept = false;
 
-    auto cf = RKCoefficients::DP();
+    constexpr auto cf = RKCoefficients::DP();
 
     do {
-        // We snapshot here to make sure that the dt is updated
-        auto p = system.kernel_parameters;
-        Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -p.dt) : Type::complex(p.dt, 0.0);
+        SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
 
-        updateKernelArguments( system.p.t, dt );
+                         CALCULATE_K( 1, wavefunction, reservoir );
 
-        SOLVER_SEQUENCE(
+                         INTERMEDIATE_SUM_K( 1, cf.b11 );
 
-            CALCULATE_K( 1, wavefunction, reservoir );
-            
-            INTERMEDIATE_SUM_K( 1, cf.b11 );
-            
-            CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir );
-            
-            INTERMEDIATE_SUM_K( 2, cf.b21, cf.b22 );
+                         CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir );
 
-            CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir );
+                         INTERMEDIATE_SUM_K( 2, cf.b21, cf.b22 );
 
-            INTERMEDIATE_SUM_K( 3, cf.b31, cf.b32, cf.b33 );
+                         CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir );
 
-            CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir );
+                         INTERMEDIATE_SUM_K( 3, cf.b31, cf.b32, cf.b33 );
 
-            INTERMEDIATE_SUM_K( 4, cf.b41, cf.b42, cf.b43, cf.b44 );
+                         CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir );
 
-            CALCULATE_K( 5, buffer_wavefunction, buffer_reservoir );
+                         INTERMEDIATE_SUM_K( 4, cf.b41, cf.b42, cf.b43, cf.b44 );
 
-            INTERMEDIATE_SUM_K( 5, cf.b51, cf.b52, cf.b53, cf.b54, cf.b55 );
+                         CALCULATE_K( 5, buffer_wavefunction, buffer_reservoir );
 
-            CALCULATE_K( 6, buffer_wavefunction, buffer_reservoir );
+                         INTERMEDIATE_SUM_K( 5, cf.b51, cf.b52, cf.b53, cf.b54, cf.b55 );
 
-            FINAL_SUM_K( cf.b61, cf.b62, cf.b63, cf.b64, cf.b65, cf.b66 );
+                         CALCULATE_K( 6, buffer_wavefunction, buffer_reservoir );
 
-            // TODO: swapBuffers funktioniert auf grund des graph cachings nicht mehr. deswegen: hier einfach den fehler ausrechnen, und wenn der klein genug ist, dann
-            // Psi next ins richtige Psi schreiben! dann spart man sich sogar die redundante rechnung falls psi nicht akzeptiert wird.
-            CALL_KERNEL(
-                Kernel::RK::runge_sum_to_error, "Error", grid_size, block_size, stream, // SOLVER_SEQUENCE creates a static stream variable
-                kernel_arguments, 
-                {
-                    kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, 
-                    kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, 
-                    kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard, 
-                    kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard
-                },
-                { cf.e7, cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6 }
-            );
-            
-        )
+                         // We need an intermediate K7 for the error calculation
+                         INTERMEDIATE_SUM_K( 7, cf.b61, cf.b62, cf.b63, cf.b64, cf.b65, cf.b66 );
 
-        #ifdef USE_CUDA
-            Type::complex error = thrust::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), Type::complex(0.0), thrust::plus<Type::complex>() );
-            Type::real sum_abs2 = thrust::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), PC3::SquareReduction(), Type::real(0.0), thrust::plus<Type::real>() );
-        #else
-            Type::complex error = std::reduce( matrix.rk_error.dbegin(), matrix.rk_error.dend(), Type::complex(0.0), std::plus<Type::complex>() );
-            Type::real sum_abs2 = std::transform_reduce( matrix.wavefunction_plus.dbegin(), matrix.wavefunction_plus.dend(), Type::real(0.0), std::plus<Type::real>(), PC3::SquareReduction() );
-        #endif
-        // TODO: maybe go back to using max since thats faster
-        //auto plus_max = std::get<1>( minmax( matrix.wavefunction_plus.getDevicePtr(), p.N_x * p.N_y, true ) );
-        Type::real final_error = CUDA::abs(error) / sum_abs2;
+                         ERROR_K( cf.e1, cf.e2, cf.e3, cf.e4, cf.e5, cf.e6, cf.e7 ) );
 
-        
+        Type::complex error = matrix.rk_error.sum();
+        Type::real sum_abs2 = CUDA::real( matrix.wavefunction_plus.transformReduce(
+            0.0, [] PULSE_HOST_DEVICE( Type::complex a ) { return Type::complex( CUDA::abs2( a ) ); },
+            [] PULSE_HOST_DEVICE( Type::complex a, Type::complex b ) { return a + b; } ) );
+
+        Type::real final_error = CUDA::abs( error ) / sum_abs2;
+
         // Calculate dh
         Type::real dh = std::pow<Type::real>( system.tolerance / 2. / std::max<Type::real>( final_error, 1E-15 ), 0.25 );
         // Check if dh is nan
@@ -130,26 +105,26 @@ void PC3::Solver::iterateVariableTimestepRungeKutta(  ) {
         }
         if ( std::isnan( final_error ) )
             dh = 0.5;
-        
-        //  Set new timestep
-        system.p.dt = std::min<Type::real>(p.dt * dh, system.dt_max);
-        if ( dh < 1.0 )
-           //system.p.dt = std::max<Type::real>( p.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
-           p.dt -= system.dt_min;
-        else
-           //system.p.dt = std::min<Type::real>( p.dt + system.dt_min * std::floor( dh ), system.dt_max );
-           p.dt += system.dt_min;
 
-        // Make sure to also update dt from p
-        system.kernel_parameters.dt = p.dt;
-        
+        //  Set new timestep
+        system.p.dt = std::min<Type::real>( system.p.dt * dh, system.dt_max );
+        if ( dh < 1.0 )
+            //system.p.dt = std::max<Type::real>( p.dt - system.dt_min * std::floor( 1.0 / dh ), system.dt_min );
+            system.p.dt -= system.dt_min;
+        else
+            //system.p.dt = std::min<Type::real>( p.dt + system.dt_min * std::floor( dh ), system.dt_max );
+            system.p.dt += system.dt_min;
 
         // Accept step if error is below tolerance
         if ( final_error < system.tolerance ) {
             accept = true;
-            // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
-            swapBuffers();
+            // Replace current Wavefunction with K7
+            matrix.k_wavefunction_plus.getFullMatrix( true, 6 ); // This syncs the full matrix of K7 into the static buffer
+            matrix.wavefunction_plus.toSubgrids();               // This syncs the current components of the static buffer into the full matrix
+            if ( system.p.use_twin_mode ) {
+                matrix.k_wavefunction_minus.getFullMatrix( true, 6 ); // This syncs the full matrix of K7 into the static buffer
+                matrix.wavefunction_minus.toSubgrids();               // This syncs the current components of the static buffer into the full matrix
+            }
         }
     } while ( !accept );
 }
-*/

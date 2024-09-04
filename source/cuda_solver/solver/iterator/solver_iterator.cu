@@ -29,26 +29,24 @@ bool PC3::Solver::iterate() {
     if ( system.p.t >= system.t_max )
         return false;
 
-    auto [block_size, grid_size] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );
-
-    /*    
     // If required, calculate new set of random numbers.
+    // TODO: move this back into subgrids, because for large number of subgrids this will look very correlated!
     if (system.evaluateStochastic()) {
-        auto device_pointers = matrix.pointers();
+        auto args = generateKernelArguments( );
+        auto [block_size, grid_size] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );
         if (first_time) {
             first_time = false;
             CALL_KERNEL(
                     PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0,
-                    system.random_seed, device_pointers.random_state, system.p.subgrid_N_x*system.p.subgrid_N_y
+                    system.random_seed, args.dev_ptrs.random_state, system.p.subgrid_N_x*system.p.subgrid_N_y
                 );
             std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
         }
         CALL_KERNEL(
             PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0,
-            device_pointers.random_state, device_pointers.random_number, system.p.subgrid_N_x*system.p.subgrid_N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
+            args.dev_ptrs.random_state, args.dev_ptrs.random_number, system.p.subgrid_N_x*system.p.subgrid_N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
         );
     }
-    */
 
     // TODO: Merhe these device arrays with the kernelParameters struct.
     // should be easily possible because the sizes of the arrays are known at launch

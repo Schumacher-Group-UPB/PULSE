@@ -12,71 +12,66 @@
  * Split Step Fourier Method
  */
 void PC3::Solver::iterateSplitStepFourier(  ) {
-    /*
-    Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
-
-    auto device_pointers = matrix.pointers();
-
-    updateKernelArguments( system.p.t, dt );
+    
+    auto kernel_arguments = generateKernelArguments( );
+    Solver::VKernelArguments v_time = getCurrentTime(); 
+    auto [block_size, grid_size] = getLaunchParameters( system.p.N_x, system.p.N_y );
 
     // Liner Half Step
     // Calculate the FFT of Psi
-    calculateFFT( device_pointers.wavefunction_plus, device_pointers.k1_wavefunction_plus, FFT::forward );
+    calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
     if (system.p.use_twin_mode)
-        calculateFFT( device_pointers.wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::forward );
+        calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
     CALL_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
-        kernel_arguments, 
+        v_time, kernel_arguments, 
         { 
-            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.discard, device_pointers.discard,
-            device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.discard, device_pointers.discard
+            kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
+            kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard
         }
     );
-    // Transform back. K1 now holds the half-stepped wavefunction.
-    calculateFFT( device_pointers.k2_wavefunction_plus, device_pointers.k1_wavefunction_plus, FFT::inverse );
+    // Transform back. WF now holds the half-stepped wavefunction.
+    calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::inverse );
     if (system.p.use_twin_mode)
-        calculateFFT( device_pointers.k2_wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::inverse );
+        calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
     // Nonlinear Full Step
     CALL_KERNEL(
         RUNGE_FUNCTION_GP_NONLINEAR, "nonlinear_full_step", grid_size, block_size, 0,
-        kernel_arguments,
+        v_time, kernel_arguments, 
         { 
-            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
-            device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.buffer_reservoir_plus, device_pointers.buffer_reservoir_minus
+            kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus,
+            kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus
         }
     );
-    // K2 now holds the nonlinearly evolved wavefunction.
+    // WF now holds the nonlinearly evolved wavefunction.
 
     // Liner Half Step 
     // Calculate the FFT of Psi
-    calculateFFT( device_pointers.k2_wavefunction_plus, device_pointers.k1_wavefunction_plus, FFT::forward );
+    calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
     if (system.p.use_twin_mode)
-        calculateFFT( device_pointers.k2_wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::forward );
+        calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
     CALL_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
-        kernel_arguments,
+        v_time, kernel_arguments, 
         { 
-            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.discard, device_pointers.discard,
-            device_pointers.k2_wavefunction_plus, device_pointers.k2_wavefunction_minus, device_pointers.discard, device_pointers.discard
+            kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
+            kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard
         }
     );
-    // Transform back. K3 now holds the half-stepped wavefunction.
-    calculateFFT( device_pointers.k2_wavefunction_plus,  device_pointers.k1_wavefunction_plus, FFT::inverse );
+    // Transform back. WF now holds the half-stepped wavefunction.
+    calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::inverse );
     if (system.p.use_twin_mode)
-        calculateFFT( device_pointers.k2_wavefunction_minus, device_pointers.k1_wavefunction_minus, FFT::inverse );
+        calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
     CALL_KERNEL(
         RUNGE_FUNCTION_GP_INDEPENDENT, "independent", grid_size, block_size, 0,
-        kernel_arguments,
+        v_time, kernel_arguments, 
         {  
-            device_pointers.k1_wavefunction_plus, device_pointers.k1_wavefunction_minus, device_pointers.reservoir_plus, device_pointers.reservoir_minus,
-            device_pointers.buffer_wavefunction_plus, device_pointers.buffer_wavefunction_minus, device_pointers.discard, device_pointers.discard
+            kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus,
+            kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus
         }
     );
-    // Buffer now holds the new result
-
-    // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
-    swapBuffers();
-    */
+    // WF now holds the new result
+    
 }

@@ -55,10 +55,10 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         // Split output_string at ","
         for ( auto range : output_string | std::views::split( ',' ) ) {
             std::string split_str;
-            for (auto ch : range) {
+            for ( auto ch : range ) {
                 split_str += ch;
             }
-            output_keys.emplace_back(split_str);
+            output_keys.emplace_back( split_str );
             //output_keys.emplace_back( std::string{ std::ranges::begin( range ), std::ranges::end( range ) } );
         }
     }
@@ -74,28 +74,27 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         p.subgrids_x = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_x", ++index );
         p.subgrids_y = p.subgrids_x;
     }
-    // TODO: chose halo size based on iterator. MAYBE: change iterator choosing at compile time? at least for K-mat iterators.
-    p.halo_size = 4;
+    // TODO: chose halo size based on iterator. MAYBE: change iterator choosing at compile time?
+
     p.subgrid_N_x = p.N_x / p.subgrids_x;
     p.subgrid_N_y = p.N_y / p.subgrids_y;
 
-    std::cout << "Subgrid Configuration: " << p.subgrids_x << "x" << p.subgrids_y << std::endl;
-    std::cout << "Subgrid Size: " << p.subgrid_N_x << "x" << p.subgrid_N_y << std::endl;
-    std::cout << "Halo Size: " << p.halo_size << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Subgrid Configuration: " + std::to_string( p.subgrids_x ) + "x" + std::to_string( p.subgrids_y ), PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Subgrid Size: " + std::to_string( p.subgrid_N_x ) + "x" + std::to_string( p.subgrid_N_y ), PC3::CLIO::Control::Info ) << std::endl;
 
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = true;
-    #ifdef SFML_RENDER
+#ifdef SFML_RENDER
     if ( PC3::CLIO::findInArgv( "-nosfml", argc, argv ) == -1 )
         disableRender = false;
-    #endif
+#endif
 
     if ( ( index = PC3::CLIO::findInArgv( "--tmax", argc, argv ) ) != -1 )
         t_max = PC3::CLIO::getNextInput( argv, argc, "s_t_max", ++index );
     if ( ( index = PC3::CLIO::findInArgv( "--tstep", argc, argv ) ) != -1 ) {
         p.dt = PC3::CLIO::getNextInput( argv, argc, "t_step", ++index );
         do_overwrite_dt = false;
-        std::cout << PC3::CLIO::prettyPrint( "Overwritten (initial) dt to " + PC3::CLIO::to_str(p.dt), PC3::CLIO::Control::Warning) << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Overwritten (initial) dt to " + PC3::CLIO::to_str( p.dt ), PC3::CLIO::Control::Warning ) << std::endl;
     }
     if ( ( index = PC3::CLIO::findInArgv( "--tol", argc, argv ) ) != -1 ) {
         tolerance = PC3::CLIO::getNextInput( argv, argc, "tol", ++index );
@@ -116,17 +115,18 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     // Choose the iterator
     iterator = "rk4";
     if ( ( index = PC3::CLIO::findInArgv( "-rk45", argc, argv ) ) != -1 ) {
-        //std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
         iterator = "rk45";
     }
     if ( ( index = PC3::CLIO::findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
-        //std::cout << PC3::CLIO::prettyPrint( "Currently not implemented. Using default iterator RK4.", PC3::CLIO::Control::FullWarning) << std::endl;
         iterator = "ssfm";
     }
     if ( ( index = PC3::CLIO::findInArgv( "--iterator", argc, argv ) ) != -1 ) {
         std::string it = PC3::CLIO::getNextStringInput( argv, argc, "iterator", ++index );
         iterator = it;
     }
+    std::map<std::string, Type::uint32> halo_size_for_it = { { "rk4", 4 }, { "rk45", 7 }, { "ssfm", 0 }, { "newton", 1 }, { "rk3", 3 } };
+    p.halo_size = halo_size_for_it[iterator];
+    std::cout << PC3::CLIO::prettyPrint( "Halo Size for iterator '" + iterator + "' = " + std::to_string( p.halo_size ), PC3::CLIO::Control::Info ) << std::endl;
 
     if ( ( index = PC3::CLIO::findInArgv( "--initRandom", argc, argv ) ) != -1 ) {
         randomly_initialize_system = true;
@@ -135,7 +135,7 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         auto str_seed = PC3::CLIO::getNextStringInput( argv, argc, "random_seed", index );
         if ( str_seed != "random" ) {
             random_seed = (Type::uint32)std::stod( str_seed );
-            std::cout << PC3::CLIO::prettyPrint( "Overwritten random seed to " + std::to_string(random_seed), PC3::CLIO::Control::Info ) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Overwritten random seed to " + std::to_string( random_seed ), PC3::CLIO::Control::Info ) << std::endl;
         }
     }
 
@@ -164,7 +164,7 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     }
     if ( ( index = PC3::CLIO::findInArgv( "--historyTime", argc, argv ) ) != -1 ) {
         output_history_start_time = PC3::CLIO::getNextInput( argv, argc, "history_time", ++index );
-        output_history_matrix_every = int(PC3::CLIO::getNextInput( argv, argc, "history_time_every", index ));
+        output_history_matrix_every = int( PC3::CLIO::getNextInput( argv, argc, "history_time_every", index ) );
     }
 
     p.periodic_boundary_x = false;
@@ -206,7 +206,6 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         p.m_eff = PC3::CLIO::getNextInput( argv, argc, "m_eff", ++index );
 
     // Solver Halo and Subgrid configuration
-    
 
     //////////////////////////////
     // Custom Read-Ins go here! //

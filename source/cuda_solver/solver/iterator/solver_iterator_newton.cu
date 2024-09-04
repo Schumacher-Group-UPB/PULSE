@@ -3,6 +3,7 @@
 // Include Cuda Kernel headers
 #include "cuda/typedef.cuh"
 #include "kernel/kernel_compute.cuh"
+#include "kernel/kernel_summation.cuh"
 #include "system/system_parameters.hpp"
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
@@ -13,20 +14,12 @@
  * Psi_next = Psi_current + dt * f(Psi_current)
  */
 
-void PC3::Solver::iterateNewton(  ) {
-    /*
-    Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
+void PC3::Solver::iterateNewton() {
+    SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
 
-    updateKernelArguments( system.p.t, dt );
+                     CALCULATE_K( 1, wavefunction, reservoir );
 
-    SOLVER_SEQUENCE(
-        CALCULATE_K( 1, wavefunction, reservoir );
-        
-        FINAL_SUM_K( 1.0 );
-    )
+                     FINAL_SUM_K( 1.0f ); )
 
-    // Swap the next and current wavefunction buffers. This only swaps the pointers, not the data.
-    //swapBuffers();
-    */
     return;
 }

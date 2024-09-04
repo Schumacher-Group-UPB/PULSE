@@ -7,7 +7,7 @@
     {                                                                                                                                                 \
         const Type::uint32 current_halo = system.p.halo_size - index;                                                                                 \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo ); \
-        CALL_KERNEL( RUNGE_FUNCTION_GP, "K" #index, current_grid, current_block, stream, current_halo, { system.p.t, system.p.dt }, kernel_arguments, \
+        CALL_KERNEL( RUNGE_FUNCTION_GP, "K" #index, current_grid, current_block, stream, current_halo, getCurrentTime(), kernel_arguments,            \
                      { matrix.input_wavefunction##_plus.getDevicePtr( subgrid ), matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),           \
                        matrix.input_reservoir##_plus.getDevicePtr( subgrid ), matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                 \
                        matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ), \
@@ -22,7 +22,7 @@
         Type::uint32 current_halo = system.p.halo_size - index;                                                                                                          \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                    \
         CALL_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Sum for K" #index, current_grid, current_block, stream, current_halo, \
-                     Solver::VKernelArguments{ system.p.t, system.p.dt }, kernel_arguments,                                                                              \
+                     getCurrentTime(), kernel_arguments,                                                                                                                 \
                      Solver::InputOutput{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                           \
                                           matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ),                                 \
                                           matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),             \
@@ -30,15 +30,22 @@
     };
 
 // Only Callable from within the solver
-#define FINAL_SUM_K( ... )                                                                                                                               \
-    {                                                                                                                                                    \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                          \
-        CALL_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Sum for Psi", current_grid, current_block, stream, 0, \
-                     Solver::VKernelArguments{ system.p.t, system.p.dt }, kernel_arguments,                                                              \
-                     Solver::InputOutput{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),           \
-                                          matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ),                 \
-                                          matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),           \
-                                          matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ) } );             \
+#define FINAL_SUM_K( ... )                                                                                                                                                 \
+    {                                                                                                                                                                      \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                            \
+        CALL_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Sum for Psi", current_grid, current_block, stream, 0, getCurrentTime(), \
+                     kernel_arguments,                                                                                                                                     \
+                     Solver::InputOutput{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                             \
+                                          matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ),                                   \
+                                          matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                             \
+                                          matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ) } );                               \
+    };
+
+#define ERROR_K( ... )                                                                                                                                               \
+    {                                                                                                                                                                \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                      \
+        CALL_KERNEL( Kernel::Summation::runge_sum_to_error<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Error", current_grid, current_block, stream, 0, getCurrentTime(), \
+                     kernel_arguments );                                                                                                                             \
     };
 
 // Only Callable from within the solver
@@ -97,13 +104,13 @@
                     std::cout << PC3::CLIO::prettyPrint( "Capturing CUDA Graph", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
                 }                                                                                                                                         \
                 if ( system.p.use_twin_mode ) {                                                                                                           \
-                    SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                          \
-                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                             \
-                    SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                         \
-                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                            \
+                    SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() );                                                         \
+                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                            \
+                    SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() );                                                        \
+                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() );                                                           \
                 } else {                                                                                                                                  \
-                    SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                          \
-                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                             \
+                    SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() );                                                         \
+                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                            \
                 }                                                                                                                                         \
                 for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                        \
                     auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                 \
@@ -121,7 +128,7 @@
                               << std::endl;                                                                                                               \
                 }                                                                                                                                         \
             } else {                                                                                                                                      \
-                Solver::VKernelArguments v_time = { system.p.t, system.p.dt };                                                                            \
+                Solver::VKernelArguments v_time = getCurrentTime();                                                                                       \
                 if ( with_graph ) {                                                                                                                       \
                     for ( Type::uint32 i = 0; i < num_nodes; i++ ) {                                                                                      \
                         cudaKernelNodeParams knp;                                                                                                         \

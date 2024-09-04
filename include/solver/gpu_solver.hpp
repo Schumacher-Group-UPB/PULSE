@@ -62,7 +62,7 @@ class Solver {
     };
 
     // Fixed Kernel Arguments. Every Compute Kernel will take one of these.
-    KernelArguments generateKernelArguments( const Type::uint32 subgrid ) {
+    KernelArguments generateKernelArguments( const Type::uint32 subgrid = 0 ) {
         auto kernel_arguments = KernelArguments();
         kernel_arguments.pulse_pointers = dev_pulse_oscillation.pointers();
         kernel_arguments.pump_pointers = dev_pump_oscillation.pointers();
@@ -76,6 +76,10 @@ class Solver {
         Type::complex t, dt;
     };
 
+    VKernelArguments getCurrentTime() {
+        Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex( 0.0, -system.p.dt ) : Type::complex( system.p.dt, 0.0 );
+        return VKernelArguments{ system.p.t, dt };
+    }
     // Cache Maps
     std::map<std::string, std::vector<Type::real>> cache_map_scalar;
 
@@ -116,8 +120,8 @@ class Solver {
     std::map<std::string, iteratorFunction> iterator = { { "newton", { 1, std::bind( &Solver::iterateNewton, this ) } },
                                                          { "rk3", { 3, std::bind( &Solver::iterateFixedTimestepRungeKutta3, this ) } },
                                                          { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this ) } },
-                                                         { "rk45", { 6, std::bind( &Solver::iterateVariableTimestepRungeKutta, this ) } },
-                                                         { "ssfm", { 2, std::bind( &Solver::iterateSplitStepFourier, this ) } } };
+                                                         { "rk45", { 7, std::bind( &Solver::iterateVariableTimestepRungeKutta, this ) } },
+                                                         { "ssfm", { 0, std::bind( &Solver::iterateSplitStepFourier, this ) } } };
 
     bool iterate();
 
@@ -125,8 +129,6 @@ class Solver {
 
     enum class FFT { inverse, forward };
     void calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir );
-
-    void swapBuffers();
 
     void cacheValues();
     void cacheMatrices();

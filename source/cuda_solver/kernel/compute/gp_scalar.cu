@@ -122,6 +122,9 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Solver::VKer
     io.out_rv_plus[i] = in_rv + result * time.dt;
 }
 
+// This kernel is somewhat special, because the reservoir input holds the old reservoir (before the fullstep)
+// and the output reservoir hols the new reservoir. We need to use the old reservoir for calculations and then
+// write the new reservoir to the output.
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     
     GET_THREAD_INDEX( i, args.p.N2 );
@@ -136,9 +139,11 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Solver::VK
     
     // MARK: Stochastic
     if (args.p.stochastic_amplitude > 0.0) {
-        const Type::complex in_rv = io.in_rv_plus[i];
+        const Type::complex in_rv = io.out_rv_plus[i]; // Input Reservoir is in output buffer.
         const Type::complex dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * in_rv + args.p.gamma_c ) / (Type::real(4.0) * args.p.dV) );
         result += dw;
     }
     io.out_wf_plus[i] = io.in_wf_plus[i] + result;
+    // Swap the reservoirs
+    io.out_rv_plus[i] = io.in_rv_plus[i];
 }
