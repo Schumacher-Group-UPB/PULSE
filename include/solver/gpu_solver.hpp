@@ -31,11 +31,11 @@ class Solver {
 
         struct Pointers {
             Type::complex* amp;
-            Type::uint n;
+            Type::uint32 n;
         };
 
         Pointers pointers() {
-            return Pointers{ GET_RAW_PTR(amp), Type::uint(amp.size()) };
+            return Pointers{ GET_RAW_PTR( amp ), Type::uint32( amp.size() ) };
         }
     } dev_pulse_oscillation, dev_pump_oscillation, dev_potential_oscillation;
 
@@ -54,20 +54,20 @@ class Solver {
     };
 
     struct KernelArguments {
-        TemporalEvelope::Pointers pulse_pointers; // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
-        TemporalEvelope::Pointers pump_pointers; // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
+        TemporalEvelope::Pointers pulse_pointers;     // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
+        TemporalEvelope::Pointers pump_pointers;      // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
         TemporalEvelope::Pointers potential_pointers; // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
-        MatrixContainer::Pointers dev_ptrs; // All the pointers to the matrices. These are obtained by calling the .pointers() method on the matrices.
-        SystemParameters::KernelParameters p; // The kernel parameters. These are obtained by copying the kernel_parameters object of the system.
+        MatrixContainer::Pointers dev_ptrs;           // All the pointers to the matrices. These are obtained by calling the .pointers() method on the matrices.
+        SystemParameters::KernelParameters p;         // The kernel parameters. These are obtained by copying the kernel_parameters object of the system.
     };
 
     // Fixed Kernel Arguments. Every Compute Kernel will take one of these.
-    KernelArguments generateKernelArguments(const Type::uint subgrid) {
+    KernelArguments generateKernelArguments( const Type::uint32 subgrid ) {
         auto kernel_arguments = KernelArguments();
         kernel_arguments.pulse_pointers = dev_pulse_oscillation.pointers();
         kernel_arguments.pump_pointers = dev_pump_oscillation.pointers();
         kernel_arguments.potential_pointers = dev_potential_oscillation.pointers();
-        kernel_arguments.dev_ptrs = matrix.pointers(subgrid);
+        kernel_arguments.dev_ptrs = matrix.pointers( subgrid );
         kernel_arguments.p = system.kernel_parameters;
         return kernel_arguments;
     }
@@ -82,19 +82,18 @@ class Solver {
     Solver( PC3::SystemParameters& system ) : system( system ), filehandler( system.filehandler ) {
         std::cout << PC3::CLIO::prettyPrint( "Creating Solver...", PC3::CLIO::Control::Info ) << std::endl;
 
-        // Initialize all host matrices
-        initializeHostMatricesFromSystem();
+        // Initialize all matrices
+        initializeMatricesFromSystem();
         // Then output all matrices to file. If --output was not passed in argv, this method outputs everything.
         outputInitialMatrices();
-        // Copy remaining stuff to Device.
-        initializeDeviceMatricesFromHost();
     }
 
-    void initializeHostMatricesFromSystem();               // Evaluates the envelopes and initializes the host matrices
-    void initializeDeviceMatricesFromHost();               // Transfers the host matrices to their device equivalents
+    void initializeMatricesFromSystem(); // Evaluates the envelopes and initializes the matrices
+    void initializeHaloMap();            // Initializes the halo map
 
     // Output (Final) Host Matrices to files
-    void outputMatrices( const Type::uint start_x, const Type::uint end_x, const Type::uint start_y, const Type::uint end_y, const Type::uint increment, const std::string& suffix = "", const std::string& prefix = "" );
+    void outputMatrices( const Type::uint32 start_x, const Type::uint32 end_x, const Type::uint32 start_y, const Type::uint32 end_y, const Type::uint32 increment,
+                         const std::string& suffix = "", const std::string& prefix = "" );
     // Output Initial Host Matrices to files
     void outputInitialMatrices();
 
@@ -103,33 +102,28 @@ class Solver {
 
     void finalize();
 
-    void iterateNewton( dim3 block_size, dim3 grid_size );
-    void iterateFixedTimestepRungeKutta3( dim3 block_size, dim3 grid_size );
-    void iterateFixedTimestepRungeKutta4( dim3 block_size, dim3 grid_size );
-    void iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size );
-    void iterateSplitStepFourier( dim3 block_size, dim3 grid_size );
-    void normalizeImaginaryTimePropagation( dim3 block_size, dim3 grid_size );
+    void iterateNewton();
+    void iterateFixedTimestepRungeKutta3();
+    void iterateFixedTimestepRungeKutta4();
+    void iterateVariableTimestepRungeKutta();
+    void iterateSplitStepFourier();
+    void normalizeImaginaryTimePropagation();
 
     struct iteratorFunction {
         int k_max;
-        std::function<void( dim3, dim3 )> iterate;
+        std::function<void()> iterate;
     };
-    std::map<std::string, iteratorFunction> iterator = {
-        { "newton", { 1, std::bind( &Solver::iterateNewton, this, std::placeholders::_1, std::placeholders::_2 ) } },
-        { "rk3", { 3, std::bind( &Solver::iterateFixedTimestepRungeKutta3, this, std::placeholders::_1, std::placeholders::_2 ) } },
-        { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this, std::placeholders::_1, std::placeholders::_2 ) } },
-        { "rk45", { 6, std::bind( &Solver::iterateVariableTimestepRungeKutta, this, std::placeholders::_1, std::placeholders::_2 ) } },
-        { "ssfm", { 2, std::bind( &Solver::iterateSplitStepFourier, this, std::placeholders::_1, std::placeholders::_2 ) } }
-    };
+    std::map<std::string, iteratorFunction> iterator = { { "newton", { 1, std::bind( &Solver::iterateNewton, this ) } },
+                                                         { "rk3", { 3, std::bind( &Solver::iterateFixedTimestepRungeKutta3, this ) } },
+                                                         { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this ) } },
+                                                         { "rk45", { 6, std::bind( &Solver::iterateVariableTimestepRungeKutta, this ) } },
+                                                         { "ssfm", { 2, std::bind( &Solver::iterateSplitStepFourier, this ) } } };
 
     bool iterate();
 
-    void applyFFTFilter( dim3 block_size, dim3 grid_size, bool apply_mask = true );
+    void applyFFTFilter( bool apply_mask = true );
 
-    enum class FFT {
-        inverse,
-        forward
-    };
+    enum class FFT { inverse, forward };
     void calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir );
 
     void swapBuffers();
@@ -139,26 +133,17 @@ class Solver {
 
     // The block size is specified by the user in the system.block_size variable.
     // This solver function the calculates the appropriate grid size for the given execution range.
-    std::pair<dim3,dim3> getLaunchParameters( const Type::uint N_x, const Type::uint N_y = 1 ) {
+    std::pair<dim3, dim3> getLaunchParameters( const Type::uint32 N_x, const Type::uint32 N_y = 1 ) {
         dim3 block_size = { system.block_size, 1, 1 };
         dim3 grid_size = { ( N_x * N_y + block_size.x ) / block_size.x, 1, 1 };
         return { block_size, grid_size };
     }
-
 };
 
 // Helper macro to choose the correct runge function
-#define RUNGE_FUNCTION_GP (system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar)
-#define RUNGE_FUNCTION_GP_LINEAR (system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_linear_fourier : PC3::Kernel::Compute::gp_scalar_linear_fourier)
-#define RUNGE_FUNCTION_GP_NONLINEAR (system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_nonlinear : PC3::Kernel::Compute::gp_scalar_nonlinear)
-#define RUNGE_FUNCTION_GP_INDEPENDENT (system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_independent : PC3::Kernel::Compute::gp_scalar_independent)
-
-struct SquareReduction
-{
-    PULSE_HOST_DEVICE PC3::Type::real operator()(const PC3::Type::complex& x) const { 
-        const PC3::Type::real res = PC3::CUDA::abs2(x);
-        return res; 
-    }
-};
+#define RUNGE_FUNCTION_GP ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar )
+#define RUNGE_FUNCTION_GP_LINEAR ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_linear_fourier : PC3::Kernel::Compute::gp_scalar_linear_fourier )
+#define RUNGE_FUNCTION_GP_NONLINEAR ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_nonlinear : PC3::Kernel::Compute::gp_scalar_nonlinear )
+#define RUNGE_FUNCTION_GP_INDEPENDENT ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_independent : PC3::Kernel::Compute::gp_scalar_independent )
 
 } // namespace PC3

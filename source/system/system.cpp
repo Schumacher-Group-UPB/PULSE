@@ -91,6 +91,7 @@ void PC3::SystemParameters::calculateAuto() {
     p.m2_over_dx2_p_dy2 = Type::real(-2.0) * ( p.one_over_dx2 + p.one_over_dy2);
     p.N2 = p.N_x * p.N_y;
     p.subgrid_N2 = p.subgrid_N_x * p.subgrid_N_y;
+    p.subgrid_N2_with_halo = ( p.subgrid_N_x + 2 * p.halo_size ) * ( p.subgrid_N_y + 2 * p.halo_size );
     p.m_eff_scaled = -0.5 * p.h_bar_s * p.h_bar_s / p.m_eff;
     magic_timestep = 0.5 * p.dx * p.dy / dt_scaling_factor;
     if ( do_overwrite_dt ) {

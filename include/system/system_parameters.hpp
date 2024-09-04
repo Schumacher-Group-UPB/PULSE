@@ -26,11 +26,11 @@ class SystemParameters {
     struct KernelParameters {
 
         // Size Variables
-        Type::uint N_x, N_y, N2;
+        Type::uint32 N_x, N_y, N2;
         // Subgrid and Halo
-        Type::uint halo_size;
-        Type::uint subgrid_N_x, subgrid_N_y, subgrid_N2;
-        Type::uint subgrids_x, subgrids_y; // For now, subgrids_x = subgrids_y at all times, even if N_x != N_y
+        Type::uint32 halo_size;
+        Type::uint32 subgrid_N_x, subgrid_N_y, subgrid_N2, subgrid_N2_with_halo;
+        Type::uint32 subgrids_x, subgrids_y; // For now, subgrids_x = subgrids_y at all times, even if N_x != N_y
         // Time variables
         Type::real t, dt;
         
@@ -65,14 +65,14 @@ class SystemParameters {
     KernelParameters& p = kernel_parameters;
 
     // Numerics
-    Type::uint iteration;
+    Type::uint32 iteration;
     bool disableRender;
 
     // RK Solver Variables
     Type::real t_max, dt_max, dt_min, tolerance, fft_every, random_system_amplitude, magic_timestep;
 
     // Kernel Block Size
-    Type::uint block_size, omp_max_threads;
+    Type::uint32 block_size, omp_max_threads;
 
     // Initialize the system randomly
     bool randomly_initialize_system;
@@ -83,12 +83,12 @@ class SystemParameters {
     std::string iterator;
 
     // Seed for random number generator
-    Type::uint random_seed;
+    Type::uint32 random_seed;
     
     // History Output
-    Type::uint history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
+    Type::uint32 history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
     bool do_output_history_matrix;
-    Type::uint output_history_matrix_every; // Scales outEvery for the history matrices with this value
+    Type::uint32 output_history_matrix_every; // Scales outEvery for the history matrices with this value
     Type::real output_history_start_time; // Only output history matrices after this time
     Type::real output_every;
 

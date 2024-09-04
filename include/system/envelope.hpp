@@ -35,7 +35,7 @@ class Envelope {
     // Points for interpolation
     std::vector<std::vector<std::vector<Type::real>>> temporal_time_points; // TODO: Read Points and interpolate between them
 
-    enum class EnvType : Type::uint {
+    enum class EnvType : Type::uint32 {
         Gauss = 1, // Gaussian Envelope
         OuterExponent = 1 << 1, // Exponent is applied to the total envelope and not just the function argument 
         Ring = 1 << 2, // Ring shape is enabled
@@ -44,14 +44,14 @@ class Envelope {
     };
     std::vector<EnvType> type;
 
-    enum class Polarization : Type::uint {
+    enum class Polarization : Type::uint32 {
         Plus = 1,
         Minus = 1 << 1,
         Both = 3 // Set to three explicitly such that Plus,Minus = Both
     };
     std::vector<Polarization> pol;
 
-    enum class Behavior : Type::uint {
+    enum class Behavior : Type::uint32 {
         Add = 1,
         Multiply = 1 << 1,
         Replace = 1 << 2,
@@ -60,7 +60,7 @@ class Envelope {
     };
     std::vector<Behavior> behavior;
     
-    enum class Temporal : Type::uint {
+    enum class Temporal : Type::uint32 {
         IExp = 1,
         Cos = 1 << 1,
         Gauss = 1 << 2,
@@ -107,9 +107,9 @@ class Envelope {
     int sizeOfGroup(int g) const;
 
     struct Dimensions {
-        Type::uint N_x, N_y;
+        Type::uint32 N_x, N_y;
         PC3::Type::real L_x,L_y,dx,dy;
-        Dimensions(Type::uint N_x, Type::uint N_y, PC3::Type::real L_x, PC3::Type::real L_y, PC3::Type::real dx, PC3::Type::real dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
+        Dimensions(Type::uint32 N_x, Type::uint32 N_y, PC3::Type::real L_x, PC3::Type::real L_y, PC3::Type::real dx, PC3::Type::real dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
     };
 
     void calculate( PC3::Type::real* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0 );

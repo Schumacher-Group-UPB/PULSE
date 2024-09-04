@@ -160,14 +160,35 @@ class BasicWindow {
         window.display();
     }
 
-    void blitMatrixPtr( const PC3::Type::real* vector, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
+    void blitMatrixPtr( const PC3::Type::real* vector, PC3::Type::real min, PC3::Type::real max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
             const int cols_over_skip = cols / skip;
     const int rows_over_skip = rows / skip;
     //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
-#pragma omp parallel for schedule( dynamic )
+#pragma omp parallel for schedule( static )
     for ( int i = 0; i < cols_over_skip; i++ ) {
         for ( int j = 0; j < rows_over_skip; j++ ) {
-            auto c = cp.getColor( vector[( j * skip ) * cols + i * skip] );
+            auto c = cp.getColor( (vector[( j * skip ) * cols + i * skip] - min) / (max-min) );
+            const auto index = ( i + 1 + posX ) * texture_h - 1 - ( j + posY );
+            pixMat.at( index ).color.r = c.r;
+            pixMat.at( index ).color.g = c.g;
+            pixMat.at( index ).color.b = c.b;
+            if ( border != 0 && ( i < border || i >= cols_over_skip - border || j < border || j >= rows_over_skip - border ) ) {
+                pixMat.at( index ).color.r = 0;
+                pixMat.at( index ).color.g = 0;
+                pixMat.at( index ).color.b = 0;
+            }
+        }
+    }
+    maintexture_has_changed = true;
+    }
+    void blitMatrixPtr( const PC3::Type::complex* vector, PC3::Type::complex min, PC3::Type::complex max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
+        const int cols_over_skip = cols / skip;
+    const int rows_over_skip = rows / skip;
+    //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
+#pragma omp parallel for schedule( static )
+    for ( int i = 0; i < cols_over_skip; i++ ) {
+        for ( int j = 0; j < rows_over_skip; j++ ) {
+            auto c = cp.getColor( PC3::CUDA::abs( (vector[( j * skip ) * cols + i * skip] - min) / (max-min) ) );
             const auto index = ( i + 1 + posX ) * texture_h - 1 - ( j + posY );
             pixMat.at( index ).color.r = c.r;
             pixMat.at( index ).color.g = c.g;

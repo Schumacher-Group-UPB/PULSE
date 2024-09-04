@@ -64,15 +64,15 @@ class FileHandler {
     bool loadMatrixFromFile( const std::string& filepath, Type::complex* buffer );
     bool loadMatrixFromFile( const std::string& filepath, Type::real* buffer );
 
-    void outputMatrixToFile( const Type::complex* buffer, Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, std::ofstream& out, const std::string& name );
-    void outputMatrixToFile( const Type::complex* buffer, Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, const std::string& out );
-    void outputMatrixToFile( const Type::complex* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, const std::string& out );
-    void outputMatrixToFile( const Type::complex* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_x, const Type::uint32 N_y, Type::uint32 increment, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_x, const Type::uint32 N_y, Type::uint32 increment, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_x, const Type::uint32 N_y, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_x, const Type::uint32 N_y, const Header& header, std::ofstream& out, const std::string& name );
 
-    void outputMatrixToFile( const Type::real* buffer, Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, std::ofstream& out, const std::string& name );
-    void outputMatrixToFile( const Type::real* buffer, Type::uint col_start, Type::uint col_stop, Type::uint row_start, Type::uint row_stop, const Type::uint N_x, const Type::uint N_y, Type::uint increment, const Header& header, const std::string& out );
-    void outputMatrixToFile( const Type::real* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, const std::string& out );
-    void outputMatrixToFile( const Type::real* buffer, const Type::uint N_x, const Type::uint N_y, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_x, const Type::uint32 N_y, Type::uint32 increment, const Header& header, std::ofstream& out, const std::string& name );
+    void outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_x, const Type::uint32 N_y, Type::uint32 increment, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_x, const Type::uint32 N_y, const Header& header, const std::string& out );
+    void outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_x, const Type::uint32 N_y, const Header& header, std::ofstream& out, const std::string& name );
 
     std::vector<std::vector<Type::real>> loadListFromFile( const std::string& path, const std::string& name );
     void outputListToFile( const std::string& path, std::vector<std::vector<Type::real>>& data, const std::string& name );

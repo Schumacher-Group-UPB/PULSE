@@ -4,8 +4,8 @@
 #include <sstream>
 #include <iomanip>
 #include "solver/gpu_solver.hpp"
-#include "misc/helperfunctions.hpp"
 #include "misc/commandline_io.hpp"
+#include "cuda/cuda_matrix.cuh"
 
 #ifdef SFML_RENDER
 #    include <SFML/Graphics.hpp>
@@ -26,6 +26,7 @@
  * This plot "helper" is an abomination by itself and will probably be replaced by a more sophisticated
  * plotting library in the future such as QT.
  *
+ * TODO: merke this header with the sfml_window class.
  */
 
 namespace PC3 {
@@ -43,29 +44,30 @@ BasicWindow& getWindow() {
     return window;
 }
 
-std::unique_ptr<Type::real[]> __plotarray;
+PC3::Type::host_vector<Type::complex> __plotarray;
+PC3::Type::host_vector<Type::complex> snapshot_wavefunction_plus, snapshot_wavefunction_minus, snapshot_reservoir_plus, snapshot_reservoir_minus;
+
 template <typename T>
-void plotMatrix( T* buffer, int NX, int NY, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "", bool plot_min_max = true ) {
-    if ( buffer == nullptr ) {
-        std::cout << PC3::CLIO::prettyPrint( "Buffer '"+title+"' is nullptr!", PC3::CLIO::Control::Error ) << std::endl;
-        return;
+void plot( PC3::CUDAMatrix<T>& matrix, bool angle, int NX, int NY, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "", bool plot_min_max = true ) {
+    T min, max;
+    if (angle) {
+        __plotarray = matrix.staticAngle(true).getFullMatrix();
+        min = -3.1415926535;
+        max = 3.1415926535;
     }
-    Type::real min, max;
-    //if constexpr (std::is_same_v<T, Type::real>) {
-    //    std::tie(min,max) = PC3::CUDA::minmax( buffer, NX * NY );
-    //    getWindow().blitMatrixPtr( buffer, cp, NX, NY, posX, posY, 1 /*border*/, skip );
-    //} else {
-        PC3::CUDA::cwiseAbs2( buffer, __plotarray.get(), NX * NY );
-        std::tie(min,max) = PC3::CUDA::minmax( __plotarray.get(), NX * NY );
-        PC3::CUDA::normalize( __plotarray.get(), NX * NY, min, max );
-        getWindow().blitMatrixPtr( __plotarray.get(), cp, NX, NY, posX, posY, 1 /*border*/, skip );
-    //}
+    else {
+        std::tie(min,max) = matrix.extrema();
+        min = PC3::CUDA::abs2( min );
+        max = PC3::CUDA::abs2( max );
+        __plotarray = matrix.staticCWiseAbs2(true).getFullMatrix(); 
+    }
+    getWindow().blitMatrixPtr( __plotarray.data(), min, max, cp, NX, NY, posX, posY, 1 /*border*/, skip );
     if ( !plot_min_max )
         return;
     NX = NX / skip;
     NY = NY / skip;
     auto text_height = getWindow().textheight / skip;
-    getWindow().scaledPrint( posX + 5, posY + NY - text_height - 5, text_height, title + "Min: " + toScientific( sqrt( min ) ) + " Max: " + toScientific( sqrt( max ) ), sf::Color::White );
+    getWindow().scaledPrint( posX + 5, posY + NY - text_height - 5, text_height, title + "Min: " + toScientific( std::sqrt( PC3::CUDA::abs(min) ) ) + " Max: " + toScientific( std::sqrt( PC3::CUDA::abs(max) ) ), sf::Color::White );
 }
 
 // Very bad practice, as this header can only be imported once without redefinitions.
@@ -110,7 +112,6 @@ void initSFMLWindow( PC3::Solver& solver ) {
     __local_colorpalette.initColors();
     __local_colorpalette_phase.initColors();
     getWindow().init();
-    __plotarray = std::make_unique<Type::real[]>( solver.system.p.N_x * solver.system.p.N_y );
 
     cb_toggle_fft = CheckBox( 10, 50, "Toggle FFT Plot", false );
     getWindow().addObject( &cb_toggle_fft );
@@ -170,20 +171,21 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         __local_inset = 0;
 
     bool plot_min_max = cb_min_and_max.isChecked();
-    // Plot Plus
-    plotMatrix( solver.matrix.wavefunction_plus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
-    //plotMatrix( inset_plot_array_plus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
-    plotMatrix( solver.matrix.reservoir_plus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
-    PC3::CUDA::angle( solver.matrix.wavefunction_plus.getHostPtr(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
-    plotMatrix( __plotarray.get(), solver.system.p.N_x, solver.system.p.N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
+    // Plot WF Plus
+    plot( solver.matrix.wavefunction_plus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
+    // Plot it again without static synchronization
+    plot( solver.matrix.wavefunction_plus, true, solver.system.p.N_x, solver.system.p.N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
+    // Plot Reservoir Plus
+    plot( solver.matrix.reservoir_plus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
 
     // Plot Minus
     if ( solver.system.p.use_twin_mode ) {
-        plotMatrix( solver.matrix.wavefunction_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "Psi- ", plot_min_max );
-        //plotMatrix( inset_plot_array_minus, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 2, __local_colorpalette, subplot_names.at( current_subplot ), plot_min_max );
-        plotMatrix( solver.matrix.reservoir_minus.getHostPtr(), solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "n- ", plot_min_max );
-        PC3::CUDA::angle( solver.matrix.wavefunction_minus.getHostPtr(), __plotarray.get(), solver.system.p.N_x * solver.system.p.N_y );
-        plotMatrix( __plotarray.get(), solver.system.p.N_x, solver.system.p.N_y, 0, solver.system.p.N_y, 1, __local_colorpalette_phase, "ang(Psi-) ", plot_min_max );
+        // Plot WF Minus
+        plot( solver.matrix.wavefunction_minus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
+        // Plot it again without static synchronization
+        plot( solver.matrix.wavefunction_minus, true, solver.system.p.N_x, solver.system.p.N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
+        // Plot Reservoir Minus
+        plot( solver.matrix.reservoir_minus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
     }
 
     const auto ps_per_second = simulation_time / elapsed_time;
@@ -230,11 +232,11 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
 
     if ( b_snapshot.isToggled() ) {
         // Copy the current state of the host wavefunction to the snapshot
-        solver.matrix.snapshot_wavefunction_plus = solver.matrix.wavefunction_plus.toFull().getHostData();
-        solver.matrix.snapshot_reservoir_plus = solver.matrix.reservoir_plus.toFull().getHostData();
+        snapshot_wavefunction_plus = solver.matrix.wavefunction_plus.toFull().getFullMatrix();
+        snapshot_reservoir_plus = solver.matrix.reservoir_plus.toFull().getFullMatrix();
         if ( solver.system.p.use_twin_mode ) {
-            solver.matrix.snapshot_wavefunction_minus = solver.matrix.wavefunction_minus.toFull().getHostData();
-            solver.matrix.snapshot_reservoir_minus = solver.matrix.reservoir_minus.toFull().getHostData();
+            snapshot_wavefunction_minus = solver.matrix.wavefunction_minus.toFull().getFullMatrix();
+            snapshot_reservoir_minus = solver.matrix.reservoir_minus.toFull().getFullMatrix();
         }
         snapshot_time = solver.system.p.t;
 
@@ -243,11 +245,11 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
 
     if ( b_reset_to_snapshot.isToggled() ) {
         // Copy the contents of the snapshot back to the host wavefunction and sync the host matrix to the device.
-        solver.matrix.wavefunction_plus.setTo( solver.matrix.snapshot_wavefunction_plus ).hostToDeviceSync();
-        solver.matrix.reservoir_plus.setTo( solver.matrix.snapshot_reservoir_plus ).hostToDeviceSync();
+        solver.matrix.wavefunction_plus.setTo( snapshot_wavefunction_plus ).hostToDeviceSync();
+        solver.matrix.reservoir_plus.setTo( snapshot_reservoir_plus ).hostToDeviceSync();
         if ( solver.system.p.use_twin_mode ) {
-            solver.matrix.wavefunction_minus.setTo( solver.matrix.snapshot_wavefunction_minus ).hostToDeviceSync();
-            solver.matrix.reservoir_minus.setTo( solver.matrix.snapshot_reservoir_minus ).hostToDeviceSync();
+            solver.matrix.wavefunction_minus.setTo( snapshot_wavefunction_minus ).hostToDeviceSync();
+            solver.matrix.reservoir_minus.setTo( snapshot_reservoir_minus ).hostToDeviceSync();
         }
         solver.system.p.t = snapshot_time;
         std::cout << PC3::CLIO::prettyPrint( "Reset to Snapshot!", PC3::CLIO::Control::Info ) << std::endl;

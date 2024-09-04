@@ -12,7 +12,6 @@
 // Include Cuda Kernel headers
 #include "kernel/kernel_compute.cuh"
 #include "system/system_parameters.hpp"
-#include "misc/helperfunctions.hpp"
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
 #include "misc/commandline_io.hpp"
@@ -54,7 +53,7 @@
 * @param evaluate_pulse If true, the pulse is evaluated at the current time step
 */
 
-void PC3::Solver::iterateVariableTimestepRungeKutta( dim3 block_size, dim3 grid_size ) {
+void PC3::Solver::iterateVariableTimestepRungeKutta(  ) {
 }
  /*
     // Accept current step?

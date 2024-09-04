@@ -134,7 +134,7 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         random_seed = std::random_device{}();
         auto str_seed = PC3::CLIO::getNextStringInput( argv, argc, "random_seed", index );
         if ( str_seed != "random" ) {
-            random_seed = (Type::uint)std::stod( str_seed );
+            random_seed = (Type::uint32)std::stod( str_seed );
             std::cout << PC3::CLIO::prettyPrint( "Overwritten random seed to " + std::to_string(random_seed), PC3::CLIO::Control::Info ) << std::endl;
         }
     }
@@ -155,11 +155,11 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     output_history_matrix_every = 1;
     output_history_start_time = 0.0;
     if ( ( index = PC3::CLIO::findInArgv( "--historyMatrix", argc, argv ) ) != -1 ) {
-        history_matrix_start_x = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_x", ++index );
-        history_matrix_end_x = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_x", index );
-        history_matrix_start_y = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_y", index );
-        history_matrix_end_y = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_y", index );
-        history_matrix_output_increment = (Type::uint)PC3::CLIO::getNextInput( argv, argc, "history_matrix_output_increment", index );
+        history_matrix_start_x = (Type::uint32)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_x", ++index );
+        history_matrix_end_x = (Type::uint32)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_x", index );
+        history_matrix_start_y = (Type::uint32)PC3::CLIO::getNextInput( argv, argc, "history_matrix_start_y", index );
+        history_matrix_end_y = (Type::uint32)PC3::CLIO::getNextInput( argv, argc, "history_matrix_end_y", index );
+        history_matrix_output_increment = (Type::uint32)PC3::CLIO::getNextInput( argv, argc, "history_matrix_output_increment", index );
         do_output_history_matrix = true;
     }
     if ( ( index = PC3::CLIO::findInArgv( "--historyTime", argc, argv ) ) != -1 ) {

@@ -2,7 +2,7 @@
 #include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     
     //LOCAL_SHARE_STRUCT( SystemParameters::KernelParameters, p_in, p );
     /*
@@ -125,9 +125,9 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm_linear_fourier( int i, Solver::V
     /*
     OVERWRITE_THREAD_INDEX( i );
 
-    // We do some weird looking casting to avoid intermediate casts to Type::uint
-    Type::real row = Type::real(Type::uint(i / args.p.N_x));
-    Type::real col = Type::real(Type::uint(i % args.p.N_x));
+    // We do some weird looking casting to avoid intermediate casts to Type::uint32
+    Type::real row = Type::real(Type::uint32(i / args.p.N_x));
+    Type::real col = Type::real(Type::uint32(i % args.p.N_x));
     
     const Type::real k_x = 2.0*3.1415926535 * Type::real(col <= args.p.N_x/2 ? col : -Type::real(args.p.N_x) + col)/args.p.L_x;
     const Type::real k_y = 2.0*3.1415926535 * Type::real(row <= args.p.N_y/2 ? row : -Type::real(args.p.N_y) + row)/args.p.L_y;

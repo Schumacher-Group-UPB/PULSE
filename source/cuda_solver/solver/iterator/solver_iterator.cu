@@ -4,7 +4,6 @@
 #include "cuda/typedef.cuh"
 #include "kernel/kernel_compute.cuh"
 #include "system/system_parameters.hpp"
-#include "misc/helperfunctions.hpp"
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
 #include "misc/commandline_io.hpp"
@@ -25,8 +24,7 @@ bool first_time = true;
  * @param N_x Number of grid points in one dimension
  * @param N_y Number of grid points in the other dimension
  */
-bool PC3::Solver::iterate( ) {
-
+bool PC3::Solver::iterate() {
     // First, check if the maximum time has been reached
     if ( system.p.t >= system.t_max )
         return false;
@@ -63,27 +61,27 @@ bool PC3::Solver::iterate( ) {
     dev_pulse_oscillation.amp = system.pulse.temporal_envelope;
     dev_potential_oscillation.amp = system.potential.temporal_envelope;
     dev_pump_oscillation.amp = system.pump.temporal_envelope;
-    
+
     // Iterate RK4(45)/ssfm/itp
-    iterator[system.iterator].iterate( block_size, grid_size );
+    iterator[system.iterator].iterate();
 
     // Call the normalization for imaginary time propagation if required
-    if (system.imag_time_amplitude != 0.0) 
-        normalizeImaginaryTimePropagation( block_size, grid_size );
+    if ( system.imag_time_amplitude != 0.0 )
+        normalizeImaginaryTimePropagation();
 
-    // Increase t. 
+    // Increase t.
     system.p.t = system.p.t + system.p.dt;
-    
+
     // For statistical purposes, increase the iteration counter
     system.iteration++;
 
-    // FFT Guard 
+    // FFT Guard
     if ( system.p.t - fft_cached_t < system.fft_every )
         return true;
 
     // Calculate the FFT
-    fft_cached_t = system.p.t; 
-    applyFFTFilter( block_size, grid_size, system.fft_mask.size() > 0 );
+    fft_cached_t = system.p.t;
+    applyFFTFilter( system.fft_mask.size() > 0 );
 
     return true;
 }

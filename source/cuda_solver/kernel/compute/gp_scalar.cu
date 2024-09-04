@@ -7,14 +7,13 @@
  * The differential equation for this model reduces to
  * ...
  */
-PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX(i, current_halo);
 
     const Type::complex in_wf = io.in_wf_plus[i];
     const Type::complex in_rv = io.in_rv_plus[i];
     Type::complex hamilton = args.p.m2_over_dx2_p_dy2 * in_wf;
     hamilton += (io.in_wf_plus[i + args.p.subgrid_N_x + 2*args.p.halo_size] + io.in_wf_plus[i - args.p.subgrid_N_x - 2*args.p.halo_size])*args.p.one_over_dy2 + (io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1])*args.p.one_over_dx2;
-    //hamilton += PC3::Kernel::Hamilton::scalar_neighbours( io.in_wf_plus, i, i / args.p.N_x /*Row*/, i % args.p.N_x /*Col*/, args.p.N_x, args.p.N_y, args.p.one_over_dx2, args.p.one_over_dy2, args.p.periodic_boundary_x, args.p.periodic_boundary_y );
 
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
     
@@ -22,7 +21,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint current_hal
     Type::complex result = args.p.minus_i_over_h_bar_s * ( args.p.m_eff_scaled * hamilton );
 
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const Type::complex potential = args.dev_ptrs.potential_plus[k][i] * args.potential_pointers.amp[k];
+        PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+        const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
         result += args.p.minus_i_over_h_bar_s * potential * in_wf;
     }
 
@@ -33,7 +33,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint current_hal
 
     // MARK: Pulse
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const Type::complex pulse = args.dev_ptrs.pulse_plus[k][i];
+        PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+        const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
         result += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
     }
     
@@ -47,7 +48,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint current_hal
     result = -args.p.gamma_r * in_rv;
     result -= args.p.R * in_psi_norm * in_rv;
     for (int k = 0; k < args.pump_pointers.n; k++) {
-            result += args.dev_ptrs.pump_plus[k][i] * args.pump_pointers.amp[k];
+        PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+        result += args.dev_ptrs.pump_plus[i+offset] * args.pump_pointers.amp[k];
     }
 
     // MARK: Stochastic-2
@@ -68,9 +70,9 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Solver:
     
     GET_THREAD_INDEX( i, args.p.N2 );
 
-    // We do some weird looking casting to avoid intermediate casts to Type::uint
-    Type::real row = Type::real(Type::uint(i / args.p.N_x));
-    Type::real col = Type::real(Type::uint(i % args.p.N_x));
+    // We do some weird looking casting to avoid intermediate casts to Type::uint32
+    Type::real row = Type::real(Type::uint32(i / args.p.N_x));
+    Type::real col = Type::real(Type::uint32(i % args.p.N_x));
     
     const Type::real k_x = 2.0*3.1415926535 * Type::real(col <= args.p.N_x/2 ? col : -Type::real(args.p.N_x) + col)/args.p.L_x;
     const Type::real k_y = 2.0*3.1415926535 * Type::real(row <= args.p.N_y/2 ? row : -Type::real(args.p.N_y) + row)/args.p.L_y;
@@ -91,7 +93,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Solver::VKer
     Type::complex result = {args.p.g_c * in_psi_norm, -args.p.h_bar_s * Type::real(0.5) * args.p.gamma_c};
 
     for (int k = 0; k < args.potential_pointers.n; k++) {
-        const Type::complex potential = args.dev_ptrs.potential_plus[k][i] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
+        PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+        const Type::complex potential = args.dev_ptrs.potential_plus[i+offset] * args.potential_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.potential_pointers.t0[k], args.potential_pointers.sigma[k], args.potential_pointers.freq[k]);
         result += potential;
     }
 
@@ -110,7 +113,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_nonlinear( int i, Solver::VKer
     result = -args.p.gamma_r * in_rv;
     result -= args.p.R * in_psi_norm * in_rv;
     for (int k = 0; k < args.pump_pointers.n; k++) {
-        result += args.dev_ptrs.pump_plus[k][i] * args.pump_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.pump_pointerst0[k], args.pump_pointerssigma[k], args.pump_pointersfreq[k]);
+        PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+        result += args.dev_ptrs.pump_plus[i+offset] * args.pump_pointers.amp[k]; //CUDA::gaussian_oscillator(t, args.pump_pointerst0[k], args.pump_pointerssigma[k], args.pump_pointersfreq[k]);
     }
     // MARK: Stochastic-2
     if (args.p.stochastic_amplitude > 0.0)
@@ -125,7 +129,8 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_independent( int i, Solver::VK
 
     // MARK: Pulse
     for (int k = 0; k < args.pulse_pointers.n; k++) {
-        const Type::complex pulse = args.dev_ptrs.pulse_plus[k][i];
+        PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+        const Type::complex pulse = args.dev_ptrs.pulse_plus[i+offset];
         result += args.p.minus_i_over_h_bar_s * time.dt * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
     }
     

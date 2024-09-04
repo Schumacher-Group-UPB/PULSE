@@ -4,7 +4,6 @@
 #include "cuda/typedef.cuh"
 #include "kernel/kernel_compute.cuh"
 #include "system/system_parameters.hpp"
-#include "misc/helperfunctions.hpp"
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
 #include "misc/commandline_io.hpp"
@@ -14,7 +13,7 @@
  * Psi_next = Psi_current + dt * f(Psi_current)
  */
 
-void PC3::Solver::iterateNewton( dim3 block_size, dim3 grid_size ) {
+void PC3::Solver::iterateNewton(  ) {
     /*
     Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex(0.0, -system.p.dt) : Type::complex(system.p.dt, 0.0);
 

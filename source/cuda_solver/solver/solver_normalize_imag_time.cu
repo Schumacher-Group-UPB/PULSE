@@ -10,13 +10,12 @@
 #include <iostream>
 #include "solver/gpu_solver.hpp"
 #include "kernel/kernel_compute.cuh"
-#include "misc/helperfunctions.hpp"
 
 // TODO: implement with subgridding
 // For now, we can simply call matrix.toFull().dbegin(), but this will be slow, because it will call the subgrid->fullgrid kernel every time
 // TODO: implement transform_reduce with subgrids and then call matrix.transform_reduce() and matrix.reduce() 
 
-void PC3::Solver::normalizeImaginaryTimePropagation( dim3 block_size, dim3 grid_size ) {
+void PC3::Solver::normalizeImaginaryTimePropagation( ) {
     /*
     // Calculate min and max values
     #ifdef USE_CPU
