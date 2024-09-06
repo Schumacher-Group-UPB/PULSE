@@ -12,6 +12,7 @@
     #include <complex>
     #include <vector>
     #include <random>
+    #include <omp.h>
 #else
     // Include the required CUDA headers
     #include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.

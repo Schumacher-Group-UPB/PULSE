@@ -25,7 +25,8 @@ struct MatrixContainer {
     PC3::Type::host_vector<Type::complex> initial_state_plus, initial_state_minus, initial_reservoir_plus, initial_reservoir_minus;
 
     // Pump, Pulse and Potential Matrices. These are vectors of CUDAMatrices.
-    PC3::CUDAMatrix<Type::complex> pump_plus, pump_minus, pulse_plus, pulse_minus, potential_plus, potential_minus;
+    PC3::CUDAMatrix<Type::complex> pulse_plus, pulse_minus;
+    PC3::CUDAMatrix<Type::real> pump_plus, pump_minus, potential_plus, potential_minus;
 
     // FFT Matrices. These are simple device vectors, not CUDAMatrices.
     PC3::Type::device_vector<Type::complex> fft_plus, fft_minus;
@@ -162,12 +163,12 @@ struct MatrixContainer {
         Type::complex* buffer_reservoir_minus = nullptr;
 
         // Pump, Pulse and Potential Matrices
-        Type::complex* pump_plus = nullptr;
-        Type::complex* pump_minus = nullptr;
+        Type::real* pump_plus = nullptr;
+        Type::real* pump_minus = nullptr;
         Type::complex* pulse_plus = nullptr;
         Type::complex* pulse_minus = nullptr;
-        Type::complex* potential_plus = nullptr;
-        Type::complex* potential_minus = nullptr;
+        Type::real* potential_plus = nullptr;
+        Type::real* potential_minus = nullptr;
 
         // K Matrices
         Type::complex* k_wavefunction_plus = nullptr;
@@ -229,7 +230,6 @@ struct MatrixContainer {
         }
 
         // MARK: Independent Components
-
         if ( use_stochastic ) {
             ptrs.random_number = GET_RAW_PTR( random_number );
             ptrs.random_state = GET_RAW_PTR( random_state );
