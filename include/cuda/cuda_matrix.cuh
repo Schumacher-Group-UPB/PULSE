@@ -79,6 +79,7 @@ class CUDAMatrix : CUDAMatrixBase {
         cols = 0;
         total_size_host = 0;
         total_size_device = 0;
+        num_matrices = 0;
         host_is_ahead = true;
     };
 
@@ -139,7 +140,7 @@ class CUDAMatrix : CUDAMatrixBase {
         host_is_ahead = true;
         // Log this action
         if ( global_matrix_transfer_log ) {
-            std::cout << PC3::CLIO::prettyPrint( "Copied " + std::to_string( data.size() ) + " elements to '" + getName() + "'",
+            std::cout << PC3::CLIO::prettyPrint( "Copied " + std::to_string( data.size() ) + " elements to '" + getName() + "'.",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
         }
@@ -173,7 +174,7 @@ class CUDAMatrix : CUDAMatrixBase {
         global_total_host_mb -= size_in_mb_host * num_matrices;
         // Log this action. Mostly for simple debugging.
         if ( global_matrix_creation_log )
-            std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string( rows ) + "x" + std::to_string( rows ) + " matrix '" + name + "'. Total allocated space: " +
+            std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string( num_matrices ) + "x" + std::to_string( rows ) + "x" + std::to_string( rows ) + " matrix '" + name + "'. Total allocated space: " +
                                                      std::to_string( global_total_host_mb ) + "MB (host), " + std::to_string( global_total_device_mb ) + "MB (device)",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
@@ -235,7 +236,7 @@ class CUDAMatrix : CUDAMatrixBase {
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
         // Allocate the host data vector. This is a full size matrix.
-        host_data.resize( total_size_host * num_matrices );
+        host_data = Type::host_vector<T>( total_size_host * num_matrices, (T)0.0 );
         // Allocate the device data vector. This is a vector of subgrids.
         device_data.resize( total_num_subgrids );
         subgrid_pointers_device.resize( num_matrices );
@@ -296,7 +297,7 @@ class CUDAMatrix : CUDAMatrixBase {
             return *this;
         // Log this action
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Host to Device Sync for matrix '" + name + "'.", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Host to Device Sync for matrix '" + name + "' ("+std::to_string(matrix)+").", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
 
         // If the subgrid size is 1 and the halo_size is zero, we can just copy the full matrix to the device data
         if ( subgrid_size == 1 and halo_size == 0 ) {
@@ -305,11 +306,10 @@ class CUDAMatrix : CUDAMatrixBase {
 // Otherwise, we have to copy the full matrix to the device data_full and then split the full matrix into subgrids
 #ifdef USE_CPU
             // Copy the matrix to the device buffer
-            std::copy( host_data.begin() + matrix * total_size_host, host_data.begin() + ( matrix + 1 ) * total_size_host, device_data_full[total_size_host].begin() );
+            std::copy( host_data.data() + matrix * total_size_host, host_data.data() + ( matrix + 1 ) * total_size_host, device_data_full[total_size_host].data() );
 #else
-            thrust::copy( host_data.begin() + matrix * total_size_host, host_data.begin() + ( matrix + 1 ) * total_size_host, device_data_full[total_size_host].begin() );
+            thrust::copy( host_data.data() + matrix * total_size_host, host_data.data() + ( matrix + 1 ) * total_size_host, device_data_full[total_size_host].data() );
 #endif
-            //device_data_full[total_size_host] = host_data;
             toSubgrids( matrix );
         }
         // The Device Matrix is now ahead of the Host matrix

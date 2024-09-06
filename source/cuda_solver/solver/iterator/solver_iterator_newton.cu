@@ -19,7 +19,9 @@ void PC3::Solver::iterateNewton() {
 
                      CALCULATE_K( 1, wavefunction, reservoir );
 
-                     FINAL_SUM_K( 1.0f ); )
+                     FINAL_SUM_K( 1, 1.0f );
+
+    )
 
     return;
 }

@@ -7,7 +7,8 @@
     {                                                                                                                                                 \
         const Type::uint32 current_halo = system.p.halo_size - index;                                                                                 \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo ); \
-        CALL_KERNEL( RUNGE_FUNCTION_GP, "K" #index, current_grid, current_block, stream, current_halo, getCurrentTime(), kernel_arguments,            \
+        void(*rf)( int, Type::uint32, Solver::VKernelArguments, Solver::KernelArguments, Solver::InputOutput ) = RUNGE_FUNCTION_GP; \
+        CALL_KERNEL( rf, "K" #index, current_grid, current_block, stream, current_halo, getCurrentTime(), kernel_arguments,            \
                      { matrix.input_wavefunction##_plus.getDevicePtr( subgrid ), matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),           \
                        matrix.input_reservoir##_plus.getDevicePtr( subgrid ), matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                 \
                        matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ), \
@@ -15,13 +16,15 @@
     };
 
 // For some reason, GCC needs this to correctly unpack the variadic arguments into a templated function
+// MSVC needs the order to not inline the function, as it otherwise calls the wrong template function.
 #define GCC_EXPAND_VA_ARGS( ... ) __VA_ARGS__
+#define GCC_EXPAND_VA_ARGS_ORDER( order, ... ) order,__VA_ARGS__
 // Only Callable from within the solver
 #define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                 \
     {                                                                                                                                                                    \
         Type::uint32 current_halo = system.p.halo_size - index;                                                                                                          \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                    \
-        CALL_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Sum for K" #index, current_grid, current_block, stream, current_halo, \
+        CALL_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS_ORDER( index, __VA_ARGS__ )>, "Sum for K" #index, current_grid, current_block, stream, current_halo, \
                      getCurrentTime(), kernel_arguments,                                                                                                                 \
                      Solver::InputOutput{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                           \
                                           matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ),                                 \
@@ -41,11 +44,11 @@
                                           matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ) } );                               \
     };
 
-#define ERROR_K( ... )                                                                                                                                               \
-    {                                                                                                                                                                \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                      \
+#define ERROR_K( order, ... )                                                                                                                                     \
+    {                                                                                                                                                             \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                   \
         CALL_KERNEL( Kernel::Summation::runge_sum_to_error<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Error", current_grid, current_block, stream, 0, getCurrentTime(), \
-                     kernel_arguments );                                                                                                                             \
+                     kernel_arguments );                                                                                                                          \
     };
 
 // Only Callable from within the solver
@@ -148,7 +151,6 @@
     #define CHECK_CUDA_ERROR( func, msg )
     // On the CPU, the Kernel call does not execute a parallel GPU Kernel. Instead,
     // it launches a group of threads using a #pragma omp instruction.
-    #include <functional>
     #define CALL_KERNEL( func, name, grid, block, stream, ... ) \
         {                                                       \
             for ( Type::uint32 i = 0; i < block.x; ++i ) {      \
@@ -162,6 +164,14 @@
     #define SOLVER_SEQUENCE( with_graph, content )                                                                                                            \
         {                                                                                                                                                     \
             PC3::Type::stream_t stream;                                                                                                                       \
+            static bool first_time = false;                                                                                                                   \
+            static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                   \
+            if ( not first_time ) {                                                                                                                           \
+                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                            \
+                    v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                       \
+                }                                                                                                                                             \
+                first_time = true;                                                                                                                            \
+            }                                                                                                                                                 \
             if ( system.p.use_twin_mode ) {                                                                                                                   \
                 SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                  \
                 SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
@@ -172,7 +182,7 @@
                 SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
             }                                                                                                                                                 \
             _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) { \
-                auto kernel_arguments = generateKernelArguments( subgrid );                                                                                   \
+                auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                         \
                 content;                                                                                                                                      \
             }                                                                                                                                                 \
         }

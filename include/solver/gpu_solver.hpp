@@ -85,7 +85,6 @@ class Solver {
 
     Solver( PC3::SystemParameters& system ) : system( system ), filehandler( system.filehandler ) {
         std::cout << PC3::CLIO::prettyPrint( "Creating Solver...", PC3::CLIO::Control::Info ) << std::endl;
-
         // Initialize all matrices
         initializeMatricesFromSystem();
         // Then output all matrices to file. If --output was not passed in argv, this method outputs everything.
@@ -122,6 +121,10 @@ class Solver {
                                                          { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this ) } },
                                                          { "rk45", { 7, std::bind( &Solver::iterateVariableTimestepRungeKutta, this ) } },
                                                          { "ssfm", { 0, std::bind( &Solver::iterateSplitStepFourier, this ) } } };
+
+    // Main System function. Either gp_scalar or gp_tetm.
+    // Both functions have signature void(int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io)
+    std::function<void( int, Type::uint32, VKernelArguments, KernelArguments, InputOutput )> runge_function;
 
     bool iterate();
 

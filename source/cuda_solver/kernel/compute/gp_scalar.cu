@@ -1,5 +1,4 @@
 #include "kernel/kernel_compute.cuh"
-#include "kernel/kernel_hamilton.cuh"
 #include "kernel/kernel_index_overwrite.cuh"
 
 /**
@@ -10,10 +9,12 @@
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX(i, current_halo);
 
+    // TODO: copy in_wf_plus into shared buffer. make sure that the shared buffer is of size min_thread-row_offset to max_thread+row_offset
+
     const Type::complex in_wf = io.in_wf_plus[i];
     const Type::complex in_rv = io.in_rv_plus[i];
     Type::complex hamilton = args.p.m2_over_dx2_p_dy2 * in_wf;
-    hamilton += (io.in_wf_plus[i + args.p.subgrid_N_x + 2*args.p.halo_size] + io.in_wf_plus[i - args.p.subgrid_N_x - 2*args.p.halo_size])*args.p.one_over_dy2 + (io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1])*args.p.one_over_dx2;
+    hamilton += (io.in_wf_plus[i + args.p.subgrid_row_offset] + io.in_wf_plus[i - args.p.subgrid_row_offset])*args.p.one_over_dy2 + (io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1])*args.p.one_over_dx2;
 
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
     

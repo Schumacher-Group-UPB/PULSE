@@ -11,12 +11,6 @@
 void PC3::Solver::initializeMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "-------------------- Initializing Host and Device Matrices ------------------------" << EscapeSequence::RESET << std::endl;
 
-    // Check wether or not the selected solver is available. If not, fallback to RK4
-    if ( not iterator.count( system.iterator ) ) {
-        std::cout << PC3::CLIO::prettyPrint( "Selected iterator not available. Falling back to RK4.", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Warning ) << std::endl;
-        system.iterator = "rk4";
-    }
-
     // First, construct all required host matrices
     bool use_fft = system.fft_every < system.t_max;
     bool use_stochastic = system.p.stochastic_amplitude > 0.0;
@@ -83,6 +77,8 @@ void PC3::Solver::initializeMatricesFromSystem() {
     std::cout << PC3::CLIO::prettyPrint( "Initializing Pump Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     for ( int pump = 0; pump < system.pump.groupSize(); pump++ ) {
         system.pump.calculate( system.filehandler, matrix.pump_plus.getHostPtr( pump ), pump, PC3::Envelope::Polarization::Plus, dim );
+        // TODO: diese host to device syncs scheinen nicht richtig und auch nicht deterministisch zu funktionieren mit CPU.
+        // TODO: matrix hier an dieser stelle mal dumpen und gucken wie die aussieht.
         matrix.pump_plus.hostToDeviceSync( pump );
         SYNCHRONIZE_HALOS( 0, matrix.pump_plus.getSubgridDevicePtrs( pump ) );
         if ( system.p.use_twin_mode ) {

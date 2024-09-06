@@ -181,11 +181,11 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     // Plot Minus
     if ( solver.system.p.use_twin_mode ) {
         // Plot WF Minus
-        plot( solver.matrix.wavefunction_minus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, 0, 1, __local_colorpalette, "Psi+ ", plot_min_max );
+        plot( solver.matrix.wavefunction_minus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "Psi+ ", plot_min_max );
         // Plot it again without static synchronization
-        plot( solver.matrix.wavefunction_minus, true, solver.system.p.N_x, solver.system.p.N_y, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
+        plot( solver.matrix.wavefunction_minus, true, solver.system.p.N_x, solver.system.p.N_y, 0, solver.system.p.N_y, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
         // Plot Reservoir Minus
-        plot( solver.matrix.reservoir_minus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
+        plot( solver.matrix.reservoir_minus, false, solver.system.p.N_x, solver.system.p.N_y /*size*/, 2 * solver.system.p.N_x, solver.system.p.N_y, 1, __local_colorpalette, "n+ ", plot_min_max );
     }
 
     const auto ps_per_second = simulation_time / elapsed_time;

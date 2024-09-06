@@ -235,7 +235,7 @@ void PC3::Envelope::calculate( PC3::Type::real* buffer, const int group, PC3::En
 }
 
 void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3::Envelope::Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask ) {
-#pragma omp parallel for
+#pragma omp parallel for schedule( static )
     for ( int row = 0; row < dim.N_y; row++ ) {
         for ( int col = 0; col < dim.N_x; col++ ) {
             int i = row * dim.N_x + col;

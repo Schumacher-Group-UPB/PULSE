@@ -4,8 +4,8 @@
 
 namespace PC3::Kernel::Summation {
 
-template <int NMax, int N, float w, float... W>
-PULSE_DEVICE PULSE_INLINE void sum_single_k( int i, Type::complex& dw, Type::complex& wf, Type::complex& rv, Type::complex* k_wavefunction, Type::complex* k_reservoir,
+template <Type::uint32 NMax, Type::uint32 N, float w, float... W>
+PULSE_DEVICE PULSE_INLINE void sum_single_k( Type::uint32 i, Type::complex& dw, Type::complex& wf, Type::complex& rv, Type::complex* k_wavefunction, Type::complex* k_reservoir,
                                              Type::uint32 offset ) {
     if constexpr ( w != 0.0 ) {
         wf += w * ( k_wavefunction[i + offset * ( NMax - N )] + dw );
@@ -16,8 +16,9 @@ PULSE_DEVICE PULSE_INLINE void sum_single_k( int i, Type::complex& dw, Type::com
     }
 }
 
-template <float... Weights>
-PULSE_GLOBAL void runge_sum_to_input_kw( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+// Specifically use Type::uint32 N instead of sizeof(Weights) to force MSVC to NOT inline this function for different solvers (RK3,RK4) which cases the respective RK solver to call the wrong template function.
+template <Type::uint32 N, float... Weights>
+PULSE_GLOBAL void runge_sum_to_input_kw( Type::uint32 i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
     Type::complex wf = 0.0;
     Type::complex rv = 0.0;
@@ -26,7 +27,7 @@ PULSE_GLOBAL void runge_sum_to_input_kw( int i, Type::uint32 current_halo, Solve
         dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_plus[i] + args.p.gamma_c ) / ( Type::real( 4.0 ) * args.p.dV ) ) / time.dt;
     }
 
-    sum_single_k<sizeof...( Weights ), sizeof...( Weights ), Weights...>( i, dw, wf, rv, args.dev_ptrs.k_wavefunction_plus, args.dev_ptrs.k_reservoir_plus,
+    sum_single_k<N, N, Weights...>( i, dw, wf, rv, args.dev_ptrs.k_wavefunction_plus, args.dev_ptrs.k_reservoir_plus,
                                                                           args.p.subgrid_N2_with_halo );
 
     io.out_wf_plus[i] = io.in_wf_plus[i] + time.dt * wf;
@@ -41,7 +42,7 @@ PULSE_GLOBAL void runge_sum_to_input_kw( int i, Type::uint32 current_halo, Solve
         dw = args.dev_ptrs.random_number[i] * CUDA::sqrt( ( args.p.R * args.dev_ptrs.reservoir_minus[i] + args.p.gamma_c ) / ( Type::real( 4.0 ) * args.p.dV ) );
     }
 
-    sum_single_k<sizeof...( Weights ), sizeof...( Weights ), Weights...>( i, dw, wf, rv, args.dev_ptrs.k_wavefunction_minus, args.dev_ptrs.k_reservoir_minus,
+    sum_single_k<N, N, Weights...>( i, dw, wf, rv, args.dev_ptrs.k_wavefunction_minus, args.dev_ptrs.k_reservoir_minus,
                                                                           args.p.subgrid_N2_with_halo );
 
     io.out_wf_minus[i] = io.in_wf_minus[i] + time.dt * wf;

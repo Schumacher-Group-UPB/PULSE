@@ -103,10 +103,9 @@ struct MatrixContainer {
             random_state = PC3::Type::device_vector<Type::cuda_random_state>( subgrid_N );
         }
 
-        // RK Error Matrix.
-        // TODO: We could define some kinda of ".define()" method for the matrices. Then, when the hostPtr is called, the matrix is constructed if it is not already constructed.
-        // Same with the device pointer. This way, we can avoid constructing matrices that are not used.
-        rk_error.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "rk_error" );
+        // RK Error Matrix. For now, use k_max > 4 as a construction condition.
+        if (k_max > 4)
+            rk_error.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "rk_error" );
 
         // Construct the halo map. 6*total halo points because we have 6 coordinates for each point
         const Type::uint32 total_halo_points = ( N_x + 2 * halo_size ) * ( N_y + 2 * halo_size ) - N_x * N_y;
