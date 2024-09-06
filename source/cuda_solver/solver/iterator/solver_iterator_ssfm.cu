@@ -22,7 +22,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
     if (system.p.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
-    CALL_KERNEL(
+    CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
         v_time, kernel_arguments, 
         { 
@@ -36,7 +36,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
     // Nonlinear Full Step
-    CALL_KERNEL(
+    CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_NONLINEAR, "nonlinear_full_step", grid_size, block_size, 0,
         v_time, kernel_arguments, 
         { 
@@ -51,7 +51,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
     if (system.p.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
-    CALL_KERNEL(
+    CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
         v_time, kernel_arguments, 
         { 
@@ -64,7 +64,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     if (system.p.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
-    CALL_KERNEL(
+    CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_INDEPENDENT, "independent", grid_size, block_size, 0,
         v_time, kernel_arguments, 
         {  

@@ -82,11 +82,11 @@ void PC3::Solver::applyFFTFilter( bool apply_mask ) {
         return;
 
     // Apply the FFT Mask Filter
-    CALL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream
+    CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream
                  GET_RAW_PTR( matrix.fft_plus ), GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_x * system.p.N_y );
 
     if ( system.p.use_twin_mode ) {
-        CALL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Minus", grid_size, block_size, 0, // 0 = default stream
+        CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Minus", grid_size, block_size, 0, // 0 = default stream
                      GET_RAW_PTR( matrix.fft_minus ), GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_x * system.p.N_y );
     }
 

@@ -398,7 +398,7 @@ class CUDAMatrix : CUDAMatrixBase {
                                                      name + "' (" + std::to_string( matrix ) + ")",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
-        CALL_KERNEL( PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_x, subgrid_cols, subgrid_rows,
+                      CALL_FULL_KERNEL( PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_x, subgrid_cols, subgrid_rows,
                      halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;
@@ -425,7 +425,7 @@ class CUDAMatrix : CUDAMatrixBase {
             std::cout << PC3::CLIO::prettyPrint( "Copying full grid buffer to subgrids for matrix '" + name + "' (" + std::to_string( matrix ) + ")",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
-        CALL_KERNEL( PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_x, subgrid_cols, subgrid_rows,
+                      CALL_FULL_KERNEL( PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_x, subgrid_cols, subgrid_rows,
                      halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;

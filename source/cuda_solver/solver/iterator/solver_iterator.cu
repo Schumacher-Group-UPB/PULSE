@@ -36,13 +36,13 @@ bool PC3::Solver::iterate() {
         auto [block_size, grid_size] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );
         if (first_time) {
             first_time = false;
-            CALL_KERNEL(
+            CALL_FULL_KERNEL(
                     PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0,
                     system.random_seed, args.dev_ptrs.random_state, system.p.subgrid_N_x*system.p.subgrid_N_y
                 );
             std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
         }
-        CALL_KERNEL(
+        CALL_FULL_KERNEL(
             PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0,
             args.dev_ptrs.random_state, args.dev_ptrs.random_number, system.p.subgrid_N_x*system.p.subgrid_N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
         );

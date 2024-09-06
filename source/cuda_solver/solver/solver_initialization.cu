@@ -12,7 +12,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "-------------------- Initializing Host and Device Matrices ------------------------" << EscapeSequence::RESET << std::endl;
 
     // First, construct all required host matrices
-    bool use_fft = system.fft_every < system.t_max;
+    bool  = system.fft_every < system.t_max;
     bool use_stochastic = system.p.stochastic_amplitude > 0.0;
     // For now, both the plus and the minus components are the same. TODO: Change
     Type::uint32 pulse_size = system.pulse.groupSize();
@@ -139,13 +139,13 @@ void PC3::Solver::initializeMatricesFromSystem() {
         matrix.fft_mask_plus = buffer;
         // Shift the filter
         auto [block_size, grid_size] = getLaunchParameters( system.p.N_x, system.p.N_y );
-        CALL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Plus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_x, system.p.N_y );
+        CALL_FULL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Plus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_x, system.p.N_y );
         if ( system.p.use_twin_mode ) {
             system.fft_mask.calculate( system.filehandler, buffer.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim,
                                        1.0 /* Default if no mask is applied */ );
             matrix.fft_mask_minus = buffer;
             // Shift the filter
-            CALL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_x, system.p.N_y );
+            CALL_FULL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_x, system.p.N_y );
         }
     }
 
