@@ -189,3 +189,11 @@ PULSE_HOST_DEVICE static PULSE_INLINE bool operator>( const PC3::Type::complex& 
     //return PC3::CUDA::real(a)+PC3::CUDA::imag(a) > PC3::CUDA::real(b)+PC3::CUDA::imag(b);
     return PC3::CUDA::abs2( a ) > PC3::CUDA::abs2( b );
 }
+
+// std::complex<double>*float does not exist, so we overload these operators here
+static PC3::Type::complex operator*( const PC3::Type::complex& a, const PC3::Type::real& b ) {
+    return PC3::Type::complex( PC3::CUDA::real( a ) * b, PC3::CUDA::imag( a ) * b );
+}
+static PC3::Type::complex operator*( const PC3::Type::real& a, const PC3::Type::complex& b ) {
+    return PC3::Type::complex( a * PC3::CUDA::real( b ), a * PC3::CUDA::imag( b ) );
+}
