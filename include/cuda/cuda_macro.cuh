@@ -2,6 +2,38 @@
 
 #include "cuda/typedef.cuh"
 
+// Macro to copy to contents of the buffers into shared memory. The threads can then use threadIdx.x to access the shared memory.
+#ifdef USE_CPU
+    #define BUFFER_TO_SHARED()
+#else
+    #define BUFFER_TO_SHARED()                                                                          \
+        extern __shared__ Type::complex input_wf[];                                                     \
+        /* Only thead 0 of the block copies the data to shared memory */                                \
+        Type::uint32 bd = blockDim.x;                                                                   \
+        Type::uint32 number_of_elements = 3 * bd + 6;                                                   \
+        /* Copy the elements from current index of threadIdx.x = 0 (which is i) - subgrid_row_offset */ \
+        /* Each Thread loads three elements*/                                                           \
+        Type::uint32 tid = threadIdx.x;                                                                 \
+        input_wf[tid] = io.in_wf_plus[i - args.p.subgrid_row_offset];                                   \
+        input_wf[tid + bd] = io.in_wf_plus[i];                                                          \
+        input_wf[tid + 2 * bd] = io.in_wf_plus[i + args.p.subgrid_row_offset];                          \
+        /* Threads zero also loads the left border */                                                   \
+        if ( threadIdx.x == 0 ) {                                                                       \
+            /* Left Border */                                                                           \
+            input_wf[0] = io.in_wf_plus[i - args.p.subgrid_row_offset - 1];                             \
+            input_wf[1] = io.in_wf_plus[i - 1];                                                         \
+            input_wf[2] = io.in_wf_plus[i + args.p.subgrid_row_offset - 1];                             \
+        }                                                                                               \
+        /* Threads zero also loads the right border */                                                  \
+        if ( threadIdx.x == bd - 1 ) { /* Right Border */                                               \
+            input_wf[number_of_elements - 3] = io.in_wf_plus[i - args.p.subgrid_row_offset + 1];        \
+            input_wf[number_of_elements - 2] = io.in_wf_plus[i + 1];                                    \
+            input_wf[number_of_elements - 1] = io.in_wf_plus[i + args.p.subgrid_row_offset + 1];        \
+        } /* Shared index equivalent to "i" */                                                          \
+        Type::uint32 si = threadIdx.x + bd;                                                             \
+        __syncthreads();
+#endif
+
 // Helper Macro to iterate a specific RK K. // Only Callable from within the solver
 #define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                             \
     {                                                                                                                                                         \
@@ -53,12 +85,12 @@
 
 // Only Callable from within the solver
 // For now, use this macro to synchronize the halos. This is a bit of a mess, but it works. TODO: move halo_map to static CUDAMatrix vector and call synchronize_halos from there.
-#define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                   \
-    {                                                                                                                                                            \
-        auto [current_block, current_grid] = getLaunchParameters( matrix.halo_map.size() / 6 * system.p.subgrids_x * system.p.subgrids_y );                      \
-        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_x, system.p.subgrids_y, \
-                             system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, matrix.halo_map.size() / 6, system.p.periodic_boundary_x,           \
-                             system.p.periodic_boundary_y, GET_RAW_PTR( matrix.halo_map ), subgrids )                                                            \
+#define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                                    \
+    {                                                                                                                                                                             \
+        auto [current_block, current_grid] = getLaunchParameters( matrix.halo_map.size() / 6 * system.p.subgrids_x * system.p.subgrids_y );                                       \
+        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_x, system.p.subgrids_y,                     \
+                          system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, matrix.halo_map.size() / 6, system.p.periodic_boundary_x, system.p.periodic_boundary_y, \
+                          GET_RAW_PTR( matrix.halo_map ), subgrids )                                                                                                              \
     }
 
 // Helper to retrieve the raw device pointer. When using nvcc and thrust, we need a raw pointer cast.
@@ -84,8 +116,13 @@
     // The Kernel call requires a name and a grid and block size that
     // are not further passed to the actual compute Kernel. Instead, they
     // are used as launch parameters and for debugging.
-    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... ) \
-        { func<<<grid, block, 0, stream>>>( 0, __VA_ARGS__ ); }
+    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                                                                \
+        {                                                                                                                                                              \
+            size_t shared_mem_size = sizeof( Type::complex ) * ( 2 * system.p.subgrid_row_offset + system.block_size + 1 );                                            \
+            std::cout << PC3::CLIO::prettyPrint( "CUDA Kernel Shared memory size is: " + std::to_string( shared_mem_size ) + " bytes", PC3::CLIO::Control::Secondary ) \
+                      << std::endl;                                                                                                                                    \
+            func<<<grid, block, shared_mem_size, stream>>>( 0, __VA_ARGS__ );                                                                                          \
+        }
     #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... ) \
         { func<<<grid, block, 0, stream>>>( 0, __VA_ARGS__ ); }
     // Wraps the successive calls to the CUDA Kernels into a single CUDA Graph.
@@ -153,14 +190,15 @@
     #define CHECK_CUDA_ERROR( func, msg )
     // On the CPU, the Kernel call does not execute a parallel GPU Kernel. Instead,
     // it launches a group of threads using a #pragma omp instruction.
-    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... ) \
-        {                                                               \
-            for ( Type::uint32 i = 0; i < block.x; ++i ) {              \
-                for ( Type::uint32 j = 0; j < grid.x; ++j ) {           \
-                    const Type::uint32 index = i * grid.x + j;          \
-                    func( index, __VA_ARGS__ );                         \
-                }                                                       \
-            }                                                           \
+    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                                   \
+        {                                                                                                                                 \
+            const Type::uint32 in_subgrid_threads = system.p.subgrids_x * system.p.subgrids_y > 1 ? 1 : system.omp_max_threads;           \
+            _Pragma( "omp parallel for schedule(static) num_threads(in_subgrid_threads)" ) for ( Type::uint32 i = 0; i < block.x; ++i ) { \
+                for ( Type::uint32 j = 0; j < grid.x; ++j ) {                                                                             \
+                    const Type::uint32 index = i * grid.x + j;                                                                            \
+                    func( index, __VA_ARGS__ );                                                                                           \
+                }                                                                                                                         \
+            }                                                                                                                             \
         }
     #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... )                                      \
         {                                                                                                 \
@@ -172,30 +210,32 @@
             }                                                                                             \
         }
     // Merges the Kernel calls into a single function call. This is not required on the CPU.
-    #define SOLVER_SEQUENCE( with_graph, content )                                                                                                            \
-        {                                                                                                                                                     \
-            PC3::Type::stream_t stream;                                                                                                                       \
-            static bool first_time = false;                                                                                                                   \
-            static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                   \
-            if ( not first_time ) {                                                                                                                           \
-                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                            \
-                    v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                       \
-                }                                                                                                                                             \
-                first_time = true;                                                                                                                            \
-            }                                                                                                                                                 \
-            if ( system.p.use_twin_mode ) {                                                                                                                   \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                  \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                 \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                    \
-            } else {                                                                                                                                          \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                  \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
-            }                                                                                                                                                 \
-            _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) { \
-                auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                         \
-                content;                                                                                                                                      \
-            }                                                                                                                                                 \
+    #define SOLVER_SEQUENCE( with_graph, content )                                                                                                                           \
+        {                                                                                                                                                                    \
+            PC3::Type::stream_t stream;                                                                                                                                      \
+            static bool first_time = false;                                                                                                                                  \
+            static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                                  \
+            if ( not first_time ) {                                                                                                                                          \
+                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                                           \
+                    v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                                      \
+                }                                                                                                                                                            \
+                first_time = true;                                                                                                                                           \
+            }                                                                                                                                                                \
+            if ( system.p.use_twin_mode ) {                                                                                                                                  \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                                 \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                                    \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                                \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                                   \
+            } else {                                                                                                                                                         \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                                 \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                                    \
+            }                                                                                                                                                                \
+            const Type::uint32 subgrid_threads = system.p.subgrids_x * system.p.subgrids_y > 1 ? system.omp_max_threads : 1;                                                 \
+            _Pragma( "omp parallel for schedule(static) num_threads(subgrid_threads)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; \
+                                                                                              subgrid++ ) {                                                                  \
+                auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                                        \
+                content;                                                                                                                                                     \
+            }                                                                                                                                                                \
         }
 #endif
 
