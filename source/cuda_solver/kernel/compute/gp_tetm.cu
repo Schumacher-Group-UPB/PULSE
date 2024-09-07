@@ -11,11 +11,11 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_tetm( int i, Type::uint32 current_hal
     Type::complex vertical_plus = ( io.in_wf_plus[i + args.p.subgrid_row_offset] + io.in_wf_plus[i - args.p.subgrid_row_offset] ) * args.p.one_over_dy2;
     Type::complex horizontal_minus = ( io.in_wf_minus[i + 1] + io.in_wf_minus[i - 1] ) * args.p.one_over_dx2;
     Type::complex vertical_minus = ( io.in_wf_minus[i + args.p.subgrid_row_offset] + io.in_wf_minus[i - args.p.subgrid_row_offset] ) * args.p.one_over_dy2;
-    Type::complex hamilton_cross_plus = horizontal_minus - vertical_minus -
+    Type::complex hamilton_cross_plus = horizontal_minus - vertical_minus +
                                         args.p.half_i / args.p.dx / args.p.dy *
                                             ( io.in_wf_minus[i + args.p.subgrid_row_offset + 1] + io.in_wf_minus[i - args.p.subgrid_row_offset - 1] -
                                               io.in_wf_minus[i + args.p.subgrid_row_offset - 1] - io.in_wf_minus[i - args.p.subgrid_row_offset + 1] );
-    Type::complex hamilton_cross_minus = horizontal_plus - vertical_plus +
+    Type::complex hamilton_cross_minus = horizontal_plus - vertical_plus -
                                          args.p.half_i / args.p.dx / args.p.dy *
                                              ( io.in_wf_plus[i + args.p.subgrid_row_offset + 1] + io.in_wf_plus[i - args.p.subgrid_row_offset - 1] -
                                                io.in_wf_plus[i + args.p.subgrid_row_offset - 1] - io.in_wf_plus[i - args.p.subgrid_row_offset + 1] );
