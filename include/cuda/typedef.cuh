@@ -190,10 +190,18 @@ PULSE_HOST_DEVICE static PULSE_INLINE bool operator>( const PC3::Type::complex& 
     return PC3::CUDA::abs2( a ) > PC3::CUDA::abs2( b );
 }
 
+#ifdef USE_CPU
 // std::complex<double>*float does not exist, so we overload these operators here
-static PC3::Type::complex operator*( const PC3::Type::complex& a, const PC3::Type::real& b ) {
-    return PC3::Type::complex( PC3::CUDA::real( a ) * b, PC3::CUDA::imag( a ) * b );
+static std::complex<double> operator*( const std::complex<double>& a, const float& b ) {
+    return std::complex<double>( a.real() * b, a.imag() * b );
 }
-static PC3::Type::complex operator*( const PC3::Type::real& a, const PC3::Type::complex& b ) {
-    return PC3::Type::complex( a * PC3::CUDA::real( b ), a * PC3::CUDA::imag( b ) );
+static std::complex<double> operator*( const float& a, const std::complex<double>& b ) {
+    return std::complex<double>( a * b.real(), a * b.imag() );
 }
+static std::complex<double> operator/( const std::complex<double>& a, const float& b ) {
+    return std::complex<double>( a.real() / b, a.imag() / b );
+}
+static std::complex<double> operator/( const float& a, const std::complex<double>& b ) {
+    return std::complex<double>( a / b.real(), a / b.imag() );
+}
+#endif
