@@ -71,6 +71,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
     // Synchronize halos
     // WHAT I TESTED:
     // - Move the kernel to here in raw code; does not change the runtime, at least on my machine.
+    // - __restrict__ also does not (measureably) change the runtime.
     {
         auto halo_map_size = matrix.halo_map.size() / 6;
         auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_x * system.p.subgrids_y );
@@ -120,6 +121,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
                                     matrix.k_reservoir_minus.getDevicePtr( subgrid, 1 - 1 ) };
             auto t = getCurrentTime();
             auto execution_range = ( system.p.subgrid_N_x + 2 * current_halo ) * ( system.p.subgrid_N_y + 2 * current_halo );
+            
             for ( Type::uint32 i = 0; i < execution_range; ++i ) 
                     rf( i, current_halo, t, kernel_arguments, io );
             

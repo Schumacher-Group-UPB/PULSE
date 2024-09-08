@@ -38,6 +38,15 @@
     #define USE_CUDA
 #endif
 
+#ifdef USE_NUMA
+    // We pin them m****f****s ourselves!
+    #include <numa.h>
+    #include <sched.h>
+    #ifndef PULSE_NUMA_DOMAINS
+        #define PULSE_NUMA_DOMAINS 4
+    #endif
+#endif
+
 #include <cmath>
 
 namespace PC3::Type {

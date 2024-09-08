@@ -246,6 +246,14 @@ class CUDAMatrix : CUDAMatrixBase {
         // Allocate the individual subgrids in a omp loop, ensuring first-touch memory allocation
 #pragma omp parallel for schedule( static )
         for ( int i = 0; i < total_num_subgrids; i++ ) {
+            #ifdef USE_NUMA
+                int numa_domain = i % PULSE_NUMA_DOMAINS;
+                numa_run_on_node(numa_domain);
+                numa_set_preferred(numa_domain);
+                int cpu = sched_getcpu();
+                int node = numa_node_of_cpu(cpu);
+                std::cout << PC3::CLIO::prettyPrint( "Allocating subgrid " + std::to_string(i) + " on CPU " + std::to_string(cpu) + " on NUMA node " + std::to_string(node) + ".", PC3::CLIO::Control::FullSuccess ) << std::endl;
+            #endif
             device_data[i] = Type::device_vector<T>( subgrid_size_with_halo * num_matrices, (T)0.0 );
             for ( int nm = 0; nm < num_matrices; nm++ ) subgrid_pointers_device[nm][i] = GET_RAW_PTR( device_data[i] ) + nm * subgrid_size_with_halo;
         }

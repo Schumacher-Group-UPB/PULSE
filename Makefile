@@ -20,14 +20,16 @@ ARCH ?= NONE
 # SFML PATH
 SFML_PATH = external/SFML/
 # Optimization
-OPTIMIZATION = -O3
+OPTIMIZATION = -O3 -save-temps
+# NUMA
+NUMA = FALSE
 
 # Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
-GCCFLAGS = -std=c++20 -fopenmp -x c++ -flto -march=native
+GCCFLAGS = -std=c++20 -fopenmp -x c++ -fverbose-asm -mtune=native -march=native -save-temps -flto -funroll-loops -finline-limit=20000 -fopt-info-vec
 ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --dlink-time-opt
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --dlink-time-opt --generate-line-info
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -diag-suppress 4005 -lstdc++ -rdc=true --expt-extended-lambda
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -lstdc++ -rdc=true --expt-extended-lambda --dlink-time-opt 
 endif
 SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 
@@ -93,11 +95,17 @@ ifndef TARGET
 	endif
 endif
 
+
 ifeq ($(COMPILER),nvcc)
 	COMPILER_FLAGS = $(NVCCFLAGS) $(OPTIMIZATION)
 else
 	COMPILER_FLAGS = $(GCCFLAGS) $(OPTIMIZATION)
 endif
+
+ifneq ($(NUMA),FALSE)
+	COMPILER_FLAGS += -DUSE_NUMA -DPULSE_NUMA_DOMAINS=$(NUMA) -lnuma
+endif
+
 
 all: $(OBJDIR) $(CPP_OBJS) $(CU_OBJS)
 	$(COMPILER) -o $(TARGET) $(CPP_OBJS) $(CU_OBJS) $(COMPILER_FLAGS) -I$(INCDIR) $(ADD_FLAGS)
