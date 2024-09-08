@@ -35,16 +35,17 @@
 #endif
 
 // Helper Macro to iterate a specific RK K. // Only Callable from within the solver
-#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                             \
-    {                                                                                                                                                         \
-        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                         \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );         \
-        void ( *rf )( int, Type::uint32, Solver::VKernelArguments, Solver::KernelArguments, Solver::InputOutput ) = RUNGE_FUNCTION_GP;                        \
-        CALL_SUBGRID_KERNEL( rf, "K" #index, current_grid, current_block, stream, current_halo, getCurrentTime(), kernel_arguments,                           \
-                             { matrix.input_wavefunction##_plus.getDevicePtr( subgrid ), matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),           \
-                               matrix.input_reservoir##_plus.getDevicePtr( subgrid ), matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                 \
-                               matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ), \
-                               matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) } );   \
+#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                              \
+    {                                                                                                                                                          \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                          \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );          \
+        void ( *rf )( int, Type::uint32, Solver::VKernelArguments, Solver::KernelArguments, Solver::InputOutput ) = RUNGE_FUNCTION_GP;                         \
+        auto current_time = getCurrentTime();                                                                                                                  \
+        Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),      \
+                                matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),         \
+                                matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ), \
+                                matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };  \
+        CALL_SUBGRID_KERNEL( rf, "K" #index, current_grid, current_block, stream, current_halo, current_time, kernel_arguments, io );                          \
     };
 
 // For some reason, GCC needs this to correctly unpack the variadic arguments into a templated function
@@ -56,41 +57,45 @@
     {                                                                                                                                                                           \
         Type::uint32 current_halo = system.p.halo_size - index;                                                                                                                 \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                           \
+        auto current_time = getCurrentTime();                                                                                                                                   \
+        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                     \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                        \
+                                matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),                              \
+                                matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),    matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) };                               \
         CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS_ORDER( index, __VA_ARGS__ )>, "Sum for K" #index, current_grid, current_block, stream, \
-                             current_halo, getCurrentTime(), kernel_arguments,                                                                                                  \
-                             Solver::InputOutput{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                          \
-                                                  matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ),                                \
-                                                  matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),            \
-                                                  matrix.buffer_reservoir_plus.getDevicePtr( subgrid ), matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) } );              \
+                             current_halo, current_time, kernel_arguments, io );                                                                                                \
     };
 
 // Only Callable from within the solver
-#define FINAL_SUM_K( ... )                                                                                                                                                         \
-    {                                                                                                                                                                              \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                                    \
-        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Sum for Psi", current_grid, current_block, stream, 0, getCurrentTime(), \
-                             kernel_arguments,                                                                                                                                     \
-                             Solver::InputOutput{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                             \
-                                                  matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ),                                   \
-                                                  matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                             \
-                                                  matrix.reservoir_plus.getDevicePtr( subgrid ), matrix.reservoir_minus.getDevicePtr( subgrid ) } );                               \
+#define FINAL_SUM_K( ... )                                                                                                                                                     \
+    {                                                                                                                                                                          \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                                \
+        auto current_time = getCurrentTime();                                                                                                                                  \
+        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                                           \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ),                                              \
+                                matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                                           \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ) };                                            \
+        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_kw<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Sum for Psi", current_grid, current_block, stream, 0, current_time, \
+                             kernel_arguments, io );                                                                                                                           \
     };
 
-#define ERROR_K( order, ... )                                                                                                                                             \
-    {                                                                                                                                                                     \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                           \
-        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_error<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Error", current_grid, current_block, stream, 0, getCurrentTime(), \
-                             kernel_arguments );                                                                                                                          \
+#define ERROR_K( order, ... )                                                                                                                                         \
+    {                                                                                                                                                                 \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                       \
+        auto current_time = getCurrentTime();                                                                                                                         \
+        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_error<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Error", current_grid, current_block, stream, 0, current_time, \
+                             kernel_arguments );                                                                                                                      \
     };
 
 // Only Callable from within the solver
 // For now, use this macro to synchronize the halos. This is a bit of a mess, but it works. TODO: move halo_map to static CUDAMatrix vector and call synchronize_halos from there.
-#define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                                    \
-    {                                                                                                                                                                             \
-        auto [current_block, current_grid] = getLaunchParameters( matrix.halo_map.size() / 6 * system.p.subgrids_x * system.p.subgrids_y );                                       \
-        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_x, system.p.subgrids_y,                     \
-                          system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, matrix.halo_map.size() / 6, system.p.periodic_boundary_x, system.p.periodic_boundary_y, \
-                          GET_RAW_PTR( matrix.halo_map ), subgrids )                                                                                                              \
+#define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                       \
+    {                                                                                                                                                                \
+        Type::uint32 halo_map_size = matrix.halo_map.size() / 6;                                                                                                     \
+        auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_x * system.p.subgrids_y );                                       \
+        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_x, system.p.subgrids_y,        \
+                          system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, halo_map_size, system.p.periodic_boundary_x, system.p.periodic_boundary_y, \
+                          GET_RAW_PTR( matrix.halo_map ), subgrids )                                                                                                 \
     }
 
 // Helper to retrieve the raw device pointer. When using nvcc and thrust, we need a raw pointer cast.
@@ -116,12 +121,10 @@
     // The Kernel call requires a name and a grid and block size that
     // are not further passed to the actual compute Kernel. Instead, they
     // are used as launch parameters and for debugging.
-    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                                                                \
-        {                                                                                                                                                              \
-            size_t shared_mem_size = sizeof( Type::complex ) * ( 2 * system.p.subgrid_row_offset + system.block_size + 1 );                                            \
-            std::cout << PC3::CLIO::prettyPrint( "CUDA Kernel Shared memory size is: " + std::to_string( shared_mem_size ) + " bytes", PC3::CLIO::Control::Secondary ) \
-                      << std::endl;                                                                                                                                    \
-            func<<<grid, block, shared_mem_size, stream>>>( 0, __VA_ARGS__ );                                                                                          \
+    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                     \
+        {                                                                                                                   \
+            size_t shared_mem_size = sizeof( Type::complex ) * ( 2 * system.p.subgrid_row_offset + system.block_size + 1 ); \
+            func<<<grid, block, shared_mem_size, stream>>>( 0, __VA_ARGS__ );                                               \
         }
     #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... ) \
         { func<<<grid, block, 0, stream>>>( 0, __VA_ARGS__ ); }
@@ -190,24 +193,19 @@
     #define CHECK_CUDA_ERROR( func, msg )
     // On the CPU, the Kernel call does not execute a parallel GPU Kernel. Instead,
     // it launches a group of threads using a #pragma omp instruction.
-    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                                   \
-        {                                                                                                                                 \
-            const Type::uint32 in_subgrid_threads = system.p.subgrids_x * system.p.subgrids_y > 1 ? 1 : system.omp_max_threads;           \
-            _Pragma( "omp parallel for schedule(static) num_threads(in_subgrid_threads)" ) for ( Type::uint32 i = 0; i < block.x; ++i ) { \
-                for ( Type::uint32 j = 0; j < grid.x; ++j ) {                                                                             \
-                    const Type::uint32 index = i * grid.x + j;                                                                            \
-                    func( index, __VA_ARGS__ );                                                                                           \
-                }                                                                                                                         \
-            }                                                                                                                             \
+    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... ) \
+        {                                                               \
+            Type::uint32 execution_range = block.x * grid.x;            \
+            for ( Type::uint32 i = 0; i < execution_range; ++i ) {      \
+                func( i, __VA_ARGS__ );                                 \
+            }                                                           \
         }
-    #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... )                                      \
-        {                                                                                                 \
-            _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 i = 0; i < block.x; ++i ) { \
-                for ( Type::uint32 j = 0; j < grid.x; ++j ) {                                             \
-                    const Type::uint32 index = i * grid.x + j;                                            \
-                    func( index, __VA_ARGS__ );                                                           \
-                }                                                                                         \
-            }                                                                                             \
+    #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... )                                              \
+        {                                                                                                         \
+            Type::uint32 execution_range = block.x * grid.x;                                                      \
+            _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 i = 0; i < execution_range; ++i ) { \
+                func( i, __VA_ARGS__ );                                                                           \
+            }                                                                                                     \
         }
     // Merges the Kernel calls into a single function call. This is not required on the CPU.
     #define SOLVER_SEQUENCE( with_graph, content )                                                                                                                           \

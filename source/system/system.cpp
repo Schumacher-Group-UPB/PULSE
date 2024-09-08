@@ -98,7 +98,6 @@ void PC3::SystemParameters::calculateAuto() {
     if ( do_overwrite_dt ) {
         p.dt = magic_timestep;
     }
-
     // Calculate scaled imaginary values
     p.one_over_h_bar_s = 1.0 / p.h_bar_s;
     p.minus_i_over_h_bar_s = Type::complex( 0.0, -Type::real(1.0) / p.h_bar_s );

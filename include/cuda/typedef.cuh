@@ -90,7 +90,8 @@ using stream_t = cudaStream_t;
     #define PULSE_DEVICE
     #define PULSE_HOST
     #define PULSE_GLOBAL
-    #define PULSE_RESTRICT __restrict
+    #define PULSE_RESTRICT __restrict__
+    #define PULSE_ALIGNED(x) __attribute__( ( aligned( sizeof( x ) ) ) )
 #else
 // Define PULSE_INLINE as nvcc's __inline__ when using the GPU
     #define PULSE_INLINE __inline__
@@ -99,6 +100,7 @@ using stream_t = cudaStream_t;
     #define PULSE_HOST __host__
     #define PULSE_GLOBAL __global__
     #define PULSE_RESTRICT __restrict__
+    #define PULSE_ALIGNED(x)
 #endif
 
 // If nvcc is not used, redefine dim3

@@ -54,6 +54,8 @@ class SystemParameters {
 
         // Twin Mode
         bool use_twin_mode;
+        // Use Reservoir
+        bool use_reservoir;
 
         ////////////////////////////////
         // Custom Parameters go here! //

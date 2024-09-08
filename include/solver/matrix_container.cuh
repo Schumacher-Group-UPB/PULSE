@@ -152,29 +152,29 @@ struct MatrixContainer {
 
     struct Pointers {
         // Wavefunction and Reservoir Matrices
-        Type::complex* wavefunction_plus = nullptr;
-        Type::complex* wavefunction_minus = nullptr;
-        Type::complex* reservoir_plus = nullptr;
-        Type::complex* reservoir_minus = nullptr;
+        Type::complex* wavefunction_plus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* wavefunction_minus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* reservoir_plus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* reservoir_minus PULSE_ALIGNED(Type::complex) = nullptr;
         // Corresponding Buffer Matrices
-        Type::complex* buffer_wavefunction_plus = nullptr;
-        Type::complex* buffer_wavefunction_minus = nullptr;
-        Type::complex* buffer_reservoir_plus = nullptr;
-        Type::complex* buffer_reservoir_minus = nullptr;
+        Type::complex* buffer_wavefunction_plus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* buffer_wavefunction_minus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* buffer_reservoir_plus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* buffer_reservoir_minus PULSE_ALIGNED(Type::complex) = nullptr;
 
         // Pump, Pulse and Potential Matrices
-        Type::real* pump_plus = nullptr;
-        Type::real* pump_minus = nullptr;
-        Type::complex* pulse_plus = nullptr;
-        Type::complex* pulse_minus = nullptr;
-        Type::real* potential_plus = nullptr;
-        Type::real* potential_minus = nullptr;
+        Type::real* pump_plus PULSE_ALIGNED(Type::real) = nullptr;
+        Type::real* pump_minus PULSE_ALIGNED(Type::real) = nullptr;
+        Type::complex* pulse_plus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* pulse_minus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::real* potential_plus PULSE_ALIGNED(Type::real) = nullptr;
+        Type::real* potential_minus PULSE_ALIGNED(Type::real) = nullptr;
 
         // K Matrices
-        Type::complex* k_wavefunction_plus = nullptr;
-        Type::complex* k_wavefunction_minus = nullptr;
-        Type::complex* k_reservoir_plus = nullptr;
-        Type::complex* k_reservoir_minus = nullptr;
+        Type::complex* k_wavefunction_plus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* k_wavefunction_minus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* k_reservoir_plus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* k_reservoir_minus PULSE_ALIGNED(Type::complex) = nullptr;
 
         // FFT Matrices
         Type::complex* fft_plus = nullptr;

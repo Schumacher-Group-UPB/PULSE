@@ -300,15 +300,16 @@ class CUDAMatrix : CUDAMatrixBase {
             std::cout << PC3::CLIO::prettyPrint( "Host to Device Sync for matrix '" + name + "' ("+std::to_string(matrix)+").", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
 
         // If the subgrid size is 1 and the halo_size is zero, we can just copy the full matrix to the device data
+        const PC3::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
         if ( subgrid_size == 1 and halo_size == 0 ) {
-            device_data[0] = host_data;
+            std::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host, device_data[0].begin()+fullgrid_host_ptr_matrix_offset );
         } else {
 // Otherwise, we have to copy the full matrix to the device data_full and then split the full matrix into subgrids
 #ifdef USE_CPU
             // Copy the matrix to the device buffer
-            std::copy( host_data.data() + matrix * total_size_host, host_data.data() + ( matrix + 1 ) * total_size_host, device_data_full[total_size_host].data() );
+            std::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host, device_data_full[total_size_host].begin() );
 #else
-            thrust::copy( host_data.data() + matrix * total_size_host, host_data.data() + ( matrix + 1 ) * total_size_host, device_data_full[total_size_host].data() );
+            thrust::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host, device_data_full[total_size_host].begin() );
 #endif
             toSubgrids( matrix );
         }
@@ -332,11 +333,11 @@ class CUDAMatrix : CUDAMatrixBase {
         if ( global_matrix_transfer_log )
             std::cout << PC3::CLIO::prettyPrint( "Device to Host Sync for matrix '" + name + "'.", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
 
+        const PC3::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
         if ( subgrid_size == 1 and halo_size == 0 ) {
-            host_data = device_data[0];
+            std::copy( device_data[0].begin(), device_data[0].end(), host_data.begin() + fullgrid_host_ptr_matrix_offset );
         } else {
             toFull( matrix );
-            const PC3::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
 #ifdef USE_CPU
             // Copy the matrix to the device buffer
             std::copy( device_data_full[total_size_host].begin(), device_data_full[total_size_host].end(), host_data.begin() + fullgrid_host_ptr_matrix_offset );

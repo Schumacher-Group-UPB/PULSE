@@ -223,6 +223,15 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     initial_state = PC3::Envelope::fromCommandlineArguments( argc, argv, "initialState", false );
     initial_reservoir = PC3::Envelope::fromCommandlineArguments( argc, argv, "initialReservoir", false );
 
+    // Check wetiher or not to evaluate the reservoir
+    p.use_reservoir = true;
+    if (pump.size() == 0 and initial_reservoir.size() == 0) {
+        p.use_reservoir = false;
+    }
+    if ( ( index = PC3::CLIO::findInArgv( "-noReservoir", argc, argv ) ) != -1 ) {
+        p.use_reservoir = false;
+    } // TODO: check if this works! print use_reservoir!
+
     ///////////////////////////////////////
     // Custom Envelope Read-Ins go here! //
     ///////////////////////////////////////

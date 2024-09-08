@@ -9,12 +9,23 @@
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX(i, current_halo);
 
-    // TODO: copy in_wf_plus into shared buffer. make sure that the shared buffer is of size min_thread-row_offset to max_thread+row_offset
+    // Copy Pointers and mark as restricted
+    Type::complex* PULSE_RESTRICT in_wf_plus = io.in_wf_plus;
+    Type::complex* PULSE_RESTRICT in_rv_plus = io.in_rv_plus;
+    Type::complex* PULSE_RESTRICT out_wf_plus = io.out_wf_plus;
+    Type::complex* PULSE_RESTRICT out_rv_plus = io.out_rv_plus;
 
-    const Type::complex in_wf = io.in_wf_plus[i];
-    const Type::complex in_rv = io.in_rv_plus[i];
+    //BUFFER_TO_SHARED();
+
+    const Type::complex in_wf = in_wf_plus[i];
+    const Type::complex in_rv = args.p.use_reservoir ? in_rv_plus[i] : 0.0;
     Type::complex hamilton = args.p.m2_over_dx2_p_dy2 * in_wf;
-    hamilton += (io.in_wf_plus[i + args.p.subgrid_row_offset] + io.in_wf_plus[i - args.p.subgrid_row_offset])*args.p.one_over_dy2 + (io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1])*args.p.one_over_dx2;
+    hamilton += (in_wf_plus[i + args.p.subgrid_row_offset] + in_wf_plus[i - args.p.subgrid_row_offset])*args.p.one_over_dy2 + (in_wf_plus[i + 1] + in_wf_plus[i - 1])*args.p.one_over_dx2;
+    
+    //const Type::complex in_wf = input_wf[si];     
+    //const Type::complex in_rv = in_rv_plus[i];
+    //Type::complex hamilton = args.p.m2_over_dx2_p_dy2 * in_wf; 
+    //hamilton += (input_wf[si + bd] + input_wf[si - bd])*args.p.one_over_dy2 + (input_wf[si + 1] + input_wf[si - 1])*args.p.one_over_dx2;
 
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
     
@@ -43,7 +54,10 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint32 current_h
     if (args.p.stochastic_amplitude > 0.0)
         result -= args.p.minus_i_over_h_bar_s * args.p.g_c * in_wf / args.p.dV;
     
-    io.out_wf_plus[i] = result;
+    out_wf_plus[i] = result;
+
+    // Return if no reservoir is used
+    if (not args.p.use_reservoir) return;
     
     // MARK: Reservoir
     result = -args.p.gamma_r * in_rv;
@@ -57,7 +71,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint32 current_h
     if (args.p.stochastic_amplitude > 0.0)
         result += args.p.R * in_rv / args.p.dV;
     
-    io.out_rv_plus[i] = result;
+    out_rv_plus[i] = result;
 
 }
 
@@ -69,7 +83,7 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar( int i, Type::uint32 current_h
 
 PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     
-    GET_THREAD_INDEX( i, args.p.N2 );
+    GET_THREAD_INDEX( i, args.p.N2 ); 
 
     // We do some weird looking casting to avoid intermediate casts to Type::uint32
     Type::real row = Type::real(Type::uint32(i / args.p.N_x));
