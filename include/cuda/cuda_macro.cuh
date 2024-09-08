@@ -105,6 +105,15 @@
     #define GET_RAW_PTR( vec ) thrust::raw_pointer_cast( vec.data() )
 #endif
 
+#ifdef USE_NUMA
+    #define PULSE_NUMA_INSERT                           \
+        int numa_domain = subgrid % PULSE_NUMA_DOMAINS; \
+        numa_run_on_node( numa_domain );                \
+        numa_set_preferred( numa_domain );
+#else
+    #define PULSE_NUMA_INSERT
+#endif
+
 #ifdef USE_CUDA
     // Execudes a CUDA Command, checks for the latest error and prints it
     // This is technically not a requirement, but usually good practice
@@ -231,9 +240,7 @@
             const Type::uint32 subgrid_threads = system.p.subgrids_x * system.p.subgrids_y > 1 ? system.omp_max_threads : 1;                                                 \
             _Pragma( "omp parallel for schedule(static) num_threads(subgrid_threads)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; \
                                                                                               subgrid++ ) {                                                                  \
-                int numa_domain = i % PULSE_NUMA_DOMAINS;                                                                                                                    \
-                numa_run_on_node( numa_domain );                                                                                                                             \
-                numa_set_preferred( numa_domain );                                                                                                                           \
+                PULSE_NUMA_INSERT;                                                                                                                                           \
                 auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                                        \
                 content;                                                                                                                                                     \
             }                                                                                                                                                                \

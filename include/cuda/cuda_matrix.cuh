@@ -252,6 +252,7 @@ class CUDAMatrix : CUDAMatrixBase {
                 numa_set_preferred(numa_domain);
                 int cpu = sched_getcpu();
                 int node = numa_node_of_cpu(cpu);
+                std::cout << "Allocating subgrid " << std::to_string(i) << " on CPU " << std::to_string(cpu) << " on NUMA node " << std::to_string(node) << std::endl;
                 std::cout << PC3::CLIO::prettyPrint( "Allocating subgrid " + std::to_string(i) + " on CPU " + std::to_string(cpu) + " on NUMA node " + std::to_string(node) + ".", PC3::CLIO::Control::FullSuccess ) << std::endl;
             #endif
             device_data[i] = Type::device_vector<T>( subgrid_size_with_halo * num_matrices, (T)0.0 );
