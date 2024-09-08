@@ -109,7 +109,8 @@
     #define PULSE_NUMA_INSERT                           \
         int numa_domain = subgrid % PULSE_NUMA_DOMAINS; \
         numa_run_on_node( numa_domain );                \
-        numa_set_preferred( numa_domain );
+        numa_set_preferred( numa_domain );              \
+        numa_set_localalloc();
 #else
     #define PULSE_NUMA_INSERT
 #endif
@@ -237,7 +238,7 @@
                 SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                                 \
                 SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                                    \
             }                                                                                                                                                                \
-            const Type::uint32 subgrid_threads = system.p.subgrids_x * system.p.subgrids_y > 1 ? system.omp_max_threads : 1;                                                 \
+            const Type::uint32 subgrid_threads = system.p.subgrids_x * system.p.subgrids_y;                                                                                  \
             _Pragma( "omp parallel for schedule(static) num_threads(subgrid_threads)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; \
                                                                                               subgrid++ ) {                                                                  \
                 PULSE_NUMA_INSERT;                                                                                                                                           \

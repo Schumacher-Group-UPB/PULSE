@@ -87,8 +87,8 @@ struct MatrixContainer {
         k_reservoir_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_reservoir_plus_" + std::to_string( k_max ), k_max );
 
         // FFT Matrices
+        fft_plus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
         if ( use_fft ) {
-            fft_plus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
             fft_mask_plus = PC3::Type::device_vector<Type::real>( N_x * N_y );
         }
 
@@ -144,8 +144,8 @@ struct MatrixContainer {
         k_reservoir_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_reservoir_minus_" + std::to_string( k_max ), k_max );
 
         // FFT Matrices
+        fft_minus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
         if ( use_fft ) {
-            fft_minus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
             fft_mask_minus = PC3::Type::device_vector<Type::real>( N_x * N_y );
         }
     }
@@ -224,8 +224,8 @@ struct MatrixContainer {
         ptrs.k_reservoir_plus = k_reservoir_plus.getDevicePtr( subgrid );
 
         // FFT Matrices
+        ptrs.fft_plus = GET_RAW_PTR( fft_plus );
         if ( use_fft ) {
-            ptrs.fft_plus = GET_RAW_PTR( fft_plus );
             ptrs.fft_mask_plus = GET_RAW_PTR( fft_mask_plus );
         }
 
@@ -267,8 +267,8 @@ struct MatrixContainer {
         ptrs.k_reservoir_minus = k_reservoir_minus.getDevicePtr( subgrid );
 
         // FFT Matrices
+        ptrs.fft_minus = GET_RAW_PTR( fft_minus );
         if ( use_fft ) {
-            ptrs.fft_minus = GET_RAW_PTR( fft_minus );
             ptrs.fft_mask_minus = GET_RAW_PTR( fft_mask_minus );
         }
 
