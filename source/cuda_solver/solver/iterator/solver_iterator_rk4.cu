@@ -62,7 +62,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
     static bool first_time = false;
     static std::vector<Solver::KernelArguments> v_kernel_arguments;
     if ( not first_time ) {
-        for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {
+        for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {
             v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );
         }
         first_time = true;
@@ -74,13 +74,13 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
     // - __restrict__ also does not (measureably) change the runtime.
     {
         auto halo_map_size = matrix.halo_map.size() / 6;
-        auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_x * system.p.subgrids_y );
+        auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_columns * system.p.subgrids_rows );
         {
     #pragma omp parallel for schedule( static )
             for ( Type::uint32 i = 0; i < current_block.x; ++i ) {
                 for ( Type::uint32 j = 0; j < current_grid.x; ++j ) {
                     const Type::uint32 index = i * current_grid.x + j;
-                    Kernel::Halo::synchronize_halos( index, system.p.subgrids_x, system.p.subgrids_y, system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, halo_map_size,
+                    Kernel::Halo::synchronize_halos( index, system.p.subgrids_columns, system.p.subgrids_rows, system.p.subgrid_N_c, system.p.subgrid_N_r, system.p.halo_size, halo_map_size,
                                                      system.p.periodic_boundary_x, system.p.periodic_boundary_y, matrix.halo_map.data(),
                                                      matrix.wavefunction_plus.getSubgridDevicePtrs() );
                 }
@@ -91,7 +91,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
             for ( Type::uint32 i = 0; i < current_block.x; ++i ) {
                 for ( Type::uint32 j = 0; j < current_grid.x; ++j ) {
                     const Type::uint32 index = i * current_grid.x + j;
-                    Kernel::Halo::synchronize_halos( index, system.p.subgrids_x, system.p.subgrids_y, system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, halo_map_size,
+                    Kernel::Halo::synchronize_halos( index, system.p.subgrids_columns, system.p.subgrids_rows, system.p.subgrid_N_c, system.p.subgrid_N_r, system.p.halo_size, halo_map_size,
                                                      system.p.periodic_boundary_x, system.p.periodic_boundary_y, matrix.halo_map.data(),
                                                      matrix.reservoir_plus.getSubgridDevicePtrs() );
                 }
@@ -101,15 +101,15 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
 
     void ( *rf )( int, Type::uint32, Solver::VKernelArguments, Solver::KernelArguments, Solver::InputOutput ) =
         ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar );
-
+ 
     // Main Loop
-    const Type::uint32 subgrid_threads = system.p.subgrids_x * system.p.subgrids_y > 1 ? system.omp_max_threads : 1;
+    const Type::uint32 subgrid_threads = system.p.subgrids_columns * system.p.subgrids_rows > 1 ? system.omp_max_threads : 1;
     #pragma omp parallel for schedule( static ) num_threads( subgrid_threads )
-    for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {
+    for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {
         auto& kernel_arguments = v_kernel_arguments[subgrid];
         {
             const Type::uint32 current_halo = system.p.halo_size - 1;
-            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );
+            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );
             // K1
             Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),
                                     matrix.wavefunction_minus.getDevicePtr( subgrid ),
@@ -120,7 +120,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
                                     matrix.k_reservoir_plus.getDevicePtr( subgrid, 1 - 1 ),
                                     matrix.k_reservoir_minus.getDevicePtr( subgrid, 1 - 1 ) };
             auto t = getCurrentTime();
-            auto execution_range = ( system.p.subgrid_N_x + 2 * current_halo ) * ( system.p.subgrid_N_y + 2 * current_halo );
+            auto execution_range = ( system.p.subgrid_N_c + 2 * current_halo ) * ( system.p.subgrid_N_r + 2 * current_halo );
             
             for ( Type::uint32 i = 0; i < execution_range; ++i ) 
                     rf( i, current_halo, t, kernel_arguments, io );
@@ -146,14 +146,14 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
         };
         {
             const Type::uint32 current_halo = system.p.halo_size - 2;
-            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );
+            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );
             // K2
             Solver::InputOutput io{ matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ),   matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),
                                     matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),      matrix.buffer_reservoir_minus.getDevicePtr( subgrid ),
                                     matrix.k_wavefunction_plus.getDevicePtr( subgrid, 2 - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, 2 - 1 ),
                                     matrix.k_reservoir_plus.getDevicePtr( subgrid, 2 - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, 2 - 1 ) };
             auto t = getCurrentTime();
-            auto execution_range = ( system.p.subgrid_N_x + 2 * current_halo ) * ( system.p.subgrid_N_y + 2 * current_halo );
+            auto execution_range = ( system.p.subgrid_N_c + 2 * current_halo ) * ( system.p.subgrid_N_r + 2 * current_halo );
             for ( Type::uint32 i = 0; i < execution_range; ++i ) 
                     rf( i, current_halo, t, kernel_arguments, io );
             
@@ -179,13 +179,13 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
         };
         {
             const Type::uint32 current_halo = system.p.halo_size - 3;
-            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );
+            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );
             Solver::InputOutput io{ matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ),   matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),
                                     matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),      matrix.buffer_reservoir_minus.getDevicePtr( subgrid ),
                                     matrix.k_wavefunction_plus.getDevicePtr( subgrid, 3 - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, 3 - 1 ),
                                     matrix.k_reservoir_plus.getDevicePtr( subgrid, 3 - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, 3 - 1 ) };
             auto t = getCurrentTime();
-            auto execution_range = ( system.p.subgrid_N_x + 2 * current_halo ) * ( system.p.subgrid_N_y + 2 * current_halo );
+            auto execution_range = ( system.p.subgrid_N_c + 2 * current_halo ) * ( system.p.subgrid_N_r + 2 * current_halo );
             for ( Type::uint32 i = 0; i < execution_range; ++i ) 
                     rf( i, current_halo, t, kernel_arguments, io );
             
@@ -210,13 +210,13 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
         };
         {
             const Type::uint32 current_halo = system.p.halo_size - 4;
-            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );
+            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );
             Solver::InputOutput io{ matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ),   matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),
                                     matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),      matrix.buffer_reservoir_minus.getDevicePtr( subgrid ),
                                     matrix.k_wavefunction_plus.getDevicePtr( subgrid, 4 - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, 4 - 1 ),
                                     matrix.k_reservoir_plus.getDevicePtr( subgrid, 4 - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, 4 - 1 ) };
             auto t = getCurrentTime();
-            auto execution_range = ( system.p.subgrid_N_x + 2 * current_halo ) * ( system.p.subgrid_N_y + 2 * current_halo );
+            auto execution_range = ( system.p.subgrid_N_c + 2 * current_halo ) * ( system.p.subgrid_N_r + 2 * current_halo );
             for ( Type::uint32 i = 0; i < execution_range; ++i ) 
                     rf( i, current_halo, t, kernel_arguments, io );
             
@@ -227,11 +227,11 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
                                     matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),
                                     matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ) };
             auto t = getCurrentTime();
-            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );
+            auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c, system.p.subgrid_N_r );
             auto offset_k2 = system.p.subgrid_N2_with_halo;
             auto offset_k3 = system.p.subgrid_N2_with_halo * 2;
             auto offset_k4 = system.p.subgrid_N2_with_halo * 3;
-            auto execution_range = system.p.subgrid_N_x * system.p.subgrid_N_y;
+            auto execution_range = system.p.subgrid_N_c * system.p.subgrid_N_r;
             Type::complex* PULSE_RESTRICT k_wavefunction_plus = kernel_arguments.dev_ptrs.k_wavefunction_plus;
             Type::complex* PULSE_RESTRICT k_reservoir_plus = kernel_arguments.dev_ptrs.k_reservoir_plus;
             #pragma omp simd

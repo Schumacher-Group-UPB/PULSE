@@ -57,8 +57,8 @@ struct MatrixContainer {
     MatrixContainer() = default;
 
     // Construction Chain. The Host Matrix is always constructed (who carese about RAM right?) and the device matrix is constructed if the condition is met.
-    void constructAll( const int N_x, const int N_y, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses_plus, const int n_pumps_plus,
-                       const int n_potentials_plus, const int n_pulses_minus, const int n_pumps_minus, const int n_potentials_minus, const int subgrids_x, const int subgrids_y,
+    void constructAll( const int N_c, const int N_r, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses_plus, const int n_pumps_plus,
+                       const int n_potentials_plus, const int n_pulses_minus, const int n_pumps_minus, const int n_potentials_minus, const int subgrids_columns, const int subgrids_rows,
                        const int halo_size ) {
         // Cache triggers
         this->use_twin_mode = use_twin_mode;
@@ -71,25 +71,25 @@ struct MatrixContainer {
         // ======================================================================================================== //
 
         // Wavefunction and Reservoir Matrices
-        wavefunction_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "wavefunction_plus" );
-        reservoir_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "reservoir_plus" );
-        buffer_wavefunction_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "buffer_wavefunction_plus" );
-        buffer_reservoir_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "buffer_reservoir_plus" );
-        initial_state_plus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
-        initial_reservoir_plus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
+        wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_plus" );
+        reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_plus" );
+        buffer_wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_plus" );
+        buffer_reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_plus" );
+        initial_state_plus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
+        initial_reservoir_plus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
 
         // Pump, Pulse and Potential Matrices
-        pump_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pump_plus", n_pumps_plus );
-        pulse_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pulse_plus", n_pulses_plus );
-        potential_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "potential_plus", n_potentials_plus );
+        pump_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "pump_plus", n_pumps_plus );
+        pulse_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "pulse_plus", n_pulses_plus );
+        potential_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "potential_plus", n_potentials_plus );
 
-        k_wavefunction_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_wavefunction_plus_" + std::to_string( k_max ), k_max );
-        k_reservoir_plus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_reservoir_plus_" + std::to_string( k_max ), k_max );
+        k_wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_wavefunction_plus_" + std::to_string( k_max ), k_max );
+        k_reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_reservoir_plus_" + std::to_string( k_max ), k_max );
 
         // FFT Matrices
-        fft_plus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
         if ( use_fft ) {
-            fft_mask_plus = PC3::Type::device_vector<Type::real>( N_x * N_y );
+            fft_plus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
+            fft_mask_plus = PC3::Type::device_vector<Type::real>( N_c * N_r );
         }
 
         // MARK: Independent Components
@@ -99,22 +99,22 @@ struct MatrixContainer {
 
         // Random Number generator and buffer
         if ( use_stochastic ) {
-            const Type::uint32 subgrid_N = N_x * N_y / subgrids_x / subgrids_y;
+            const Type::uint32 subgrid_N = N_c * N_r / subgrids_columns / subgrids_rows;
             random_number = PC3::Type::device_vector<Type::complex>( subgrid_N );
             random_state = PC3::Type::device_vector<Type::cuda_random_state>( subgrid_N );
         }
 
         // RK Error Matrix. For now, use k_max > 4 as a construction condition.
         if (k_max > 4)
-            rk_error.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "rk_error" );
+            rk_error.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "rk_error" );
 
         // Construct the halo map. 6*total halo points because we have 6 coordinates for each point
-        const Type::uint32 total_halo_points = ( N_x + 2 * halo_size ) * ( N_y + 2 * halo_size ) - N_x * N_y;
+        const Type::uint32 total_halo_points = ( N_c + 2 * halo_size ) * ( N_r + 2 * halo_size ) - N_c * N_r;
         halo_map = PC3::Type::device_vector<int>( total_halo_points * 6 );
 
         // User defined matrices
 #ifdef MATRIX_LIST
-    #define DEFINE_MATRIX( type, name ) name.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, #name );
+    #define DEFINE_MATRIX( type, name ) name.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, #name );
         MATRIX_LIST
     #undef X
 #endif
@@ -127,26 +127,26 @@ struct MatrixContainer {
         // ======================================================================================================== //
 
         // Wavefunction and Reservoir Matrices
-        wavefunction_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "wavefunction_minus" );
-        reservoir_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "reservoir_minus" );
-        buffer_wavefunction_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "buffer_wavefunction_minus" );
-        buffer_reservoir_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "buffer_reservoir_minus" );
-        initial_state_minus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
-        initial_reservoir_minus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
+        wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_minus" );
+        reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_minus" );
+        buffer_wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_minus" );
+        buffer_reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_minus" );
+        initial_state_minus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
+        initial_reservoir_minus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
 
         // Pump, Pulse and Potential Matrices
-        pump_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pump_minus", n_pumps_minus );
-        pulse_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "pulse_minus", n_pulses_minus );
-        potential_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "potential_minus", n_potentials_minus );
+        pump_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "pump_minus", n_pumps_minus );
+        pulse_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "pulse_minus", n_pulses_minus );
+        potential_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "potential_minus", n_potentials_minus );
 
         // K Matrices
-        k_wavefunction_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_wavefunction_minus_" + std::to_string( k_max ), k_max );
-        k_reservoir_minus.construct( N_x, N_y, subgrids_x, subgrids_y, halo_size, "k_reservoir_minus_" + std::to_string( k_max ), k_max );
+        k_wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_wavefunction_minus_" + std::to_string( k_max ), k_max );
+        k_reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_reservoir_minus_" + std::to_string( k_max ), k_max );
 
         // FFT Matrices
-        fft_minus = PC3::Type::device_vector<Type::complex>( N_x * N_y );
         if ( use_fft ) {
-            fft_mask_minus = PC3::Type::device_vector<Type::real>( N_x * N_y );
+            fft_minus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
+            fft_mask_minus = PC3::Type::device_vector<Type::real>( N_c * N_r );
         }
     }
 

@@ -14,7 +14,8 @@ class WindowObject {
     int x, y;
     bool visible = true;
 
-    WindowObject( int x, int y, bool visible = true ) : x( x ), y( y ), visible( visible ) {}
+    WindowObject( int x, int y, bool visible = true ) : x( x ), y( y ), visible( visible ) {
+    }
     WindowObject() = default;
 
     virtual bool draw( BasicWindow* basicwindow ) = 0;
@@ -120,7 +121,8 @@ class BasicWindow {
                 pixMat.push_back( sf::Vertex( sf::Vector2f( i + .5f, j + .5f ), sf::Color( 0, 0, 0 ) ) );
             }
         }
-        std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size() << " pixels." << std::endl;
+        std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size()
+                  << " pixels." << std::endl;
     }
 
     void init() {
@@ -160,47 +162,49 @@ class BasicWindow {
         window.display();
     }
 
-    void blitMatrixPtr( const PC3::Type::real* vector, PC3::Type::real min, PC3::Type::real max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
-            const int cols_over_skip = cols / skip;
-    const int rows_over_skip = rows / skip;
-    //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
-#pragma omp parallel for schedule( static )
-    for ( int i = 0; i < cols_over_skip; i++ ) {
-        for ( int j = 0; j < rows_over_skip; j++ ) {
-            auto c = cp.getColor( (vector[( j * skip ) * cols + i * skip] - min) / (max-min) );
-            const auto index = ( i + 1 + posX ) * texture_h - 1 - ( j + posY );
-            pixMat.at( index ).color.r = c.r;
-            pixMat.at( index ).color.g = c.g;
-            pixMat.at( index ).color.b = c.b;
-            if ( border != 0 && ( i < border || i >= cols_over_skip - border || j < border || j >= rows_over_skip - border ) ) {
-                pixMat.at( index ).color.r = 0;
-                pixMat.at( index ).color.g = 0;
-                pixMat.at( index ).color.b = 0;
-            }
-        }
-    }
-    maintexture_has_changed = true;
-    }
-    void blitMatrixPtr( const PC3::Type::complex* vector, PC3::Type::complex min, PC3::Type::complex max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
+    void blitMatrixPtr( const PC3::Type::real* vector, PC3::Type::real min, PC3::Type::real max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
+                        int border = 0, int skip = 1 ) {
         const int cols_over_skip = cols / skip;
-    const int rows_over_skip = rows / skip;
-    //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
+        const int rows_over_skip = rows / skip;
+        //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
 #pragma omp parallel for schedule( static )
-    for ( int i = 0; i < cols_over_skip; i++ ) {
-        for ( int j = 0; j < rows_over_skip; j++ ) {
-            auto c = cp.getColor( PC3::CUDA::abs( (vector[( j * skip ) * cols + i * skip] - min) / (max-min) ) );
-            const auto index = ( i + 1 + posX ) * texture_h - 1 - ( j + posY );
-            pixMat.at( index ).color.r = c.r;
-            pixMat.at( index ).color.g = c.g;
-            pixMat.at( index ).color.b = c.b;
-            if ( border != 0 && ( i < border || i >= cols_over_skip - border || j < border || j >= rows_over_skip - border ) ) {
-                pixMat.at( index ).color.r = 0;
-                pixMat.at( index ).color.g = 0;
-                pixMat.at( index ).color.b = 0;
+        for ( int r = 0; r < rows_over_skip; r++ ) {
+            for ( int c = 0; c < cols_over_skip; c++ ) {
+                auto color = cp.getColor( ( vector[( r * skip ) * cols + c * skip] - min ) / ( max - min ) );
+                const auto index = ( c + 1 + posX ) * texture_h - 1 - ( r + posY );
+                pixMat.at( index ).color.r = color.r;
+                pixMat.at( index ).color.g = color.g;
+                pixMat.at( index ).color.b = color.b;
+                if ( border != 0 && ( c < border || c >= cols_over_skip - border || r < border || r >= rows_over_skip - border ) ) {
+                    pixMat.at( index ).color.r = 0;
+                    pixMat.at( index ).color.g = 0;
+                    pixMat.at( index ).color.b = 0;
+                }
             }
         }
+        maintexture_has_changed = true;
     }
-    maintexture_has_changed = true;
+    void blitMatrixPtr( const PC3::Type::complex* vector, PC3::Type::complex min, PC3::Type::complex max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
+                        int border = 0, int skip = 1 ) {
+        const int cols_over_skip = cols / skip;
+        const int rows_over_skip = rows / skip;
+        //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
+#pragma omp parallel for schedule( static )
+        for ( int r = 0; r < rows_over_skip; r++ ) {
+            for ( int c = 0; c < cols_over_skip; c++ ) {
+                auto color = cp.getColor( PC3::CUDA::abs( ( vector[( r * skip ) * cols + c * skip] - min ) / ( max - min ) ) );
+                const auto index = ( c + 1 + posX ) * texture_h - 1 - ( r + posY );
+                pixMat.at( index ).color.r = color.r;
+                pixMat.at( index ).color.g = color.g;
+                pixMat.at( index ).color.b = color.b;
+                if ( border != 0 && ( c < border || c >= cols_over_skip - border || r < border || r >= rows_over_skip - border ) ) {
+                    pixMat.at( index ).color.r = 0;
+                    pixMat.at( index ).color.g = 0;
+                    pixMat.at( index ).color.b = 0;
+                }
+            }
+        }
+        maintexture_has_changed = true;
     }
 
     sf::Color convertColorToSFML( int r, int g, int b ) {
@@ -211,7 +215,7 @@ class BasicWindow {
         print( x, y, textheight, text, textcolor, background, backgroundcolor );
     }
 
-    void print( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ){
+    void print( int x, int y, float h, std::string text, sf::Color textcolor = COLOR_WHITE, int background = 0, sf::Color backgroundcolor = COLOR_BLACK ) {
         printtext.setFillColor( textcolor );
         printtext.setPosition( (float)x, (float)y );
         printtext.setString( text );
@@ -233,7 +237,7 @@ class BasicWindow {
         printtext.setPosition( (float)x, (float)y );
         printtext.setString( text );
         if ( h > 0 )
-            printtext.setCharacterSize( h ); 
+            printtext.setCharacterSize( h );
         window.draw( printtext ); // std::cout << "Test " << text << std::endl;
     }
 
@@ -299,7 +303,7 @@ class BasicWindow {
         float x_scale = (float)width / texture_w;
         float y_scale = (float)height / texture_h;
         x0 = x0 * x_scale;
-        y0 = y0 * y_scale; 
+        y0 = y0 * y_scale;
         sf::RectangleShape line( sf::Vector2f( y1 - y0, 1.0f ) );
         line.setPosition( sf::Vector2f( x0, y0 ) );
         line.setFillColor( color );
@@ -308,11 +312,15 @@ class BasicWindow {
     }
 
     void drawRect( int x0, int x1, int y0, int y1, sf::Color color = COLOR_WHITE, bool filled = false ) {
-        if ( x0 <= 0 ) x0 = 0;
-        if ( x1 >= width ) x1 = width;
-        if ( y0 <= 0 ) y0 = 0;
-        if ( y1 >= height ) y1 = height; 
-        if (filled) {
+        if ( x0 <= 0 )
+            x0 = 0;
+        if ( x1 >= width )
+            x1 = width;
+        if ( y0 <= 0 )
+            y0 = 0;
+        if ( y1 >= height )
+            y1 = height;
+        if ( filled ) {
             sf::RectangleShape rect( sf::Vector2f( x1 - x0, y1 - y0 ) );
             rect.setPosition( x0, y0 );
             rect.setFillColor( color );
@@ -383,7 +391,8 @@ class CheckBox : public WindowObject {
         return true;
     }
 
-    void update() override {}
+    void update() override {
+    }
 
     void onClick( int x, int y ) override {
         if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h ) {
@@ -422,7 +431,8 @@ class Button : public WindowObject {
         return true;
     }
 
-    void update() override {}
+    void update() override {
+    }
 
     void onClick( int x, int y ) override {
         if ( x >= this->x && x <= this->x + w && y >= this->y && y <= this->y + h ) {

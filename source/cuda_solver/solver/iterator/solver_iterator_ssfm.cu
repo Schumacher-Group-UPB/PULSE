@@ -15,7 +15,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     
     auto kernel_arguments = generateKernelArguments( );
     Solver::VKernelArguments v_time = getCurrentTime(); 
-    auto [block_size, grid_size] = getLaunchParameters( system.p.N_x, system.p.N_y );
+    auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
 
     // Liner Half Step
     // Calculate the FFT of Psi

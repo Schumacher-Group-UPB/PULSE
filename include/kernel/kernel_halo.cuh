@@ -6,41 +6,41 @@
 namespace PC3::Kernel::Halo {
 
 template <typename T>
-PULSE_GLOBAL void full_grid_to_halo_grid( int i, Type::uint32 N_x, Type::uint32 N_y, Type::uint32 subgrids_x, Type::uint32 subgrid_N_x, Type::uint32 subgrid_N_y,
+PULSE_GLOBAL void full_grid_to_halo_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
                                           Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
-    GET_THREAD_INDEX( i, N_x * N_y );
+    GET_THREAD_INDEX( i, N_c * N_r );
 
-    const Type::uint32 r = i / N_x;
-    const Type::uint32 c = i % N_x;
+    const Type::uint32 r = i / N_c;
+    const Type::uint32 c = i % N_c;
 
-    const Type::uint32 R = r / subgrid_N_y;
-    const Type::uint32 C = c / subgrid_N_x;
-    const Type::uint32 subgrid = R * subgrids_x + C;
+    const Type::uint32 R = r / subgrid_N_r;
+    const Type::uint32 C = c / subgrid_N_c;
+    const Type::uint32 subgrid = R * subgrids_columns + C;
 
-    const Type::uint32 r_subgrid = halo_size + r % subgrid_N_y;
-    const Type::uint32 c_subgrid = halo_size + c % subgrid_N_x;
+    const Type::uint32 r_subgrid = halo_size + r % subgrid_N_r;
+    const Type::uint32 c_subgrid = halo_size + c % subgrid_N_c;
 
-    const Type::uint32 subgrid_with_halo = subgrid_N_x + 2 * halo_size;
+    const Type::uint32 subgrid_with_halo = subgrid_N_c + 2 * halo_size;
     // Now move value from subgrid to fullgrid
     subgrids[subgrid][r_subgrid * subgrid_with_halo + c_subgrid] = fullgrid[i];
 }
 
 template <typename T>
-PULSE_GLOBAL void halo_grid_to_full_grid( int i, Type::uint32 N_x, Type::uint32 N_y, Type::uint32 subgrids_x, Type::uint32 subgrid_N_x, Type::uint32 subgrid_N_y,
+PULSE_GLOBAL void halo_grid_to_full_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
                                           Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
-    GET_THREAD_INDEX( i, N_x * N_y );
+    GET_THREAD_INDEX( i, N_c * N_r );
 
-    const Type::uint32 r = i / N_x;
-    const Type::uint32 c = i % N_x;
+    const Type::uint32 r = i / N_c;
+    const Type::uint32 c = i % N_c;
 
-    const Type::uint32 R = r / subgrid_N_y;
-    const Type::uint32 C = c / subgrid_N_x;
-    const Type::uint32 subgrid = R * subgrids_x + C;
+    const Type::uint32 R = r / subgrid_N_r;
+    const Type::uint32 C = c / subgrid_N_c;
+    const Type::uint32 subgrid = R * subgrids_columns + C;
 
-    const Type::uint32 r_subgrid = halo_size + r % subgrid_N_y;
-    const Type::uint32 c_subgrid = halo_size + c % subgrid_N_x;
+    const Type::uint32 r_subgrid = halo_size + r % subgrid_N_r;
+    const Type::uint32 c_subgrid = halo_size + c % subgrid_N_c;
 
-    const Type::uint32 subgrid_with_halo = subgrid_N_x + 2 * halo_size;
+    const Type::uint32 subgrid_with_halo = subgrid_N_c + 2 * halo_size;
     // Now move value from subgrid to fullgrid
     fullgrid[i] = subgrids[subgrid][r_subgrid * subgrid_with_halo + c_subgrid];
 }
@@ -52,16 +52,16 @@ PULSE_DEVICE PULSE_INLINE void __synchronize_halo( Type::uint32 subgrid_to, Type
 }
 
 template <typename T>
-PULSE_GLOBAL void synchronize_halos( int i, Type::uint32 subgrids_x, Type::uint32 subgrids_y, Type::uint32 subgrid_N_x, Type::uint32 subgrid_N_y, Type::uint32 halo_size,
+PULSE_GLOBAL void synchronize_halos( int i, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r, Type::uint32 halo_size,
                                      Type::uint32 halo_num, bool periodic_boundary_x, bool periodic_boundary_y, int* subgrid_map, T** current_subgridded_matrix ) {
-    GET_THREAD_INDEX( i, halo_num * subgrids_x * subgrids_y );
+    GET_THREAD_INDEX( i, halo_num * subgrids_columns * subgrids_rows );
     
-    const Type::uint32 sg = i / halo_num;        // subgrid index from 0 to subgrids_x*subgrids_y.
+    const Type::uint32 sg = i / halo_num;        // subgrid index from 0 to subgrids_columns*subgrids_rows.
     const Type::uint32 s = ( i % halo_num ) * 6; // subgrid_map index from 0 to 6*len(subgrid_map)
 
-    const int R = sg / subgrids_x;
-    const int C = sg % subgrids_x;
-    const Type::uint32 subgrid = R * subgrids_x + C;
+    const int R = sg / subgrids_columns;
+    const int C = sg % subgrids_columns;
+    const Type::uint32 subgrid = R * subgrids_columns + C;
 
     const auto dr = subgrid_map[s];
     const auto dc = subgrid_map[s + 1];
@@ -71,14 +71,14 @@ PULSE_GLOBAL void synchronize_halos( int i, Type::uint32 subgrids_x, Type::uint3
     const auto tc = subgrid_map[s + 5];
 
     // Subgrid remains zero if the boundary condition is not periodic
-    if ( !periodic_boundary_x && ( C + dc < 0 || C + dc >= subgrids_x ) )
+    if ( !periodic_boundary_x && ( C + dc < 0 || C + dc >= subgrids_columns ) )
         return;
-    if ( !periodic_boundary_y && ( R + dr < 0 || R + dr >= subgrids_y ) )
+    if ( !periodic_boundary_y && ( R + dr < 0 || R + dr >= subgrids_rows ) )
         return;
 
-    const Type::uint32 r_new = ( R + dr ) % subgrids_y;
-    const Type::uint32 c_new = ( C + dc ) % subgrids_x;
+    const Type::uint32 r_new = ( R + dr ) % subgrids_rows;
+    const Type::uint32 c_new = ( C + dc ) % subgrids_columns;
 
-    __synchronize_halo( subgrid, tr * ( subgrid_N_x + 2 * halo_size ) + tc, r_new * subgrids_x + c_new, fr * ( subgrid_N_x + 2 * halo_size ) + fc, current_subgridded_matrix );
+    __synchronize_halo( subgrid, tr * ( subgrid_N_c + 2 * halo_size ) + tc, r_new * subgrids_columns + c_new, fr * ( subgrid_N_c + 2 * halo_size ) + fc, current_subgridded_matrix );
 }
 } // namespace PC3::Kernel::Halo

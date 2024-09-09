@@ -107,9 +107,9 @@ class Envelope {
     int sizeOfGroup(int g) const;
 
     struct Dimensions {
-        Type::uint32 N_x, N_y;
+        Type::uint32 N_c, N_r;
         PC3::Type::real L_x,L_y,dx,dy;
-        Dimensions(Type::uint32 N_x, Type::uint32 N_y, PC3::Type::real L_x, PC3::Type::real L_y, PC3::Type::real dx, PC3::Type::real dy) : N_x(N_x), N_y(N_y), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
+        Dimensions(Type::uint32 N_c, Type::uint32 N_r, PC3::Type::real L_x, PC3::Type::real L_y, PC3::Type::real dx, PC3::Type::real dy) : N_c(N_c), N_r(N_r), L_x(L_x), L_y(L_y), dx(dx), dy(dy) {}
     };
 
     void calculate( PC3::Type::real* buffer, const int group, Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask = 0.0 );
@@ -138,7 +138,7 @@ class Envelope {
             cache.push_back( nullptr );
             if ( load_path[c] == "" )
                 continue;
-            cache.back() = std::make_unique<PC3::Type::complex[]>( dim.N_x * dim.N_y );
+            cache.back() = std::make_unique<PC3::Type::complex[]>( dim.N_c * dim.N_r );
             filehandler.loadMatrixFromFile( load_path[c], cache.back().get() );
         }
     }

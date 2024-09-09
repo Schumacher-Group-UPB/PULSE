@@ -225,20 +225,20 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
  * Temporarily copying the results is probably fine.
  */
 void PC3::Envelope::calculate( PC3::Type::real* buffer, const int group, PC3::Envelope::Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask ) {
-    std::unique_ptr<PC3::Type::complex[]> tmp_buffer = std::make_unique<PC3::Type::complex[]>( dim.N_x * dim.N_y );
+    std::unique_ptr<PC3::Type::complex[]> tmp_buffer = std::make_unique<PC3::Type::complex[]>( dim.N_c * dim.N_r );
     calculate( tmp_buffer.get(), group, polarization, dim, default_value_if_no_mask );
 // Transfer tmp_buffer to buffer as complex numbers
 #pragma omp parallel for
-    for ( int i = 0; i < dim.N_x * dim.N_y; i++ ) {
+    for ( int i = 0; i < dim.N_c * dim.N_r; i++ ) {
         buffer[i] = CUDA::real( tmp_buffer[i] );
     }
 }
 
 void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3::Envelope::Polarization polarization, Dimensions dim, PC3::Type::real default_value_if_no_mask ) {
 #pragma omp parallel for schedule( static )
-    for ( int row = 0; row < dim.N_y; row++ ) {
-        for ( int col = 0; col < dim.N_x; col++ ) {
-            int i = row * dim.N_x + col;
+    for ( int row = 0; row < dim.N_r; row++ ) {
+        for ( int col = 0; col < dim.N_c; col++ ) {
+            int i = row * dim.N_c + col;
             buffer[i] = PC3::Type::complex( 0.0, 0.0 );
             bool has_been_set = false;
             for ( int c = 0; c < amp.size(); c++ ) {
@@ -254,8 +254,8 @@ void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3:
                 auto cy = -dim.L_y/2.0 + dim.dy * row;
                 // If type contains "local", use local coordinates instead
                 if ( type[c] & PC3::Envelope::EnvType::Local ) {
-                    cx = -1.0 + 2.0 * col / ( dim.N_x - 1 );
-                    cy = -1.0 + 2.0 * row / ( dim.N_y - 1 );
+                    cx = -1.0 + 2.0 * col / ( dim.N_c - 1 );
+                    cy = -1.0 + 2.0 * row / ( dim.N_r - 1 );
                 }
                 has_been_set = true;
 

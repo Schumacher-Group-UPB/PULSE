@@ -14,12 +14,12 @@ void PC3::SystemParameters::validateInputs() {
     // Give warnings if any variables appear to be too large or too small
     bool valid = true;
 
-    if ( p.N_x <= 0 or p.N_y <= 0 ) {
-        std::cout << PC3::CLIO::prettyPrint( "N = " + PC3::CLIO::to_str( p.N_x ) + ", " + PC3::CLIO::to_str( p.N_y ) + " cannot be negative!", PC3::CLIO::Control::Warning) << std::endl;
+    if ( p.N_c <= 0 or p.N_r <= 0 ) {
+        std::cout << PC3::CLIO::prettyPrint( "N = " + PC3::CLIO::to_str( p.N_c ) + ", " + PC3::CLIO::to_str( p.N_r ) + " cannot be negative!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;
     }
 
-    if ( p.N_x % 2 != 0 or p.N_y % 2) {
+    if ( p.N_c % 2 != 0 or p.N_r % 2) {
         std::cout << PC3::CLIO::prettyPrint( "Input Dimensions have to be even!", PC3::CLIO::Control::Warning) << std::endl;
         valid = false;    
     }

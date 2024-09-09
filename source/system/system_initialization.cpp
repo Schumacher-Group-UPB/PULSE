@@ -65,22 +65,21 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
 
     // Numerik
     if ( ( index = PC3::CLIO::findInArgv( "--N", argc, argv ) ) != -1 ) {
-        p.N_x = (int)PC3::CLIO::getNextInput( argv, argc, "N_x", ++index );
-        p.N_y = (int)PC3::CLIO::getNextInput( argv, argc, "N_y", index );
+        p.N_c = (int)PC3::CLIO::getNextInput( argv, argc, "N_c", ++index );
+        p.N_r = (int)PC3::CLIO::getNextInput( argv, argc, "N_r", index );
     }
-    p.subgrids_x = 1;
-    p.subgrids_y = 1;
+    p.subgrids_columns = 1;
+    p.subgrids_rows = 1;
     if ( ( index = PC3::CLIO::findInArgv( "--subgrids", argc, argv ) ) != -1 ) {
-        p.subgrids_x = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_x", ++index );
-        p.subgrids_y = p.subgrids_x;
+        p.subgrids_rows = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_rows", ++index );
+        p.subgrids_columns = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_columns", index );
     }
-    // TODO: chose halo size based on iterator. MAYBE: change iterator choosing at compile time?
 
-    p.subgrid_N_x = p.N_x / p.subgrids_x;
-    p.subgrid_N_y = p.N_y / p.subgrids_y;
+    p.subgrid_N_c = p.N_c / p.subgrids_columns;
+    p.subgrid_N_r = p.N_r / p.subgrids_rows;
 
-    std::cout << PC3::CLIO::prettyPrint( "Subgrid Configuration: " + std::to_string( p.subgrids_x ) + "x" + std::to_string( p.subgrids_y ), PC3::CLIO::Control::Info ) << std::endl;
-    std::cout << PC3::CLIO::prettyPrint( "Subgrid Size: " + std::to_string( p.subgrid_N_x ) + "x" + std::to_string( p.subgrid_N_y ), PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Subgrid Configuration: " + std::to_string( p.subgrids_columns ) + "x" + std::to_string( p.subgrids_rows ), PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Subgrid Size: " + std::to_string( p.subgrid_N_c ) + "x" + std::to_string( p.subgrid_N_r ), PC3::CLIO::Control::Info ) << std::endl;
 
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = true;
@@ -149,8 +148,8 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     history_matrix_output_increment = 1u;
     history_matrix_start_x = 0;
     history_matrix_start_y = 0;
-    history_matrix_end_x = p.N_x;
-    history_matrix_end_y = p.N_y;
+    history_matrix_end_x = p.N_c;
+    history_matrix_end_y = p.N_r;
     do_output_history_matrix = false;
     output_history_matrix_every = 1;
     output_history_start_time = 0.0;

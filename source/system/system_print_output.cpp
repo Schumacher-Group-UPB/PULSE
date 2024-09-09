@@ -65,7 +65,8 @@ void PC3::SystemParameters::printHelp() {
     std::cout << PC3::CLIO::fillLine( console_width, seperator ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "Numerical parameters", "", "" ) << std::endl
               << PC3::CLIO::unifyLength( "Flag", "Inputs", "Description" ) << std::endl
-              << PC3::CLIO::unifyLength( "--N", "<int> <int>", "Grid Dimensions (N x N). Standard is " + std::to_string( p.N_x ) + " x " + std::to_string( p.N_y ) ) << std::endl
+              << PC3::CLIO::unifyLength( "--N", "<int> <int>", "Grid Dimensions (N x N). Standard is " + std::to_string( p.N_c ) + " x " + std::to_string( p.N_r ) ) << std::endl
+              << PC3::CLIO::unifyLength( "--subgrids", "<int> <int>", "Subgrid Dimensions (N x N). Standard is " + std::to_string( p.subgrids_columns ) + " x " + std::to_string( p.subgrids_rows ) ) << std::endl
               << PC3::CLIO::unifyLength( "--tstep", "<double>", "Timestep, standard is magic-timestep = " + PC3::CLIO::to_str( magic_timestep ) + "ps" ) << std::endl
               << PC3::CLIO::unifyLength( "--tmax", "<double>", "Timelimit, standard is " + PC3::CLIO::to_str( t_max ) + " ps" ) << std::endl
               << PC3::CLIO::unifyLength( "--iterator", "<string>", "RK4, RK45 or SSFM" ) << std::endl
@@ -119,15 +120,21 @@ void PC3::SystemParameters::printHelp() {
 
 void PC3::SystemParameters::printSummary( std::map<std::string, std::vector<double>> timeit_times, std::map<std::string, double> timeit_times_total ) {
     print_name();
-    const int l = 15;
+    const int l = 35;
     std::cout << EscapeSequence::BOLD << PC3::CLIO::fillLine( console_width, seperator ) << EscapeSequence::RESET << std::endl;
     std::cout << EscapeSequence::BOLD << PC3::CLIO::centerString( " Parameters ", console_width, '-' ) << EscapeSequence::RESET << std::endl;
-    std::cout << PC3::CLIO::unifyLength( "N", std::to_string( p.N_x ) + ", " + std::to_string( p.N_y ), "", l, l, l, " " ) << std::endl;
-    std::cout << PC3::CLIO::unifyLength( "N^2", std::to_string( p.N_x * p.N_y ), "", l, l, l, " " ) << std::endl;
+    std::cout << PC3::CLIO::unifyLength( "Grid Configuration", "---", "---", l, l, l, " " ) << std::endl;
+    std::cout << PC3::CLIO::unifyLength( "N", std::to_string( p.N_c ) + ", " + std::to_string( p.N_r ), "", l, l, l, " " ) << std::endl;
+    std::cout << PC3::CLIO::unifyLength( "N^2", std::to_string( p.N_c * p.N_r ), "", l, l, l, " " ) << std::endl;
+    std::cout << PC3::CLIO::unifyLength( "Subgrids", std::to_string( p.subgrids_columns) +", "+ std::to_string( p.subgrids_rows ), "", l, l, l, " " ) << std::endl;
+    std::cout << PC3::CLIO::unifyLength( "Total Subgrids", std::to_string( p.subgrids_columns * p.subgrids_rows ), "", l, l, l, " " ) << std::endl;
+    const double subgrid_overhead = ((p.subgrid_N_r+2.0*p.halo_size)*(p.subgrid_N_c+2*p.halo_size)*(p.subgrids_columns*p.subgrids_rows)/(p.N_r*p.N_c) - 1.0)*100.0;
+    std::cout << PC3::CLIO::unifyLength( "Subgrid Overhead", std::to_string( subgrid_overhead ), "%", l, l, l, " " ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "Lx", PC3::CLIO::to_str( p.L_x ), "mum", l, l, l, " " ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "Ly", PC3::CLIO::to_str( p.L_y ), "mum", l, l, l, " " ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "dx", PC3::CLIO::to_str( p.dx ), "mum", l, l, l, " " ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "dy", PC3::CLIO::to_str( p.dx ), "mum", l, l, l, " " ) << std::endl;
+    std::cout << PC3::CLIO::unifyLength( "System Configuration", "---", "---", l, l, l, " " ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "tmax", PC3::CLIO::to_str( t_max ), "ps", l, l, l, " " ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "dt", PC3::CLIO::to_str( p.dt ), "ps", l, l, l, " " ) << std::endl;
     std::cout << PC3::CLIO::unifyLength( "gamma_c", PC3::CLIO::to_str( p.gamma_c ), "ps^-1", l, l, l, " " ) << std::endl;

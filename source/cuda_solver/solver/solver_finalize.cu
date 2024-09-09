@@ -4,7 +4,7 @@
 
 void PC3::Solver::finalize() {
     // Output Matrices
-    outputMatrices( 0 /*start*/, system.p.N_x /*end*/, 0 /*start*/, system.p.N_y /*end*/, 1.0 /*increment*/);
+    outputMatrices( 0 /*start*/, system.p.N_c /*end*/, 0 /*start*/, system.p.N_r /*end*/, 1.0 /*increment*/);
     // Cache to files
     std::cout << PC3::CLIO::prettyPrint( "Caching to Files... ", PC3::CLIO::Control::Info ) << std::endl;
     cacheToFiles();

@@ -21,8 +21,8 @@ bool first_time = true;
  * Note, that all device arrays and variables have to be initialized at this point
  * @param t Current time, will be updated to t + dt
  * @param dt Time step, will be updated to the next time step
- * @param N_x Number of grid points in one dimension
- * @param N_y Number of grid points in the other dimension
+ * @param N_c Number of grid points in one dimension
+ * @param N_r Number of grid points in the other dimension
  */
 bool PC3::Solver::iterate() {
     // First, check if the maximum time has been reached
@@ -33,18 +33,18 @@ bool PC3::Solver::iterate() {
     // TODO: move this back into subgrids, because for large number of subgrids this will look very correlated!
     if (system.evaluateStochastic()) {
         auto args = generateKernelArguments( );
-        auto [block_size, grid_size] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );
+        auto [block_size, grid_size] = getLaunchParameters( system.p.subgrid_N_c, system.p.subgrid_N_r );
         if (first_time) {
             first_time = false;
             CALL_FULL_KERNEL(
                     PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0,
-                    system.random_seed, args.dev_ptrs.random_state, system.p.subgrid_N_x*system.p.subgrid_N_y
+                    system.random_seed, args.dev_ptrs.random_state, system.p.subgrid_N_c*system.p.subgrid_N_r
                 );
             std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
         }
         CALL_FULL_KERNEL(
             PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0,
-            args.dev_ptrs.random_state, args.dev_ptrs.random_number, system.p.subgrid_N_x*system.p.subgrid_N_y, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
+            args.dev_ptrs.random_state, args.dev_ptrs.random_number, system.p.subgrid_N_c*system.p.subgrid_N_r, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
         );
     }
 

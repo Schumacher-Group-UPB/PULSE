@@ -26,11 +26,11 @@ class SystemParameters {
     struct KernelParameters {
 
         // Size Variables
-        Type::uint32 N_x, N_y, N2;
+        Type::uint32 N_c, N_r, N2;
         // Subgrid and Halo
         Type::uint32 halo_size;
-        Type::uint32 subgrid_N_x, subgrid_N_y, subgrid_N2, subgrid_N2_with_halo, subgrid_row_offset;
-        Type::uint32 subgrids_x, subgrids_y; // For now, subgrids_x = subgrids_y at all times, even if N_x != N_y
+        Type::uint32 subgrid_N_c, subgrid_N_r, subgrid_N2, subgrid_N2_with_halo, subgrid_row_offset;
+        Type::uint32 subgrids_columns, subgrids_rows; // For now, subgrids_columns = subgrids_rows at all times, even if N_c != N_r
         // Time variables
         Type::real t, dt;
         

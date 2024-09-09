@@ -39,8 +39,8 @@ class CUDAMatrix : CUDAMatrixBase {
     Type::uint32 total_size_host;
     Type::uint32 total_size_device;
     // The number of subgrids the device matrix is composed of
-    Type::uint32 subgrids_x, subgrids_y;
-    Type::uint32 total_num_subgrids;     // = subgrids_x * subgrids_y;
+    Type::uint32 subgrids_columns, subgrids_rows;
+    Type::uint32 total_num_subgrids;     // = subgrids_columns * subgrids_rows;
     Type::uint32 subgrid_size;           // = subgrid_rows * subgrid_cols;
     Type::uint32 subgrid_size_with_halo; // = subgrid_rows_with_halo * subgrid_cols_with_halo;
     // The size of the halo around each subgrid
@@ -188,18 +188,18 @@ class CUDAMatrix : CUDAMatrixBase {
     }
 
     /**
-     * Calculates the sizes of the matrix and the subgrids from the rows, cols, subgrids_x, subgrids_y and halo_size.
+     * Calculates the sizes of the matrix and the subgrids from the rows, cols, subgrids_columns, subgrids_rows and halo_size.
      */
     void calculateSizes() {
         total_size_host = rows * cols;
         size_in_mb_host = total_size_host * sizeof( T ) / 1024.0 / 1024.0;
         total_size_device = ( rows + 2 * halo_size ) * ( cols + 2 * halo_size );
         size_in_mb_device = total_size_device * sizeof( T ) / 1024.0 / 1024.0;
-        subgrid_rows = rows / subgrids_y;
+        subgrid_rows = rows / subgrids_rows;
         subgrid_rows_with_halo = subgrid_rows + 2 * halo_size;
-        subgrid_cols = cols / subgrids_x;
+        subgrid_cols = cols / subgrids_columns;
         subgrid_cols_with_halo = subgrid_cols + 2 * halo_size;
-        total_num_subgrids = subgrids_x * subgrids_y;
+        total_num_subgrids = subgrids_columns * subgrids_rows;
         subgrid_size = subgrid_rows * subgrid_cols;
         subgrid_size_with_halo = subgrid_rows_with_halo * subgrid_cols_with_halo;
     }
@@ -208,13 +208,13 @@ class CUDAMatrix : CUDAMatrixBase {
      * Constructs the Device Matrix vector. This function only allocates the memory and does not copy any data.
      * @return: ptr to this matrix.
      */
-    CUDAMatrix<T>& construct( Type::uint32 rows, Type::uint32 cols, Type::uint32 subgrids_x, Type::uint32 subgrids_y, Type::uint32 halo_size, const std::string& name,
+    CUDAMatrix<T>& construct( Type::uint32 rows, Type::uint32 cols, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 halo_size, const std::string& name,
                               const Type::uint32 num_matrices = 1 ) {
         this->name = name;
         this->rows = rows;
         this->cols = cols;
-        this->subgrids_x = subgrids_x;
-        this->subgrids_y = subgrids_y;
+        this->subgrids_columns = subgrids_columns;
+        this->subgrids_rows = subgrids_rows;
         this->halo_size = halo_size;
         this->num_matrices = num_matrices;
         // Calculate the total size of this matrix as well as its size in bytes
@@ -372,13 +372,13 @@ class CUDAMatrix : CUDAMatrixBase {
     }
     // output device_vector[0] to file
     void dumpToFile( std::string path, std::string fp ) {
-        for ( int r = 0; r < subgrids_y; r++ ) {
-            for ( int c = 0; c < subgrids_x; c++ ) {
+        for ( int r = 0; r < subgrids_rows; r++ ) {
+            for ( int c = 0; c < subgrids_columns; c++ ) {
                 std::ofstream file;
                 file.open( path + std::to_string( r ) + std::string( "_" ) + std::to_string( c ) + std::string( "_" ) + fp + std::string( ".txt" ) );
                 for ( int i = 0; i < subgrid_rows_with_halo; i++ ) {
-                    for ( int j = 0; j < subgrid_rows_with_halo; j++ ) {
-                        T v = device_data[r * subgrids_x + c][i * subgrid_cols_with_halo + j];
+                    for ( int j = 0; j < subgrid_cols_with_halo; j++ ) {
+                        T v = device_data[r * subgrids_columns + c][i * subgrid_cols_with_halo + j];
                         file << CUDA::real( v ) << " ";
                     }
                     file << std::endl;
@@ -404,11 +404,11 @@ class CUDAMatrix : CUDAMatrixBase {
         auto fullgrid_dev_ptr = GET_RAW_PTR( out );
         auto dev_ptrs = getSubgridDevicePtrs( matrix );
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string( subgrids_x ) + "x" + std::to_string( subgrids_y ) + " subgrids to full grid buffer for matrix '" +
+            std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string( subgrids_columns ) + "x" + std::to_string( subgrids_rows ) + " subgrids to full grid buffer for matrix '" +
                                                      name + "' (" + std::to_string( matrix ) + ")",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
-                      CALL_FULL_KERNEL( PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_x, subgrid_cols, subgrid_rows,
+                      CALL_FULL_KERNEL( PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols, subgrid_rows,
                      halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;
@@ -435,7 +435,7 @@ class CUDAMatrix : CUDAMatrixBase {
             std::cout << PC3::CLIO::prettyPrint( "Copying full grid buffer to subgrids for matrix '" + name + "' (" + std::to_string( matrix ) + ")",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
-                      CALL_FULL_KERNEL( PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_x, subgrid_cols, subgrid_rows,
+                      CALL_FULL_KERNEL( PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols, subgrid_rows,
                      halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;

@@ -38,7 +38,7 @@
 #define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                              \
     {                                                                                                                                                          \
         const Type::uint32 current_halo = system.p.halo_size - index;                                                                                          \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );          \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );          \
         void ( *rf )( int, Type::uint32, Solver::VKernelArguments, Solver::KernelArguments, Solver::InputOutput ) = RUNGE_FUNCTION_GP;                         \
         auto current_time = getCurrentTime();                                                                                                                  \
         Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),      \
@@ -56,7 +56,7 @@
 #define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                        \
     {                                                                                                                                                                           \
         Type::uint32 current_halo = system.p.halo_size - index;                                                                                                                 \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x + 2 * current_halo, system.p.subgrid_N_y + 2 * current_halo );                           \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                           \
         auto current_time = getCurrentTime();                                                                                                                                   \
         Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                     \
                                 matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                        \
@@ -69,7 +69,7 @@
 // Only Callable from within the solver
 #define FINAL_SUM_K( ... )                                                                                                                                                     \
     {                                                                                                                                                                          \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                                \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c, system.p.subgrid_N_r );                                                                \
         auto current_time = getCurrentTime();                                                                                                                                  \
         Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                                           \
                                 matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ),                                              \
@@ -81,7 +81,7 @@
 
 #define ERROR_K( order, ... )                                                                                                                                         \
     {                                                                                                                                                                 \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_x, system.p.subgrid_N_y );                                                       \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c, system.p.subgrid_N_r );                                                       \
         auto current_time = getCurrentTime();                                                                                                                         \
         CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_error<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Error", current_grid, current_block, stream, 0, current_time, \
                              kernel_arguments );                                                                                                                      \
@@ -92,9 +92,9 @@
 #define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                       \
     {                                                                                                                                                                \
         Type::uint32 halo_map_size = matrix.halo_map.size() / 6;                                                                                                     \
-        auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_x * system.p.subgrids_y );                                       \
-        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_x, system.p.subgrids_y,        \
-                          system.p.subgrid_N_x, system.p.subgrid_N_y, system.p.halo_size, halo_map_size, system.p.periodic_boundary_x, system.p.periodic_boundary_y, \
+        auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_columns * system.p.subgrids_rows );                                       \
+        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_columns, system.p.subgrids_rows,        \
+                          system.p.subgrid_N_c, system.p.subgrid_N_r, system.p.halo_size, halo_map_size, system.p.periodic_boundary_x, system.p.periodic_boundary_y, \
                           GET_RAW_PTR( matrix.halo_map ), subgrids )                                                                                                 \
     }
 
@@ -150,7 +150,7 @@
             static size_t num_nodes;                                                                                                                      \
             if ( not cuda_graph_created or not with_graph ) {                                                                                             \
                 std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                  \
-                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                        \
+                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                                        \
                     v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                   \
                 }                                                                                                                                         \
                 if ( with_graph ) {                                                                                                                       \
@@ -167,7 +167,7 @@
                     SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() );                                                         \
                     SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                            \
                 }                                                                                                                                         \
-                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                        \
+                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                                        \
                     auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                 \
                     content;                                                                                                                              \
                 }                                                                                                                                         \
@@ -218,33 +218,31 @@
             }                                                                                                     \
         }
     // Merges the Kernel calls into a single function call. This is not required on the CPU.
-    #define SOLVER_SEQUENCE( with_graph, content )                                                                                                                           \
-        {                                                                                                                                                                    \
-            PC3::Type::stream_t stream;                                                                                                                                      \
-            static bool first_time = false;                                                                                                                                  \
-            static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                                  \
-            if ( not first_time ) {                                                                                                                                          \
-                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; subgrid++ ) {                                                           \
-                    v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                                      \
-                }                                                                                                                                                            \
-                first_time = true;                                                                                                                                           \
-            }                                                                                                                                                                \
-            if ( system.p.use_twin_mode ) {                                                                                                                                  \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                                 \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                                    \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                                \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                                   \
-            } else {                                                                                                                                                         \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                                 \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                                    \
-            }                                                                                                                                                                \
-            const Type::uint32 subgrid_threads = system.p.subgrids_x * system.p.subgrids_y;                                                                                  \
-            _Pragma( "omp parallel for schedule(static) num_threads(subgrid_threads)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_x * system.p.subgrids_y; \
-                                                                                              subgrid++ ) {                                                                  \
-                PULSE_NUMA_INSERT;                                                                                                                                           \
-                auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                                        \
-                content;                                                                                                                                                     \
-            }                                                                                                                                                                \
+    #define SOLVER_SEQUENCE( with_graph, content )                                                                                                            \
+        {                                                                                                                                                     \
+            PC3::Type::stream_t stream;                                                                                                                       \
+            static bool first_time = false;                                                                                                                   \
+            static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                   \
+            if ( not first_time ) {                                                                                                                           \
+                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                                            \
+                    v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                       \
+                }                                                                                                                                             \
+                first_time = true;                                                                                                                            \
+            }                                                                                                                                                 \
+            if ( system.p.use_twin_mode ) {                                                                                                                   \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                  \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                 \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                    \
+            } else {                                                                                                                                          \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                  \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
+            }                                                                                                                                                 \
+            _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) { \
+                PULSE_NUMA_INSERT;                                                                                                                            \
+                auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                         \
+                content;                                                                                                                                      \
+            }                                                                                                                                                 \
         }
 #endif
 

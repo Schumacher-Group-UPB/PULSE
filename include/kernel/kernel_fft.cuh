@@ -14,22 +14,22 @@ namespace PC3::Kernel {
     }
     
     template<typename T>
-    PULSE_GLOBAL void fft_shift_2D( int i, T* data, const Type::uint32 N_x, const Type::uint32 N_y ) {
-        GET_THREAD_INDEX( i, N_x*N_y );
+    PULSE_GLOBAL void fft_shift_2D( int i, T* data, const Type::uint32 N_c, const Type::uint32 N_r ) {
+        GET_THREAD_INDEX( i, N_c*N_r );
     
         // Current indices of upper left quadrant
-        const int k = i / N_x ;
-        if ( k >= N_y/2 )
+        const int k = i / N_c ;
+        if ( k >= N_r/2 )
             return;
-        const int l = i % N_x;
-        if ( l >= N_x/2 )
+        const int l = i % N_c;
+        if ( l >= N_c/2 )
             return;
     
         // Swap upper left quadrant with lower right quadrant
-        swap_symbol( data[k * N_x + l], data[( k + N_y/2 ) * N_x + l + N_x/2] );
+        swap_symbol( data[k * N_c + l], data[( k + N_r/2 ) * N_c + l + N_c/2] );
         
         // Swap lower left quadrant with upper right quadrant
-        swap_symbol( data[k * N_x + l + N_x/2], data[( k + N_y/2 ) * N_x + l] );
+        swap_symbol( data[k * N_c + l + N_c/2], data[( k + N_r/2 ) * N_c + l] );
     }
     
     template<typename T, typename U>

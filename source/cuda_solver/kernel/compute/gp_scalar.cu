@@ -86,11 +86,11 @@ PULSE_GLOBAL void PC3::Kernel::Compute::gp_scalar_linear_fourier( int i, Solver:
     GET_THREAD_INDEX( i, args.p.N2 ); 
 
     // We do some weird looking casting to avoid intermediate casts to Type::uint32
-    Type::real row = Type::real(Type::uint32(i / args.p.N_x));
-    Type::real col = Type::real(Type::uint32(i % args.p.N_x));
+    Type::real row = Type::real(Type::uint32(i / args.p.N_c));
+    Type::real col = Type::real(Type::uint32(i % args.p.N_c));
     
-    const Type::real k_x = 2.0*3.1415926535 * Type::real(col <= args.p.N_x/2 ? col : -Type::real(args.p.N_x) + col)/args.p.L_x;
-    const Type::real k_y = 2.0*3.1415926535 * Type::real(row <= args.p.N_y/2 ? row : -Type::real(args.p.N_y) + row)/args.p.L_y;
+    const Type::real k_x = 2.0*3.1415926535 * Type::real(col <= args.p.N_c/2 ? col : -Type::real(args.p.N_c) + col)/args.p.L_x;
+    const Type::real k_y = 2.0*3.1415926535 * Type::real(row <= args.p.N_r/2 ? row : -Type::real(args.p.N_r) + row)/args.p.L_y;
 
     Type::real linear = args.p.h_bar_s/2.0/args.p.m_eff * (k_x*k_x + k_y*k_y);
     io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real(args.p.N2) * CUDA::exp( args.p.minus_i * linear * time.dt / Type::real(2.0) );
