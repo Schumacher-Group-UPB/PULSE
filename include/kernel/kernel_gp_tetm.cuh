@@ -5,7 +5,7 @@
 
 namespace PC3::Kernel::Compute {
 
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_tetm( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
     const Type::complex in_wf_plus = io.in_wf_plus[i];
@@ -132,7 +132,7 @@ PULSE_GLOBAL PULSE_CPU_INLINE void gp_tetm( int i, Type::uint32 current_halo, So
      * Fourier Method (SSFM)
     */
 
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_tetm_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     // We do some weird looking casting to avoid intermediate casts to Type::uint32
@@ -147,7 +147,7 @@ PULSE_GLOBAL PULSE_CPU_INLINE void gp_tetm_linear_fourier( int i, Solver::VKerne
     io.out_wf_minus[i] = io.in_wf_minus[i] / Type::real( args.p.N2 ) * CUDA::exp( args.p.minus_i * linear * time.dt / Type::real( 2.0 ) );
 }
 
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_tetm_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     const Type::complex in_wf_plus = io.in_wf_plus[i];
@@ -228,7 +228,7 @@ PULSE_GLOBAL PULSE_CPU_INLINE void gp_tetm_nonlinear( int i, Solver::VKernelArgu
     io.out_rv_minus[i] = in_rv_minus + result * time.dt;
 }
 
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_tetm_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     // MARK: Plus

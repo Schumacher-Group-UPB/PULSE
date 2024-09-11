@@ -5,7 +5,7 @@
 namespace PC3::Kernel::Halo {
 
 template <typename T>
-PULSE_GLOBAL PULSE_CPU_INLINE void full_grid_to_halo_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void full_grid_to_halo_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
                                           Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
     GET_THREAD_INDEX( i, N_c * N_r );
 
@@ -25,7 +25,7 @@ PULSE_GLOBAL PULSE_CPU_INLINE void full_grid_to_halo_grid( int i, Type::uint32 N
 }
 
 template <typename T>
-PULSE_GLOBAL PULSE_CPU_INLINE void halo_grid_to_full_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void halo_grid_to_full_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
                                           Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
     GET_THREAD_INDEX( i, N_c * N_r );
 
@@ -51,7 +51,7 @@ PULSE_DEVICE PULSE_INLINE void __synchronize_halo( Type::uint32 subgrid_to, Type
 }
 
 template <typename T>
-PULSE_GLOBAL PULSE_CPU_INLINE void synchronize_halos( int i, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r, Type::uint32 halo_size,
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void synchronize_halos( int i, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r, Type::uint32 halo_size,
                                      Type::uint32 halo_num, bool periodic_boundary_x, bool periodic_boundary_y, int* subgrid_map, T** current_subgridded_matrix ) {
     GET_THREAD_INDEX( i, halo_num * subgrids_columns * subgrids_rows );
     
