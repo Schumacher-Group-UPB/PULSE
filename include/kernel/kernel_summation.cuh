@@ -18,7 +18,7 @@ PULSE_DEVICE PULSE_INLINE void sum_single_k( Type::uint32 i, Type::complex& dw, 
 
 // Specifically use Type::uint32 N instead of sizeof(Weights) to force MSVC to NOT inline this function for different solvers (RK3,RK4) which cases the respective RK solver to call the wrong template function.
 template <Type::uint32 N, float... Weights>
-PULSE_GLOBAL void runge_sum_to_input_kw( Type::uint32 i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_CPU_INLINE void runge_sum_to_input_kw( Type::uint32 i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
     Type::complex wf = 0.0;
     Type::complex rv = 0.0;
@@ -50,7 +50,7 @@ PULSE_GLOBAL void runge_sum_to_input_kw( Type::uint32 i, Type::uint32 current_ha
 }
 
 template <int NMax, int N, float w, float... W>
-PULSE_DEVICE void sum_single_error_k( int i, Type::complex& error, Type::complex* k_wavefunction, Type::uint32 offset ) {
+PULSE_DEVICE PULSE_CPU_INLINE void sum_single_error_k( int i, Type::complex& error, Type::complex* k_wavefunction, Type::uint32 offset ) {
     if constexpr ( w != 0.0 ) {
         error += w * k_wavefunction[i + offset * ( NMax - N )];
     }
@@ -60,7 +60,7 @@ PULSE_DEVICE void sum_single_error_k( int i, Type::complex& error, Type::complex
 }
 
 template <float... Weights>
-PULSE_GLOBAL void runge_sum_to_error( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args ) {
+PULSE_GLOBAL PULSE_CPU_INLINE void runge_sum_to_error( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
     Type::complex error = 0.0;

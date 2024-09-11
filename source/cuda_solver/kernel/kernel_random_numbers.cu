@@ -1,6 +1,5 @@
 #include "cuda/typedef.cuh"
 #include "kernel/kernel_compute.cuh"
-#include "kernel/kernel_index_overwrite.cuh"
 
 PULSE_GLOBAL void PC3::Kernel::initialize_random_number_generator( int i, Type::uint32 seed, Type::cuda_random_state* state, const Type::uint32 N) {
     GET_THREAD_INDEX( i, N );

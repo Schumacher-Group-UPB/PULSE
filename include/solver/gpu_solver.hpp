@@ -146,7 +146,6 @@ class Solver {
 };
 
 // Helper macro to choose the correct runge function
-#define RUNGE_FUNCTION_GP ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar )
 #define RUNGE_FUNCTION_GP_LINEAR ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_linear_fourier : PC3::Kernel::Compute::gp_scalar_linear_fourier )
 #define RUNGE_FUNCTION_GP_NONLINEAR ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_nonlinear : PC3::Kernel::Compute::gp_scalar_nonlinear )
 #define RUNGE_FUNCTION_GP_INDEPENDENT ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_independent : PC3::Kernel::Compute::gp_scalar_independent )

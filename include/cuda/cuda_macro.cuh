@@ -34,18 +34,58 @@
         __syncthreads();
 #endif
 
+#ifdef USE_CUDA
+    // If the GPU is used, overwrite the current index with the gpu thread index.
+    #define GENERATE_SUBGRID_INDEX(i, ch) \
+        i = blockIdx.x * blockDim.x + threadIdx.x; \
+        if (i >= (args.p.subgrid_N_c + 2*ch)*(args.p.subgrid_N_r + 2*ch)) return; \
+        Type::uint32 r = i / (args.p.subgrid_N_c + 2*ch); \
+        Type::uint32 c = i % (args.p.subgrid_N_c + 2*ch); \
+        i = (args.p.subgrid_row_offset)*(r+args.p.halo_size-ch) + args.p.halo_size - ch + c; 
+    #define GENERATE_THREAD_INDEX( N ) \
+        int i = blockIdx.x * blockDim.x + threadIdx.x; \
+        if (i >= N) return;
+    #define GET_THREAD_INDEX( i, N ) \
+        i = blockIdx.x * blockDim.x + threadIdx.x; \
+        if (i >= N) return;
+
+    #define LOCAL_SHARE_STRUCT( T, in, out ) \
+        __shared__ T out; \
+        if (threadIdx.x == 0) { \
+            out = in; \
+        } \
+        __syncthreads();
+#else
+    #define GENERATE_SUBGRID_INDEX(i, ch) \
+        if (i >= (args.p.subgrid_N_c + 2*ch)*(args.p.subgrid_N_r + 2*ch)) return; \
+        Type::uint32 r = i / (args.p.subgrid_N_c + 2*ch); \
+        Type::uint32 c = i % (args.p.subgrid_N_c + 2*ch); \
+        i = (args.p.subgrid_row_offset)*(r+args.p.halo_size-ch) + args.p.halo_size - ch + c; 
+    #define GENERATE_THREAD_INDEX( N ) \
+        int i = 0;
+    #define GET_THREAD_INDEX( i, N ) \
+        if (i >= N) return;
+
+    #define LOCAL_SHARE_STRUCT( T, in, out ) \
+        T& out = in;
+
+#endif
+
 // Helper Macro to iterate a specific RK K. // Only Callable from within the solver
-#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                              \
-    {                                                                                                                                                          \
-        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                          \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );          \
-        void ( *rf )( int, Type::uint32, Solver::VKernelArguments, Solver::KernelArguments, Solver::InputOutput ) = RUNGE_FUNCTION_GP;                         \
-        auto current_time = getCurrentTime();                                                                                                                  \
-        Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),      \
-                                matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),         \
-                                matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ), \
-                                matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };  \
-        CALL_SUBGRID_KERNEL( rf, "K" #index, current_grid, current_block, stream, current_halo, current_time, kernel_arguments, io );                          \
+#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                      \
+    {                                                                                                                                                                  \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                  \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                  \
+        auto current_time = getCurrentTime();                                                                                                                          \
+        Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),              \
+                                matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                 \
+                                matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ),         \
+                                matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };          \
+        if ( system.p.use_twin_mode ) {                                                                                                                                \
+            CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_tetm, "K" #index, current_grid, current_block, stream, current_halo, current_time, kernel_arguments, io );   \
+        } else {                                                                                                                                                       \
+            CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar, "K" #index, current_grid, current_block, stream, current_halo, current_time, kernel_arguments, io ); \
+        }                                                                                                                                                              \
     };
 
 // For some reason, GCC needs this to correctly unpack the variadic arguments into a templated function
@@ -89,13 +129,13 @@
 
 // Only Callable from within the solver
 // For now, use this macro to synchronize the halos. This is a bit of a mess, but it works. TODO: move halo_map to static CUDAMatrix vector and call synchronize_halos from there.
-#define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                       \
-    {                                                                                                                                                                \
-        Type::uint32 halo_map_size = matrix.halo_map.size() / 6;                                                                                                     \
-        auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_columns * system.p.subgrids_rows );                                       \
-        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_columns, system.p.subgrids_rows,        \
-                          system.p.subgrid_N_c, system.p.subgrid_N_r, system.p.halo_size, halo_map_size, system.p.periodic_boundary_x, system.p.periodic_boundary_y, \
-                          GET_RAW_PTR( matrix.halo_map ), subgrids )                                                                                                 \
+#define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                         \
+    {                                                                                                                                                                  \
+        Type::uint32 halo_map_size = matrix.halo_map.size() / 6;                                                                                                       \
+        auto [current_block, current_grid] = getLaunchParameters( halo_map_size * system.p.subgrids_columns * system.p.subgrids_rows );                                \
+        CALL_FULL_KERNEL( Kernel::Halo::synchronize_halos, "Synchronization", current_grid, current_block, _stream, system.p.subgrids_columns, system.p.subgrids_rows, \
+                          system.p.subgrid_N_c, system.p.subgrid_N_r, system.p.halo_size, halo_map_size, system.p.periodic_boundary_x, system.p.periodic_boundary_y,   \
+                          GET_RAW_PTR( matrix.halo_map ), subgrids )                                                                                                   \
     }
 
 // Helper to retrieve the raw device pointer. When using nvcc and thrust, we need a raw pointer cast.
@@ -150,7 +190,7 @@
             static size_t num_nodes;                                                                                                                      \
             if ( not cuda_graph_created or not with_graph ) {                                                                                             \
                 std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                  \
-                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                                        \
+                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                               \
                     v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                   \
                 }                                                                                                                                         \
                 if ( with_graph ) {                                                                                                                       \
@@ -167,7 +207,7 @@
                     SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() );                                                         \
                     SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                            \
                 }                                                                                                                                         \
-                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                                        \
+                for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                               \
                     auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                 \
                     content;                                                                                                                              \
                 }                                                                                                                                         \
@@ -203,6 +243,8 @@
     #define CHECK_CUDA_ERROR( func, msg )
     // On the CPU, the Kernel call does not execute a parallel GPU Kernel. Instead,
     // it launches a group of threads using a #pragma omp instruction.
+
+    // CALL_SUBGRID_KERNEL simply calls the function with the given arguments. The for-loop should happen in the function itself to avoid calling the function multiple times.
     #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... ) \
         {                                                               \
             Type::uint32 execution_range = block.x * grid.x;            \
@@ -218,31 +260,31 @@
             }                                                                                                     \
         }
     // Merges the Kernel calls into a single function call. This is not required on the CPU.
-    #define SOLVER_SEQUENCE( with_graph, content )                                                                                                            \
-        {                                                                                                                                                     \
-            PC3::Type::stream_t stream;                                                                                                                       \
-            static bool first_time = false;                                                                                                                   \
-            static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                   \
-            if ( not first_time ) {                                                                                                                           \
+    #define SOLVER_SEQUENCE( with_graph, content )                                                                                                                     \
+        {                                                                                                                                                              \
+            PC3::Type::stream_t stream;                                                                                                                                \
+            static bool first_time = false;                                                                                                                            \
+            static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                            \
+            if ( not first_time ) {                                                                                                                                    \
                 for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                                            \
-                    v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                       \
-                }                                                                                                                                             \
-                first_time = true;                                                                                                                            \
-            }                                                                                                                                                 \
-            if ( system.p.use_twin_mode ) {                                                                                                                   \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                  \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                 \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                    \
-            } else {                                                                                                                                          \
-                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                  \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                     \
-            }                                                                                                                                                 \
+                    v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                                \
+                }                                                                                                                                                      \
+                first_time = true;                                                                                                                                     \
+            }                                                                                                                                                          \
+            if ( system.p.use_twin_mode ) {                                                                                                                            \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                           \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                              \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                          \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                             \
+            } else {                                                                                                                                                   \
+                SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                           \
+                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                              \
+            }                                                                                                                                                          \
             _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) { \
-                PULSE_NUMA_INSERT;                                                                                                                            \
-                auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                         \
-                content;                                                                                                                                      \
-            }                                                                                                                                                 \
+                PULSE_NUMA_INSERT;                                                                                                                                     \
+                auto& kernel_arguments = v_kernel_arguments[subgrid];                                                                                                  \
+                content;                                                                                                                                               \
+            }                                                                                                                                                          \
         }
 #endif
 

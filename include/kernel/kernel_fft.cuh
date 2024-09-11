@@ -1,7 +1,6 @@
 #pragma once
 #include "cuda/typedef.cuh"
 #include "cuda/cuda_macro.cuh"
-#include "kernel/kernel_index_overwrite.cuh"
 
 namespace PC3::Kernel {
     

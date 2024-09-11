@@ -95,15 +95,17 @@ using stream_t = cudaStream_t;
 #ifdef USE_CPU
 // Define PULSE_INLINE as inline when using the CPU
     #define PULSE_INLINE inline
+    #define PULSE_CPU_INLINE __attribute__((always_inline)) inline
     #define PULSE_HOST_DEVICE
     #define PULSE_DEVICE
     #define PULSE_HOST
     #define PULSE_GLOBAL
     #define PULSE_RESTRICT __restrict__
     #define PULSE_ALIGNED(x) __attribute__( ( aligned( sizeof( x ) ) ) )
-#else
-// Define PULSE_INLINE as nvcc's __inline__ when using the GPU
+    #else
+    // Define PULSE_INLINE as nvcc's __inline__ when using the GPU
     #define PULSE_INLINE __inline__
+    #define PULSE_CPU_INLINE
     #define PULSE_HOST_DEVICE __host__ __device__
     #define PULSE_DEVICE __device__
     #define PULSE_HOST __host__
