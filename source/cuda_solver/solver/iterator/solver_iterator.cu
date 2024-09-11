@@ -52,6 +52,7 @@ bool PC3::Solver::iterate() {
     // should be easily possible because the sizes of the arrays are known at launch
     // which means we can allocate the memory in the kernelParameters struct
     // Update the temporal envelopes
+    // measure time taken
     system.pulse.updateTemporal( system.p.t );
     system.potential.updateTemporal( system.p.t );
     system.pump.updateTemporal( system.p.t );

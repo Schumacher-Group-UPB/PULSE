@@ -5,12 +5,7 @@
 
 namespace PC3::Kernel::Compute {
 
-/**
- * Mode without TE/TM Splitting
- * The differential equation for this model reduces to
- * ...
- */
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+static PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
     // Copy Pointers and mark as restricted
@@ -86,7 +81,7 @@ PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar( int i, Type::uint32 current_halo, 
  * Fourier Method (SSFM)
 */
 
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+static PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     // We do some weird looking casting to avoid intermediate casts to Type::uint32
@@ -100,7 +95,7 @@ PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_linear_fourier( int i, Solver::VKer
     io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real( args.p.N2 ) * CUDA::exp( args.p.minus_i * linear * time.dt / Type::real( 2.0 ) );
 }
 
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+static PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     const Type::complex in_wf = io.in_wf_plus[i];
@@ -146,7 +141,7 @@ PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_nonlinear( int i, Solver::VKernelAr
 // This kernel is somewhat special, because the reservoir input holds the old reservoir (before the fullstep)
 // and the output reservoir hols the new reservoir. We need to use the old reservoir for calculations and then
 // write the new reservoir to the output.
-PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+static PULSE_GLOBAL PULSE_CPU_INLINE void gp_scalar_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
     Type::complex result = { 0.0, 0.0 };
 

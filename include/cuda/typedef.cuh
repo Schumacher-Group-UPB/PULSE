@@ -105,7 +105,7 @@ using stream_t = cudaStream_t;
     #else
     // Define PULSE_INLINE as nvcc's __inline__ when using the GPU
     #define PULSE_INLINE __inline__
-    #define PULSE_CPU_INLINE
+    #define PULSE_CPU_INLINE  
     #define PULSE_HOST_DEVICE __host__ __device__
     #define PULSE_DEVICE __device__
     #define PULSE_HOST __host__
