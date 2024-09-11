@@ -95,6 +95,7 @@ using stream_t = cudaStream_t;
 #ifdef USE_CPU
 // Define PULSE_INLINE as inline when using the CPU
     #define PULSE_INLINE inline
+    // For the CPU Version, we inline the Kernel Functions
     #define PULSE_CPU_INLINE __attribute__((always_inline)) inline
     #define PULSE_HOST_DEVICE
     #define PULSE_DEVICE
@@ -105,7 +106,8 @@ using stream_t = cudaStream_t;
     #else
     // Define PULSE_INLINE as nvcc's __inline__ when using the GPU
     #define PULSE_INLINE __inline__
-    #define PULSE_CPU_INLINE  
+    // For the GPU Version, the Kernel Functions are static to avoid name mangling
+    #define PULSE_CPU_INLINE static
     #define PULSE_HOST_DEVICE __host__ __device__
     #define PULSE_DEVICE __device__
     #define PULSE_HOST __host__
