@@ -94,7 +94,7 @@ using stream_t = cudaStream_t;
 
 #ifdef USE_CPU
 // Define PULSE_INLINE as inline when using the CPU
-    #define PULSE_INLINE inline
+    #define PULSE_INLINE __attribute__((always_inline)) inline
     // For the CPU Version, we inline the Kernel Functions
     #define PULSE_COMPILER_SPECIFIC __attribute__((always_inline)) inline
     #define PULSE_HOST_DEVICE
