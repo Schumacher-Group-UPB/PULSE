@@ -5,7 +5,7 @@
 
 namespace PC3::Kernel::Compute {
 
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm( int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm( int i, Type::uint32 current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
     const Type::complex in_wf_plus = io.in_wf_plus[i];
@@ -132,7 +132,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm( int i, Type::uint32 current_h
      * Fourier Method (SSFM)
     */
 
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_linear_fourier( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     // We do some weird looking casting to avoid intermediate casts to Type::uint32
@@ -143,11 +143,11 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_linear_fourier( int i, Solver:
     const Type::real k_y = 2.0 * 3.1415926535 * Type::real( row <= args.p.N_r / 2 ? row : -Type::real( args.p.N_r ) + row ) / args.p.L_y;
 
     Type::real linear = args.p.h_bar_s / 2.0 / args.p.m_eff * ( k_x * k_x + k_y * k_y );
-    io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real( args.p.N2 ) * CUDA::exp( args.p.minus_i * linear * time.dt / Type::real( 2.0 ) );
-    io.out_wf_minus[i] = io.in_wf_minus[i] / Type::real( args.p.N2 ) * CUDA::exp( args.p.minus_i * linear * time.dt / Type::real( 2.0 ) );
+    io.out_wf_plus[i] = io.in_wf_plus[i] / Type::real( args.p.N2 ) * CUDA::exp( args.p.minus_i * linear * args.time[1] / Type::real( 2.0 ) );
+    io.out_wf_minus[i] = io.in_wf_minus[i] / Type::real( args.p.N2 ) * CUDA::exp( args.p.minus_i * linear * args.time[1] / Type::real( 2.0 ) );
 }
 
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_nonlinear( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     const Type::complex in_wf_plus = io.in_wf_plus[i];
@@ -178,7 +178,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_nonlinear( int i, Solver::VKer
         result -= args.p.g_c / args.p.dV;
     }
 
-    io.out_wf_plus[i] = in_wf_plus * CUDA::exp( args.p.minus_i_over_h_bar_s * ( result + cross ) * time.dt );
+    io.out_wf_plus[i] = in_wf_plus * CUDA::exp( args.p.minus_i_over_h_bar_s * ( result + cross ) * args.time[1] );
 
     // MARK: Reservoir
     result = -args.p.gamma_r * in_rv_plus;
@@ -190,7 +190,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_nonlinear( int i, Solver::VKer
     // MARK: Stochastic-2
     if ( args.p.stochastic_amplitude > 0.0 )
         result += args.p.R * in_rv_plus / args.p.dV;
-    io.out_rv_plus[i] = in_rv_plus + result * time.dt;
+    io.out_rv_plus[i] = in_rv_plus + result * args.time[1];
 
     // MARK: Wavefunction Minus
     result = Type::complex( args.p.g_c * in_psi_minus_norm, -args.p.h_bar_s * Type::real( 0.5 ) * args.p.gamma_c );
@@ -213,7 +213,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_nonlinear( int i, Solver::VKer
         result -= args.p.g_c / args.p.dV;
     }
 
-    io.out_wf_minus[i] = in_wf_minus * CUDA::exp( args.p.minus_i_over_h_bar_s * ( result + cross ) * time.dt );
+    io.out_wf_minus[i] = in_wf_minus * CUDA::exp( args.p.minus_i_over_h_bar_s * ( result + cross ) * args.time[1] );
 
     // MARK: Reservoir
     result = -args.p.gamma_r * in_rv_minus;
@@ -225,10 +225,10 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_nonlinear( int i, Solver::VKer
     // MARK: Stochastic-2
     if ( args.p.stochastic_amplitude > 0.0 )
         result += args.p.R * in_rv_minus / args.p.dV;
-    io.out_rv_minus[i] = in_rv_minus + result * time.dt;
+    io.out_rv_minus[i] = in_rv_minus + result * args.time[1];
 }
 
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_independent( int i, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_independent( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     // MARK: Plus
@@ -238,7 +238,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_independent( int i, Solver::VK
     for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
         PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
         const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
-        result += args.p.minus_i_over_h_bar_s * time.dt * pulse *
+        result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse *
                   args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
     }
     if ( args.p.stochastic_amplitude > 0.0 ) {
@@ -255,7 +255,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_tetm_independent( int i, Solver::VK
     for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
         PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
         const Type::complex pulse = args.dev_ptrs.pulse_minus[i + offset];
-        result += args.p.minus_i_over_h_bar_s * time.dt * pulse *
+        result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse *
                   args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
     }
     if ( args.p.stochastic_amplitude > 0.0 ) {

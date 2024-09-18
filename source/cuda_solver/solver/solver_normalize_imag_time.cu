@@ -27,7 +27,7 @@ void PC3::Solver::normalizeImaginaryTimePropagation() {
     matrix.wavefunction_plus.transform( [sum_psi_plus] PULSE_HOST_DEVICE( Type::complex val ) { return val * sum_psi_plus; } );
     matrix.reservoir_plus.transform( [sum_res_plus] PULSE_HOST_DEVICE( Type::complex val ) { return val * sum_res_plus; } );
 
-    if ( not system.p.use_twin_mode )
+    if ( not system.use_twin_mode )
         return;
 
     // Calculate sums

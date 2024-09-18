@@ -56,10 +56,12 @@ bool PC3::Solver::iterate() {
     system.pulse.updateTemporal( system.p.t );
     system.potential.updateTemporal( system.p.t );
     system.pump.updateTemporal( system.p.t );
+    Type::host_vector<Type::complex> new_time = { system.p.t, system.p.dt };
     // And update the solver struct accordingly
     dev_pulse_oscillation.amp = system.pulse.temporal_envelope;
     dev_potential_oscillation.amp = system.potential.temporal_envelope;
     dev_pump_oscillation.amp = system.pump.temporal_envelope;
+    time = new_time;
 
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate();

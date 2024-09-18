@@ -52,10 +52,11 @@ class SystemParameters {
         // Boundary Conditions
         bool periodic_boundary_x, periodic_boundary_y;
 
+        // TODO: REMOVE THESE TWO. do templated branching
         // Twin Mode
-        bool use_twin_mode;
+        // bool use_twin_mode;
         // Use Reservoir
-        bool use_reservoir;
+        // bool use_reservoir;
 
         ////////////////////////////////
         // Custom Parameters go here! //
@@ -78,9 +79,6 @@ class SystemParameters {
 
     // Initialize the system randomly
     bool randomly_initialize_system;
-    
-    // Periodic Boundary Conditions
-    bool periodic_boundary_x, periodic_boundary_y;
 
     std::string iterator;
 
@@ -98,6 +96,9 @@ class SystemParameters {
 
     // Imag Time Amp
     Type::real imag_time_amplitude;
+
+    // Flags for the different system branches. These will be set after the input is read.
+    bool use_reservoir, use_pulses, use_pumps, use_potentials, use_stochastic, use_twin_mode;
 
     // Output of Variables
     std::vector<std::string> output_keys;

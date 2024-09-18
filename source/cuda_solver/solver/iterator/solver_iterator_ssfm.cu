@@ -13,18 +13,17 @@
  */
 void PC3::Solver::iterateSplitStepFourier(  ) {
     
-    auto kernel_arguments = generateKernelArguments( );
-    Solver::VKernelArguments v_time = getCurrentTime(); 
+    auto kernel_arguments = generateKernelArguments( ); 
     auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
 
     // Liner Half Step
     // Calculate the FFT of Psi
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
-    if (system.p.use_twin_mode)
+    if (system.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
     CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
-        v_time, kernel_arguments, 
+        kernel_arguments, 
         { 
             kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
             kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard
@@ -32,13 +31,13 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     );
     // Transform back. WF now holds the half-stepped wavefunction.
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::inverse );
-    if (system.p.use_twin_mode)
+    if (system.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
     // Nonlinear Full Step
     CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_NONLINEAR, "nonlinear_full_step", grid_size, block_size, 0,
-        v_time, kernel_arguments, 
+        kernel_arguments, 
         { 
             kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus,
             kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus
@@ -49,11 +48,11 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     // Liner Half Step 
     // Calculate the FFT of Psi
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
-    if (system.p.use_twin_mode)
+    if (system.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
     CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
-        v_time, kernel_arguments, 
+        kernel_arguments, 
         { 
             kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
             kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard
@@ -61,12 +60,12 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     );
     // Transform back. WF now holds the half-stepped wavefunction.
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::inverse );
-    if (system.p.use_twin_mode)
+    if (system.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
     CALL_SUBGRID_KERNEL(
         RUNGE_FUNCTION_GP_INDEPENDENT, "independent", grid_size, block_size, 0,
-        v_time, kernel_arguments, 
+        kernel_arguments, 
         {  
             kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus,
             kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus

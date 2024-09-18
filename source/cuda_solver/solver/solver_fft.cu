@@ -73,7 +73,7 @@ void PC3::Solver::applyFFTFilter( bool apply_mask ) {
     calculateFFT( GET_RAW_PTR( matrix.fft_plus ), GET_RAW_PTR( matrix.fft_plus ), FFT::forward );
 
     // Do the FFT and the shifting here already for visualization only
-    if ( system.p.use_twin_mode ) {
+    if ( system.use_twin_mode ) {
         matrix.wavefunction_minus.toFull( matrix.fft_minus );
         calculateFFT( GET_RAW_PTR( matrix.fft_minus ), GET_RAW_PTR( matrix.fft_minus ), FFT::forward );
     }
@@ -85,7 +85,7 @@ void PC3::Solver::applyFFTFilter( bool apply_mask ) {
     CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream
                  GET_RAW_PTR( matrix.fft_plus ), GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c * system.p.N_r );
 
-    if ( system.p.use_twin_mode ) {
+    if ( system.use_twin_mode ) {
         CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Minus", grid_size, block_size, 0, // 0 = default stream
                      GET_RAW_PTR( matrix.fft_minus ), GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c * system.p.N_r );
     }
@@ -94,7 +94,7 @@ void PC3::Solver::applyFFTFilter( bool apply_mask ) {
     calculateFFT( GET_RAW_PTR( matrix.fft_plus ), matrix.wavefunction_plus.fullMatrixPointer(), FFT::inverse );
     matrix.wavefunction_plus.toSubgrids();
 
-    if ( system.p.use_twin_mode ) {
+    if ( system.use_twin_mode ) {
         calculateFFT( GET_RAW_PTR( matrix.fft_minus ), matrix.wavefunction_minus.fullMatrixPointer(), FFT::inverse );
         matrix.wavefunction_minus.toSubgrids();
     }

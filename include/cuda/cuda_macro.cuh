@@ -74,53 +74,365 @@
 
 #endif
 
-// Helper Macro to iterate a specific RK K. // Only Callable from within the solver
-#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                      \
-    {                                                                                                                                                                  \
-        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                  \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                  \
-        auto current_time = getCurrentTime();                                                                                                                          \
-        Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),              \
-                                matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                 \
-                                matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ),         \
-                                matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };          \
-        if ( system.p.use_twin_mode ) {                                                                                                                                \
-            CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_tetm, "K" #index, current_grid, current_block, stream, current_halo, current_time, kernel_arguments, io );   \
-        } else {                                                                                                                                                       \
-            CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar, "K" #index, current_grid, current_block, stream, current_halo, current_time, kernel_arguments, io ); \
-        }                                                                                                                                                              \
-    };
-
 // For some reason, GCC needs this to correctly unpack the variadic arguments into a templated function
-// MSVC needs the order to not inline the function, as it otherwise calls the wrong template function.
 #define GCC_EXPAND_VA_ARGS( ... ) __VA_ARGS__
 #define GCC_EXPAND_VA_ARGS_ORDER( order, ... ) order, __VA_ARGS__
+
+// Helper Macro to iterate a specific RK K. // Only Callable from within the solver
+// This helper gets a little ugly when branching for all the specific cases using the templated kernel. Should ultimately perform better tho.
+// OMG I am so sorry... but this is actually quite a bit faster than before^^
+#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                              \
+    {                                                                                                                                                                          \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                          \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                          \
+        Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),                      \
+                                matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                         \
+                                matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ),                 \
+                                matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };                  \
+        if ( system.use_twin_mode ) {                                                                                                                                          \
+            if ( system.use_reservoir ) {                                                                                                                                      \
+                if ( system.use_pulses ) {                                                                                                                                     \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, true, true, true )>, "K" #index, current_grid,      \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, true, true, false )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, true, false, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, true, false, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, false, true, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, false, true, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, false, false, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, true, false, false, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                } else {                                                                                                                                                       \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, true, true, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, true, true, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, true, false, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, true, false, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, false, true, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, false, true, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, false, false, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, true, false, false, false, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                }                                                                                                                                                              \
+            } else {                                                                                                                                                           \
+                if ( system.use_pulses ) {                                                                                                                                     \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, true, true, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, true, true, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, true, false, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, true, false, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, false, true, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, false, true, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, false, false, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, true, false, false, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                } else {                                                                                                                                                       \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, true, true, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, true, true, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, true, false, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, true, false, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, true, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, true, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, false, true )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, false, false )>, "K" #index, current_grid, \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                }                                                                                                                                                              \
+            }                                                                                                                                                                  \
+        } else {                                                                                                                                                               \
+            if ( system.use_reservoir ) {                                                                                                                                      \
+                if ( system.use_pulses ) {                                                                                                                                     \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, true, true, true )>, "K" #index, current_grid,      \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, true, true, false )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, true, false, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, true, false, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, false, true, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, false, true, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, false, false, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, true, false, false, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                } else {                                                                                                                                                       \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, true, true, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, true, true, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, true, false, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, true, false, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, false, true, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, false, true, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, false, false, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, true, false, false, false, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                }                                                                                                                                                              \
+            } else {                                                                                                                                                           \
+                if ( system.use_pulses ) {                                                                                                                                     \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, true, true, true )>, "K" #index, current_grid,     \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, true, true, false )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, true, false, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, true, false, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, false, true, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, false, true, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, false, false, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, true, false, false, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                } else {                                                                                                                                                       \
+                    if ( system.use_pumps ) {                                                                                                                                  \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, true, true, true )>, "K" #index, current_grid,    \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, true, true, false )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, true, false, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, true, false, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    } else {                                                                                                                                                   \
+                        if ( system.use_potentials ) {                                                                                                                         \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, false, true, true )>, "K" #index, current_grid,   \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, false, true, false )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        } else {                                                                                                                                               \
+                            if ( system.use_stochastic ) {                                                                                                                     \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, false, false, true )>, "K" #index, current_grid,  \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            } else {                                                                                                                                           \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( true, false, false, false, false, false )>, "K" #index, current_grid, \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                \
+                            }                                                                                                                                                  \
+                        }                                                                                                                                                      \
+                    }                                                                                                                                                          \
+                }                                                                                                                                                              \
+            }                                                                                                                                                                  \
+        }                                                                                                                                                                      \
+    }
+
 // Only Callable from within the solver
 #define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                          \
     {                                                                                                                                                                             \
         Type::uint32 current_halo = system.p.halo_size - index;                                                                                                                   \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                             \
-        auto current_time = getCurrentTime();                                                                                                                                     \
         Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                       \
                                 matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                          \
                                 matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),                                \
                                 matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),    matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) };                                 \
-        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                             \
+        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                        \
         CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, index, __VA_ARGS__ )>, "Sum for K" #index, current_grid,      \
-                             current_block, stream, current_halo, current_time, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus );                                 \
-        if ( system.p.use_reservoir ) {                                                                                                                                           \
-            Type::complex *k_vec_res_plus = matrix.k_reservoir_plus.getDevicePtr( subgrid );                                                                           \
+                             current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus );                                 \
+        if ( system.use_reservoir ) {                                                                                                                                             \
+            Type::complex *k_vec_res_plus = matrix.k_reservoir_plus.getDevicePtr( subgrid );                                                                                      \
             CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, index, __VA_ARGS__ )>, "Sum for K" #index, current_grid, \
-                                 current_block, stream, current_halo, current_time, kernel_arguments, io.in_rv_plus, io.out_rv_plus, k_vec_res_plus );                            \
+                                 current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, io.out_rv_plus, k_vec_res_plus );                            \
         }                                                                                                                                                                         \
-        if ( system.p.use_twin_mode ) {                                                                                                                                           \
-            Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                       \
+        if ( system.use_twin_mode ) {                                                                                                                                           \
+            Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                                  \
             CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, index, __VA_ARGS__ )>, "Sum for K" #index, current_grid,  \
-                                 current_block, stream, current_halo, current_time, kernel_arguments, io.in_wf_minus, io.out_wf_minus, k_vec_wf_minus );                          \
-            if ( system.p.use_reservoir ) {                                                                                                                                       \
-                Type::complex *k_vec_res_minus = matrix.k_reservoir_minus.getDevicePtr( subgrid );                                                                     \
+                                 current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus, k_vec_wf_minus );                          \
+            if ( system.use_reservoir ) {                                                                                                                                         \
+                Type::complex *k_vec_res_minus = matrix.k_reservoir_minus.getDevicePtr( subgrid );                                                                                \
                 CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, index, __VA_ARGS__ )>, "Sum for K" #index,           \
-                                     current_grid, current_block, stream, current_halo, current_time, kernel_arguments, io.in_rv_minus, io.out_rv_minus, k_vec_res_minus );       \
+                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, io.out_rv_minus, k_vec_res_minus );       \
             }                                                                                                                                                                     \
         }                                                                                                                                                                         \
     };
@@ -129,27 +441,26 @@
 #define FINAL_SUM_K( index, ... )                                                                                                                                                 \
     {                                                                                                                                                                             \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c, system.p.subgrid_N_r );                                                                   \
-        auto current_time = getCurrentTime();                                                                                                                                     \
         Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                       \
                                 matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                          \
                                 matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),                                \
                                 matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),    matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) };                                 \
         Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                        \
         CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, index, __VA_ARGS__ )>, "Sum for K" #index, current_grid,      \
-                             current_block, stream, 0, current_time, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );                                                           \
-        if ( system.p.use_reservoir ) {                                                                                                                                           \
+                             current_block, stream, 0, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );                                                            \
+        if ( system.use_reservoir ) {                                                                                                                                             \
             Type::complex *k_vec_res_plus = matrix.k_reservoir_plus.getDevicePtr( subgrid );                                                                                      \
             CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, index, __VA_ARGS__ )>, "Sum for K" #index, current_grid, \
-                                 current_block, stream, 0, current_time, kernel_arguments, io.in_rv_plus, k_vec_res_plus );                                                      \
+                                 current_block, stream, 0, kernel_arguments, io.in_rv_plus, k_vec_res_plus );                                                       \
         }                                                                                                                                                                         \
-        if ( system.p.use_twin_mode ) {                                                                                                                                           \
+        if ( system.use_twin_mode ) {                                                                                                                                           \
             Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                                  \
             CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, index, __VA_ARGS__ )>, "Sum for K" #index, current_grid,  \
-                                 current_block, stream, 0, current_time, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );                                                     \
-            if ( system.p.use_reservoir ) {                                                                                                                                       \
+                                 current_block, stream, 0, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );                                                      \
+            if ( system.use_reservoir ) {                                                                                                                                         \
                 Type::complex *k_vec_res_minus = matrix.k_reservoir_minus.getDevicePtr( subgrid );                                                                                \
                 CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, index, __VA_ARGS__ )>, "Sum for K" #index,           \
-                                     current_grid, current_block, stream, 0, current_time, kernel_arguments, io.in_rv_minus, k_vec_res_minus );                                  \
+                                     current_grid, current_block, stream, 0, kernel_arguments, io.in_rv_minus, k_vec_res_minus );                                   \
             }                                                                                                                                                                     \
         }                                                                                                                                                                         \
     };
@@ -157,8 +468,7 @@
 #define ERROR_K( order, ... )                                                                                                                                         \
     {                                                                                                                                                                 \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c, system.p.subgrid_N_r );                                                       \
-        auto current_time = getCurrentTime();                                                                                                                         \
-        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_error<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Error", current_grid, current_block, stream, 0, current_time, \
+        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_error<GCC_EXPAND_VA_ARGS( __VA_ARGS__ )>, "Error", current_grid, current_block, stream, 0, \
                              kernel_arguments );                                                                                                                      \
     };
 
@@ -233,7 +543,7 @@
                     cudaStreamBeginCapture( stream, cudaStreamCaptureModeGlobal );                                                                        \
                     std::cout << PC3::CLIO::prettyPrint( "Capturing CUDA Graph", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl; \
                 }                                                                                                                                         \
-                if ( system.p.use_twin_mode ) {                                                                                                           \
+                if ( system.use_twin_mode ) {                                                                                                           \
                     SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() );                                                         \
                     SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                            \
                     SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() );                                                        \
@@ -258,17 +568,6 @@
                               << std::endl;                                                                                                               \
                 }                                                                                                                                         \
             } else {                                                                                                                                      \
-                Solver::VKernelArguments v_time = getCurrentTime();                                                                                       \
-                if ( with_graph ) {                                                                                                                       \
-                    for ( Type::uint32 i = 0; i < num_nodes; i++ ) {                                                                                      \
-                        cudaKernelNodeParams knp;                                                                                                         \
-                        cudaGraphKernelNodeGetParams( nodes[i], &knp );                                                                                   \
-                        if ( knp.func == (void *)( RUNGE_FUNCTION_GP ) ) {                                                                                \
-                            knp.kernelParams[2] = &v_time;                                                                                                \
-                            cudaGraphExecKernelNodeSetParams( instance, nodes[i], &knp );                                                                 \
-                        }                                                                                                                                 \
-                    }                                                                                                                                     \
-                }                                                                                                                                         \
                 cudaGraphLaunch( instance, stream );                                                                                                      \
             }                                                                                                                                             \
         }
@@ -306,7 +605,7 @@
                 }                                                                                                                                                      \
                 first_time = true;                                                                                                                                     \
             }                                                                                                                                                          \
-            if ( system.p.use_twin_mode ) {                                                                                                                            \
+            if ( system.use_twin_mode ) {                                                                                                                            \
                 SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                           \
                 SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                              \
                 SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                          \

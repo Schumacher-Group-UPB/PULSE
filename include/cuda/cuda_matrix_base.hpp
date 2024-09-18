@@ -2,8 +2,8 @@
 
 namespace PC3 {
 
-static inline bool global_matrix_creation_log = true;
-static inline bool global_matrix_transfer_log = true;
+static inline bool global_matrix_creation_log = false;
+static inline bool global_matrix_transfer_log = false;
 
 /**
  * @brief Base class for all device matrices. Mostly a gimmick to have a global

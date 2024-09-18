@@ -121,7 +121,7 @@ void PC3::Solver::iterateVariableTimestepRungeKutta() {
             // Replace current Wavefunction with K7
             matrix.k_wavefunction_plus.getFullMatrix( true, 6 ); // This syncs the full matrix of K7 into the static buffer
             matrix.wavefunction_plus.toSubgrids();               // This syncs the current components of the static buffer into the full matrix
-            if ( system.p.use_twin_mode ) {
+            if ( system.use_twin_mode ) {
                 matrix.k_wavefunction_minus.getFullMatrix( true, 6 ); // This syncs the full matrix of K7 into the static buffer
                 matrix.wavefunction_minus.toSubgrids();               // This syncs the current components of the static buffer into the full matrix
             }

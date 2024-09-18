@@ -52,11 +52,14 @@ class Solver {
         Type::complex* PULSE_RESTRICT out_rv_plus = nullptr;
         Type::complex* PULSE_RESTRICT out_rv_minus = nullptr;
     };
+    
+    Type::device_vector<Type::complex> time; // [0] is t, [1] is dt
 
     struct KernelArguments {
         TemporalEvelope::Pointers pulse_pointers;     // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
         TemporalEvelope::Pointers pump_pointers;      // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
         TemporalEvelope::Pointers potential_pointers; // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
+        Type::complex* time;                          // Pointer to Device Memory of the time array. [0] is t, [1] is dt
         MatrixContainer::Pointers dev_ptrs;           // All the pointers to the matrices. These are obtained by calling the .pointers() method on the matrices.
         SystemParameters::KernelParameters p;         // The kernel parameters. These are obtained by copying the kernel_parameters object of the system.
     };
@@ -69,17 +72,10 @@ class Solver {
         kernel_arguments.potential_pointers = dev_potential_oscillation.pointers();
         kernel_arguments.dev_ptrs = matrix.pointers( subgrid );
         kernel_arguments.p = system.kernel_parameters;
+        kernel_arguments.time = GET_RAW_PTR( time );
         return kernel_arguments;
     }
 
-    struct VKernelArguments {
-        Type::complex t, dt;
-    };
-
-    VKernelArguments getCurrentTime() {
-        Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex( 0.0, -system.p.dt ) : Type::complex( system.p.dt, 0.0 );
-        return VKernelArguments{ system.p.t, dt };
-    }
     // Cache Maps
     std::map<std::string, std::vector<Type::real>> cache_map_scalar;
 
@@ -124,7 +120,7 @@ class Solver {
 
     // Main System function. Either gp_scalar or gp_tetm.
     // Both functions have signature void(int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io)
-    std::function<void( int, Type::uint32, VKernelArguments, KernelArguments, InputOutput )> runge_function;
+    std::function<void( int, Type::uint32, KernelArguments, InputOutput )> runge_function;
 
     bool iterate();
 
@@ -146,9 +142,9 @@ class Solver {
 };
 
 // Helper macro to choose the correct runge function. We still need the RUNGE_FUNC_GP at one point in the CUDA graph calls... TODO: Remove these things.
-#define RUNGE_FUNCTION_GP ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar )
-#define RUNGE_FUNCTION_GP_LINEAR ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_linear_fourier : PC3::Kernel::Compute::gp_scalar_linear_fourier )
-#define RUNGE_FUNCTION_GP_NONLINEAR ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_nonlinear : PC3::Kernel::Compute::gp_scalar_nonlinear )
-#define RUNGE_FUNCTION_GP_INDEPENDENT ( system.p.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_independent : PC3::Kernel::Compute::gp_scalar_independent )
+#define RUNGE_FUNCTION_GP ( system.use_twin_mode ? PC3::Kernel::Compute::gp_tetm : PC3::Kernel::Compute::gp_scalar )
+#define RUNGE_FUNCTION_GP_LINEAR ( system.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_linear_fourier : PC3::Kernel::Compute::gp_scalar_linear_fourier )
+#define RUNGE_FUNCTION_GP_NONLINEAR ( system.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_nonlinear : PC3::Kernel::Compute::gp_scalar_nonlinear )
+#define RUNGE_FUNCTION_GP_INDEPENDENT ( system.use_twin_mode ? PC3::Kernel::Compute::gp_tetm_independent : PC3::Kernel::Compute::gp_scalar_independent )
 
 } // namespace PC3

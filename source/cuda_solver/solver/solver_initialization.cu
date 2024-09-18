@@ -18,7 +18,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
     Type::uint32 pulse_size = system.pulse.groupSize();
     Type::uint32 pump_size = system.pump.groupSize();
     Type::uint32 potential_size = system.potential.groupSize();
-    matrix.constructAll( system.p.N_c, system.p.N_r, system.p.use_twin_mode, use_fft, use_stochastic, iterator[system.iterator].k_max, pulse_size, pump_size, potential_size,
+    matrix.constructAll( system.p.N_c, system.p.N_r, system.use_twin_mode, use_fft, use_stochastic, iterator[system.iterator].k_max, pulse_size, pump_size, potential_size,
                          pulse_size, pump_size, potential_size, system.p.subgrids_columns, system.p.subgrids_rows, system.p.halo_size );
 
     // ==================================================
@@ -36,7 +36,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
     system.initial_state.calculate( system.filehandler, matrix.initial_state_plus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
     system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_plus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
-    if ( system.p.use_twin_mode ) {
+    if ( system.use_twin_mode ) {
         system.initial_state.calculate( system.filehandler, matrix.initial_state_minus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
         system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_minus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
     }
@@ -49,7 +49,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
         std::ranges::for_each( matrix.initial_state_plus.data(), matrix.initial_state_plus.data() + system.p.N_c * system.p.N_r,
                                [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
         // Also fill minus component if use_twin_mode is true
-        if ( system.p.use_twin_mode )
+        if ( system.use_twin_mode )
             std::ranges::for_each( matrix.initial_state_minus.data(), matrix.initial_state_minus.data() + system.p.N_c * system.p.N_r,
                                    [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
     }
@@ -62,7 +62,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
     matrix.reservoir_plus.hostToDeviceSync();
     SYNCHRONIZE_HALOS( 0, matrix.reservoir_plus.getSubgridDevicePtrs() );
 
-    if ( system.p.use_twin_mode ) {
+    if ( system.use_twin_mode ) {
         matrix.wavefunction_minus.setTo( matrix.initial_state_minus );
         matrix.wavefunction_minus.hostToDeviceSync();
         SYNCHRONIZE_HALOS( 0, matrix.wavefunction_minus.getSubgridDevicePtrs() );
@@ -79,7 +79,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
         system.pump.calculate( system.filehandler, matrix.pump_plus.getHostPtr( pump ), pump, PC3::Envelope::Polarization::Plus, dim );
         matrix.pump_plus.hostToDeviceSync( pump );
         SYNCHRONIZE_HALOS( 0, matrix.pump_plus.getSubgridDevicePtrs( pump ) );
-        if ( system.p.use_twin_mode ) {
+        if ( system.use_twin_mode ) {
             system.pump.calculate( system.filehandler, matrix.pump_minus.getHostPtr( pump ), pump, PC3::Envelope::Polarization::Minus, dim );
             matrix.pump_minus.hostToDeviceSync(pump);
             SYNCHRONIZE_HALOS( 0, matrix.pump_minus.getSubgridDevicePtrs( pump ) );
@@ -97,7 +97,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
         system.potential.calculate( system.filehandler, matrix.potential_plus.getHostPtr( potential ), potential, PC3::Envelope::Polarization::Plus, dim );
         matrix.potential_plus.hostToDeviceSync( potential);
         SYNCHRONIZE_HALOS( 0, matrix.potential_plus.getSubgridDevicePtrs( potential ) );
-        if ( system.p.use_twin_mode ) {
+        if ( system.use_twin_mode ) {
             system.potential.calculate( system.filehandler, matrix.potential_minus.getHostPtr( potential ), potential, PC3::Envelope::Polarization::Minus, dim );
             matrix.potential_minus.hostToDeviceSync(potential);
             SYNCHRONIZE_HALOS( 0, matrix.potential_minus.getSubgridDevicePtrs( potential ) );
@@ -115,7 +115,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
         system.pulse.calculate( system.filehandler, matrix.pulse_plus.getHostPtr( pulse ), pulse, PC3::Envelope::Polarization::Plus, dim );
         matrix.pulse_plus.hostToDeviceSync(pulse);
         SYNCHRONIZE_HALOS( 0, matrix.pulse_plus.getSubgridDevicePtrs( pulse ) );
-        if ( system.p.use_twin_mode ) {
+        if ( system.use_twin_mode ) {
             system.pulse.calculate( system.filehandler, matrix.pulse_minus.getHostPtr( pulse ), pulse, PC3::Envelope::Polarization::Minus, dim );
             matrix.pulse_minus.hostToDeviceSync(pulse);
             SYNCHRONIZE_HALOS( 0, matrix.pulse_minus.getSubgridDevicePtrs( pulse ) );
@@ -138,7 +138,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
         // Shift the filter
         auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
         CALL_FULL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Plus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c, system.p.N_r );
-        if ( system.p.use_twin_mode ) {
+        if ( system.use_twin_mode ) {
             system.fft_mask.calculate( system.filehandler, buffer.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim,
                                        1.0 /* Default if no mask is applied */ );
             matrix.fft_mask_minus = buffer;

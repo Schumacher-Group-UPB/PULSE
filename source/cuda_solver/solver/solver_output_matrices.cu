@@ -21,18 +21,18 @@ void PC3::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32
             auto key = fileoutputkeys[i];
             if ( key == "wavefunction_plus" and system.doOutput( "wavefunction", "psi", "wavefunction_plus", "psi_plus", "plus", "wf", "mat", "all", "initial", "initial_plus" ) )
                 filehandler.outputMatrixToFile( matrix.wavefunction_plus.getHostPtr(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
-            if ( key == "reservoir_plus" and system.p.use_reservoir and system.doOutput( "mat", "reservoir", "n", "reservoir_plus", "n_plus", "plus", "rv", "mat", "all" ) )
+            if ( key == "reservoir_plus" and system.use_reservoir and system.doOutput( "mat", "reservoir", "n", "reservoir_plus", "n_plus", "plus", "rv", "mat", "all" ) )
                 filehandler.outputMatrixToFile( matrix.reservoir_plus.getHostPtr(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
             if ( system.fft_every < system.t_max and key == "fft_plus" and system.doOutput( "fft_mask", "fft", "fft_plus", "plus", "mat", "all" ) ) {
                 Type::host_vector<Type::complex> buffer = matrix.fft_plus;
                 filehandler.outputMatrixToFile( buffer.data(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, fft_header_information, prefix + key + suffix );
             }
             // Guard when not useing TE/TM splitting
-            if ( not system.p.use_twin_mode )
+            if ( not system.use_twin_mode )
                 continue;
             if ( key == "wavefunction_minus" and system.doOutput( "wavefunction", "psi", "wavefunction_minus", "psi_minus", "plus", "wf", "mat", "all", "initial", "initial_minus" ) )
                 filehandler.outputMatrixToFile( matrix.wavefunction_minus.getHostPtr(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
-            if ( key == "reservoir_minus" and system.p.use_reservoir and system.doOutput( "reservoir", "n", "reservoir_minus", "n_minus", "plus", "rv", "mat", "all" ) )
+            if ( key == "reservoir_minus" and system.use_reservoir and system.doOutput( "reservoir", "n", "reservoir_minus", "n_minus", "plus", "rv", "mat", "all" ) )
                 filehandler.outputMatrixToFile( matrix.reservoir_minus.getHostPtr(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
             if ( system.fft_every < system.t_max and key == "fft_minus" and system.doOutput( "fft_mask", "fft", "fft_minus", "plus", "mat", "all" ) ) {
                 Type::host_vector<Type::complex> buffer = matrix.fft_minus;
@@ -50,7 +50,7 @@ void PC3::Solver::outputInitialMatrices() {
         system.filehandler.outputMatrixToFile( matrix.initial_state_plus.data(), system.p.N_c, system.p.N_r, header_information, "initial_wavefunction_plus" );
         system.filehandler.outputMatrixToFile( matrix.initial_reservoir_plus.data(), system.p.N_c, system.p.N_r, header_information, "initial_reservoir_plus" );
     }
-    if ( system.p.use_reservoir and system.doOutput( "all", "mat", "pump_plus", "pump" ) )
+    if ( system.use_reservoir and system.doOutput( "all", "mat", "pump_plus", "pump" ) )
         for (int i = 0; i < system.pump.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
@@ -77,14 +77,14 @@ void PC3::Solver::outputInitialMatrices() {
     // Custom Outputs go here! //
     /////////////////////////////
 
-    if (not system.p.use_twin_mode )
+    if (not system.use_twin_mode )
         return;
 
     if ( system.doOutput( "all", "mat", "initial_minus", "initial" ) ) {
         system.filehandler.outputMatrixToFile( matrix.initial_state_minus.data(), system.p.N_c, system.p.N_r, header_information, "initial_wavefunctions_minus" );
         system.filehandler.outputMatrixToFile( matrix.initial_reservoir_minus.data(), system.p.N_c, system.p.N_r, header_information, "initial_reservoir_minus" );
     }    
-    if ( system.p.use_reservoir and system.doOutput( "all", "mat", "pump_minus", "pump" ) )
+    if ( system.use_reservoir and system.doOutput( "all", "mat", "pump_minus", "pump" ) )
         for (int i = 0; i < system.pump.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";

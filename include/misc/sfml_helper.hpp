@@ -93,7 +93,7 @@ void initSFMLWindow( PC3::Solver& solver ) {
         std::cout << PC3::CLIO::prettyPrint( "Manually disabled SFML Renderer!", PC3::CLIO::Control::Warning ) << std::endl;
         return;
     }
-    if ( solver.system.p.use_twin_mode )
+    if ( solver.system.use_twin_mode )
         getWindow().construct( 1920, 1080, solver.system.p.N_c * 3, solver.system.p.N_r * 2, "PULSE - TE/TM" );
     else
         getWindow().construct( 1920, 540, solver.system.p.N_c * 3, solver.system.p.N_r, "PULSE - Scalar" );
@@ -153,7 +153,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     //                                                            &solver.matrix.k1_reservoir_plus, &solver.matrix.k2_reservoir_plus, &solver.matrix.k3_reservoir_plus, &solver.matrix.k4_reservoir_plus,
     //                                                            &solver.matrix.pump_plus, &solver.matrix.pulse_plus, &solver.matrix.potential_plus, &solver.matrix.random_number };
     //    inset_plot_array_plus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
-    //    if ( solver.system.p.use_twin_mode ) {
+    //    if ( solver.system.use_twin_mode ) {
     //        std::vector<PC3::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_minus,
     //                                                                &solver.matrix.k1_wavefunction_minus, &solver.matrix.k2_wavefunction_minus, &solver.matrix.k3_wavefunction_minus, &solver.matrix.k4_wavefunction_minus,
     //                                                                &solver.matrix.k1_reservoir_minus, &solver.matrix.k2_reservoir_minus, &solver.matrix.k3_reservoir_minus, &solver.matrix.k4_reservoir_minus,
@@ -179,7 +179,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     plot( solver.matrix.reservoir_plus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, 2 * solver.system.p.N_c, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
 
     // Plot Minus
-    if ( solver.system.p.use_twin_mode ) {
+    if ( solver.system.use_twin_mode ) {
         // Plot WF Minus
         plot( solver.matrix.wavefunction_minus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, solver.system.p.N_c, solver.system.p.N_r, 1, __local_colorpalette, "Psi+ ", plot_min_max );
         // Plot it again without static synchronization
@@ -234,7 +234,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         // Copy the current state of the host wavefunction to the snapshot
         snapshot_wavefunction_plus = solver.matrix.wavefunction_plus.toFull().getFullMatrix();
         snapshot_reservoir_plus = solver.matrix.reservoir_plus.toFull().getFullMatrix();
-        if ( solver.system.p.use_twin_mode ) {
+        if ( solver.system.use_twin_mode ) {
             snapshot_wavefunction_minus = solver.matrix.wavefunction_minus.toFull().getFullMatrix();
             snapshot_reservoir_minus = solver.matrix.reservoir_minus.toFull().getFullMatrix();
         }
@@ -247,7 +247,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         // Copy the contents of the snapshot back to the host wavefunction and sync the host matrix to the device.
         solver.matrix.wavefunction_plus.setTo( snapshot_wavefunction_plus ).hostToDeviceSync();
         solver.matrix.reservoir_plus.setTo( snapshot_reservoir_plus ).hostToDeviceSync();
-        if ( solver.system.p.use_twin_mode ) {
+        if ( solver.system.use_twin_mode ) {
             solver.matrix.wavefunction_minus.setTo( snapshot_wavefunction_minus ).hostToDeviceSync();
             solver.matrix.reservoir_minus.setTo( snapshot_reservoir_minus ).hostToDeviceSync();
         }
@@ -258,7 +258,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     if ( b_reset_to_initial.isToggled() ) {
         solver.matrix.wavefunction_plus.setTo( solver.matrix.initial_state_plus ).hostToDeviceSync();
         solver.matrix.reservoir_plus.setTo( solver.matrix.initial_reservoir_plus ).hostToDeviceSync();
-        if ( solver.system.p.use_twin_mode ) {
+        if ( solver.system.use_twin_mode ) {
             solver.matrix.wavefunction_minus.setTo( solver.matrix.initial_state_minus ).hostToDeviceSync();
             solver.matrix.reservoir_minus.setTo( solver.matrix.initial_reservoir_minus ).hostToDeviceSync();
         }

@@ -35,7 +35,7 @@ void PC3::Solver::cacheValues() {
     }
 
     // TE/TM Guard
-    if ( not system.p.use_twin_mode )
+    if ( not system.use_twin_mode )
         return;
 
     // Same for _minus component if use_twin_mode is true

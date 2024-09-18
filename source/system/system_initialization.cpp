@@ -14,9 +14,9 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     int index = 0;
 
     // Structure
-    p.use_twin_mode = false;
+    use_twin_mode = false;
     if ( ( index = PC3::CLIO::findInArgv( "-tetm", argc, argv ) ) != -1 ) {
-        p.use_twin_mode = true;
+        use_twin_mode = true;
     }
 
     if ( ( index = PC3::CLIO::findInArgv( "--gammaC", argc, argv ) ) != -1 )
@@ -222,14 +222,18 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     initial_state = PC3::Envelope::fromCommandlineArguments( argc, argv, "initialState", false );
     initial_reservoir = PC3::Envelope::fromCommandlineArguments( argc, argv, "initialReservoir", false );
 
-    // Check wetiher or not to evaluate the reservoir
-    p.use_reservoir = true;
+    // Set evaluation flags
+    use_reservoir = true;
+    use_pumps = pump.size() > 0;
+    use_pulses = pulse.size() > 0;
+    use_potentials = potential.size() > 0;
+    use_stochastic = p.stochastic_amplitude > 0.0;
     if (pump.size() == 0 and initial_reservoir.size() == 0) {
-        p.use_reservoir = false;
+        use_reservoir = false;
     }
     if ( ( index = PC3::CLIO::findInArgv( "-noReservoir", argc, argv ) ) != -1 ) {
-        p.use_reservoir = false;
-    } // TODO: check if this works! print use_reservoir!
+        use_reservoir = false;
+    }
 
     ///////////////////////////////////////
     // Custom Envelope Read-Ins go here! //
