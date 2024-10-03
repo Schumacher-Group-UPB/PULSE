@@ -48,15 +48,12 @@ bool PC3::Solver::iterate() {
         );
     }
 
-    // TODO: Merhe these device arrays with the kernelParameters struct.
-    // should be easily possible because the sizes of the arrays are known at launch
-    // which means we can allocate the memory in the kernelParameters struct
-    // Update the temporal envelopes
-    // measure time taken
+    // TODO: Hide this in a solver.updateKernelArgs function
     system.pulse.updateTemporal( system.p.t );
     system.potential.updateTemporal( system.p.t );
     system.pump.updateTemporal( system.p.t );
-    Type::host_vector<Type::complex> new_time = { system.p.t, system.p.dt };
+    Type::complex dt = system.imag_time_amplitude != 0.0 ? Type::complex( 0.0, -system.p.dt ) : system.p.dt;
+    Type::host_vector<Type::complex> new_time = { system.p.t, dt };
     // And update the solver struct accordingly
     dev_pulse_oscillation.amp = system.pulse.temporal_envelope;
     dev_potential_oscillation.amp = system.potential.temporal_envelope;

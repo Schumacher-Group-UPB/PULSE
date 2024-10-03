@@ -5,8 +5,8 @@
 namespace PC3::Kernel::Halo {
 
 template <typename T>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void full_grid_to_halo_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
-                                          Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void full_grid_to_halo_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c,
+                                                                  Type::uint32 subgrid_N_r, Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
     GET_THREAD_INDEX( i, N_c * N_r );
 
     const Type::uint32 r = i / N_c;
@@ -25,8 +25,8 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void full_grid_to_halo_grid( int i, Type::u
 }
 
 template <typename T>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void halo_grid_to_full_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
-                                          Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void halo_grid_to_full_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c,
+                                                                  Type::uint32 subgrid_N_r, Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
     GET_THREAD_INDEX( i, N_c * N_r );
 
     const Type::uint32 r = i / N_c;
@@ -51,10 +51,11 @@ PULSE_DEVICE PULSE_INLINE void __synchronize_halo( Type::uint32 subgrid_to, Type
 }
 
 template <typename T>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void synchronize_halos( int i, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r, Type::uint32 halo_size,
-                                     Type::uint32 halo_num, bool periodic_boundary_x, bool periodic_boundary_y, int* subgrid_map, T** current_subgridded_matrix ) {
+PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void synchronize_halos( int i, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
+                                                             Type::uint32 halo_size, Type::uint32 halo_num, bool periodic_boundary_x, bool periodic_boundary_y, int* subgrid_map,
+                                                             T** current_subgridded_matrix ) {
     GET_THREAD_INDEX( i, halo_num * subgrids_columns * subgrids_rows );
-    
+
     const Type::uint32 sg = i / halo_num;        // subgrid index from 0 to subgrids_columns*subgrids_rows.
     const Type::uint32 s = ( i % halo_num ) * 6; // subgrid_map index from 0 to 6*len(subgrid_map)
 
@@ -70,14 +71,13 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void synchronize_halos( int i, Type::uint32
     const auto tc = subgrid_map[s + 5];
 
     // Subgrid remains zero if the boundary condition is not periodic
-    if ( !periodic_boundary_x && ( C + dc < 0 || C + dc >= subgrids_columns ) )
-        return;
-    if ( !periodic_boundary_y && ( R + dr < 0 || R + dr >= subgrids_rows ) )
-        return;
-
-    const Type::uint32 r_new = ( R + dr ) % subgrids_rows;
-    const Type::uint32 c_new = ( C + dc ) % subgrids_columns;
-
-    __synchronize_halo( subgrid, tr * ( subgrid_N_c + 2 * halo_size ) + tc, r_new * subgrids_columns + c_new, fr * ( subgrid_N_c + 2 * halo_size ) + fc, current_subgridded_matrix );
+    if ( ( !periodic_boundary_x && ( C + dc < 0 || C + dc >= subgrids_columns ) ) or ( !periodic_boundary_y && ( R + dr < 0 || R + dr >= subgrids_rows ) ) ) {
+        current_subgridded_matrix[subgrid][tr * ( subgrid_N_c + 2 * halo_size ) + tc] = 0;
+    } else {
+        const Type::uint32 r_new = ( R + dr ) % subgrids_rows;
+        const Type::uint32 c_new = ( C + dc ) % subgrids_columns;
+        __synchronize_halo( subgrid, tr * ( subgrid_N_c + 2 * halo_size ) + tc, r_new * subgrids_columns + c_new, fr * ( subgrid_N_c + 2 * halo_size ) + fc,
+                            current_subgridded_matrix );
+    }
 }
 } // namespace PC3::Kernel::Halo

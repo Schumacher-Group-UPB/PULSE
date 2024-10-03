@@ -14,6 +14,50 @@
 */
 
 namespace PC3::Kernel::Compute {
+/*
+    template <bool tmp_use_tetm, bool tmp_use_reservoir, bool tmp_use_pulse, bool tmp_use_pump, bool tmp_use_potential, bool tmp_use_stochastic>
+    PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {    
+        
+    Type::complex* PULSE_RESTRICT in_wf_plus = io.in_wf_plus;
+    Type::complex* PULSE_RESTRICT in_rv_plus = io.in_rv_plus;
+    Type::complex* PULSE_RESTRICT out_wf_plus = io.out_wf_plus;
+    Type::complex* PULSE_RESTRICT out_rv_plus = io.out_rv_plus;
+            //Type::real hamilton_real = args.p.m2_over_dx2_p_dy2 * CUDA::real(io.in_wf_plus[i]);
+            //Type::real hamilton_imag = args.p.m2_over_dx2_p_dy2 * CUDA::imag(io.in_wf_plus[i]);
+            const Type::complex in_wf = in_wf_plus[i];
+            const Type::real in_psi_norm = CUDA::abs2( in_wf );
+            Type::complex wf_plus = args.p.m_eff_scaled * args.p.m2_over_dx2_p_dy2 * in_wf + in_psi_norm;
+            //hamilton_real+=args.p.one_over_dx2*(io.in_wf_plus[i]+io.in_wf_plus[i])
+            //+args.p.one_over_dy2*(io.in_wf_plus[i]+io.in_wf_plus[i]);
+            /*
+            hamilton_imag+=one_over_dx2*(in_wfu_imag[(igy)*Nx+(igx-1)]+in_wfu_imag[(igy)*Nx+(igx+1)])
+            +one_over_dy2*(in_wfu_imag[(igy-1)*Nx+(igx)]+in_wfu_imag[(igy+1)*Nx+(igx)]);
+              Type::real in_psi_norm=in_wfu_real[ig]*in_wfu_real[ig]+in_wfu_imag[ig]*in_wfu_imag[ig];
+              Type::real result_real=-minus_1_over_h_bar_s*m_eff_scaled*hamilton_imag;
+              Type::real result_imag=minus_1_over_h_bar_s*m_eff_scaled*hamilton_real;
+              
+              //          result += p_in.minus_i_over_h_bar_s * p_in.g_c * in_psi_norm * in_wf;
+              result_real+=-minus_1_over_h_bar_s*g_c*in_psi_norm*in_wfu_imag[ig];
+              result_imag+= minus_1_over_h_bar_s*g_c*in_psi_norm*in_wfu_real[ig];
+              //          result += p_in.minus_i_over_h_bar_s * p_in.g_r * in_rv * in_wf
+              result_real+=-minus_1_over_h_bar_s * g_r*(in_wfu_real[ig]*in_res_imag[ig]+in_wfu_imag[ig]*in_res_real[ig]);
+              result_imag+= minus_1_over_h_bar_s * g_r*(in_wfu_real[ig]*in_res_real[ig]-in_wfu_imag[ig]*in_res_imag[ig]);
+              //          result += Type::real(0.5) * p_in.R * in_rv * in_wf;
+              result_real+=Type::real(0.5) * R*(in_wfu_real[ig]*in_res_real[ig]-in_wfu_imag[ig]*in_res_imag[ig]);
+              result_real+=Type::real(0.5) * R*(in_wfu_real[ig]*in_res_imag[ig]+in_wfu_imag[ig]*in_res_real[ig]);
+              //          //result += Type::real(0.5) * p.R * in_rv * in_wf;
+              //          result -= Type::real(0.5) * p_in.gamma_c * in_wf;
+              result_real-=Type::real(0.5) * gamma_c*in_wfu_real[ig];
+              result_imag-=Type::real(0.5) * gamma_c*in_wfu_imag[ig];
+              //Type::real* PULSE_RESTRICT in_wfu_real = reinterpret_cast<Type::real*>(io.in_wf_plus);
+              //in_wfu_real[2*i]=in_wfu_real[2*i] + 0.1f;
+              // calculate wf_plus * args.p.minus_i_over_h_bar_s
+              wf_plus = Type::complex(CUDA::imag(wf_plus)/args.p.h_bar_s, -1.0f*CUDA::real(wf_plus)/args.p.h_bar_s);
+              io.out_wf_plus[i] = io.in_wf_plus[i] + wf_plus;//Type::complex(hamilton_real,hamilton_imag);
+              
+            }
+            
+            */
 
 template <bool tmp_use_tetm, bool tmp_use_reservoir, bool tmp_use_pulse, bool tmp_use_pump, bool tmp_use_potential, bool tmp_use_stochastic>
 PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
@@ -29,33 +73,37 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
     const Type::complex in_wf = in_wf_plus[i];
     const Type::real in_psi_norm = CUDA::abs2( in_wf );
-
-    Type::complex wf_plus = args.p.minus_i_over_h_bar_s * args.p.m_eff_scaled *
+    Type::complex wf_plus = args.p.m_eff_scaled *
                             ( args.p.m2_over_dx2_p_dy2 * in_wf + 
                             ( in_wf_plus[i + args.p.subgrid_row_offset] + in_wf_plus[i - args.p.subgrid_row_offset] ) * args.p.one_over_dy2 +
                             ( in_wf_plus[i + 1] + in_wf_plus[i - 1] ) * args.p.one_over_dx2 );
     
-    wf_plus += (args.p.minus_i_over_h_bar_s * args.p.g_c * in_psi_norm - Type::real( 0.5 ) * args.p.gamma_c ) * in_wf;
+    wf_plus += args.p.g_c * in_psi_norm;
+    // calculate -i*one_over_h_bar_s*wf_plus
+    wf_plus = Type::complex( CUDA::imag( wf_plus ) * args.p.one_over_h_bar_s, -1.0f * CUDA::real( wf_plus ) * args.p.one_over_h_bar_s );
+        
+    wf_plus -= Type::real( 0.5 ) * args.p.gamma_c * in_wf;
 
     if constexpr ( tmp_use_reservoir ) {
         const Type::complex in_rv = in_rv_plus[i];
         wf_plus += (args.p.minus_i_over_h_bar_s * args.p.g_r * in_rv + Type::real( 0.5 ) * args.p.R * in_rv) * in_wf;
         Type::complex rv_plus = -(args.p.gamma_r + args.p.R * in_psi_norm)*in_rv;
-
+        
         if constexpr ( tmp_use_pump ) {
             for ( int k = 0; k < args.pump_pointers.n; k++ ) {
                 PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
                 rv_plus += args.dev_ptrs.pump_plus[i + offset] * args.pump_pointers.amp[k];
-            }
+                }
         }
-
+        
         if constexpr ( tmp_use_stochastic ) {
             rv_plus += args.p.R * in_rv / args.p.dV;
         }
 
         out_rv_plus[i] = rv_plus;
     }
-
+    
+    
     if constexpr ( tmp_use_potential ) {
         for ( int k = 0; k < args.potential_pointers.n; k++ ) {
             PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
@@ -78,9 +126,6 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
     out_wf_plus[i] = wf_plus;
 }
-
-// Instantiate the Scalar Kernel with all possible components, so we 
-
 
 /**
  * Linear, Nonlinear and Independet parts of the upper Kernel

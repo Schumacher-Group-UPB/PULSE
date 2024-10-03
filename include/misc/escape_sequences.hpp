@@ -11,6 +11,7 @@ namespace EscapeSequence {
     static inline std::string GREEN = "";
     static inline std::string YELLOW = "";
     static inline std::string BLUE = "";
+    static inline std::string ORANGE = "";
 
     static inline std::string RESET = "";
     static inline std::string BOLD = "";
@@ -29,6 +30,7 @@ namespace EscapeSequence {
     static inline std::string GREEN = "\033[92m";
     static inline std::string YELLOW = "\033[93m";
     static inline std::string BLUE = "\033[94m";
+    static inline std::string ORANGE = "\033[38;2;128;59;3m";
 
     static inline std::string RESET = "\033[0m";
     static inline std::string BOLD = "\033[1m";

@@ -20,7 +20,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta3() {
                      CALCULATE_K( 1, wavefunction, reservoir );
 
                      INTERMEDIATE_SUM_K( 1, 0.5f );
-
+ 
                      CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir );
 
                      INTERMEDIATE_SUM_K( 2, -1.0f, 2.0f );
