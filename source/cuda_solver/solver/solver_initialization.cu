@@ -12,7 +12,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "-------------------- Initializing Host and Device Matrices ------------------------" << EscapeSequence::RESET << std::endl;
 
     // First, construct all required host matrices
-    bool use_fft = system.fft_every < system.t_max;
+    bool use_fft = system.fft_every < system.t_max or system.iterator == "ssfm";
     bool use_stochastic = system.p.stochastic_amplitude > 0.0;
     // For now, both the plus and the minus components are the same. TODO: Change
     Type::uint32 pulse_size = system.pulse.groupSize();

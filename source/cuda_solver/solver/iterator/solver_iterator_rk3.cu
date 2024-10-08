@@ -27,8 +27,8 @@ void PC3::Solver::iterateFixedTimestepRungeKutta3() {
 
                      CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir );
 
-                    // TODO: For some wild reason, MSVC will always call this function in RK4... using g++ will call the correct function. O1 will also work.
-                     //FINAL_SUM_K( 3, 1.0f / 6.0f, 4.0f / 6.0f, 1.0f / 6.0f );
+                    // TODO: For some wild reason, MSVC will always call this function in RK4... using g++ will call the correct function. O0 for msvc will also work.
+                     FINAL_SUM_K( 3, 1.0f / 6.0f, 4.0f / 6.0f, 1.0f / 6.0f );
 
     );
 
