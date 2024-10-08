@@ -58,8 +58,8 @@ struct MatrixContainer {
 
     // Construction Chain. The Host Matrix is always constructed (who carese about RAM right?) and the device matrix is constructed if the condition is met.
     void constructAll( const int N_c, const int N_r, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses_plus, const int n_pumps_plus,
-                       const int n_potentials_plus, const int n_pulses_minus, const int n_pumps_minus, const int n_potentials_minus, const int subgrids_columns, const int subgrids_rows,
-                       const int halo_size ) {
+                       const int n_potentials_plus, const int n_pulses_minus, const int n_pumps_minus, const int n_potentials_minus, const int subgrids_columns,
+                       const int subgrids_rows, const int halo_size ) {
         // Cache triggers
         this->use_twin_mode = use_twin_mode;
         this->use_fft = use_fft;
@@ -99,13 +99,13 @@ struct MatrixContainer {
 
         // Random Number generator and buffer
         if ( use_stochastic ) {
-            const Type::uint32 subgrid_N = N_c * N_r / subgrids_columns / subgrids_rows;
+            const Type::uint32 subgrid_N = ( N_c / subgrids_columns + 2 * halo_size ) * ( N_r / subgrids_rows + 2 * halo_size );
             random_number = PC3::Type::device_vector<Type::complex>( subgrid_N );
             random_state = PC3::Type::device_vector<Type::cuda_random_state>( subgrid_N );
         }
 
         // RK Error Matrix. For now, use k_max > 4 as a construction condition.
-        if (k_max > 4)
+        if ( k_max > 4 )
             rk_error.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "rk_error" );
 
         // Construct the halo map. 6*total halo points because we have 6 coordinates for each point
@@ -152,29 +152,29 @@ struct MatrixContainer {
 
     struct Pointers {
         // Wavefunction and Reservoir Matrices
-        Type::complex* wavefunction_plus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* wavefunction_minus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* reservoir_plus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* reservoir_minus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* wavefunction_plus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* wavefunction_minus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* reservoir_plus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* reservoir_minus PULSE_ALIGNED( Type::complex ) = nullptr;
         // Corresponding Buffer Matrices
-        Type::complex* buffer_wavefunction_plus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* buffer_wavefunction_minus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* buffer_reservoir_plus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* buffer_reservoir_minus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* buffer_wavefunction_plus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* buffer_wavefunction_minus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* buffer_reservoir_plus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* buffer_reservoir_minus PULSE_ALIGNED( Type::complex ) = nullptr;
 
         // Pump, Pulse and Potential Matrices
-        Type::real* pump_plus PULSE_ALIGNED(Type::real) = nullptr;
-        Type::real* pump_minus PULSE_ALIGNED(Type::real) = nullptr;
-        Type::complex* pulse_plus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* pulse_minus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::real* potential_plus PULSE_ALIGNED(Type::real) = nullptr;
-        Type::real* potential_minus PULSE_ALIGNED(Type::real) = nullptr;
+        Type::real* pump_plus PULSE_ALIGNED( Type::real ) = nullptr;
+        Type::real* pump_minus PULSE_ALIGNED( Type::real ) = nullptr;
+        Type::complex* pulse_plus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* pulse_minus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::real* potential_plus PULSE_ALIGNED( Type::real ) = nullptr;
+        Type::real* potential_minus PULSE_ALIGNED( Type::real ) = nullptr;
 
         // K Matrices
-        Type::complex* k_wavefunction_plus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* k_wavefunction_minus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* k_reservoir_plus PULSE_ALIGNED(Type::complex) = nullptr;
-        Type::complex* k_reservoir_minus PULSE_ALIGNED(Type::complex) = nullptr;
+        Type::complex* k_wavefunction_plus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* k_wavefunction_minus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* k_reservoir_plus PULSE_ALIGNED( Type::complex ) = nullptr;
+        Type::complex* k_reservoir_minus PULSE_ALIGNED( Type::complex ) = nullptr;
 
         // FFT Matrices
         Type::complex* fft_plus = nullptr;

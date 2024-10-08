@@ -65,9 +65,7 @@
     //    i = ( args.p.subgrid_row_offset ) * ( r + args.p.halo_size - ch ) + args.p.halo_size - ch + c;
     #define GENERATE_SUBGRID_INDEX( i, ch )
     #define GENERATE_THREAD_INDEX( N ) int i = 0;
-    #define GET_THREAD_INDEX( i, N ) \
-        if ( i >= N )                \
-            return;
+    #define GET_THREAD_INDEX( i, N )
 
     #define LOCAL_SHARE_STRUCT( T, in, out ) T &out = in;
 
@@ -88,7 +86,7 @@
                                 matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                          \
                                 matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ),                  \
                                 matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };                   \
-        if ( system.use_twin_mode ) {                                                                                                                                           \
+        if ( not system.use_twin_mode ) {                                                                                                                                       \
             if ( system.use_reservoir ) {                                                                                                                                       \
                 if ( system.use_pulses ) {                                                                                                                                      \
                     if ( system.use_pumps ) {                                                                                                                                   \
@@ -408,103 +406,223 @@
     }
 
 // Only Callable from within the solver
-// New: Summation always sums the whole grid, ignores halos. So current_halo is always halo_size
-// Turns Type::uint32 current_halo = system.p.halo_size - index; into Type::uint32 current_halo = system.p.halo_size;
-#define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                           \
-    {                                                                                                                                                                              \
-        Type::uint32 current_halo = system.p.halo_size;                                                                                                                            \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                              \
-        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                        \
-                                matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                           \
-                                matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),                                 \
-                                matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),    matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) };                                  \
-        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                         \
-        if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                                 \
-            CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, index, __VA_ARGS__ )>, "Sum for K" #index,          \
-                                 current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus );                              \
-        } else {                                                                                                                                                                   \
-            CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, index, __VA_ARGS__ )>, "Sum for K" #index,           \
-                                 current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus );                              \
-        }                                                                                                                                                                          \
-        if ( system.use_reservoir ) {                                                                                                                                              \
-            Type::complex *k_vec_res_plus = matrix.k_reservoir_plus.getDevicePtr( subgrid );                                                                                       \
-            if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                             \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, index, __VA_ARGS__ )>, "Sum for K" #index,     \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, io.out_rv_plus, k_vec_res_plus );                         \
-            } else {                                                                                                                                                               \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, index, __VA_ARGS__ )>, "Sum for K" #index,      \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, io.out_rv_plus, k_vec_res_plus );                         \
-            }                                                                                                                                                                      \
-        }                                                                                                                                                                          \
-        if ( system.use_twin_mode ) {                                                                                                                                              \
-            Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                                   \
-            if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                             \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, index, __VA_ARGS__ )>, "Sum for K" #index,      \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus, k_vec_wf_minus );                       \
-            } else {                                                                                                                                                               \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, index, __VA_ARGS__ )>, "Sum for K" #index,       \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus, k_vec_wf_minus );                       \
-            }                                                                                                                                                                      \
-            if ( system.use_reservoir ) {                                                                                                                                          \
-                Type::complex *k_vec_res_minus = matrix.k_reservoir_minus.getDevicePtr( subgrid );                                                                                 \
-                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                         \
-                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, index, __VA_ARGS__ )>, "Sum for K" #index, \
-                                         current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, io.out_rv_minus, k_vec_res_minus );                  \
-                } else {                                                                                                                                                           \
-                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, index, __VA_ARGS__ )>, "Sum for K" #index,  \
-                                         current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, io.out_rv_minus, k_vec_res_minus );                  \
-                }                                                                                                                                                                  \
-            }                                                                                                                                                                      \
-        }                                                                                                                                                                          \
+#define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                          \
+    {                                                                                                                                                                             \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                                           \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                             \
+        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                       \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                          \
+                                matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),                                \
+                                matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),    matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) };                                 \
+        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                        \
+        if ( system.use_reservoir ) {                                                                                                                                             \
+            if ( system.use_stochastic ) {                                                                                                                                        \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                        \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, true, index, __VA_ARGS__ )>,               \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                } else {                                                                                                                                                          \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, true, index, __VA_ARGS__ )>,                \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                }                                                                                                                                                                 \
+            } else {                                                                                                                                                              \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                        \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,              \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                } else {                                                                                                                                                          \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,               \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                }                                                                                                                                                                 \
+            }                                                                                                                                                                     \
+            Type::complex *k_vec_res_plus = matrix.k_reservoir_plus.getDevicePtr( subgrid );                                                                                      \
+            if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                            \
+                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,                  \
+                                     "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, io.out_rv_plus, k_vec_res_plus );    \
+            } else {                                                                                                                                                              \
+                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,                   \
+                                     "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, io.out_rv_plus, k_vec_res_plus );    \
+            }                                                                                                                                                                     \
+            if ( system.use_twin_mode ) {                                                                                                                                         \
+                Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                              \
+                if ( system.use_stochastic ) {                                                                                                                                    \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                    \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, true, index, __VA_ARGS__ )>,           \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    } else {                                                                                                                                                      \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, true, index, __VA_ARGS__ )>,            \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    }                                                                                                                                                             \
+                } else {                                                                                                                                                          \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                    \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,          \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    } else {                                                                                                                                                      \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,           \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    }                                                                                                                                                             \
+                }                                                                                                                                                                 \
+                Type::complex *k_vec_res_minus = matrix.k_reservoir_minus.getDevicePtr( subgrid );                                                                                \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                        \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,              \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, io.out_rv_minus,                \
+                                         k_vec_res_minus );                                                                                                                       \
+                } else {                                                                                                                                                          \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,               \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, io.out_rv_minus,                \
+                                         k_vec_res_minus );                                                                                                                       \
+                }                                                                                                                                                                 \
+            }                                                                                                                                                                     \
+        } else {                                                                                                                                                                  \
+            if ( system.use_stochastic ) {                                                                                                                                        \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                        \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, false, index, __VA_ARGS__ )>,              \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                } else {                                                                                                                                                          \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, false, index, __VA_ARGS__ )>,               \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                }                                                                                                                                                                 \
+            } else {                                                                                                                                                              \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                        \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, false, index, __VA_ARGS__ )>,             \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                } else {                                                                                                                                                          \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, false, index, __VA_ARGS__ )>,              \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+                }                                                                                                                                                                 \
+            }                                                                                                                                                                     \
+            if ( system.use_twin_mode ) {                                                                                                                                         \
+                Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                              \
+                if ( system.use_stochastic ) {                                                                                                                                    \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                    \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, false, index, __VA_ARGS__ )>,          \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    } else {                                                                                                                                                      \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, false, index, __VA_ARGS__ )>,           \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    }                                                                                                                                                             \
+                } else {                                                                                                                                                          \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                    \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, false, index, __VA_ARGS__ )>,         \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    } else {                                                                                                                                                      \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, false, index, __VA_ARGS__ )>,          \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, io.out_wf_minus,            \
+                                             k_vec_wf_minus );                                                                                                                    \
+                    }                                                                                                                                                             \
+                }                                                                                                                                                                 \
+            }                                                                                                                                                                     \
+        }                                                                                                                                                                         \
     };
 
 // Only Callable from within the solver
-#define FINAL_SUM_K( index, ... )                                                                                                                                                  \
-    {                                                                                                                                                                              \
-        Type::uint32 current_halo = system.p.halo_size;                                                                                                                            \
-        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                              \
-        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                        \
-                                matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                           \
-                                matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),                                 \
-                                matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),    matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) };                                  \
-        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                         \
-        if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                                 \
-            CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, index, __VA_ARGS__ )>, "Sum for K" #index,          \
-                                 current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );                                              \
-        } else {                                                                                                                                                                   \
-            CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, index, __VA_ARGS__ )>, "Sum for K" #index,           \
-                                 current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );                                              \
-        }                                                                                                                                                                          \
-        if ( system.use_reservoir ) {                                                                                                                                              \
-            Type::complex *k_vec_res_plus = matrix.k_reservoir_plus.getDevicePtr( subgrid );                                                                                       \
-            if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                             \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, index, __VA_ARGS__ )>, "Sum for K" #index,     \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, k_vec_res_plus );                                         \
-            } else {                                                                                                                                                               \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, index, __VA_ARGS__ )>, "Sum for K" #index,      \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, k_vec_res_plus );                                         \
-            }                                                                                                                                                                      \
-        }                                                                                                                                                                          \
-        if ( system.use_twin_mode ) {                                                                                                                                              \
-            Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                                   \
-            if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                             \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, index, __VA_ARGS__ )>, "Sum for K" #index,      \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );                                        \
-            } else {                                                                                                                                                               \
-                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, index, __VA_ARGS__ )>, "Sum for K" #index,       \
-                                     current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );                                        \
-            }                                                                                                                                                                      \
-            if ( system.use_reservoir ) {                                                                                                                                          \
-                Type::complex *k_vec_res_minus = matrix.k_reservoir_minus.getDevicePtr( subgrid );                                                                                 \
-                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                         \
-                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, index, __VA_ARGS__ )>, "Sum for K" #index, \
-                                         current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, k_vec_res_minus );                                   \
-                } else {                                                                                                                                                           \
-                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, index, __VA_ARGS__ )>, "Sum for K" #index,  \
-                                         current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, k_vec_res_minus );                                   \
-                }                                                                                                                                                                  \
-            }                                                                                                                                                                      \
-        }                                                                                                                                                                          \
+#define FINAL_SUM_K( index, ... )                                                                                                                                         \
+    {                                                                                                                                                                     \
+        Type::uint32 current_halo = system.p.halo_size;                                                                                                                   \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                     \
+        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                                      \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ),                                         \
+                                matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                                      \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ) };                                       \
+        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                \
+        if ( system.use_reservoir ) {                                                                                                                                     \
+            if ( system.use_stochastic ) {                                                                                                                                \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, true, index, __VA_ARGS__ )>,       \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                } else {                                                                                                                                                  \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, true, index, __VA_ARGS__ )>,        \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                }                                                                                                                                                         \
+            } else {                                                                                                                                                      \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,      \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                } else {                                                                                                                                                  \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,       \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                }                                                                                                                                                         \
+            }                                                                                                                                                             \
+            Type::complex *k_vec_res_plus = matrix.k_reservoir_plus.getDevicePtr( subgrid );                                                                              \
+            if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                    \
+                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,          \
+                                     "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, k_vec_res_plus );            \
+            } else {                                                                                                                                                      \
+                CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,           \
+                                     "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_plus, k_vec_res_plus );            \
+            }                                                                                                                                                             \
+            if ( system.use_twin_mode ) {                                                                                                                                 \
+                Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                      \
+                if ( system.use_stochastic ) {                                                                                                                            \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                            \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, true, index, __VA_ARGS__ )>,   \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    } else {                                                                                                                                              \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, true, index, __VA_ARGS__ )>,    \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    }                                                                                                                                                     \
+                } else {                                                                                                                                                  \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                            \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,  \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    } else {                                                                                                                                              \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,   \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    }                                                                                                                                                     \
+                }                                                                                                                                                         \
+                Type::complex *k_vec_res_minus = matrix.k_reservoir_minus.getDevicePtr( subgrid );                                                                        \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, true, index, __VA_ARGS__ )>,      \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, k_vec_res_minus );      \
+                } else {                                                                                                                                                  \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, true, index, __VA_ARGS__ )>,       \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_rv_minus, k_vec_res_minus );      \
+                }                                                                                                                                                         \
+            }                                                                                                                                                             \
+        } else {                                                                                                                                                          \
+            if ( system.use_stochastic ) {                                                                                                                                \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, false, index, __VA_ARGS__ )>,      \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                } else {                                                                                                                                                  \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, false, index, __VA_ARGS__ )>,       \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                }                                                                                                                                                         \
+            } else {                                                                                                                                                      \
+                if ( system.imag_time_amplitude == 0.0 ) {                                                                                                                \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, false, index, __VA_ARGS__ )>,     \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                } else {                                                                                                                                                  \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, false, index, __VA_ARGS__ )>,      \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+                }                                                                                                                                                         \
+            }                                                                                                                                                             \
+            if ( system.use_twin_mode ) {                                                                                                                                 \
+                Type::complex *k_vec_wf_minus = matrix.k_wavefunction_minus.getDevicePtr( subgrid );                                                                      \
+                if ( system.use_stochastic ) {                                                                                                                            \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                            \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, true, false, index, __VA_ARGS__ )>,  \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    } else {                                                                                                                                              \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, true, false, index, __VA_ARGS__ )>,   \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    }                                                                                                                                                     \
+                } else {                                                                                                                                                  \
+                    if ( system.imag_time_amplitude == 0.0 ) {                                                                                                            \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, false, index, __VA_ARGS__ )>, \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    } else {                                                                                                                                              \
+                        CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, true, false, false, index, __VA_ARGS__ )>,  \
+                                             "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_minus, k_vec_wf_minus );   \
+                    }                                                                                                                                                     \
+                }                                                                                                                                                         \
+            }                                                                                                                                                             \
+        }                                                                                                                                                                 \
     };
 
 #define ERROR_K( order, ... )                                                                                                                                               \
@@ -586,12 +704,16 @@
                 }                                                                                                                                         \
                 if ( system.use_twin_mode ) {                                                                                                             \
                     SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() );                                                         \
-                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                            \
                     SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() );                                                        \
-                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() );                                                           \
+                    if ( system.use_reservoir ) {                                                                                                         \
+                        SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                        \
+                        SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() );                                                       \
+                    }                                                                                                                                     \
                 } else {                                                                                                                                  \
                     SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() );                                                         \
-                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                            \
+                    if ( system.use_reservoir ) {                                                                                                         \
+                        SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() );                                                        \
+                    }                                                                                                                                     \
                 }                                                                                                                                         \
                 for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                               \
                     auto &kernel_arguments = v_kernel_arguments[subgrid];                                                                                 \
@@ -619,17 +741,17 @@
     // On the CPU, the Kernel call does not execute a parallel GPU Kernel. Instead,
     // it launches a group of threads using a #pragma omp instruction.
 
-    // CALL_SUBGRID_KERNEL simply calls the function with the given arguments. The for-loop should happen in the function itself to avoid calling the function multiple times.
     // CALL_SUBGRID_KERNEL will call the kernel row-wise, making sure that memory accesses are coalesced and the innermost loop is vectorizable
-    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                  \
-        {                                                                                \
-            Type::uint32 halo_rem = system.p.halo_size - current_halo;                   \
-            for (Type::uint32 row = 0; row  < block.x; row++) {\
-                Type::uint32 index_start = (row+halo_rem)*system.p.subgrid_row_offset + halo_rem; \
-                _Pragma( "omp simd" ) for ( Type::uint32 col = 0; col < system.p.subgrid_N_c+2*(current_halo); col++ ) { \
-                    func( index_start+col, __VA_ARGS__ );                                                  \
-                }                                                                            \
-            }                                                                            \
+    // CALL_FULL_KERNEL will also handle the indexing, making sure that the function is called with the correct, modified row-col index depending on the current halo.
+    #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                        \
+        {                                                                                                                      \
+            Type::uint32 halo_rem = system.p.halo_size - current_halo;                                                         \
+            for ( Type::uint32 row = 0; row < block.x; row++ ) {                                                               \
+                Type::uint32 index_start = ( row + halo_rem ) * system.p.subgrid_row_offset + halo_rem;                        \
+                _Pragma( "omp simd" ) for ( Type::uint32 col = 0; col < system.p.subgrid_N_c + 2 * ( current_halo ); col++ ) { \
+                    func( index_start + col, __VA_ARGS__ );                                                                    \
+                }                                                                                                              \
+            }                                                                                                                  \
         }
     #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... )                                              \
         {                                                                                                         \
@@ -644,6 +766,7 @@
             PC3::Type::stream_t stream;                                                                                                                                \
             static bool first_time = false;                                                                                                                            \
             static std::vector<Solver::KernelArguments> v_kernel_arguments;                                                                                            \
+            Type::uint32 current_halo = system.p.halo_size;                                                                                                            \
             if ( not first_time ) {                                                                                                                                    \
                 for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) {                                            \
                     v_kernel_arguments.push_back( generateKernelArguments( subgrid ) );                                                                                \
@@ -652,12 +775,16 @@
             }                                                                                                                                                          \
             if ( system.use_twin_mode ) {                                                                                                                              \
                 SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                           \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                              \
                 SYNCHRONIZE_HALOS( stream, matrix.wavefunction_minus.getSubgridDevicePtrs() )                                                                          \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                             \
+                if ( system.use_reservoir ) {                                                                                                                          \
+                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                          \
+                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_minus.getSubgridDevicePtrs() )                                                                         \
+                }                                                                                                                                                      \
             } else {                                                                                                                                                   \
                 SYNCHRONIZE_HALOS( stream, matrix.wavefunction_plus.getSubgridDevicePtrs() )                                                                           \
-                SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                              \
+                if ( system.use_reservoir ) {                                                                                                                          \
+                    SYNCHRONIZE_HALOS( stream, matrix.reservoir_plus.getSubgridDevicePtrs() )                                                                          \
+                }                                                                                                                                                      \
             }                                                                                                                                                          \
             _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 subgrid = 0; subgrid < system.p.subgrids_columns * system.p.subgrids_rows; subgrid++ ) { \
                 PULSE_NUMA_INSERT;                                                                                                                                     \

@@ -235,6 +235,12 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         use_reservoir = false;
     }
 
+    std::cout << PC3::CLIO::prettyPrint( "Using Reservoir: " + std::to_string( use_reservoir ), PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Using Pumps: " + std::to_string( use_pumps ), PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Using Pulses: " + std::to_string( use_pulses ), PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Using Potentials: " + std::to_string( use_potentials ), PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PC3::CLIO::prettyPrint( "Using Stochastic: " + std::to_string( use_stochastic ), PC3::CLIO::Control::Info ) << std::endl;
+
     ///////////////////////////////////////
     // Custom Envelope Read-Ins go here! //
     ///////////////////////////////////////

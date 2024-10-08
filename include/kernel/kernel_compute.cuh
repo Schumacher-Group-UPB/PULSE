@@ -3,8 +3,7 @@
 #include "kernel_coefficients_dormand_prince.cuh"
 #include "solver/gpu_solver.hpp"
 
-#include "kernel/kernel_gp_scalar.cuh"
-#include "kernel/kernel_gp_tetm.cuh"
+#include "kernel/kernel_gp_compute.cuh"
 
 /**
  * Contains the Kernels required for the Runge Kutta Solver

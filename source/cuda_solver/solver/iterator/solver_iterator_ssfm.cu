@@ -13,6 +13,8 @@
  */
 void PC3::Solver::iterateSplitStepFourier(  ) {
     
+    /*
+    // TODO: im cudamacro.cuh soll ein choose_kernel macro stehen -> der wählt dann die template parameter aus. die einzelfunktionen dann auch templated!!
     auto kernel_arguments = generateKernelArguments( ); 
     auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
 
@@ -21,7 +23,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
     if (system.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
-    CALL_SUBGRID_KERNEL(
+    CALL_FULL_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
         kernel_arguments, 
         { 
@@ -35,7 +37,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
     // Nonlinear Full Step
-    CALL_SUBGRID_KERNEL(
+    CALL_FULL_KERNEL(
         RUNGE_FUNCTION_GP_NONLINEAR, "nonlinear_full_step", grid_size, block_size, 0,
         kernel_arguments, 
         { 
@@ -50,7 +52,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::forward );
     if (system.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
-    CALL_SUBGRID_KERNEL(
+    CALL_FULL_KERNEL(
         RUNGE_FUNCTION_GP_LINEAR, "linear_half_step", grid_size, block_size, 0,
         kernel_arguments, 
         { 
@@ -63,7 +65,7 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
     if (system.use_twin_mode)
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
-    CALL_SUBGRID_KERNEL(
+    CALL_FULL_KERNEL(
         RUNGE_FUNCTION_GP_INDEPENDENT, "independent", grid_size, block_size, 0,
         kernel_arguments, 
         {  
@@ -72,5 +74,5 @@ void PC3::Solver::iterateSplitStepFourier(  ) {
         }
     );
     // WF now holds the new result
-    
+    */
 }

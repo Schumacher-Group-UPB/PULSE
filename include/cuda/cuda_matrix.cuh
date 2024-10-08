@@ -174,8 +174,9 @@ class CUDAMatrix : CUDAMatrixBase {
         global_total_host_mb -= size_in_mb_host * num_matrices;
         // Log this action. Mostly for simple debugging.
         if ( global_matrix_creation_log )
-            std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string( num_matrices ) + "x" + std::to_string( rows ) + "x" + std::to_string( rows ) + " matrix '" + name + "'. Total allocated space: " +
-                                                     std::to_string( global_total_host_mb ) + "MB (host), " + std::to_string( global_total_device_mb ) + "MB (device)",
+            std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string( num_matrices ) + "x" + std::to_string( rows ) + "x" + std::to_string( rows ) + " matrix '" + name +
+                                                     "'. Total allocated space: " + std::to_string( global_total_host_mb ) + "MB (host), " +
+                                                     std::to_string( global_total_device_mb ) + "MB (device)",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
         // Clear the Host data
@@ -246,15 +247,17 @@ class CUDAMatrix : CUDAMatrixBase {
         // Allocate the individual subgrids in a omp loop, ensuring first-touch memory allocation
 #pragma omp parallel for schedule( static )
         for ( int i = 0; i < total_num_subgrids; i++ ) {
-            #ifdef USE_NUMA
-                int numa_domain = i % PULSE_NUMA_DOMAINS;
-                numa_run_on_node(numa_domain);
-                numa_set_preferred(numa_domain);
-                int cpu = sched_getcpu();
-                int node = numa_node_of_cpu(cpu);
-                #pragma omp critical
-                std::cout << PC3::CLIO::prettyPrint( "Allocating subgrid " + std::to_string(i) + " on CPU " + std::to_string(cpu) + " on NUMA node " + std::to_string(node) + ".", PC3::CLIO::Control::FullSuccess ) << std::endl;
-            #endif
+#ifdef USE_NUMA
+            int numa_domain = i % PULSE_NUMA_DOMAINS;
+            numa_run_on_node( numa_domain );
+            numa_set_preferred( numa_domain );
+            int cpu = sched_getcpu();
+            int node = numa_node_of_cpu( cpu );
+    #pragma omp critical
+            std::cout << PC3::CLIO::prettyPrint( "Allocating subgrid " + std::to_string( i ) + " on CPU " + std::to_string( cpu ) + " on NUMA node " + std::to_string( node ) + ".",
+                                                 PC3::CLIO::Control::FullSuccess )
+                      << std::endl;
+#endif
             device_data[i] = Type::device_vector<T>( subgrid_size_with_halo * num_matrices, (T)0.0 );
             for ( int nm = 0; nm < num_matrices; nm++ ) subgrid_pointers_device[nm][i] = GET_RAW_PTR( device_data[i] ) + nm * subgrid_size_with_halo;
         }
@@ -289,7 +292,7 @@ class CUDAMatrix : CUDAMatrixBase {
      */
     CUDAMatrix<T>& fill( T value, Type::uint32 matrix = 0 ) {
         std::fill( host_data.begin() + matrix * total_size_host, host_data.begin() + ( matrix + 1 ) * total_size_host, value );
-        hostToDeviceSync(matrix);
+        hostToDeviceSync( matrix );
         return *this;
     }
 
@@ -306,19 +309,24 @@ class CUDAMatrix : CUDAMatrixBase {
             return *this;
         // Log this action
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Host to Device Sync for matrix '" + name + "' ("+std::to_string(matrix)+").", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Host to Device Sync for matrix '" + name + "' (" + std::to_string( matrix ) + ").",
+                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+                      << std::endl;
 
         // If the subgrid size is 1 and the halo_size is zero, we can just copy the full matrix to the device data
         const PC3::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
         if ( subgrid_size == 1 and halo_size == 0 ) {
-            std::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host, device_data[0].begin()+fullgrid_host_ptr_matrix_offset );
+            std::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host,
+                       device_data[0].begin() + fullgrid_host_ptr_matrix_offset );
         } else {
 // Otherwise, we have to copy the full matrix to the device data_full and then split the full matrix into subgrids
 #ifdef USE_CPU
             // Copy the matrix to the device buffer
-            std::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host, device_data_full[total_size_host].begin() );
+            std::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host,
+                       device_data_full[total_size_host].begin() );
 #else
-            thrust::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host, device_data_full[total_size_host].begin() );
+            thrust::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host,
+                          device_data_full[total_size_host].begin() );
 #endif
             toSubgrids( matrix );
         }
@@ -398,18 +406,25 @@ class CUDAMatrix : CUDAMatrixBase {
     CUDAMatrix<T>& toFull( PC3::Type::device_vector<T>& out, PC3::Type::uint32 matrix = 0, PC3::Type::stream_t stream = 0 ) {
         if ( not is_constructed )
             return *this;
-        // Copy all device data to a device buffer.
+// Copy all device data to a device buffer.
+#ifdef USE_CPU
+        // On the CPU, we need exactly one thread per cell
+        dim3 block_size( rows, 1 );
+        dim3 grid_size( cols, 1 );
+#else
+        // On the GPU, we need at least one thread per cell
         dim3 block_size( 256, 1 );
         dim3 grid_size( ( rows * cols + block_size.x ) / block_size.x, 1 );
+#endif
         auto fullgrid_dev_ptr = GET_RAW_PTR( out );
         auto dev_ptrs = getSubgridDevicePtrs( matrix );
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string( subgrids_columns ) + "x" + std::to_string( subgrids_rows ) + " subgrids to full grid buffer for matrix '" +
-                                                     name + "' (" + std::to_string( matrix ) + ")",
+            std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string( subgrids_columns ) + "x" + std::to_string( subgrids_rows ) +
+                                                     " subgrids to full grid buffer for matrix '" + name + "' (" + std::to_string( matrix ) + ")",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
-                      CALL_FULL_KERNEL( PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols, subgrid_rows,
-                     halo_size, fullgrid_dev_ptr, dev_ptrs );
+        CALL_FULL_KERNEL( PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols,
+                          subgrid_rows, halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;
     }
@@ -425,9 +440,16 @@ class CUDAMatrix : CUDAMatrixBase {
     CUDAMatrix<T>& toSubgrids( PC3::Type::device_vector<T>& in, PC3::Type::uint32 matrix = 0, PC3::Type::stream_t stream = 0 ) {
         if ( not is_constructed )
             return *this;
-        // Copy all device data of a device_vector to the subgrids.
+// Copy all device data of a device_vector to the subgrids.
+#ifdef USE_CPU
+        // On the CPU, we need exactly one thread per cell
+        dim3 block_size( rows, 1 );
+        dim3 grid_size( cols, 1 );
+#else
+        // On the GPU, we need at least one thread per cell
         dim3 block_size( 256, 1 );
         dim3 grid_size( ( rows * cols + block_size.x ) / block_size.x, 1 );
+#endif
 
         auto fullgrid_dev_ptr = GET_RAW_PTR( in );
         auto dev_ptrs = getSubgridDevicePtrs( matrix );
@@ -435,8 +457,8 @@ class CUDAMatrix : CUDAMatrixBase {
             std::cout << PC3::CLIO::prettyPrint( "Copying full grid buffer to subgrids for matrix '" + name + "' (" + std::to_string( matrix ) + ")",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
-                      CALL_FULL_KERNEL( PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols, subgrid_rows,
-                     halo_size, fullgrid_dev_ptr, dev_ptrs );
+        CALL_FULL_KERNEL( PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols,
+                          subgrid_rows, halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;
     }
@@ -463,7 +485,7 @@ class CUDAMatrix : CUDAMatrixBase {
             return nullptr;
         // If the host is ahead, synchronize first
         if ( host_is_ahead )
-            hostToDeviceSync(matrix);
+            hostToDeviceSync( matrix );
         // This is equivalent to "GET_RAW_PTR( subgrid_pointers_device[matrix][subgrid] );" but we use this to avoid accessing the device vector.
         return GET_RAW_PTR( device_data[subgrid] ) + matrix * subgrid_size_with_halo;
     }

@@ -191,6 +191,10 @@ using thrust::pow;
 using thrust::sin;
 using thrust::sqrt;
 using thrust::tan;
+// special case sqrt for regular floats
+PULSE_HOST_DEVICE static PULSE_INLINE Type::real sqrt( const Type::real x ) {
+    return std::sqrt( x );
+}
 #endif
 
 } // namespace PC3::CUDA

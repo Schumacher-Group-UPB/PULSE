@@ -46,14 +46,13 @@ void PC3::Solver::initializeMatricesFromSystem() {
         // Fill the buffer with random values
         std::mt19937 gen{ system.random_seed };
         std::uniform_real_distribution<Type::real> dist{ -system.random_system_amplitude, system.random_system_amplitude };
-        std::ranges::for_each( matrix.initial_state_plus.data(), matrix.initial_state_plus.data() + system.p.N_c * system.p.N_r,
+        std::ranges::for_each( matrix.initial_state_plus.begin(), matrix.initial_state_plus.end(),
                                [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
         // Also fill minus component if use_twin_mode is true
         if ( system.use_twin_mode )
-            std::ranges::for_each( matrix.initial_state_minus.data(), matrix.initial_state_minus.data() + system.p.N_c * system.p.N_r,
+            std::ranges::for_each( matrix.initial_state_minus.begin(), matrix.initial_state_minus.end(),
                                    [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
     }
-
     // Copy the initial state to the device wavefunction, synchronize it to the device and synchronize the halos
     matrix.wavefunction_plus.setTo( matrix.initial_state_plus );
     matrix.wavefunction_plus.hostToDeviceSync();

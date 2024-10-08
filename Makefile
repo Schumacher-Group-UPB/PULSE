@@ -1,31 +1,31 @@
 # Compiler
-COMPILER = nvcc
+COMPILER ?= nvcc
 
 # Folders
-SRCDIR = source
-INCDIR = include
-OBJDIR = obj
+SRCDIR ?= source
+INCDIR ?= include
+OBJDIR ?= obj
 
 SFML ?= FALSE
 FP32 ?= FALSE
 CPU ?= FALSE
 
 PRETTYCMD ?= FALSE
-CMD_COLORS ?= FALSE
-CMD_SYMBOLS ?= FALSE
+CMD_COLORS ?= TRUE
+CMD_SYMBOLS ?= TRUE
 
 # GPU Architexture flag. If false, none is used
 ARCH ?= NONE
 
 # SFML PATH
-SFML_PATH = external/SFML/
+SFML_PATH ?= external/SFML/
 # Optimization
-OPTIMIZATION = -O3 -save-temps
+OPTIMIZATION ?= -O3
 # NUMA
-NUMA = FALSE
+NUMA ?= FALSE
 
 # Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
-GCCFLAGS = -std=c++20 -fopenmp -x c++ -fverbose-asm -mtune=native -march=native -save-temps -flto -funroll-loops -finline-limit=20000 -fopt-info-vec
+GCCFLAGS = -std=c++20 -fopenmp -x c++ -fverbose-asm -mtune=native -march=native -funroll-loops -finline-limit=20000 -fopt-info-vec #-fopt-info-vec-missed -flto 
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --expt-relaxed-constexpr --dlink-time-opt --generate-line-info
 else
@@ -78,12 +78,15 @@ ifeq ($(CPU),TRUE)
 endif
 
 ifeq ($(PRETTYCMD),FALSE)
-	ifeq ($(CMD_COLORS),FALSE)
-		ADD_FLAGS += -DPC3_NO_ANSI_COLORS
-	endif
-	ifeq ($(CMD_SYMBOLS),FALSE)
-		ADD_FLAGS += -DPC3_NO_EXTENDED_SYMBOLS
-	endif
+	CMD_COLORS = FALSE
+	CMD_SYMBOLS = FALSE
+endif
+
+ifeq ($(CMD_COLORS),FALSE)
+	ADD_FLAGS += -DPC3_NO_ANSI_COLORS
+endif
+ifeq ($(CMD_SYMBOLS),FALSE)
+	ADD_FLAGS += -DPC3_NO_EXTENDED_SYMBOLS
 endif
 
 # Targets
