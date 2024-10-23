@@ -71,6 +71,8 @@ void PC3::SystemParameters::printHelp() {
         //<< PC3::CLIO::unifyLength( "--history", "<Y> <points>", "Outputs a maximum number of x-slices at Y for history. y-slices are not supported." ) << std::endl
         << PC3::CLIO::unifyLength( "--historyMatrix", "<int> <int> <int> <int> <int>",
                                    "Outputs the matrices specified in --output with specified startx,endx,starty,endy index and increment." )
+        << PC3::CLIO::unifyLength( "--historyTime", "<float> <int>",
+                                   "Outputs the matrices specified in --output after starting time is reached and only every multiple*outEvery times with <start> <multiple>." )
         << std::endl
         //<< PC3::CLIO::unifyLength( "--input", "<string...>", "Comma seperated list of things to input. Available: mat,scalar,fft,pump,mask,psi,n. Many can also be specified with _plus or _minus." ) << std::endl
         << PC3::CLIO::unifyLength( "-nosfml", "no arguments", "If passed to the program, disables all live graphical output. " ) << std::endl;

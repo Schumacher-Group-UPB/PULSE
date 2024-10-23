@@ -77,7 +77,7 @@
 
 // Helper Macro to iterate a specific RK K. // Only Callable from within the solver
 // This helper gets a little ugly when branching for all the specific cases using the templated kernel. Should ultimately perform better tho.
-// OMG I am so sorry... but this is actually quite a bit faster than before^^
+// OMG I am so sorry... but this is actually quite a bit faster than before, because we dont use function pointers any more^^
 #define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                               \
     {                                                                                                                                                                           \
         const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                           \

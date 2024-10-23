@@ -75,12 +75,6 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         p.subgrids_columns = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_columns", index );
     }
 
-    p.subgrid_N_c = p.N_c / p.subgrids_columns;
-    p.subgrid_N_r = p.N_r / p.subgrids_rows;
-
-    std::cout << PC3::CLIO::prettyPrint( "Subgrid Configuration: " + std::to_string( p.subgrids_columns ) + "x" + std::to_string( p.subgrids_rows ), PC3::CLIO::Control::Info ) << std::endl;
-    std::cout << PC3::CLIO::prettyPrint( "Subgrid Size: " + std::to_string( p.subgrid_N_c ) + "x" + std::to_string( p.subgrid_N_r ), PC3::CLIO::Control::Info ) << std::endl;
-
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = true;
 #ifdef SFML_RENDER

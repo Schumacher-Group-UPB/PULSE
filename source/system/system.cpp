@@ -39,6 +39,8 @@ PC3::SystemParameters::SystemParameters() {
     // Numerics
     p.N_c = 400;
     p.N_r = 400;
+    p.subgrids_columns = 1;
+    p.subgrids_rows = 1;
     t_max = 1000;
     iteration = 0;
     // RK Solver Variables
@@ -82,18 +84,26 @@ void PC3::SystemParameters::calculateAuto() {
     // SI scaling factor for the magic timestep. If the user choses a custom
     // effective mass, the magic timestep will be scaled accordingly.
     const auto dt_scaling_factor = p.m_e / p.e_e * 1E8 / p.m_eff;
-    // Calculate dx and dt
+    // Spatial steps
     p.dx = p.L_x / ( p.N_c - 1 ); 
     p.dy = p.L_y / ( p.N_r - 1 ); 
     p.dV = p.dx * p.dy; // Volume element
+    // Inverse squared spatial steps
     p.one_over_dx2 = Type::real(1.0) / ( p.dx * p.dx );
     p.one_over_dy2 = Type::real(1.0) / ( p.dy * p.dy );
     p.m2_over_dx2_p_dy2 = Type::real(-2.0) * ( p.one_over_dx2 + p.one_over_dy2);
+    // Number of grid points
     p.N2 = p.N_c * p.N_r;
+    // Number of subgrid points
+    p.subgrid_N_c = p.N_c / p.subgrids_columns;
+    p.subgrid_N_r = p.N_r / p.subgrids_rows;
     p.subgrid_N2 = p.subgrid_N_c * p.subgrid_N_r;
     p.subgrid_N2_with_halo = ( p.subgrid_N_c + 2 * p.halo_size ) * ( p.subgrid_N_r + 2 * p.halo_size );
+    // Row offset for a subgrid- i +/- row offset is the row above/below
     p.subgrid_row_offset = p.subgrid_N_c + 2 * p.halo_size;
+    // Effective mass, scaled with hbar 
     p.m_eff_scaled = -0.5 * p.h_bar_s * p.h_bar_s / p.m_eff;
+    // Magic timestep
     magic_timestep = 0.5 * p.dx * p.dy / dt_scaling_factor;
     if ( do_overwrite_dt ) {
         p.dt = magic_timestep;

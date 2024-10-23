@@ -49,7 +49,7 @@ void PC3::Solver::iterateFixedTimestepRungeKutta4() {
 
                      CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir );  
 
-                     FINAL_SUM_K( 4, 1.01f / 6.0f, 1.0f / 3.0f, 1.0f / 3.0f, 1.0f / 6.0f ); 
+                     FINAL_SUM_K( 4, 1.0f / 6.0f, 1.0f / 3.0f, 1.0f / 3.0f, 1.0f / 6.0f ); 
 
     );
 
