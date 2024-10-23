@@ -15,6 +15,8 @@
 
 // Also, we really need a better way to output the matrices. This is a bit of a mess. And we need an output queue that doesnt stall the main thread.
 
+// TODO: Should the arguments be shared ptrs?
+
 void PC3::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32 end_x, const Type::uint32 start_y, const Type::uint32 end_y, const Type::uint32 increment, const std::string& suffix, const std::string& prefix ) {
     const static std::vector<std::string> fileoutputkeys = { "wavefunction_plus", "wavefunction_minus", "reservoir_plus", "reservoir_minus", "fft_plus", "fft_minus" };
     auto header_information = PC3::FileHandler::Header( system.p.L_x * (end_x-start_x)/system.p.N_c, system.p.L_y* (end_y-start_y)/system.p.N_r, system.p.dx, system.p.dy, system.p.t );
@@ -22,25 +24,24 @@ void PC3::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32
     //auto res = std::async( std::launch::async, [&]() {
         //std::lock_guard<std::mutex> lock( mtx );
         //#pragma omp parallel for
-        Type::host_vector<Type::complex> buffer;
         for ( int i = 0; i < fileoutputkeys.size(); i++ ) {
             auto key = fileoutputkeys[i];
             if ( key == "wavefunction_plus" and system.doOutput( "wavefunction", "psi", "wavefunction_plus", "psi_plus", "plus", "wf", "mat", "all", "initial", "initial_plus" ) ) {
-                buffer = matrix.wavefunction_plus.getFullMatrix(true);
+                Type::host_vector<Type::complex> buffer = matrix.wavefunction_plus.getFullMatrix(true);
                 auto future = std::async(std::launch::async, [buffer, header_information, start_x, end_x, start_y, end_y, increment, this, key, suffix, prefix]() {
                     this->system.filehandler.outputMatrixToFile(buffer.data(), start_x, end_x, start_y, end_y, this->system.p.N_c, this->system.p.N_r, increment, header_information, prefix + key + suffix);
                 });
                 //filehandler.outputMatrixToFile( buffer.data(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
             }
             if ( key == "reservoir_plus" and system.use_reservoir and system.doOutput( "mat", "reservoir", "n", "reservoir_plus", "n_plus", "plus", "rv", "mat", "all" ) ) {
-                buffer = matrix.reservoir_plus.getFullMatrix(true);
+                Type::host_vector<Type::complex> buffer = matrix.reservoir_plus.getFullMatrix(true);
                 auto future = std::async(std::launch::async, [buffer, header_information, start_x, end_x, start_y, end_y, increment, this, key, suffix, prefix]() {
                     this->system.filehandler.outputMatrixToFile(buffer.data(), start_x, end_x, start_y, end_y, this->system.p.N_c, this->system.p.N_r, increment, header_information, prefix + key + suffix);
                 });
                 //filehandler.outputMatrixToFile( buffer.data(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
             }
             if ( system.fft_every < system.t_max and key == "fft_plus" and system.doOutput( "fft_mask", "fft", "fft_plus", "plus", "mat", "all" ) ) {
-                buffer = matrix.fft_plus;
+                Type::host_vector<Type::complex> buffer = matrix.fft_plus;
                 auto future = std::async(std::launch::async, [buffer, fft_header_information, start_x, end_x, start_y, end_y, increment, this, key, suffix, prefix]() {
                     this->system.filehandler.outputMatrixToFile(buffer.data(), start_x, end_x, start_y, end_y, this->system.p.N_c, this->system.p.N_r, increment, fft_header_information, prefix + key + suffix);
                 });
@@ -50,21 +51,21 @@ void PC3::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32
             if ( not system.use_twin_mode )
                 continue;
             if ( key == "wavefunction_minus" and system.doOutput( "wavefunction", "psi", "wavefunction_minus", "psi_minus", "plus", "wf", "mat", "all", "initial", "initial_minus" ) ) {
-                buffer = matrix.wavefunction_minus.getFullMatrix(true);
+                Type::host_vector<Type::complex> buffer = matrix.wavefunction_minus.getFullMatrix(true);
                 auto future = std::async(std::launch::async, [buffer, header_information, start_x, end_x, start_y, end_y, increment, this, key, suffix, prefix]() {
                     this->system.filehandler.outputMatrixToFile(buffer.data(), start_x, end_x, start_y, end_y, this->system.p.N_c, this->system.p.N_r, increment, header_information, prefix + key + suffix);
                 });
                 //filehandler.outputMatrixToFile( buffer.data(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
             }
             if ( key == "reservoir_minus" and system.use_reservoir and system.doOutput( "reservoir", "n", "reservoir_minus", "n_minus", "plus", "rv", "mat", "all" ) ) {
-                buffer = matrix.reservoir_minus.getFullMatrix(true);
+                Type::host_vector<Type::complex> buffer = matrix.reservoir_minus.getFullMatrix(true);
                 auto future = std::async(std::launch::async, [buffer, header_information, start_x, end_x, start_y, end_y, increment, this, key, suffix, prefix]() {
                     this->system.filehandler.outputMatrixToFile(buffer.data(), start_x, end_x, start_y, end_y, this->system.p.N_c, this->system.p.N_r, increment, header_information, prefix + key + suffix);
                 });
                 //filehandler.outputMatrixToFile( buffer.data(), start_x, end_x, start_y, end_y, system.p.N_c, system.p.N_r, increment, header_information, prefix + key + suffix );
             }
             if ( system.fft_every < system.t_max and key == "fft_minus" and system.doOutput( "fft_mask", "fft", "fft_minus", "plus", "mat", "all" ) ) {
-                buffer = matrix.fft_minus;
+                Type::host_vector<Type::complex> buffer = matrix.fft_minus;
                 auto future = std::async(std::launch::async, [buffer, fft_header_information, start_x, end_x, start_y, end_y, increment, this, key, suffix, prefix]() {
                     this->system.filehandler.outputMatrixToFile(buffer.data(), start_x, end_x, start_y, end_y, this->system.p.N_c, this->system.p.N_r, increment, fft_header_information, prefix + key + suffix);
                 });
@@ -77,7 +78,6 @@ void PC3::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32
 void PC3::Solver::outputInitialMatrices() {
     std::cout << "--------------------------- Outputting Initial Matrices ---------------------------" << std::endl;
     auto header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t);
-    Type::host_vector<Type::complex> buffer;
     // Output Matrices to file
     // Output Matrices to file
     if (system.doOutput("all", "mat", "initial_plus", "initial")) {
@@ -93,7 +93,7 @@ void PC3::Solver::outputInitialMatrices() {
         for (int i = 0; i < system.pump.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
-            buffer = matrix.pump_plus.getFullMatrix(true,i);
+            Type::host_vector<Type::real> buffer = matrix.pump_plus.getFullMatrix(true,i);
             auto future = std::async(std::launch::async, [buffer, osc_header_information, this, suffix]() {
                 this->system.filehandler.outputMatrixToFile(buffer.data(), this->system.p.N_c, this->system.p.N_r, osc_header_information, "pump_plus" + suffix);
             });
@@ -103,7 +103,7 @@ void PC3::Solver::outputInitialMatrices() {
         for (int i = 0; i < system.pulse.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
-            buffer = matrix.pulse_plus.getFullMatrix(true,i);
+            Type::host_vector<Type::complex> buffer = matrix.pulse_plus.getFullMatrix(true,i);
             auto future = std::async(std::launch::async, [buffer, osc_header_information, this, suffix]() {
                 this->system.filehandler.outputMatrixToFile(buffer.data(), this->system.p.N_c, this->system.p.N_r, osc_header_information, "pulse_plus" + suffix);
             });
@@ -113,7 +113,7 @@ void PC3::Solver::outputInitialMatrices() {
         for (int i = 0; i < system.potential.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.potential.t0[i], system.potential.freq[i], system.potential.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
-            buffer = matrix.potential_plus.getFullMatrix(true,i);
+            Type::host_vector<Type::real> buffer = matrix.potential_plus.getFullMatrix(true,i);
             auto future = std::async(std::launch::async, [buffer, osc_header_information, this, suffix]() {
                 this->system.filehandler.outputMatrixToFile(buffer.data(), this->system.p.N_c, this->system.p.N_r, osc_header_information, "potential_plus" + suffix);
             });
@@ -145,7 +145,7 @@ void PC3::Solver::outputInitialMatrices() {
         for (int i = 0; i < system.pump.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
-            buffer = matrix.pump_minus.getFullMatrix(true,i);
+            Type::host_vector<Type::real> buffer = matrix.pump_minus.getFullMatrix(true,i);
             auto future = std::async(std::launch::async, [buffer, osc_header_information, this, suffix]() {
                 this->system.filehandler.outputMatrixToFile(buffer.data(), this->system.p.N_c, this->system.p.N_r, osc_header_information, "pump_minus" + suffix);
             });
@@ -155,7 +155,7 @@ void PC3::Solver::outputInitialMatrices() {
         for (int i = 0; i < system.pulse.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
-            buffer = matrix.pulse_minus.getFullMatrix(true,i);
+            Type::host_vector<Type::complex> buffer = matrix.pulse_minus.getFullMatrix(true,i);
             auto future = std::async(std::launch::async, [buffer, osc_header_information, this, suffix]() {
                 this->system.filehandler.outputMatrixToFile(buffer.data(), this->system.p.N_c, this->system.p.N_r, osc_header_information, "pulse_minus" + suffix);
             });
@@ -165,7 +165,7 @@ void PC3::Solver::outputInitialMatrices() {
         for (int i = 0; i < system.potential.groupSize(); i++) {
             auto osc_header_information = PC3::FileHandler::Header(system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.potential.t0[i], system.potential.freq[i], system.potential.sigma[i]);
             std::string suffix = i > 0 ? "_" + std::to_string(i) : "";
-            buffer = matrix.potential_minus.getFullMatrix(true,i);
+            Type::host_vector<Type::real> buffer = matrix.potential_minus.getFullMatrix(true,i);
             auto future = std::async(std::launch::async, [buffer, osc_header_information, this, suffix]() {
                 this->system.filehandler.outputMatrixToFile(buffer.data(), this->system.p.N_c, this->system.p.N_r, osc_header_information, "potential_minus" + suffix);
             });
