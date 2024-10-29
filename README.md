@@ -30,7 +30,7 @@ PHOENIX is designed to run exclusively on Nvidia GPUs. Verify your hardware to e
 #### 2. Install Visual Studio Microsoft (Windows) or the GNU Compiler GCC (linux)
 
 Select the right software for your operating system. Download and install it. If you are installing Microsoft Visual Studios, make sure you check "C++ Desktop Development section" during the installation process (see Screenshot). **Do not make any changes to the installation path for Visual Studio!**
-![image](https://github.com/AG-Schumacher-UPB/PHOENIX/assets/139117697/9f6fed2a-ce10-49d9-8a23-3bf5c37b91b0)
+![image](https://github.com/AG-Schumacher-UPB/PULSE/assets/139117697/9f6fed2a-ce10-49d9-8a23-3bf5c37b91b0)
 
 #### 3. Install CUDA and MSYS2
 
@@ -44,7 +44,7 @@ Open your Enviroment Variables
 - **Windows**: Right-click on Start-button then click on "System" in the context menu. Click "Advanced system settings" and go to "Advanced" tab. Now click Enviroment Variables. Here, double-click on "Path" in the lower section. Click on new to add to your path.
 
 Now you need to find the path to your cl.exe of Visual Studio and nvcc.exe for CUDA, if you have not changed the preset path during installation you should find your executable at the same location as marked orange in the screenshot.
-![image](https://github.com/AG-Schumacher-UPB/PHOENIX/assets/139117697/127b096e-1f0d-4bda-ac54-a41305891785)
+![image](https://github.com/AG-Schumacher-UPB/PULSE/assets/139117697/127b096e-1f0d-4bda-ac54-a41305891785)
 
 Note that in your case the version-number in the path (\14.37.32822\ for VS and \v12.3\ for CUDA) can be different.
 
