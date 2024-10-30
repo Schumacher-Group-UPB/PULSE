@@ -31,26 +31,24 @@
  * Then, we iterate all of the remaining rows after each other, incrementing the buffer for the next iteration.
  */
 
-void PC3::Solver::iterateFixedTimestepRungeKutta4() {   
- 
-    SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,  
-   
-                     CALCULATE_K( 1, wavefunction, reservoir ); 
- 
-                     INTERMEDIATE_SUM_K( 1, 0.5f );   
-    
+void PC3::Solver::iterateFixedTimestepRungeKutta4() {
+    SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
+
+                     CALCULATE_K( 1, wavefunction, reservoir );
+
+                     INTERMEDIATE_SUM_K( 1, 0.5f );
+
                      CALCULATE_K( 2, buffer_wavefunction, buffer_reservoir );
 
                      INTERMEDIATE_SUM_K( 2, 0.5f );
 
-                     CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir ); 
+                     CALCULATE_K( 3, buffer_wavefunction, buffer_reservoir );
 
                      INTERMEDIATE_SUM_K( 3, 1.0f );
 
-                     CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir );  
+                     CALCULATE_K( 4, buffer_wavefunction, buffer_reservoir );
 
-                     FINAL_SUM_K( 4, 1.0f / 6.0f, 1.0f / 3.0f, 1.0f / 3.0f, 1.0f / 6.0f ); 
+                     FINAL_SUM_K( 4, 1.0f / 6.0f, 1.0f / 3.0f, 1.0f / 3.0f, 1.0f / 6.0f );
 
     );
-
 }

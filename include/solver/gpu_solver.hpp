@@ -52,14 +52,14 @@ class Solver {
         Type::complex* PULSE_RESTRICT out_rv_plus = nullptr;
         Type::complex* PULSE_RESTRICT out_rv_minus = nullptr;
     };
-    
+
     Type::device_vector<Type::real> time; // [0] is t, [1] is dt
 
     struct KernelArguments {
         TemporalEvelope::Pointers pulse_pointers;     // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
         TemporalEvelope::Pointers pump_pointers;      // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
         TemporalEvelope::Pointers potential_pointers; // The pointers to the envelopes. These are obtained by calling the .pointers() method on the envelopes.
-        Type::real* time;                          // Pointer to Device Memory of the time array. [0] is t, [1] is dt
+        Type::real* time;                             // Pointer to Device Memory of the time array. [0] is t, [1] is dt
         MatrixContainer::Pointers dev_ptrs;           // All the pointers to the matrices. These are obtained by calling the .pointers() method on the matrices.
         SystemParameters::KernelParameters p;         // The kernel parameters. These are obtained by copying the kernel_parameters object of the system.
     };
@@ -135,13 +135,13 @@ class Solver {
     // The block size is specified by the user in the system.block_size variable.
     // This solver function the calculates the appropriate grid size for the given execution range.
     std::pair<dim3, dim3> getLaunchParameters( const Type::uint32 N_c, const Type::uint32 N_r = 1 ) {
-        #ifdef USE_CPU
+#ifdef USE_CPU
         dim3 block_size = { N_r, 1, 1 };
         dim3 grid_size = { N_c, 1, 1 };
-        #else
+#else
         dim3 block_size = { system.block_size, 1, 1 };
         dim3 grid_size = { ( N_c * N_r + block_size.x ) / block_size.x, 1, 1 };
-        #endif
+#endif
         return { block_size, grid_size };
     }
 };

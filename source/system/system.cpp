@@ -26,15 +26,15 @@ PC3::SystemParameters::SystemParameters() {
     // System Variables
     p.m_eff = -1; // = 1E-4 * m_e / e * 1E12  = 0.00056856;
     p.m_eff_scaled = 0;
-    p.gamma_c = 0.15;          // ps^-1
+    p.gamma_c = 0.15;            // ps^-1
     p.gamma_r = 1.5 * p.gamma_c; // ps^-1
-    p.g_c = 3.E-6;             // meV mum^2
+    p.g_c = 3.E-6;               // meV mum^2
     p.g_r = 2. * p.g_c;          // meV mum^2
-    p.R = 0.01;                // ps^-1 mum^2
-    p.L_x = 100.;             // mum
-    p.L_y = 100.;             // mum
+    p.R = 0.01;                  // ps^-1 mum^2
+    p.L_x = 100.;                // mum
+    p.L_y = 100.;                // mum
     p.g_pm = -p.g_c / 5;         // meV mum^2
-    p.delta_LT = 0.025E-3;     // meV
+    p.delta_LT = 0.025E-3;       // meV
 
     // Numerics
     p.N_c = 400;
@@ -85,13 +85,13 @@ void PC3::SystemParameters::calculateAuto() {
     // effective mass, the magic timestep will be scaled accordingly.
     const auto dt_scaling_factor = p.m_e / p.e_e * 1E8 / p.m_eff;
     // Spatial steps
-    p.dx = p.L_x / ( p.N_c - 1 ); 
-    p.dy = p.L_y / ( p.N_r - 1 ); 
+    p.dx = p.L_x / ( p.N_c - 1 );
+    p.dy = p.L_y / ( p.N_r - 1 );
     p.dV = p.dx * p.dy; // Volume element
     // Inverse squared spatial steps
-    p.one_over_dx2 = Type::real(1.0) / ( p.dx * p.dx );
-    p.one_over_dy2 = Type::real(1.0) / ( p.dy * p.dy );
-    p.m2_over_dx2_p_dy2 = Type::real(-2.0) * ( p.one_over_dx2 + p.one_over_dy2);
+    p.one_over_dx2 = Type::real( 1.0 ) / ( p.dx * p.dx );
+    p.one_over_dy2 = Type::real( 1.0 ) / ( p.dy * p.dy );
+    p.m2_over_dx2_p_dy2 = Type::real( -2.0 ) * ( p.one_over_dx2 + p.one_over_dy2 );
     // Number of grid points
     p.N2 = p.N_c * p.N_r;
     // Number of subgrid points
@@ -101,7 +101,7 @@ void PC3::SystemParameters::calculateAuto() {
     p.subgrid_N2_with_halo = ( p.subgrid_N_c + 2 * p.halo_size ) * ( p.subgrid_N_r + 2 * p.halo_size );
     // Row offset for a subgrid- i +/- row offset is the row above/below
     p.subgrid_row_offset = p.subgrid_N_c + 2 * p.halo_size;
-    // Effective mass, scaled with hbar 
+    // Effective mass, scaled with hbar
     p.m_eff_scaled = -0.5 * p.h_bar_s * p.h_bar_s / p.m_eff;
     // Magic timestep
     magic_timestep = 0.5 * p.dx * p.dy / dt_scaling_factor;
@@ -110,12 +110,11 @@ void PC3::SystemParameters::calculateAuto() {
     }
     // Calculate scaled imaginary values
     p.one_over_h_bar_s = 1.0 / p.h_bar_s;
-    p.minus_i_over_h_bar_s = Type::complex( 0.0, -Type::real(1.0) / p.h_bar_s );
+    p.minus_i_over_h_bar_s = Type::complex( 0.0, -Type::real( 1.0 ) / p.h_bar_s );
     p.i_h_bar_s = Type::complex( 0.0, p.h_bar_s );
 }
 
 PC3::SystemParameters::SystemParameters( int argc, char** argv ) : SystemParameters() {
-
     // Check if help is requested
     if ( PC3::CLIO::findInArgv( "--help", argc, argv ) != -1 || PC3::CLIO::findInArgv( "-h", argc, argv ) != -1 ) {
         calculateAuto();

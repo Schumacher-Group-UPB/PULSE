@@ -13,8 +13,10 @@
 
 void PC3::Solver::normalizeImaginaryTimePropagation() {
     // Calculate sums
-    Type::real sum_psi_plus = CUDA::real( matrix.wavefunction_plus.transformReduce( 0.0, [] PULSE_HOST_DEVICE (Type::complex a) { return Type::complex(CUDA::abs2(a)); }, [] PULSE_HOST_DEVICE (Type::complex a, Type::complex b) {return a + b;} ) );
-    Type::real sum_res_plus = CUDA::real( matrix.reservoir_plus.transformReduce( 0.0, [] PULSE_HOST_DEVICE (Type::complex a) { return Type::complex(CUDA::abs2(a)); }, [] PULSE_HOST_DEVICE (Type::complex a, Type::complex b) {return a + b;} ) );
+    Type::real sum_psi_plus = CUDA::real( matrix.wavefunction_plus.transformReduce(
+        0.0, [] PULSE_HOST_DEVICE( Type::complex a ) { return Type::complex( CUDA::abs2( a ) ); }, [] PULSE_HOST_DEVICE( Type::complex a, Type::complex b ) { return a + b; } ) );
+    Type::real sum_res_plus = CUDA::real( matrix.reservoir_plus.transformReduce(
+        0.0, [] PULSE_HOST_DEVICE( Type::complex a ) { return Type::complex( CUDA::abs2( a ) ); }, [] PULSE_HOST_DEVICE( Type::complex a, Type::complex b ) { return a + b; } ) );
 
     if ( sum_psi_plus < 1e-10 )
         sum_psi_plus = 1.0;
@@ -31,8 +33,10 @@ void PC3::Solver::normalizeImaginaryTimePropagation() {
         return;
 
     // Calculate sums
-    Type::real sum_psi_minus = CUDA::real( matrix.wavefunction_minus.transformReduce( 0.0, [] PULSE_HOST_DEVICE (Type::complex a) { return Type::complex(CUDA::abs2(a)); }, [] PULSE_HOST_DEVICE (Type::complex a, Type::complex b) {return a + b;} ) );
-    Type::real sum_res_minus = CUDA::real( matrix.reservoir_minus.transformReduce( 0.0, [] PULSE_HOST_DEVICE (Type::complex a) { return Type::complex(CUDA::abs2(a)); }, [] PULSE_HOST_DEVICE (Type::complex a, Type::complex b) {return a + b;} ) );
+    Type::real sum_psi_minus = CUDA::real( matrix.wavefunction_minus.transformReduce(
+        0.0, [] PULSE_HOST_DEVICE( Type::complex a ) { return Type::complex( CUDA::abs2( a ) ); }, [] PULSE_HOST_DEVICE( Type::complex a, Type::complex b ) { return a + b; } ) );
+    Type::real sum_res_minus = CUDA::real( matrix.reservoir_minus.transformReduce(
+        0.0, [] PULSE_HOST_DEVICE( Type::complex a ) { return Type::complex( CUDA::abs2( a ) ); }, [] PULSE_HOST_DEVICE( Type::complex a, Type::complex b ) { return a + b; } ) );
 
     if ( sum_psi_minus < 1e-10 )
         sum_psi_minus = 1.0;

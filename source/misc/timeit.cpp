@@ -23,7 +23,7 @@ void PC3::TimeIt::toFile( std::ofstream& file ) {
         file << key << " ";
     }
     file << std::endl;
-    for (auto index = 0; index < times.begin()->second.size(); index++) {
+    for ( auto index = 0; index < times.begin()->second.size(); index++ ) {
         file << index << " ";
         for ( const auto& [key, value] : times ) {
             file << value[index] << " ";
@@ -32,8 +32,8 @@ void PC3::TimeIt::toFile( std::ofstream& file ) {
     }
 }
 
-void PC3::TimeIt::addTime(const std::string& name, double duration) {
-    if ( not times.count(name) )
+void PC3::TimeIt::addTime( const std::string& name, double duration ) {
+    if ( not times.count( name ) )
         times_total[name] = 0;
     times[name].emplace_back( duration );
     times_total[name] += duration;

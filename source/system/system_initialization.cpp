@@ -117,6 +117,14 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
         std::string it = PC3::CLIO::getNextStringInput( argv, argc, "iterator", ++index );
         iterator = it;
     }
+
+    // Temporary: RK3 and RK45 are not implemented correctly, which is why we fall back to RK4 for now.
+    // We leave all the code for RK3 and RK45 in place, so that we can easily switch back to them once they are implemented.
+    if ( iterator == "rk3" || iterator == "rk45" ) {
+        iterator = "rk4";
+        std::cout << PC3::CLIO::prettyPrint( "Iterator '" + iterator + "' is not implemented. Falling back to 'rk4'", PC3::CLIO::Control::Warning ) << std::endl;
+    }
+
     std::map<std::string, Type::uint32> halo_size_for_it = { { "rk4", 4 }, { "rk45", 7 }, { "ssfm", 0 }, { "newton", 1 }, { "rk3", 3 } };
     p.halo_size = halo_size_for_it[iterator];
     std::cout << PC3::CLIO::prettyPrint( "Halo Size for iterator '" + iterator + "' = " + std::to_string( p.halo_size ), PC3::CLIO::Control::Info ) << std::endl;
@@ -222,7 +230,7 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     use_pulses = pulse.size() > 0;
     use_potentials = potential.size() > 0;
     use_stochastic = p.stochastic_amplitude > 0.0;
-    if (pump.size() == 0 and initial_reservoir.size() == 0) {
+    if ( pump.size() == 0 and initial_reservoir.size() == 0 ) {
         use_reservoir = false;
     }
     if ( ( index = PC3::CLIO::findInArgv( "-noReservoir", argc, argv ) ) != -1 ) {

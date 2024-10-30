@@ -80,7 +80,7 @@ void PC3::Solver::initializeMatricesFromSystem() {
         SYNCHRONIZE_HALOS( 0, matrix.pump_plus.getSubgridDevicePtrs( pump ) );
         if ( system.use_twin_mode ) {
             system.pump.calculate( system.filehandler, matrix.pump_minus.getHostPtr( pump ), pump, PC3::Envelope::Polarization::Minus, dim );
-            matrix.pump_minus.hostToDeviceSync(pump);
+            matrix.pump_minus.hostToDeviceSync( pump );
             SYNCHRONIZE_HALOS( 0, matrix.pump_minus.getSubgridDevicePtrs( pump ) );
         }
     }
@@ -94,11 +94,11 @@ void PC3::Solver::initializeMatricesFromSystem() {
     std::cout << PC3::CLIO::prettyPrint( "Initializing Potential Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     for ( int potential = 0; potential < system.potential.groupSize(); potential++ ) {
         system.potential.calculate( system.filehandler, matrix.potential_plus.getHostPtr( potential ), potential, PC3::Envelope::Polarization::Plus, dim );
-        matrix.potential_plus.hostToDeviceSync( potential);
+        matrix.potential_plus.hostToDeviceSync( potential );
         SYNCHRONIZE_HALOS( 0, matrix.potential_plus.getSubgridDevicePtrs( potential ) );
         if ( system.use_twin_mode ) {
             system.potential.calculate( system.filehandler, matrix.potential_minus.getHostPtr( potential ), potential, PC3::Envelope::Polarization::Minus, dim );
-            matrix.potential_minus.hostToDeviceSync(potential);
+            matrix.potential_minus.hostToDeviceSync( potential );
             SYNCHRONIZE_HALOS( 0, matrix.potential_minus.getSubgridDevicePtrs( potential ) );
         }
     }
@@ -112,11 +112,11 @@ void PC3::Solver::initializeMatricesFromSystem() {
     std::cout << PC3::CLIO::prettyPrint( "Initializing Pulse Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
     for ( int pulse = 0; pulse < system.pulse.groupSize(); pulse++ ) {
         system.pulse.calculate( system.filehandler, matrix.pulse_plus.getHostPtr( pulse ), pulse, PC3::Envelope::Polarization::Plus, dim );
-        matrix.pulse_plus.hostToDeviceSync(pulse);
+        matrix.pulse_plus.hostToDeviceSync( pulse );
         SYNCHRONIZE_HALOS( 0, matrix.pulse_plus.getSubgridDevicePtrs( pulse ) );
         if ( system.use_twin_mode ) {
             system.pulse.calculate( system.filehandler, matrix.pulse_minus.getHostPtr( pulse ), pulse, PC3::Envelope::Polarization::Minus, dim );
-            matrix.pulse_minus.hostToDeviceSync(pulse);
+            matrix.pulse_minus.hostToDeviceSync( pulse );
             SYNCHRONIZE_HALOS( 0, matrix.pulse_minus.getSubgridDevicePtrs( pulse ) );
         }
     }
@@ -142,7 +142,8 @@ void PC3::Solver::initializeMatricesFromSystem() {
                                        1.0 /* Default if no mask is applied */ );
             matrix.fft_mask_minus = buffer;
             // Shift the filter
-            CALL_FULL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c, system.p.N_r );
+            CALL_FULL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c,
+                              system.p.N_r );
         }
     }
 

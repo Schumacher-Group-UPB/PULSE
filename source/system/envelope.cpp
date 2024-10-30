@@ -32,9 +32,8 @@ eval_enum _cast_string_list_to_enum( const std::string& input, std::string split
     return ret;
 }
 
-void PC3::Envelope::addSpacial( PC3::Type::real amp, PC3::Type::real width_x, PC3::Type::real width_y, PC3::Type::real x, PC3::Type::real y,
-                                PC3::Type::real exponent, const std::string& s_type, const std::string& s_pol,
-                                const std::string& s_behavior, const std::string& s_m ) {
+void PC3::Envelope::addSpacial( PC3::Type::real amp, PC3::Type::real width_x, PC3::Type::real width_y, PC3::Type::real x, PC3::Type::real y, PC3::Type::real exponent,
+                                const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m ) {
     this->amp.push_back( amp );
     this->width_x.push_back( width_x );
     this->width_y.push_back( width_y );
@@ -145,11 +144,12 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
 
     while ( ( index = PC3::CLIO::findInArgv( "--" + key, argc, argv, index ) ) != -1 ) {
         // Spacial Component
-        std::cout << PC3::CLIO::prettyPrint( "Parsing envelope '" + key + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+        std::cout << PC3::CLIO::prettyPrint( "Parsing envelope '" + key + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
         // If first argument is "load", save the next argument as the path to the file to load!
         if ( PC3::CLIO::getNextStringInput( argv, argc, key + "_load", ++index ) == "load" ) {
             auto path = PC3::CLIO::getNextStringInput( argv, argc, key + "_path", index );
-            std::cout << PC3::CLIO::prettyPrint( "Queuing envelope '" + key + "' to be loaded from file: '" + path + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Queuing envelope '" + key + "' to be loaded from file: '" + path + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+                      << std::endl;
             // Ampltitude.
             PC3::Type::real amp = PC3::CLIO::getNextInput( argv, argc, key + "_amp", index );
             // Behaviour
@@ -198,7 +198,9 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
         }
         if ( PC3::CLIO::getNextStringInput( argv, argc, key + "_load", index ) == "load" ) {
             auto path = PC3::CLIO::getNextStringInput( argv, argc, key + "_path", index );
-            std::cout << PC3::CLIO::prettyPrint( "Queuing temporal envelope '" + key + "' to be loaded from file: '" + path + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Queuing temporal envelope '" + key + "' to be loaded from file: '" + path + "'",
+                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+                      << std::endl;
             ret.addTemporal( path );
         } else {
             index--;
@@ -209,7 +211,9 @@ PC3::Envelope PC3::Envelope::fromCommandlineArguments( int argc, char** argv, co
             sigma = PC3::CLIO::getNextInput( argv, argc, key + "_sigma", index );
             freq = PC3::CLIO::getNextInput( argv, argc, key + "_freq", index );
             ret.addTemporal( t0, sigma, freq, s_type );
-            std::cout << PC3::CLIO::prettyPrint( "Added Temporal Component '" + s_type + "' to Envelope '" + key + "'", PC3::CLIO::Control::Success | PC3::CLIO::Control::Secondary ) << std::endl;
+            std::cout << PC3::CLIO::prettyPrint( "Added Temporal Component '" + s_type + "' to Envelope '" + key + "'",
+                                                 PC3::CLIO::Control::Success | PC3::CLIO::Control::Secondary )
+                      << std::endl;
         }
     }
 
@@ -250,8 +254,8 @@ void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3:
                     continue;
 
                 // Calculate X,Y in the grid space
-                auto cx = -dim.L_x/2.0 + dim.dx * col;
-                auto cy = -dim.L_y/2.0 + dim.dy * row;
+                auto cx = -dim.L_x / 2.0 + dim.dx * col;
+                auto cy = -dim.L_y / 2.0 + dim.dy * row;
                 // If type contains "local", use local coordinates instead
                 if ( type[c] & PC3::Envelope::EnvType::Local ) {
                     cx = -1.0 + 2.0 * col / ( dim.N_c - 1 );
@@ -307,7 +311,7 @@ void PC3::Envelope::calculate( PC3::Type::complex* buffer, const int group, PC3:
             // If no mask has been applied, set the value to the default value.
             // This ensures the mask is always initialized
             if ( not has_been_set )
-                buffer[i] = PC3::Type::complex(default_value_if_no_mask, 0);
+                buffer[i] = PC3::Type::complex( default_value_if_no_mask, 0 );
         }
     }
     cache.clear();
@@ -345,12 +349,18 @@ std::string PC3::Envelope::toString() const {
             if ( load_path[i] == "" ) {
                 os << b << "  Spatial Envelope " << i << ":" << std::endl
                    << "    " << b << "Generated from Parameters:" << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " )
+                   << EscapeSequence::RESET << std::endl
                    << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Type: ", s_type[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
                    << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Polarization: ", s_pol[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
                    << "    " << b << EscapeSequence::GRAY << PC3::CLIO::unifyLength( "Behavior: ", s_behavior[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl;
@@ -368,7 +378,7 @@ std::string PC3::Envelope::toString() const {
 
 void PC3::Envelope::updateTemporal( const PC3::Type::real t ) {
     // Iterate only over the group size, as the temporal envelope is the same for all envelopes in the group.
-    for (int g = 0; g < groupSize(); g++) {
+    for ( int g = 0; g < groupSize(); g++ ) {
         temporal_envelope[g] = 1.0;
         // If the envelope is constant, skip
         if ( temporal[g] & PC3::Envelope::Temporal::Constant )
@@ -383,11 +393,11 @@ void PC3::Envelope::updateTemporal( const PC3::Type::real t ) {
             // Find the closest time points to t using std::lower_bound
             auto it = std::lower_bound( temporal_time_points[g][0].begin(), temporal_time_points[g][0].end(), t );
             // We use points[t]-points[t-1] to interpolate, hence we limit the index to 1:points.size()-1
-            size_t index = std::min<size_t>( std::max<size_t>( 1, std::distance( temporal_time_points[g][0].begin(), it ) ),temporal_time_points[g][0].size()-1 );
+            size_t index = std::min<size_t>( std::max<size_t>( 1, std::distance( temporal_time_points[g][0].begin(), it ) ), temporal_time_points[g][0].size() - 1 );
             // Interpolate between the two closest points
-            const auto t1 = temporal_time_points[g][0][index-1];
+            const auto t1 = temporal_time_points[g][0][index - 1];
             const auto t2 = temporal_time_points[g][0][index];
-            const auto v1 = PC3::Type::complex( temporal_time_points[g][1][index-1], temporal_time_points[g][2][index-1] );
+            const auto v1 = PC3::Type::complex( temporal_time_points[g][1][index - 1], temporal_time_points[g][2][index - 1] );
             const auto v2 = PC3::Type::complex( temporal_time_points[g][1][index], temporal_time_points[g][2][index] );
             temporal_envelope[g] = v1 + ( v2 - v1 ) * ( t - t1 ) / ( t2 - t1 );
         }

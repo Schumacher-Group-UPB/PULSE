@@ -408,7 +408,7 @@
 // Only Callable from within the solver
 #define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                          \
     {                                                                                                                                                                             \
-        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                                           \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                             \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                             \
         Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                       \
                                 matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                          \

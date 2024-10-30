@@ -31,21 +31,17 @@ bool PC3::Solver::iterate() {
 
     // If required, calculate new set of random numbers.
     // TODO: move this back into subgrids, because for large number of subgrids this will look very correlated!
-    if (system.evaluateStochastic()) {
-        auto args = generateKernelArguments( );
+    if ( system.evaluateStochastic() ) {
+        auto args = generateKernelArguments();
         auto [block_size, grid_size] = getLaunchParameters( 1, system.p.subgrid_N2_with_halo );
-        if (first_time) {
+        if ( first_time ) {
             first_time = false;
-            CALL_FULL_KERNEL(
-                PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0,
-                system.random_seed, args.dev_ptrs.random_state, system.p.subgrid_N2_with_halo
-            );
+            CALL_FULL_KERNEL( PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0, system.random_seed, args.dev_ptrs.random_state,
+                              system.p.subgrid_N2_with_halo );
             std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
         }
-        CALL_FULL_KERNEL(
-            PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0,
-            args.dev_ptrs.random_state, args.dev_ptrs.random_number, system.p.subgrid_N2_with_halo, system.p.stochastic_amplitude*std::sqrt(system.p.dt), system.p.stochastic_amplitude*std::sqrt(system.p.dt)
-        );
+        CALL_FULL_KERNEL( PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0, args.dev_ptrs.random_state, args.dev_ptrs.random_number,
+                          system.p.subgrid_N2_with_halo, system.p.stochastic_amplitude * std::sqrt( system.p.dt ), system.p.stochastic_amplitude * std::sqrt( system.p.dt ) );
     }
     // TODO: Hide this in a solver.updateKernelArgs function
     system.pulse.updateTemporal( system.p.t );
@@ -58,7 +54,7 @@ bool PC3::Solver::iterate() {
     dev_potential_oscillation.amp = system.potential.temporal_envelope;
     dev_pump_oscillation.amp = system.pump.temporal_envelope;
     time = new_time;
-    
+
     // Iterate RK4(45)/ssfm/itp
     iterator[system.iterator].iterate();
 

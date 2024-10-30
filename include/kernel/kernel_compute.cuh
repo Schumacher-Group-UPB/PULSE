@@ -13,7 +13,8 @@
 
 namespace PC3::Kernel {
 
-    PULSE_GLOBAL void initialize_random_number_generator(int i, Type::uint32 seed, Type::cuda_random_state* state, const Type::uint32 N);
-    PULSE_GLOBAL void generate_random_numbers(int i, Type::cuda_random_state* state, Type::complex* buffer, const Type::uint32 N, const Type::real real_amp, const Type::real imag_amp);
+PULSE_GLOBAL void initialize_random_number_generator( int i, Type::uint32 seed, Type::cuda_random_state* state, const Type::uint32 N );
+PULSE_GLOBAL void generate_random_numbers( int i, Type::cuda_random_state* state, Type::complex* buffer, const Type::uint32 N, const Type::real real_amp,
+                                           const Type::real imag_amp );
 
 } // namespace PC3::Kernel

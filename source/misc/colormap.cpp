@@ -85,23 +85,19 @@ void ColorPalette::readColorPaletteFromGnuplotDOTPAL( std::string filepath, int 
                 else {
                     color.clear();
                     // Find first non-space value (integer)
-                    while ( i < str.size() && str.at( i ) == ' ' )
-                        i++;
+                    while ( i < str.size() && str.at( i ) == ' ' ) i++;
                     // Skip the integer
-                    while ( i < str.size() && str.at( i ) != ' ' )
-                        i++;
+                    while ( i < str.size() && str.at( i ) != ' ' ) i++;
                     for ( int k = 0; k < 3; k++ ) {
                         if ( i >= str.size() ) {
                             k = 3;
                             break;
                         }
                         // Skip the spaces
-                        while ( str.at( i ) == ' ' || str.at( i ) == '(' )
-                            i++;
+                        while ( str.at( i ) == ' ' || str.at( i ) == '(' ) i++;
                         j = i;
                         // Parse value
-                        while ( str.at( i ) != ' ' && str.at( i ) != ',' && str.at( i ) != ')' )
-                            i++;
+                        while ( str.at( i ) != ' ' && str.at( i ) != ',' && str.at( i ) != ')' ) i++;
                         color.push_back( (int)( 255.0 * std::strtod( str.substr( j, i - j ).c_str(), NULL ) ) );
                     }
                     if ( color.size() == 3 )

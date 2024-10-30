@@ -17,4 +17,4 @@ class CUDAMatrixBase {
     static inline double global_total_host_mb_max = 0;
 };
 
-}
+} // namespace PC3

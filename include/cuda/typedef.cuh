@@ -94,26 +94,26 @@ using stream_t = cudaStream_t;
 
 #ifdef USE_CPU
 // Define PULSE_INLINE as inline when using the CPU
-    #define PULSE_INLINE __attribute__((always_inline)) inline
-    // For the CPU Version, we inline the Kernel Functions
-    #define PULSE_COMPILER_SPECIFIC __attribute__((always_inline)) inline
+    #define PULSE_INLINE __attribute__( ( always_inline ) ) inline
+// For the CPU Version, we inline the Kernel Functions
+    #define PULSE_COMPILER_SPECIFIC __attribute__( ( always_inline ) ) inline
     #define PULSE_HOST_DEVICE
     #define PULSE_DEVICE
     #define PULSE_HOST
     #define PULSE_GLOBAL
     #define PULSE_RESTRICT __restrict__
-    #define PULSE_ALIGNED(x) __attribute__( ( aligned( sizeof( x ) ) ) )
-    #else
-    // Define PULSE_INLINE as nvcc's __inline__ when using the GPU
+    #define PULSE_ALIGNED( x ) __attribute__( ( aligned( sizeof( x ) ) ) )
+#else
+// Define PULSE_INLINE as nvcc's __inline__ when using the GPU
     #define PULSE_INLINE __inline__
-    // For the GPU Version, the Kernel Functions are static to avoid name mangling
+// For the GPU Version, the Kernel Functions are static to avoid name mangling
     #define PULSE_COMPILER_SPECIFIC static
     #define PULSE_HOST_DEVICE __host__ __device__
     #define PULSE_DEVICE __device__
     #define PULSE_HOST __host__
     #define PULSE_GLOBAL __global__
     #define PULSE_RESTRICT __restrict__
-    #define PULSE_ALIGNED(x)
+    #define PULSE_ALIGNED( x )
 #endif
 
 // If nvcc is not used, redefine dim3

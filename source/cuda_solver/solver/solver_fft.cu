@@ -6,22 +6,22 @@
 
 #ifdef USE_CPU
 
-#    include <fftw3.h>
+    #include <fftw3.h>
 
 #else
 
-#    include <cufft.h>
-#    include <curand_kernel.h>
-#    define cuda_fft_plan cufftHandle
-#    ifdef USE_HALF_PRECISION
-#        define FFTSOLVER cufftExecC2C
-#        define FFTPLAN CUFFT_C2C
+    #include <cufft.h>
+    #include <curand_kernel.h>
+    #define cuda_fft_plan cufftHandle
+    #ifdef USE_HALF_PRECISION
+        #define FFTSOLVER cufftExecC2C
+        #define FFTPLAN CUFFT_C2C
 using fft_type = cufftComplex;
-#    else
-#        define FFTSOLVER cufftExecZ2Z
-#        define FFTPLAN CUFFT_Z2Z
+    #else
+        #define FFTSOLVER cufftExecZ2Z
+        #define FFTPLAN CUFFT_Z2Z
 using fft_type = cufftDoubleComplex;
-#    endif
+    #endif
 
 #endif
 
@@ -62,10 +62,9 @@ static cufftHandle& getFFTPlan( PC3::Type::uint32 N_c, PC3::Type::uint32 N_r ) {
  * to a cached filter mask, which itself will be shifted.
  */
 
-#define fft_template_type PC3::Type::complex,PC3::Type::real
+#define fft_template_type PC3::Type::complex, PC3::Type::real
 
 void PC3::Solver::applyFFTFilter( bool apply_mask ) {
-
     auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
 
     matrix.wavefunction_plus.toFull( matrix.fft_plus );
@@ -83,11 +82,11 @@ void PC3::Solver::applyFFTFilter( bool apply_mask ) {
 
     // Apply the FFT Mask Filter
     CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream
-                 GET_RAW_PTR( matrix.fft_plus ), GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c * system.p.N_r );
+                      GET_RAW_PTR( matrix.fft_plus ), GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c * system.p.N_r );
 
     if ( system.use_twin_mode ) {
         CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Minus", grid_size, block_size, 0, // 0 = default stream
-                     GET_RAW_PTR( matrix.fft_minus ), GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c * system.p.N_r );
+                          GET_RAW_PTR( matrix.fft_minus ), GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c * system.p.N_r );
     }
 
     // Transform back.
@@ -104,23 +103,21 @@ void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* dev
 #ifdef USE_CUDA
     // Do FFT using CUDAs FFT functions
     auto plan = getFFTPlan( system.p.N_c, system.p.N_r );
-    CHECK_CUDA_ERROR( FFTSOLVER( plan, reinterpret_cast<fft_type*>( device_ptr_in ), reinterpret_cast<fft_type*>( device_ptr_out ), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
+    CHECK_CUDA_ERROR(
+        FFTSOLVER( plan, reinterpret_cast<fft_type*>( device_ptr_in ), reinterpret_cast<fft_type*>( device_ptr_out ), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ),
+        "FFT Exec" );
 #else
-// auto [plan_forward, plan_inverse] = getFFTPlan(system.p.N_c, system.p.N_r, device_ptr_in, device_ptr_out);
-#    ifdef USE_HALF_PRECISION
-    auto plan = fftwf_plan_dft_2d( system.p.N_c, system.p.N_r,
-                                   reinterpret_cast<fftwf_complex*>( device_ptr_in ),
-                                   reinterpret_cast<fftwf_complex*>( device_ptr_out ),
+    // auto [plan_forward, plan_inverse] = getFFTPlan(system.p.N_c, system.p.N_r, device_ptr_in, device_ptr_out);
+    #ifdef USE_HALF_PRECISION
+    auto plan = fftwf_plan_dft_2d( system.p.N_c, system.p.N_r, reinterpret_cast<fftwf_complex*>( device_ptr_in ), reinterpret_cast<fftwf_complex*>( device_ptr_out ),
                                    dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE );
     fftwf_execute( plan );
     fftwf_destroy_plan( plan );
-#    else
-    auto plan = fftw_plan_dft_2d( system.p.N_c, system.p.N_r,
-                                  reinterpret_cast<fftw_complex*>( device_ptr_in ),
-                                  reinterpret_cast<fftw_complex*>( device_ptr_out ),
+    #else
+    auto plan = fftw_plan_dft_2d( system.p.N_c, system.p.N_r, reinterpret_cast<fftw_complex*>( device_ptr_in ), reinterpret_cast<fftw_complex*>( device_ptr_out ),
                                   dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE );
     fftw_execute( plan );
     fftw_destroy_plan( plan );
-#    endif
+    #endif
 #endif
 }

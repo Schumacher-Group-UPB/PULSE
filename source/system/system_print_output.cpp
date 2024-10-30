@@ -19,12 +19,12 @@ Prints PHOENIX. Font is CyberLarge
 
 */
 void print_name() {
-    std::cout << PC3::CLIO::fillLine( console_width, seperator ) << "\n\n"; // Horizontal Seperator 
+    std::cout << PC3::CLIO::fillLine( console_width, seperator ) << "\n\n"; // Horizontal Seperator
     std::cout << EscapeSequence::ORANGE << EscapeSequence::BOLD;            // Make Text Bold
     // Print Phoenix LOGO
     std::cout << PC3::CLIO::centerString( " _____    _     _    _____    _______   __   _   _____   _     _  ", console_width ) << "\n";
     std::cout << PC3::CLIO::centerString( "|_____]   |_____|   |     |   |______   | \\  |     |      \\___/   ", console_width ) << "\n";
-    std::cout << PC3::CLIO::centerString( "|       . |     | . |_____| . |______ . |  \\_| . __|__ . _/   \\_ .", console_width ) << "\n\n"; 
+    std::cout << PC3::CLIO::centerString( "|       . |     | . |_____| . |______ . |  \\_| . __|__ . _/   \\_ .", console_width ) << "\n\n";
     std::stringstream ss;
     // Paderborn Highly Optimized and Energy efficient solver for two-dimensional Nonlinear Schrödinger equations with Integrated Xtensions
     ss << EscapeSequence::RESET << EscapeSequence::UNDERLINE << EscapeSequence::BOLD << EscapeSequence::BLUE << "P" << EscapeSequence::GRAY << "aderborn " << EscapeSequence::BLUE
@@ -32,9 +32,9 @@ void print_name() {
        << "nergy efficient solver for two-dimensional ";
     std::cout << PC3::CLIO::centerStringRaw( ss.str(), console_width, "Paderborn Highly Optimized and Energy efficient solver for two-dimensional" ) << std::endl;
     ss.str( "" );
-    ss.clear(); 
-    ss << EscapeSequence::BLUE << "N" << EscapeSequence::GRAY << "onlinear Schroedinger equations with " << EscapeSequence::BLUE
-       << "I" << EscapeSequence::GRAY << "ntegrated e" << EscapeSequence::BLUE << "X" << EscapeSequence::GRAY << "tensions" << EscapeSequence::RESET;
+    ss.clear();
+    ss << EscapeSequence::BLUE << "N" << EscapeSequence::GRAY << "onlinear Schroedinger equations with " << EscapeSequence::BLUE << "I" << EscapeSequence::GRAY << "ntegrated e"
+       << EscapeSequence::BLUE << "X" << EscapeSequence::GRAY << "tensions" << EscapeSequence::RESET;
     std::cout << PC3::CLIO::centerStringRaw( ss.str(), console_width, "Nonlinear Schroedinger equations with Integrated Xtensions" ) << std::endl;
     ss.str( "" );
     ss.clear();

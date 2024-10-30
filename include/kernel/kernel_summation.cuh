@@ -145,7 +145,7 @@ PULSE_DEVICE PULSE_INLINE void runge_add_to_input_k4( Type::uint32 i, Type::uint
 template <typename buffer_type, bool complex_dt, bool include_dw, bool include_reservoir, Type::uint32 N, float... Weights>
 PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_sum_to_input_k( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
                                                                 buffer_type* k_vec ) {
-    GENERATE_SUBGRID_INDEX(i, current_halo);
+    GENERATE_SUBGRID_INDEX( i, current_halo );
 
     if constexpr ( sizeof...( Weights ) == 1 ) {
         runge_sum_to_input_k1<buffer_type, complex_dt, N, Weights...>( i, ( N - 1 ) * args.p.subgrid_N2_with_halo, current_halo, args, input, output, k_vec );
@@ -173,7 +173,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_sum_to_input_k( Type::uint32 i, 
 template <typename buffer_type, bool complex_dt, bool include_dw, bool include_reservoir, Type::uint32 N, float... Weights>
 PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_add_to_input_k( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output,
                                                                 buffer_type* k_vec ) {
-    GENERATE_SUBGRID_INDEX(i, current_halo);
+    GENERATE_SUBGRID_INDEX( i, current_halo );
 
     if constexpr ( sizeof...( Weights ) == 1 ) {
         runge_add_to_input_k1<buffer_type, complex_dt, N, Weights...>( i, ( N - 1 ) * args.p.subgrid_N2_with_halo, current_halo, args, input_output, k_vec );

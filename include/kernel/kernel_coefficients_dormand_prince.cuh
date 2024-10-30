@@ -8,7 +8,6 @@ namespace RKCoefficients {
 
 // RK 45 coefficients (Dormand–Prince method)
 struct DP {
-
     static constexpr float a2 = 1.f / 5.f;
     static constexpr float a3 = 3.f / 10.f;
     static constexpr float a4 = 4.f / 5.f;
@@ -38,8 +37,6 @@ struct DP {
     static constexpr float b65 = -2187.f / 6784.f;
     static constexpr float b66 = 11.f / 84.f;
 
-
-
     /**
     * The First Psi Delta Matrix is calculated using 
     * delta_psi_1 = b61 * k1 + b63 * k3 + b64 * k4 + b65 * k5 + b66 * k6;
@@ -53,11 +50,10 @@ struct DP {
     */
     static constexpr float e1 = b61 - 5179.f / 57600.f;
     static constexpr float e2 = 0.0f;
-    static constexpr float e3 = b63 - 7571.f / 16695.f;   
-    static constexpr float e4 = b64 - 393.f / 640.f;      
+    static constexpr float e3 = b63 - 7571.f / 16695.f;
+    static constexpr float e4 = b64 - 393.f / 640.f;
     static constexpr float e5 = b65 - -92097.f / 339200.f;
-    static constexpr float e6 = b66 - 187.f / 2100.f;     
-    static constexpr float e7 = -1.f / 40.f;         
-
+    static constexpr float e6 = b66 - 187.f / 2100.f;
+    static constexpr float e7 = -1.f / 40.f;
 };
 } // namespace RKCoefficients

@@ -21,10 +21,8 @@ namespace PC3 {
  */
 class SystemParameters {
    public:
-
     // System Parameters. These are also passed to the Kernels
     struct KernelParameters {
-
         // Size Variables
         Type::uint32 N_c, N_r, N2;
         // Subgrid and Halo
@@ -33,21 +31,21 @@ class SystemParameters {
         Type::uint32 subgrids_columns, subgrids_rows; // For now, subgrids_columns = subgrids_rows at all times, even if N_c != N_r
         // Time variables
         Type::real t, dt;
-        
+
         // SI Rescaling Units
         Type::real m_e, h_bar, e_e, h_bar_s, m_eff, m_eff_scaled;
-        
+
         // System Variables
         Type::real L_x, L_y, dx, dy, dV, stochastic_amplitude, one_over_dx2, one_over_dy2, m2_over_dx2_p_dy2;
         Type::real gamma_c, gamma_r, g_c, g_r, R, g_pm, delta_LT;
-        
+
         // Complex Scaled Values
         Type::real one_over_h_bar_s;
         Type::complex minus_i_over_h_bar_s, i_h_bar_s;
-        Type::complex i = {0.0,1.0};
-        Type::complex half_i = {0.0,0.5};
-        Type::complex minus_half_i = {0.0,-0.5};
-        Type::complex minus_i = {0.0,-1.0};
+        Type::complex i = { 0.0, 1.0 };
+        Type::complex half_i = { 0.0, 0.5 };
+        Type::complex minus_half_i = { 0.0, -0.5 };
+        Type::complex minus_i = { 0.0, -1.0 };
 
         // Boundary Conditions
         bool periodic_boundary_x, periodic_boundary_y;
@@ -84,12 +82,12 @@ class SystemParameters {
 
     // Seed for random number generator
     Type::uint32 random_seed;
-    
+
     // History Output
     Type::uint32 history_matrix_start_x, history_matrix_start_y, history_matrix_end_x, history_matrix_end_y, history_matrix_output_increment;
     bool do_output_history_matrix;
     Type::uint32 output_history_matrix_every; // Scales outEvery for the history matrices with this value
-    Type::real output_history_start_time; // Only output history matrices after this time
+    Type::real output_history_start_time;     // Only output history matrices after this time
     Type::real output_every;
 
     bool do_overwrite_dt;
