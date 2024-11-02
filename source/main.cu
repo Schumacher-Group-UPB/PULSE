@@ -35,6 +35,7 @@
 #include "misc/timeit.hpp"
 #include "misc/sfml_helper.hpp"
 #include "solver/gpu_solver.hpp"
+#include <likwid.h>
 
 int main( int argc, char* argv[] ) {
     // Try and read-in any config file
@@ -55,6 +56,11 @@ int main( int argc, char* argv[] ) {
     PC3::Type::uint32 out_every_iterations = 1;
     PC3::Type::real dt = system.p.dt;
     // Main Loop
+    LIKWID_MARKER_INIT;
+    #pragma omp parallel
+    {
+      LIKWID_MARKER_START("iterator");
+    }
     while ( system.p.t < system.t_max and running ) {
         TimeThis(
             // Iterate #output_every ps
@@ -83,6 +89,10 @@ int main( int argc, char* argv[] ) {
 
         system.printCMD( complete_duration, system.iteration );
     }
+    #pragma omp parallel
+    {
+      LIKWID_MARKER_STOP("iterator");
+    }
     system.finishCMD();
 
     // Fileoutput
@@ -91,6 +101,7 @@ int main( int argc, char* argv[] ) {
     // Print Time statistics and output to file
     system.printSummary( PC3::TimeIt::getTimes(), PC3::TimeIt::getTimesTotal() );
     PC3::TimeIt::toFile( system.filehandler.getFile( "times" ) );
+    LIKWID_MARKER_CLOSE;
 
     return 0;
 }
