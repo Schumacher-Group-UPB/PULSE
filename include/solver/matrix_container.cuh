@@ -19,10 +19,14 @@ struct MatrixContainer {
 
     // Wavefunction and Reservoir Matrices.
     PC3::CUDAMatrix<Type::complex> wavefunction_plus, wavefunction_minus, reservoir_plus, reservoir_minus;
+#ifdef BENCH        
     PC3::CUDAMatrix<Type::complex> wavefunction_iplus, wavefunction_iminus;
+#endif    
     // Corresponding Buffer Matrices
     PC3::CUDAMatrix<Type::complex> buffer_wavefunction_plus, buffer_wavefunction_minus, buffer_reservoir_plus, buffer_reservoir_minus;
+#ifdef BENCH        
     PC3::CUDAMatrix<Type::complex> buffer_wavefunction_iplus, buffer_wavefunction_iminus;
+#endif    
     // Corresponding initial States. These are simple host vectors, not CUDAMatrices.
     PC3::Type::host_vector<Type::complex> initial_state_plus, initial_state_minus, initial_reservoir_plus, initial_reservoir_minus;
 
@@ -74,10 +78,14 @@ struct MatrixContainer {
 
         // Wavefunction and Reservoir Matrices
         wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_plus" );
+#ifdef BENCH        
         wavefunction_iplus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_iplus" );
+#endif      
         reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_plus" );
         buffer_wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_plus" );
-        buffer_wavefunction_iplus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_plus" );
+#ifdef BENCH        
+        buffer_wavefunction_iplus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_iplus" );
+#endif      
         buffer_reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_plus" );
         initial_state_plus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
         initial_reservoir_plus = PC3::Type::device_vector<Type::complex>( N_c * N_r );
@@ -132,7 +140,9 @@ struct MatrixContainer {
 
         // Wavefunction and Reservoir Matrices
         wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_minus" );
+#ifdef BENCH        
         wavefunction_iminus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_iminus" );
+#endif        
         reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_minus" );
         buffer_wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_minus" );
         buffer_reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_minus" );
@@ -159,15 +169,19 @@ struct MatrixContainer {
         // Wavefunction and Reservoir Matrices
         Type::complex* wavefunction_plus PULSE_ALIGNED( Type::complex ) = nullptr;
         Type::complex* wavefunction_minus PULSE_ALIGNED( Type::complex ) = nullptr;
+#ifdef BENCH        
         Type::complex* wavefunction_iplus PULSE_ALIGNED( Type::complex ) = nullptr;
         Type::complex* wavefunction_iminus PULSE_ALIGNED( Type::complex ) = nullptr;
+#endif        
         Type::complex* reservoir_plus PULSE_ALIGNED( Type::complex ) = nullptr;
         Type::complex* reservoir_minus PULSE_ALIGNED( Type::complex ) = nullptr;
         // Corresponding Buffer Matrices
         Type::complex* buffer_wavefunction_plus PULSE_ALIGNED( Type::complex ) = nullptr;
         Type::complex* buffer_wavefunction_minus PULSE_ALIGNED( Type::complex ) = nullptr;
+#ifdef BENCH        
         Type::complex* buffer_wavefunction_iplus PULSE_ALIGNED( Type::complex ) = nullptr;
         Type::complex* buffer_wavefunction_iminus PULSE_ALIGNED( Type::complex ) = nullptr;
+#endif        
         Type::complex* buffer_reservoir_plus PULSE_ALIGNED( Type::complex ) = nullptr;
         Type::complex* buffer_reservoir_minus PULSE_ALIGNED( Type::complex ) = nullptr;
 
@@ -219,10 +233,14 @@ struct MatrixContainer {
         // Wavefunction and Reservoir Matrices. Only the Plus components are initialized here. If the twin mode is enabled, the minus components are initialized in the next step.
         // The kernels can then check for nullptr and use the minus components if they are not nullptr.
         ptrs.wavefunction_plus = wavefunction_plus.getDevicePtr( subgrid );
+#ifdef BENCH        
         ptrs.wavefunction_iplus = wavefunction_iplus.getDevicePtr( subgrid );
+#endif        
         ptrs.reservoir_plus = reservoir_plus.getDevicePtr( subgrid );
         ptrs.buffer_wavefunction_plus = buffer_wavefunction_plus.getDevicePtr( subgrid );
+#ifdef BENCH        
         ptrs.buffer_wavefunction_iplus = buffer_wavefunction_iplus.getDevicePtr( subgrid );
+#endif        
         ptrs.buffer_reservoir_plus = buffer_reservoir_plus.getDevicePtr( subgrid );
 
         // Pump, Pulse and Potential Matrices
@@ -264,7 +282,9 @@ struct MatrixContainer {
 
         // Wavefunction and Reservoir Matrices
         ptrs.wavefunction_minus = wavefunction_minus.getDevicePtr( subgrid );
+#ifdef BENCH        
         ptrs.wavefunction_iminus = wavefunction_iminus.getDevicePtr( subgrid );
+#endif        
         ptrs.reservoir_minus = reservoir_minus.getDevicePtr( subgrid );
         ptrs.buffer_wavefunction_minus = buffer_wavefunction_minus.getDevicePtr( subgrid );
         ptrs.buffer_reservoir_minus = buffer_reservoir_minus.getDevicePtr( subgrid );

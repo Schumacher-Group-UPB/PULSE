@@ -16,21 +16,6 @@
 namespace PC3::Kernel::Compute {
 
 template <bool tmp_use_tetm, bool tmp_use_reservoir, bool tmp_use_pulse, bool tmp_use_pump, bool tmp_use_potential, bool tmp_use_stochastic>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void wf_times_mi( int i, Type::uint32 current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
-    GENERATE_SUBGRID_INDEX( i, current_halo );
-
-    // Copy Pointers and mark as restricted
-    //Type::complex* PULSE_RESTRICT in_wf_plus = io.in_wf_plus;
-    //Type::complex* PULSE_RESTRICT in_rv_plus = io.in_rv_plus;
-    //Type::complex* PULSE_RESTRICT out_wf_plus = io.out_wf_plus;
-    //Type::complex* PULSE_RESTRICT out_rv_plus = io.out_rv_plus;
-
-    //BUFFER_TO_SHARED();
-
-    io.in_wf_plus_i[i]=Type::complex( CUDA::imag( io.in_wf_plus[i] ), -1.0f * CUDA::real( io.in_wf_plus[i] ) );
-}
-
-template <bool tmp_use_tetm, bool tmp_use_reservoir, bool tmp_use_pulse, bool tmp_use_pump, bool tmp_use_potential, bool tmp_use_stochastic>
 PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
@@ -54,74 +39,81 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
     // MARK: Scalar
     if constexpr ( not tmp_use_tetm ) {
-        Type::complex wf_plus = 0;
-          const Type::complex in_wf = io.in_wf_plus[i];
-          // Use this for -i*in_wf
-          
-//          const Type::complex in_wf_mi = Type::complex( CUDA::imag( in_wf ), -1.0f * CUDA::real( in_wf ) );
-          const Type::complex in_wf_mi = io.in_wf_plus_i[i]; //Type::complex( CUDA::imag( in_wf ), -1.0f * CUDA::real( in_wf ) );
-          
-          // |Psi|^2
-          const Type::real in_psi_norm = CUDA::abs2( in_wf );
-        
-          // Hamiltonian
-          wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * in_wf +
+#ifdef BENCH
+        const Type::complex in_wf = io.in_wf_plus[i];
+        const Type::complex in_wf_mi = io.in_wf_plus_i[i];
+        const Type::real in_psi_norm = CUDA::abs2( in_wf );
+        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * io.in_wf_plus_i[i] +
                                                           ( io.in_wf_plus_i[i + subgrid_row_offset] + io.in_wf_plus_i[i - subgrid_row_offset] ) * one_over_dy2 +
                                                           ( io.in_wf_plus_i[i + 1] + io.in_wf_plus_i[i - 1] ) * one_over_dx2 );
-          
-//          wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * in_wf +
-//                                                          ( io.in_wf_plus[i + subgrid_row_offset] + io.in_wf_plus[i - subgrid_row_offset] ) * one_over_dy2 +
-//                                                          ( io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1] ) * one_over_dx2 );
-          // -i/hbar * H
-//          wf_plus = Type::complex( CUDA::imag( wf_plus ), -1.0f * CUDA::real( wf_plus ))*one_over_h_bar_s;
-          wf_plus = wf_plus*one_over_h_bar_s;
-          wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
+        wf_plus = wf_plus*one_over_h_bar_s;
+        wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
+        wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
 
-          //
-          
-          wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
+#else
+        const Type::complex in_wf = io.in_wf_plus[i];
+        // Use this for -i*in_wf
+        
+        const Type::complex in_wf_mi = Type::complex( CUDA::imag( in_wf ), -1.0f * CUDA::real( in_wf ) );
+        
+        // |Psi|^2
+        const Type::real in_psi_norm = CUDA::abs2( in_wf );
+      
+        // Hamiltonian
+        
+        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * in_wf +
+                                                        ( io.in_wf_plus[i + subgrid_row_offset] + io.in_wf_plus[i - subgrid_row_offset] ) * one_over_dy2 +
+                                                        ( io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1] ) * one_over_dx2 );
+        // -i/hbar * H
+        wf_plus = Type::complex( CUDA::imag( wf_plus ), -1.0f * CUDA::real( wf_plus ))*one_over_h_bar_s;
+        wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
 
-        if constexpr ( tmp_use_reservoir ) {
-            const Type::complex in_rv = io.in_rv_plus[i];
-            wf_plus += args.p.one_over_h_bar_s * args.p.g_r * in_rv * in_wf_mi;
-            wf_plus += Type::real( 0.5 ) * args.p.R * in_rv * in_wf;
-            Type::complex rv_plus = -( args.p.gamma_r + args.p.R * in_psi_norm ) * in_rv;
+        //
+        
+        wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
+#endif
 
-            if constexpr ( tmp_use_pump ) {
-                for ( int k = 0; k < args.pump_pointers.n; k++ ) {
-                    PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
-                    rv_plus += args.dev_ptrs.pump_plus[i + offset] * args.pump_pointers.amp[k];
-                }
-            }
+      if constexpr ( tmp_use_reservoir ) {
+          const Type::complex in_rv = io.in_rv_plus[i];
+          wf_plus += args.p.one_over_h_bar_s * args.p.g_r * in_rv * in_wf_mi;
+          wf_plus += Type::real( 0.5 ) * args.p.R * in_rv * in_wf;
+          Type::complex rv_plus = -( args.p.gamma_r + args.p.R * in_psi_norm ) * in_rv;
 
-            if constexpr ( tmp_use_stochastic ) {
-                rv_plus += args.p.R * in_rv / args.p.dV;
-            }
+          if constexpr ( tmp_use_pump ) {
+              for ( int k = 0; k < args.pump_pointers.n; k++ ) {
+                  PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+                  rv_plus += args.dev_ptrs.pump_plus[i + offset] * args.pump_pointers.amp[k];
+              }
+          }
 
-            io.out_rv_plus[i] = rv_plus;
-        }
+          if constexpr ( tmp_use_stochastic ) {
+              rv_plus += args.p.R * in_rv / args.p.dV;
+          }
 
-        if constexpr ( tmp_use_potential ) {
-            for ( int k = 0; k < args.potential_pointers.n; k++ ) {
-                PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
-                const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
-                wf_plus += args.p.one_over_h_bar_s * potential * in_wf_mi;
-            }
-        }
+          io.out_rv_plus[i] = rv_plus;
+      }
 
-        if constexpr ( tmp_use_pulse ) {
-            for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
-                PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
-                const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
-                wf_plus += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
-            }
-        }
+      if constexpr ( tmp_use_potential ) {
+          for ( int k = 0; k < args.potential_pointers.n; k++ ) {
+              PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+              const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
+              wf_plus += args.p.one_over_h_bar_s * potential * in_wf_mi;
+          }
+      }
 
-        if constexpr ( tmp_use_stochastic ) {
-            wf_plus -= args.p.one_over_h_bar_s * args.p.g_c * in_wf_mi / args.p.dV;
-        }
+      if constexpr ( tmp_use_pulse ) {
+          for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
+              PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+              const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
+              wf_plus += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
+          }
+      }
 
-        io.out_wf_plus[i] = wf_plus;
+      if constexpr ( tmp_use_stochastic ) {
+          wf_plus -= args.p.one_over_h_bar_s * args.p.g_c * in_wf_mi / args.p.dV;
+      }
+
+      io.out_wf_plus[i] = wf_plus;
 
     } else {
         // MARK: TE/TM
