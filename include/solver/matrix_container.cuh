@@ -56,7 +56,7 @@ struct MatrixContainer {
     // Empty Constructor
     MatrixContainer() = default;
 
-    // Construction Chain. The Host Matrix is always constructed (who carese about RAM right?) and the device matrix is constructed if the condition is met.
+    // Construction Chain. The Host Matrix is always constructed (who cares about RAM right?) and the device matrix is constructed if the condition is met.
     void constructAll( const int N_c, const int N_r, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses_plus, const int n_pumps_plus,
                        const int n_potentials_plus, const int n_pulses_minus, const int n_pumps_minus, const int n_potentials_minus, const int subgrids_columns,
                        const int subgrids_rows, const int halo_size ) {
@@ -118,6 +118,7 @@ struct MatrixContainer {
         MATRIX_LIST
     #undef X
 #endif
+
         if ( not use_twin_mode )
             return;
 

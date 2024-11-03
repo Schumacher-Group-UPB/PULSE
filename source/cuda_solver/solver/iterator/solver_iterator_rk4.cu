@@ -32,6 +32,7 @@
  */
 
 void PC3::Solver::iterateFixedTimestepRungeKutta4() {
+
     SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
 
                      CALCULATE_K( 1, wavefunction, reservoir );

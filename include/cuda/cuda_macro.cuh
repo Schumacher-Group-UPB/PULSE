@@ -675,10 +675,11 @@
     // The Kernel call requires a name and a grid and block size that
     // are not further passed to the actual compute Kernel. Instead, they
     // are used as launch parameters and for debugging.
+    // Don't use shared_mem_size for now, as it is not used and will result in large grids crashing the kernel launch.
+    //size_t shared_mem_size = sizeof( Type::complex ) * ( 2 * system.p.subgrid_row_offset + system.block_size + 1 );
     #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                     \
         {                                                                                                                   \
-            size_t shared_mem_size = sizeof( Type::complex ) * ( 2 * system.p.subgrid_row_offset + system.block_size + 1 ); \
-            func<<<grid, block, shared_mem_size, stream>>>( 0, __VA_ARGS__ );                                               \
+            func<<<grid, block, 0, stream>>>( 0, __VA_ARGS__ );                                               \
         }
     #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... ) \
         { func<<<grid, block, 0, stream>>>( 0, __VA_ARGS__ ); }

@@ -71,8 +71,8 @@ void PC3::SystemParameters::init( int argc, char** argv ) {
     p.subgrids_columns = 1;
     p.subgrids_rows = 1;
     if ( ( index = PC3::CLIO::findInArgv( "--subgrids", argc, argv ) ) != -1 ) {
-        p.subgrids_rows = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_rows", ++index );
-        p.subgrids_columns = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_columns", index );
+        p.subgrids_columns = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_columns", ++index );
+        p.subgrids_rows = (int)PC3::CLIO::getNextInput( argv, argc, "subgrids_rows", index );
     }
 
     // We can also disable to SFML renderer by using the --nosfml flag.

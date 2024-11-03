@@ -230,9 +230,9 @@ class CUDAMatrix : CUDAMatrixBase {
         global_total_host_mb_max = std::max( global_total_host_mb, global_total_host_mb_max );
         // Log this action.
         if ( global_matrix_creation_log )
-            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string( size_in_mb_device ) + " MB for " + std::to_string( num_matrices ) + "x" + std::to_string( rows ) +
-                                                     "x" + std::to_string( cols ) + " device matrix '" + name + "' with halo " + std::to_string( halo_size ) + " and " +
-                                                     std::to_string( total_num_subgrids ) +
+            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string( size_in_mb_device ) + " MB for " + std::to_string( num_matrices ) + "x(" + std::to_string( rows ) +
+                                                     "+" + std::to_string( 2*halo_size ) + ")x(" + std::to_string( cols ) + "+" + std::to_string( 2*halo_size ) + ")" +
+                                                     " device matrix '" + name + "' with halo " + std::to_string( halo_size ) + " and " + std::to_string( total_num_subgrids ) +
                                                      " total subgrids, total allocated device space: " + std::to_string( global_total_device_mb ) + " MB.",
                                                  PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
                       << std::endl;
