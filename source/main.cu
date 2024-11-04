@@ -36,7 +36,9 @@
 #include "misc/sfml_helper.hpp"
 #include "solver/gpu_solver.hpp"
 #ifdef BENCH
+#ifdef LIKWID
 #include <likwid.h>
+#endif
 #endif
 
 int main( int argc, char* argv[] ) {
@@ -59,12 +61,28 @@ int main( int argc, char* argv[] ) {
     PC3::Type::real dt = system.p.dt;
     // Main Loop
 #ifdef BENCH
+#ifdef LIKWID
     LIKWID_MARKER_INIT;
     #pragma omp parallel
     {
       LIKWID_MARKER_START("iterator");
     }
 #endif
+    double tstart=omp_get_wtime();
+    TimeThis(
+    while ( omp_get_wtime()-tstart<=BENCH_TIME ) {
+      solver.iterate();
+    }
+    , "Main-Loop" );
+    complete_duration = PC3::TimeIt::totalRuntime();
+    system.printCMD( complete_duration, system.iteration );
+#ifdef LIKWID
+    #pragma omp parallel
+    {
+      LIKWID_MARKER_STOP("iterator");
+    }
+#endif
+#else
     while ( system.p.t < system.t_max and running ) {
         TimeThis(
             // Iterate #output_every ps
@@ -93,12 +111,8 @@ int main( int argc, char* argv[] ) {
 
         system.printCMD( complete_duration, system.iteration );
     }
-#ifdef BENCH
-    #pragma omp parallel
-    {
-      LIKWID_MARKER_STOP("iterator");
-    }
 #endif
+
     system.finishCMD();
 
     // Fileoutput
@@ -108,7 +122,9 @@ int main( int argc, char* argv[] ) {
     system.printSummary( PC3::TimeIt::getTimes(), PC3::TimeIt::getTimesTotal() );
     PC3::TimeIt::toFile( system.filehandler.getFile( "times" ) );
 #ifdef BENCH
+#ifdef LIKWID
     LIKWID_MARKER_CLOSE;
+#endif    
 #endif
 
     return 0;

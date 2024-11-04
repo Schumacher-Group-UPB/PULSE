@@ -25,7 +25,7 @@ OPTIMIZATION ?= -O3
 NUMA ?= FALSE
 
 # Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
-GCCFLAGS = -std=c++20 -fopenmp -x c++ -fverbose-asm -mtune=native -march=native -funroll-loops -finline-limit=20000 -fopt-info-vec
+GCCFLAGS = -std=c++20 -fopenmp -x c++ -mtune=native -march=native -funroll-loops -finline-limit=20000 #-fopt-info-vec
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --expt-relaxed-constexpr --dlink-time-opt --generate-line-info
 else
@@ -91,8 +91,11 @@ endif
 ifeq ($(AVX2),TRUE)
 	ADD_FLAGS += -DAVX2
 endif
+ifeq ($(LIKWID),TRUE)
+	ADD_FLAGS += -DBENCH -DLIKWID -llikwid -DLIKWID_PERFMON 
+endif
 ifeq ($(BENCH),TRUE)
-	ADD_FLAGS += -DBENCH -llikwid -DLIKWID_PERFMON
+	ADD_FLAGS += -DBENCH -DBENCH_TIME=10
 endif
 
 ifeq ($(PRETTYCMD),FALSE)

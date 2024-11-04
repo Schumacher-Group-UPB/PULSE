@@ -11,7 +11,7 @@ if [[ "1" == "1" ]]; then
   rm ./obj/fp32/cpu/cuda_solver/solver/iterator/solver_iterator_rk4.obj
   rm ./obj/fp32/cpu/cuda_solver/solver/solver_iterator.obj
   rm ./obj/fp32/cpu/cuda_solver/solver/iterator/solver_iterator.obj
-  make SFML=FALSE FP32=TRUE TETM=FALSE CPU=TRUE COMPILER=g++ NO_CALCULATE_K=FALSE NO_INTERMEDIATE_SUM_K=FALSE NO_FINAL_SUM_K=FALSE NO_HALO_SYNC=FALSE AVX2=TRUE BENCH=TRUE
+  make SFML=FALSE FP32=TRUE TETM=FALSE CPU=TRUE COMPILER=g++ NO_CALCULATE_K=FALSE NO_INTERMEDIATE_SUM_K=FALSE NO_FINAL_SUM_K=FALSE NO_HALO_SYNC=FALSE AVX2=TRUE BENCH=TRUE LIKWID=TRUE
   #make SFML=FALSE FP32=TRUE TETM=FALSE CPU=TRUE COMPILER=clang
   #make SFML=FALSE FP32=TRUE TETM=FALSE CPU=TRUE COMPILER=icx
 fi
@@ -27,7 +27,7 @@ d="run_size_${1}_by_${2}_threads_${3}_bx_${bx}_by_${by}"
 echo $d
 
 T=200
-T2=200
+T2=201
 seed=4343
 
 #out="none"
