@@ -1,6 +1,9 @@
 #pragma once
 
 #include "cuda/typedef.cuh"
+#ifdef USE_CPU
+  #include <immintrin.h>
+#endif
 
 // Macro to copy to contents of the buffers into shared memory. The threads can then use threadIdx.x to access the shared memory.
 #ifdef USE_CPU
@@ -78,6 +81,27 @@
 // Helper Macro to iterate a specific RK K. // Only Callable from within the solver
 // This helper gets a little ugly when branching for all the specific cases using the templated kernel. Should ultimately perform better tho.
 // OMG I am so sorry... but this is actually quite a bit faster than before, because we dont use function pointers any more^^
+#ifdef NO_CALCULATE_K
+#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                               \
+    {                                                                                                                                                                           \
+    };
+#else
+#ifdef BENCH
+#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                               \
+    {                                                                                                                                                                           \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                           \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                           \
+        Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),                       \
+                                matrix.input_wavefunction##_iplus.getDevicePtr( subgrid ),     matrix.input_wavefunction##_iminus.getDevicePtr( subgrid ),                      \
+                                matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                          \
+                                matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ),                  \
+                                matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };                   \
+                                CALL_SUBGRID_KERNEL_MI( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, false, false )>, "K" #index, current_grid, \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                               \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, false, false )>, "K" #index, current_grid, \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                               \
+    }
+#else
 #define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                               \
     {                                                                                                                                                                           \
         const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                           \
@@ -405,7 +429,29 @@
         }                                                                                                                                                                       \
     }
 
+#endif
+#endif
 // Only Callable from within the solver
+#ifdef NO_INTERMEDIATE_SUM_K
+#define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                          \
+    {                                                                                                                                                                             \
+    };
+#else
+#ifdef BENCH
+#define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                          \
+    {                                                                                                                                                                             \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                             \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                             \
+        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ),        matrix.wavefunction_minus.getDevicePtr( subgrid ),                                       \
+                                matrix.wavefunction##_iplus.getDevicePtr( subgrid ),     matrix.wavefunction##_iminus.getDevicePtr( subgrid ),                      \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),           matrix.reservoir_minus.getDevicePtr( subgrid ),                                          \
+                                matrix.buffer_wavefunction_plus.getDevicePtr( subgrid ), matrix.buffer_wavefunction_minus.getDevicePtr( subgrid ),                                \
+                                matrix.buffer_reservoir_plus.getDevicePtr( subgrid ),    matrix.buffer_reservoir_minus.getDevicePtr( subgrid ) };                                 \
+        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                        \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_sum_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, false, index, __VA_ARGS__ )>,             \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, io.out_wf_plus, k_vec_wf_plus ); \
+    };
+#else
 #define INTERMEDIATE_SUM_K( index, ... )                                                                                                                                          \
     {                                                                                                                                                                             \
         const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                             \
@@ -519,8 +565,29 @@
             }                                                                                                                                                                     \
         }                                                                                                                                                                         \
     };
-
+#endif
+#endif
 // Only Callable from within the solver
+#ifdef NO_FINAL_SUM_K
+#define FINAL_SUM_K( index, ... )                                                                                                                                         \
+    {                                                                                                                                                                     \
+    };
+#else
+#ifdef BENCH
+#define FINAL_SUM_K( index, ... )                                                                                                                                         \
+    {                                                                                                                                                                     \
+        Type::uint32 current_halo = system.p.halo_size;                                                                                                                   \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                     \
+        Solver::InputOutput io{ matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                                      \
+                                matrix.wavefunction##_iplus.getDevicePtr( subgrid ),     matrix.wavefunction##_iminus.getDevicePtr( subgrid ),                      \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ),                                         \
+                                matrix.wavefunction_plus.getDevicePtr( subgrid ), matrix.wavefunction_minus.getDevicePtr( subgrid ),                                      \
+                                matrix.reservoir_plus.getDevicePtr( subgrid ),    matrix.reservoir_minus.getDevicePtr( subgrid ) };                                       \
+        Type::complex *k_vec_wf_plus = matrix.k_wavefunction_plus.getDevicePtr( subgrid );                                                                                \
+                    CALL_SUBGRID_KERNEL( Kernel::Summation::runge_add_to_input_k<GCC_EXPAND_VA_ARGS_ORDER( Type::complex, false, false, false, index, __VA_ARGS__ )>,     \
+                                         "Sum for K" #index, current_grid, current_block, stream, current_halo, kernel_arguments, io.in_wf_plus, k_vec_wf_plus );         \
+    };
+#else
 #define FINAL_SUM_K( index, ... )                                                                                                                                         \
     {                                                                                                                                                                     \
         Type::uint32 current_halo = system.p.halo_size;                                                                                                                   \
@@ -625,6 +692,8 @@
         }                                                                                                                                                                 \
     };
 
+#endif
+#endif
 #define ERROR_K( order, ... )                                                                                                                                               \
     {                                                                                                                                                                       \
         auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c, system.p.subgrid_N_r );                                                             \
@@ -633,6 +702,11 @@
 
 // Only Callable from within the solver
 // For now, use this macro to synchronize the halos. This is a bit of a mess, but it works. TODO: move halo_map to static CUDAMatrix vector and call synchronize_halos from there.
+#ifdef NO_HALO_SYNC
+#define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                         \
+    {                                                                                                                                                                  \
+    }
+#else
 #define SYNCHRONIZE_HALOS( _stream, subgrids )                                                                                                                         \
     {                                                                                                                                                                  \
         Type::uint32 halo_map_size = matrix.halo_map.size() / 6;                                                                                                       \
@@ -641,7 +715,7 @@
                           system.p.subgrid_N_c, system.p.subgrid_N_r, system.p.halo_size, halo_map_size, system.p.periodic_boundary_x, system.p.periodic_boundary_y,   \
                           GET_RAW_PTR( matrix.halo_map ), subgrids )                                                                                                   \
     }
-
+#endif
 // Helper to retrieve the raw device pointer. When using nvcc and thrust, we need a raw pointer cast.
 #ifdef USE_CPU
     #define GET_RAW_PTR( vec ) vec.data()
@@ -746,17 +820,49 @@
     // CALL_FULL_KERNEL will also handle the indexing, making sure that the function is called with the correct, modified row-col index depending on the current halo.
     #define CALL_SUBGRID_KERNEL( func, name, grid, block, stream, ... )                                                        \
         {                                                                                                                      \
-            Type::uint32 halo_rem = system.p.halo_size - current_halo;                                                         \
-            for ( Type::uint32 row = 0; row < block.x; row++ ) {                                                               \
-                Type::uint32 index_start = ( row + halo_rem ) * system.p.subgrid_row_offset + halo_rem;                        \
-                _Pragma( "omp simd" ) for ( Type::uint32 col = 0; col < system.p.subgrid_N_c + 2 * ( current_halo ); col++ ) { \
+            const int halo_rem = system.p.halo_size - current_halo;                                                         \
+            const int nc=system.p.subgrid_N_c; \
+            const int bx=block.x; \
+            for ( int row = 0; row < bx; row++ ) {                                                               \
+                int index_start = ( row + halo_rem ) * system.p.subgrid_row_offset + halo_rem;                        \
+                _Pragma( "omp simd" ) for ( int col = 0; col < nc + 2 * ( current_halo ); col++ ) { \
                     func( index_start + col, __VA_ARGS__ );                                                                    \
                 }                                                                                                              \
             }                                                                                                                  \
         }
+#ifdef BENCH        
+  #ifdef AVX2
+    #define CALL_SUBGRID_KERNEL_MI( func, name, grid, block, stream, ... )                                                        \
+        {                                                                                                                      \
+          const int n=system.p.subgrid_N2_with_halo; \
+          static const float m[8] = { 1,-1,1,-1,1,-1,1,-1}; \
+          const __m256 c=_mm256_loadu_ps(m); \
+          for (int i = 0; i < n-n%4; i += 4) \
+          { \
+            __m256 a = _mm256_loadu_ps (reinterpret_cast<const float*> (io.in_wf_plus + i    )); \
+            __m256 b = _mm256_permute_ps (a, 0b10110001); \
+            a=_mm256_mul_ps(b,c); \
+            _mm256_storeu_ps (reinterpret_cast<float*>(io.in_wf_plus_i +i), a); \
+          } \
+          for (int i = n-n%4; i<n;i++) \
+          { \
+            io.in_wf_plus_i[i]=std::complex(imag(io.in_wf_plus[i]),-real(io.in_wf_plus[i])); \
+          } \
+        }
+  #else
+    #define CALL_SUBGRID_KERNEL_MI( func, name, grid, block, stream, ... )                                                        \
+        {                                                                                                                      \
+          const int n=system.p.subgrid_N2_with_halo; \
+          for (int i = 0; i<n;i++) \
+          { \
+            io.in_wf_plus_i[i]=std::complex(imag(io.in_wf_plus[i]),-real(io.in_wf_plus[i])); \
+          } \
+        }
+  #endif
+#endif
     #define CALL_FULL_KERNEL( func, name, grid, block, stream, ... )                                              \
         {                                                                                                         \
-            Type::uint32 execution_range = block.x * grid.x;                                                      \
+            const Type::uint32 execution_range = block.x * grid.x;                                                      \
             _Pragma( "omp parallel for schedule(static)" ) for ( Type::uint32 i = 0; i < execution_range; ++i ) { \
                 func( i, __VA_ARGS__ );                                                                           \
             }                                                                                                     \

@@ -9,7 +9,6 @@
 #include "cuda/cuda_matrix.cuh"
 #include "solver/gpu_solver.hpp"
 #include "misc/commandline_io.hpp"
-
 /*
  * This function iterates the Runge Kutta Kernel using a fixed time step.
  * A 4th order Runge-Kutta method is used. This function calls a single
@@ -30,7 +29,6 @@
  * We calculate 4 rows of k1, 3 rows of k2, 2 rows of k3 and 1 row of k4 before the first iteration.
  * Then, we iterate all of the remaining rows after each other, incrementing the buffer for the next iteration.
  */
-
 void PC3::Solver::iterateFixedTimestepRungeKutta4() {
 
     SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,

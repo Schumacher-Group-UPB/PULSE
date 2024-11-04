@@ -45,6 +45,10 @@ class Solver {
     struct InputOutput {
         Type::complex* PULSE_RESTRICT in_wf_plus = nullptr;
         Type::complex* PULSE_RESTRICT in_wf_minus = nullptr;
+#ifdef BENCH        
+        Type::complex* PULSE_RESTRICT in_wf_plus_i = nullptr;
+        Type::complex* PULSE_RESTRICT in_wf_minus_i = nullptr;
+#endif        
         Type::complex* PULSE_RESTRICT in_rv_plus = nullptr;
         Type::complex* PULSE_RESTRICT in_rv_minus = nullptr;
         Type::complex* PULSE_RESTRICT out_wf_plus = nullptr;
