@@ -30,11 +30,11 @@ static std::string string_progress_sym_front = "#";
 #else
 
 // If PC3_NO_EXTENDED_SYMBOLS is defined globally, colors are disabled.
-static std::string string_info_sym = EscapeSequence::BLUE + std::string( reinterpret_cast<const char*>( u8"\u2139" ) ) + "  | " + EscapeSequence::RESET;
-static std::string string_warning_sym = EscapeSequence::YELLOW + std::string( reinterpret_cast<const char*>( u8"\u26A0" ) ) + "  | " + EscapeSequence::RESET;
-static std::string string_error_sym = EscapeSequence::RED + std::string( reinterpret_cast<const char*>( u8"\u2716" ) ) + "  | " + EscapeSequence::RESET;
-static std::string string_success_sym = EscapeSequence::GREEN + std::string( reinterpret_cast<const char*>( u8"\u2713" ) ) + "  | " + EscapeSequence::RESET;
-static std::string string_debug_sym = EscapeSequence::GRAY + std::string( reinterpret_cast<const char*>( u8"\u2699" ) ) + "  | " + EscapeSequence::RESET;
+static std::string string_info_sym = EscapeSequence::BLUE + std::string( reinterpret_cast<const char*>( u8"\u2139" ) ) + EscapeSequence::RESET;
+static std::string string_warning_sym = EscapeSequence::YELLOW + std::string( reinterpret_cast<const char*>( u8"\u26A0" ) ) + EscapeSequence::RESET;
+static std::string string_error_sym = EscapeSequence::RED + std::string( reinterpret_cast<const char*>( u8"\u2612" ) ) + EscapeSequence::RESET;
+static std::string string_success_sym = EscapeSequence::GREEN + std::string( reinterpret_cast<const char*>( u8"\u2611" ) ) + EscapeSequence::RESET;
+static std::string string_debug_sym = EscapeSequence::GRAY + std::string( reinterpret_cast<const char*>( u8"\u2699" ) ) + EscapeSequence::RESET;
 
     #ifdef PC3_NO_ANSI_COLORS
 static std::string string_progress_sym_front = std::string( reinterpret_cast<const char*>( u8"\u2587" ) );
@@ -64,6 +64,7 @@ std::string PC3::CLIO::prettyPrint( const std::string& message, Control control 
         ret += string_success_sym;
     else if ( (size_t)control & (size_t)Control::Debug )
         ret += string_debug_sym;
+    ret += "  | ";
 
     // If the FullColor flag is set, print the message in color.
     if ( (size_t)control & (size_t)Control::FullColor ) {
