@@ -151,7 +151,7 @@ for ic in range(len(comb)):
     if "nvidia-smi" in env:
         with open(os.path.join(d,"nvidia.csv")) as f:
             for l in f.read().splitlines():
-                Pgpu=flaot(l.split(",")[2].split(" ")[1])
+                Pgpu=float(l.split(",")[2].split(" ")[1])
            
     if Pgpu!=-1:
         run["gpu_power_W"]=Pgpu
