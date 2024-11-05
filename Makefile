@@ -29,7 +29,7 @@ GCCFLAGS = -std=c++20 -fopenmp -x c++ -mtune=native -march=native -funroll-loops
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --expt-relaxed-constexpr --dlink-time-opt --generate-line-info
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -lstdc++ -rdc=true --expt-extended-lambda --expt-relaxed-constexpr --dlink-time-opt 
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -lstdc++ -rdc=true --expt-extended-lambda --expt-relaxed-constexpr #--dlink-time-opt 
 endif
 SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 
