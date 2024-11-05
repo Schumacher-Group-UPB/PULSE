@@ -5,7 +5,7 @@
   ],
   "envs": 
   [
-    {"label":"gcc-13.2.0","modules":["system/CUDA/12.6.0","tools/likwid/5.3.0-GCC-13.2.0","toolchain/foss/2023b","lang/Python/3.12.3-GCCcore-13.2.0"],"compiler":"g++","likwid":"likwid-perfctr","machinestate":"~/.local/bin/machinestate","nvidia-smi":"nvidia-smi"}
+    {"label":"gcc-13.2.0","modules":["system/CUDA/12.6.0","tools/likwid/5.3.0-GCC-13.2.0","toolchain/foss/2023b","lang/Python/3.12.3-GCCcore-13.2.0"],"compiler":"g++","likwid":"likwid-perfctr","machinestate":"~/.local/bin/machinestate","nvidia-smi":"nvidia-smi","perf":"perf"}
   ],
   "makes":
   [

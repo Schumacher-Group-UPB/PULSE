@@ -114,8 +114,11 @@ for ic in range(len(comb)):
     if "nvidia-smi" in env:
         runscript+=env["nvidia-smi"]+" --query-gpu=index,timestamp,power.draw,clocks.sm,clocks.mem,clocks.gr --format=csv -lms 100 -i 0 > nvidia.csv & \n"
         runscript+="nvpid=$!\n"
+    rcmd=""
+    if "perf" in env:
+        rcmd=env["perf"]+" stat -e power/energy-pkg/ --per-socket -x \",\" -o perf.out "+rcmd
     if "likwid" in env:
-        rcmd=env["likwid"]+" -m -g "+gv(data,comb[ic],"likwid_metrics")+" -C 0-"+str(gv(data,comb[ic],"threads")-1)+" -o likwid.json "
+        rcmd=env["likwid"]+" -m -g "+gv(data,comb[ic],"likwid_metrics")+" -C 0-"+str(gv(data,comb[ic],"threads")-1)+" -o likwid.json "+rcmd
     rcmd+="../../../bins/"+bindir+"/main.o -L 200 200 --tmax 1000 --gammaC 0.01 --gc 6E-6 --gr 12E-6 --initRandom 0.01 4242 100 --outEvery 1000 --threads "+str(gv(data,comb[ic],"threads"))+" --path output --N "+str(gv(data,comb[ic],"grids"))+" "+str(gv(data,comb[ic],"grids"))+" --output psi_plus --fftEvery 100000000 --boundary zero zero --subgrids "+str(gv(data,comb[ic],"subgrids")[0])+" "+str(gv(data,comb[ic],"subgrids")[1])+" > out 2> err"
     runscript+=rcmd+"\n"
     if "nvidia-smi" in env:
@@ -136,12 +139,34 @@ for ic in range(len(comb)):
                 run["mus/it"]=float(l.split()[8].replace("mus/it",""))
                 break
     
-    #build json description file
+    #get power usage
+    #cpu
+    if gv(data,comb[ic],"likwid_metrics")=="ENERGY":
+        with open(os.path.join(d,"likwid.json")) as f:
+            likwid_data = json.load(f)
+        Pcpu=likwid_data["Energy"]["Energy"]["Metric STAT"]["Power PKG [W] STAT"]
+   
+    #gpu
+    Pgpu=-1
+    if "nvidia-smi" in env:
+        with open(os.path.join(d,"nvidia.csv")) as f:
+            for l in f.read().splitlines():
+                Pgpu=flaot(l.split(",")[2].split(" ")[1])
+           
+    if Pgpu!=-1:
+        run["gpu_power_W"]=Pgpu
+    if Pcpu!=-1:
+        run["cpu_power_W"]=Pcpu
+
+
+
+    #write json description file
     for f in data:
         if f!="name":
             run[f]=gv(data,comb[ic],f)
     with open(os.path.join(d,'run.json'), 'w') as f:
             json.dump(run, f)
+
 
 
 
