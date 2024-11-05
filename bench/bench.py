@@ -144,7 +144,7 @@ for ic in range(len(comb)):
     if gv(data,comb[ic],"likwid_metrics")=="ENERGY":
         with open(os.path.join(d,"likwid.json")) as f:
             likwid_data = json.load(f)
-        Pcpu=likwid_data["Energy"]["Energy"]["Metric STAT"]["Power PKG [W] STAT"]
+        Pcpu=likwid_data["ENERGY"]["ENERGY"]["Metric STAT"]["Power PKG [W] STAT"]
    
     #gpu
     Pgpu=-1
