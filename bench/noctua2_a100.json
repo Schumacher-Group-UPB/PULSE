@@ -1,5 +1,4 @@
 {
-  "name":"noctua2_a100_grid_scaling",
   "commits":[
     {"label":"bench","repo":"https://github.com/davidbauch/PHOENIX/","type":"branch"}
   ],

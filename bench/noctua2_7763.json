@@ -1,5 +1,4 @@
 {
-  "name":"noctua2_7763_grid_scaling",
   "commits":[
     {"label":"bench","repo":"https://github.com/davidbauch/PHOENIX/","type":"branch"}
   ],
@@ -20,6 +19,6 @@
   "grids": [192,256,320,384,448,512,576,640,704,768,832,896,960,1024,1088,1152,1216,1280,1344,1408,1472,1536,1600,1664,1728,1792,1856,1920,1984,2048],
   "grids": [192],
   "subgrids": [[8,8],[16,16]],
-  "likwid_metrics": ["ENERGY","DATA","FLOPS_SP","CACHE","L2","L2CACHE","L3","L3CACHE","MEM1","MEM2"]
+  "likwid_metrics": ["ENERGY","DATA","FLOPS_SP","CACHE","L2","L2CACHE","L3","MEM1","MEM2"]
 }
 
