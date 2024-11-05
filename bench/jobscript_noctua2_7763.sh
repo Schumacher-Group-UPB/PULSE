@@ -9,4 +9,4 @@
 
 module reset
 module load lang/Python/3.12.3-GCCcore-13.2.0
-pyhton3 bench.py -c noctua2_7763.json
+python3 bench.py -c noctua2_7763.json
