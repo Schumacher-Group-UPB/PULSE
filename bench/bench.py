@@ -167,13 +167,9 @@ if not args.dryrun:
                 for l in f.read().splitlines():
                     Egpu+=float(l.split(",")[2].split(" ")[1])*0.1
                
-        if Egpu!=-1:
-            run["gpu_energy_J"]=Egpu
-        if Ecpu!=-1:
-            run["cpu_energy_J_perf"]=Ecpu
-        if Ecpu2!=-1:
-            run["cpu_energy_J_likwid"]=Ecpu2
-
+        run["gpu_energy_J"]=Egpu
+        run["cpu_energy_J_perf"]=Ecpu
+        run["cpu_energy_J_likwid"]=Ecpu2
 
         Mlikwid=0
         if "likwid" in env:
