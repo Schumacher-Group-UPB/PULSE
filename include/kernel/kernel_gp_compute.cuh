@@ -39,7 +39,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
     // MARK: Scalar
     if constexpr ( not tmp_use_tetm ) {
-#ifdef BENCH
+#if defined(BENCH) && defined(USE_CPU)
         const Type::complex in_wf = io.in_wf_plus[i];
         const Type::complex in_wf_mi = io.in_wf_plus_i[i];
         const Type::real in_psi_norm = CUDA::abs2( in_wf );

@@ -87,6 +87,7 @@
     };
 #else
 #ifdef BENCH
+#ifdef USE_CPU
 #define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                               \
     {                                                                                                                                                                           \
         const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                           \
@@ -101,6 +102,20 @@
                                 CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, false, false )>, "K" #index, current_grid, \
                                                      current_block, stream, current_halo, kernel_arguments, io );                                                               \
     }
+#else
+#define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                               \
+    {                                                                                                                                                                           \
+        const Type::uint32 current_halo = system.p.halo_size - index;                                                                                                           \
+        auto [current_block, current_grid] = getLaunchParameters( system.p.subgrid_N_c + 2 * current_halo, system.p.subgrid_N_r + 2 * current_halo );                           \
+        Solver::InputOutput io{ matrix.input_wavefunction##_plus.getDevicePtr( subgrid ),      matrix.input_wavefunction##_minus.getDevicePtr( subgrid ),                       \
+                                matrix.input_wavefunction##_iplus.getDevicePtr( subgrid ),     matrix.input_wavefunction##_iminus.getDevicePtr( subgrid ),                      \
+                                matrix.input_reservoir##_plus.getDevicePtr( subgrid ),         matrix.input_reservoir##_minus.getDevicePtr( subgrid ),                          \
+                                matrix.k_wavefunction_plus.getDevicePtr( subgrid, index - 1 ), matrix.k_wavefunction_minus.getDevicePtr( subgrid, index - 1 ),                  \
+                                matrix.k_reservoir_plus.getDevicePtr( subgrid, index - 1 ),    matrix.k_reservoir_minus.getDevicePtr( subgrid, index - 1 ) };                   \
+                                CALL_SUBGRID_KERNEL( PC3::Kernel::Compute::gp_scalar<GCC_EXPAND_VA_ARGS( false, false, false, false, false, false )>, "K" #index, current_grid, \
+                                                     current_block, stream, current_halo, kernel_arguments, io );                                                               \
+    }
+#endif
 #else
 #define CALCULATE_K( index, input_wavefunction, input_reservoir )                                                                                                               \
     {                                                                                                                                                                           \
