@@ -29,7 +29,7 @@
  * TODO: merke this header with the sfml_window class.
  */
 
-namespace PC3 {
+namespace PHOENIX {
 
 std::string toScientific( const Type::real in ) {
     std::stringstream ss;
@@ -44,11 +44,11 @@ BasicWindow& getWindow() {
     return window;
 }
 
-PC3::Type::host_vector<Type::complex> __plotarray;
-PC3::Type::host_vector<Type::complex> snapshot_wavefunction_plus, snapshot_wavefunction_minus, snapshot_reservoir_plus, snapshot_reservoir_minus;
+PHOENIX::Type::host_vector<Type::complex> __plotarray;
+PHOENIX::Type::host_vector<Type::complex> snapshot_wavefunction_plus, snapshot_wavefunction_minus, snapshot_reservoir_plus, snapshot_reservoir_minus;
 
 template <typename T>
-void plot( PC3::CUDAMatrix<T>& matrix, bool angle, int N_cols, int N_rows, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "",
+void plot( PHOENIX::CUDAMatrix<T>& matrix, bool angle, int N_cols, int N_rows, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "",
            bool plot_min_max = true ) {
     T min, max;
     if ( angle ) {
@@ -57,8 +57,8 @@ void plot( PC3::CUDAMatrix<T>& matrix, bool angle, int N_cols, int N_rows, int p
         max = 3.1415926535;
     } else {
         std::tie( min, max ) = matrix.extrema();
-        min = PC3::CUDA::abs2( min );
-        max = PC3::CUDA::abs2( max );
+        min = PHOENIX::CUDA::abs2( min );
+        max = PHOENIX::CUDA::abs2( max );
         __plotarray = matrix.staticCWiseAbs2( true ).getFullMatrix();
     }
     getWindow().blitMatrixPtr( __plotarray.data(), min, max, cp, N_cols, N_rows, posX, posY, 1 /*border*/, skip );
@@ -68,7 +68,7 @@ void plot( PC3::CUDAMatrix<T>& matrix, bool angle, int N_cols, int N_rows, int p
     N_rows = N_rows / skip;
     auto text_height = getWindow().textheight / skip;
     getWindow().scaledPrint( posX + 5, posY + N_rows - text_height - 5, text_height,
-                             title + "Min: " + toScientific( std::sqrt( PC3::CUDA::abs( min ) ) ) + " Max: " + toScientific( std::sqrt( PC3::CUDA::abs( max ) ) ),
+                             title + "Min: " + toScientific( std::sqrt( PHOENIX::CUDA::abs( min ) ) ) + " Max: " + toScientific( std::sqrt( PHOENIX::CUDA::abs( max ) ) ),
                              sf::Color::White );
 }
 
@@ -90,15 +90,15 @@ Button b_cycle_subplot;
 double snapshot_time = 0.0;
 size_t current_subplot = 0;
 
-void initSFMLWindow( PC3::Solver& solver ) {
+void initSFMLWindow( PHOENIX::Solver& solver ) {
     if ( solver.system.disableRender ) {
-        std::cout << PC3::CLIO::prettyPrint( "Manually disabled SFML Renderer!", PC3::CLIO::Control::Warning ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Manually disabled SFML Renderer!", PHOENIX::CLIO::Control::Warning ) << std::endl;
         return;
     }
     if ( solver.system.use_twin_mode )
-        getWindow().construct( 1920, 1080, solver.system.p.N_c * 3, solver.system.p.N_r * 2, "PULSE - TE/TM" );
+        getWindow().construct( 1920, 1080, solver.system.p.N_c * 3, solver.system.p.N_r * 2, "PHOENIX_ - TE/TM" );
     else
-        getWindow().construct( 1920, 540, solver.system.p.N_c * 3, solver.system.p.N_r, "PULSE - Scalar" );
+        getWindow().construct( 1920, 540, solver.system.p.N_c * 3, solver.system.p.N_r, "PHOENIX_ - Scalar" );
 
     // if .pal in __local_colorpalette, read gnuplot __local_colorpalette, else read as .txt
     if ( solver.system.filehandler.color_palette.find( ".pal" ) != std::string::npos ) {
@@ -143,7 +143,7 @@ std::vector<std::string> subplot_names{ "FFT - ",          "Wavefunction K1 - ",
                                         "Reservoir K1 - ", "Reservoir K2 - ",    "Reservoir K3 - ",    "Reservoir K4 - ",    "Pump - ",
                                         "Pulse - ",        "Potential - ",       "RandomNumber - " };
 
-bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed_time, size_t iterations ) {
+bool plotSFMLWindow( PHOENIX::Solver& solver, double simulation_time, double elapsed_time, size_t iterations ) {
     if ( solver.system.disableRender )
         return true;
     bool running = getWindow().run();
@@ -151,13 +151,13 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
     //Type::complex *inset_plot_array_plus = nullptr, *inset_plot_array_minus = nullptr;
     //TODO: change to hold a raw pointer to the device memory
     //if ( __local_inset == 1 ) {
-    //    std::vector<PC3::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_plus,
+    //    std::vector<PHOENIX::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_plus,
     //                                                            &solver.matrix.k1_wavefunction_plus, &solver.matrix.k2_wavefunction_plus, &solver.matrix.k3_wavefunction_plus, &solver.matrix.k4_wavefunction_plus,
     //                                                            &solver.matrix.k1_reservoir_plus, &solver.matrix.k2_reservoir_plus, &solver.matrix.k3_reservoir_plus, &solver.matrix.k4_reservoir_plus,
     //                                                            &solver.matrix.pump_plus, &solver.matrix.pulse_plus, &solver.matrix.potential_plus, &solver.matrix.random_number };
     //    inset_plot_array_plus = subplots[current_subplot]->deviceToHostSync().getHostPtr();
     //    if ( solver.system.use_twin_mode ) {
-    //        std::vector<PC3::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_minus,
+    //        std::vector<PHOENIX::CUDAMatrix<Type::complex>*> subplots{ &solver.matrix.fft_minus,
     //                                                                &solver.matrix.k1_wavefunction_minus, &solver.matrix.k2_wavefunction_minus, &solver.matrix.k3_wavefunction_minus, &solver.matrix.k4_wavefunction_minus,
     //                                                                &solver.matrix.k1_reservoir_minus, &solver.matrix.k2_reservoir_minus, &solver.matrix.k3_reservoir_minus, &solver.matrix.k4_reservoir_minus,
     //                                                                &solver.matrix.pump_minus, &solver.matrix.pulse_minus, &solver.matrix.potential_minus, &solver.matrix.random_number };
@@ -248,7 +248,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
         }
         snapshot_time = solver.system.p.t;
 
-        std::cout << PC3::CLIO::prettyPrint( "Snapshot taken!", PC3::CLIO::Control::Info ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Snapshot taken!", PHOENIX::CLIO::Control::Info ) << std::endl;
     }
 
     if ( b_reset_to_snapshot.isToggled() ) {
@@ -260,7 +260,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
             solver.matrix.reservoir_minus.setTo( snapshot_reservoir_minus ).hostToDeviceSync();
         }
         solver.system.p.t = snapshot_time;
-        std::cout << PC3::CLIO::prettyPrint( "Reset to Snapshot!", PC3::CLIO::Control::Info ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Reset to Snapshot!", PHOENIX::CLIO::Control::Info ) << std::endl;
     }
 
     if ( b_reset_to_initial.isToggled() ) {
@@ -271,7 +271,7 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
             solver.matrix.reservoir_minus.setTo( solver.matrix.initial_reservoir_minus ).hostToDeviceSync();
         }
         solver.system.p.t = 0.0;
-        std::cout << PC3::CLIO::prettyPrint( "Reset to Initial!", PC3::CLIO::Control::Info ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Reset to Initial!", PHOENIX::CLIO::Control::Info ) << std::endl;
     }
 
     if ( b_cycle_subplot.isToggled() ) {
@@ -286,10 +286,10 @@ bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed
 }
 
 #else
-void initSFMLWindow( PC3::Solver& solver ) {};
-bool plotSFMLWindow( PC3::Solver& solver, double simulation_time, double elapsed_time, size_t iterationsd ) {
+void initSFMLWindow( PHOENIX::Solver& solver ) {};
+bool plotSFMLWindow( PHOENIX::Solver& solver, double simulation_time, double elapsed_time, size_t iterationsd ) {
     return true;
 };
 #endif
 
-} // namespace PC3
+} // namespace PHOENIX

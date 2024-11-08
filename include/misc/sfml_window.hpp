@@ -162,7 +162,7 @@ class BasicWindow {
         window.display();
     }
 
-    void blitMatrixPtr( const PC3::Type::real* vector, PC3::Type::real min, PC3::Type::real max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
+    void blitMatrixPtr( const PHOENIX::Type::real* vector, PHOENIX::Type::real min, PHOENIX::Type::real max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
                         int border = 0, int skip = 1 ) {
         const int cols_over_skip = cols / skip;
         const int rows_over_skip = rows / skip;
@@ -184,7 +184,7 @@ class BasicWindow {
         }
         maintexture_has_changed = true;
     }
-    void blitMatrixPtr( const PC3::Type::complex* vector, PC3::Type::complex min, PC3::Type::complex max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
+    void blitMatrixPtr( const PHOENIX::Type::complex* vector, PHOENIX::Type::complex min, PHOENIX::Type::complex max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
                         int border = 0, int skip = 1 ) {
         const int cols_over_skip = cols / skip;
         const int rows_over_skip = rows / skip;
@@ -192,7 +192,7 @@ class BasicWindow {
 #pragma omp parallel for schedule( static )
         for ( int r = 0; r < rows_over_skip; r++ ) {
             for ( int c = 0; c < cols_over_skip; c++ ) {
-                auto color = cp.getColor( PC3::CUDA::abs( ( vector[( r * skip ) * cols + c * skip] - min ) / ( max - min ) ) );
+                auto color = cp.getColor( PHOENIX::CUDA::abs( ( vector[( r * skip ) * cols + c * skip] - min ) / ( max - min ) ) );
                 const auto index = ( c + 1 + posX ) * texture_h - 1 - ( r + posY );
                 pixMat.at( index ).color.r = color.r;
                 pixMat.at( index ).color.g = color.g;

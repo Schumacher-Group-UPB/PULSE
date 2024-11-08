@@ -8,7 +8,7 @@
 #include "misc/escape_sequences.hpp"
 #include "misc/commandline_io.hpp"
 
-void PC3::Solver::initializeMatricesFromSystem() {
+void PHOENIX::Solver::initializeMatricesFromSystem() {
     std::cout << EscapeSequence::BOLD << "-------------------- Initializing Host and Device Matrices ------------------------" << EscapeSequence::RESET << std::endl;
 
     // First, construct all required host matrices
@@ -29,16 +29,16 @@ void PC3::Solver::initializeMatricesFromSystem() {
     // ==================================================
     // =................ Initial States ................=
     // ==================================================
-    std::cout << PC3::CLIO::prettyPrint( "Initializing Host Matrices...", PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Initializing Host Matrices...", PHOENIX::CLIO::Control::Info ) << std::endl;
 
     Envelope::Dimensions dim{ system.p.N_c, system.p.N_r, system.p.L_x, system.p.L_y, system.p.dx, system.p.dy };
 
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
-    system.initial_state.calculate( system.filehandler, matrix.initial_state_plus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
-    system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_plus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim );
+    system.initial_state.calculate( system.filehandler, matrix.initial_state_plus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Plus, dim );
+    system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_plus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Plus, dim );
     if ( system.use_twin_mode ) {
-        system.initial_state.calculate( system.filehandler, matrix.initial_state_minus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
-        system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_minus.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim );
+        system.initial_state.calculate( system.filehandler, matrix.initial_state_minus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim );
+        system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_minus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim );
     }
 
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
@@ -73,76 +73,76 @@ void PC3::Solver::initializeMatricesFromSystem() {
     // ==================================================
     // =................ Pump Envelopes ................=
     // ==================================================
-    std::cout << PC3::CLIO::prettyPrint( "Initializing Pump Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Initializing Pump Envelopes...", PHOENIX::CLIO::Control::Info ) << std::endl;
     for ( int pump = 0; pump < system.pump.groupSize(); pump++ ) {
-        system.pump.calculate( system.filehandler, matrix.pump_plus.getHostPtr( pump ), pump, PC3::Envelope::Polarization::Plus, dim );
+        system.pump.calculate( system.filehandler, matrix.pump_plus.getHostPtr( pump ), pump, PHOENIX::Envelope::Polarization::Plus, dim );
         matrix.pump_plus.hostToDeviceSync( pump );
         SYNCHRONIZE_HALOS( 0, matrix.pump_plus.getSubgridDevicePtrs( pump ) );
         if ( system.use_twin_mode ) {
-            system.pump.calculate( system.filehandler, matrix.pump_minus.getHostPtr( pump ), pump, PC3::Envelope::Polarization::Minus, dim );
+            system.pump.calculate( system.filehandler, matrix.pump_minus.getHostPtr( pump ), pump, PHOENIX::Envelope::Polarization::Minus, dim );
             matrix.pump_minus.hostToDeviceSync( pump );
             SYNCHRONIZE_HALOS( 0, matrix.pump_minus.getSubgridDevicePtrs( pump ) );
         }
     }
-    std::cout << PC3::CLIO::prettyPrint( "Succesfull, designated number of pump groups: " + std::to_string( system.pump.groupSize() ),
-                                         PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success )
+    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of pump groups: " + std::to_string( system.pump.groupSize() ),
+                                         PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
               << std::endl;
 
     // ==================================================
     // =............. Potential Envelopes ..............=
     // ==================================================
-    std::cout << PC3::CLIO::prettyPrint( "Initializing Potential Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Initializing Potential Envelopes...", PHOENIX::CLIO::Control::Info ) << std::endl;
     for ( int potential = 0; potential < system.potential.groupSize(); potential++ ) {
-        system.potential.calculate( system.filehandler, matrix.potential_plus.getHostPtr( potential ), potential, PC3::Envelope::Polarization::Plus, dim );
+        system.potential.calculate( system.filehandler, matrix.potential_plus.getHostPtr( potential ), potential, PHOENIX::Envelope::Polarization::Plus, dim );
         matrix.potential_plus.hostToDeviceSync( potential );
         SYNCHRONIZE_HALOS( 0, matrix.potential_plus.getSubgridDevicePtrs( potential ) );
         if ( system.use_twin_mode ) {
-            system.potential.calculate( system.filehandler, matrix.potential_minus.getHostPtr( potential ), potential, PC3::Envelope::Polarization::Minus, dim );
+            system.potential.calculate( system.filehandler, matrix.potential_minus.getHostPtr( potential ), potential, PHOENIX::Envelope::Polarization::Minus, dim );
             matrix.potential_minus.hostToDeviceSync( potential );
             SYNCHRONIZE_HALOS( 0, matrix.potential_minus.getSubgridDevicePtrs( potential ) );
         }
     }
-    std::cout << PC3::CLIO::prettyPrint( "Succesfull, designated number of potential groups: " + std::to_string( system.potential.groupSize() ),
-                                         PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success )
+    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of potential groups: " + std::to_string( system.potential.groupSize() ),
+                                         PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
               << std::endl;
 
     // ==================================================
     // =............... Pulse Envelopes ................=
     // ==================================================
-    std::cout << PC3::CLIO::prettyPrint( "Initializing Pulse Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Initializing Pulse Envelopes...", PHOENIX::CLIO::Control::Info ) << std::endl;
     for ( int pulse = 0; pulse < system.pulse.groupSize(); pulse++ ) {
-        system.pulse.calculate( system.filehandler, matrix.pulse_plus.getHostPtr( pulse ), pulse, PC3::Envelope::Polarization::Plus, dim );
+        system.pulse.calculate( system.filehandler, matrix.pulse_plus.getHostPtr( pulse ), pulse, PHOENIX::Envelope::Polarization::Plus, dim );
         matrix.pulse_plus.hostToDeviceSync( pulse );
         SYNCHRONIZE_HALOS( 0, matrix.pulse_plus.getSubgridDevicePtrs( pulse ) );
         if ( system.use_twin_mode ) {
-            system.pulse.calculate( system.filehandler, matrix.pulse_minus.getHostPtr( pulse ), pulse, PC3::Envelope::Polarization::Minus, dim );
+            system.pulse.calculate( system.filehandler, matrix.pulse_minus.getHostPtr( pulse ), pulse, PHOENIX::Envelope::Polarization::Minus, dim );
             matrix.pulse_minus.hostToDeviceSync( pulse );
             SYNCHRONIZE_HALOS( 0, matrix.pulse_minus.getSubgridDevicePtrs( pulse ) );
         }
     }
-    std::cout << PC3::CLIO::prettyPrint( "Succesfull, designated number of pulse groups: " + std::to_string( system.pulse.groupSize() ),
-                                         PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success )
+    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of pulse groups: " + std::to_string( system.pulse.groupSize() ),
+                                         PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
               << std::endl;
 
     // ==================================================
     // =................. FFT Envelopes ................=
     // ==================================================
     Type::host_vector<Type::real> buffer( system.p.N_c * system.p.N_r, 0.0 );
-    std::cout << PC3::CLIO::prettyPrint( "Initializing FFT Envelopes...", PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Initializing FFT Envelopes...", PHOENIX::CLIO::Control::Info ) << std::endl;
     if ( system.fft_mask.size() == 0 ) {
-        std::cout << PC3::CLIO::prettyPrint( "No fft mask provided.", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Warning ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "No fft mask provided.", PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Warning ) << std::endl;
     } else {
-        system.fft_mask.calculate( system.filehandler, buffer.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, dim, 1.0 /* Default if no mask is applied */ );
+        system.fft_mask.calculate( system.filehandler, buffer.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Plus, dim, 1.0 /* Default if no mask is applied */ );
         matrix.fft_mask_plus = buffer;
         // Shift the filter
         auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
-        CALL_FULL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Plus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c, system.p.N_r );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::fft_shift_2D<Type::real>, "FFT Shift Plus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c, system.p.N_r );
         if ( system.use_twin_mode ) {
-            system.fft_mask.calculate( system.filehandler, buffer.data(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, dim,
+            system.fft_mask.calculate( system.filehandler, buffer.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim,
                                        1.0 /* Default if no mask is applied */ );
             matrix.fft_mask_minus = buffer;
             // Shift the filter
-            CALL_FULL_KERNEL( PC3::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c,
+            CALL_FULL_KERNEL( PHOENIX::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c,
                               system.p.N_r );
         }
     }
@@ -158,10 +158,10 @@ T delta( T a, T b ) {
     return a == b ? (T)1 : (T)0;
 }
 
-void PC3::Solver::initializeHaloMap() {
-    std::cout << PC3::CLIO::prettyPrint( "Initializing Halo Map...", PC3::CLIO::Control::Info ) << std::endl;
+void PHOENIX::Solver::initializeHaloMap() {
+    std::cout << PHOENIX::CLIO::prettyPrint( "Initializing Halo Map...", PHOENIX::CLIO::Control::Info ) << std::endl;
 
-    PC3::Type::host_vector<int> halo_map;
+    PHOENIX::Type::host_vector<int> halo_map;
 
     // Create subgrid map
     for ( int dr = -1; dr <= 1; dr++ ) {
@@ -195,7 +195,7 @@ void PC3::Solver::initializeHaloMap() {
             }
         }
     }
-    std::cout << PC3::CLIO::prettyPrint( "Designated number of halo cells: " + std::to_string( halo_map.size() / 6 ), PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Success )
+    std::cout << PHOENIX::CLIO::prettyPrint( "Designated number of halo cells: " + std::to_string( halo_map.size() / 6 ), PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
               << std::endl;
     matrix.halo_map = halo_map;
 }

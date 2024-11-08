@@ -14,7 +14,7 @@
  * Psi_next = Psi_current + dt * f(Psi_current)
  */
 
-void PC3::Solver::iterateNewton() {
+void PHOENIX::Solver::iterateNewton() {
     SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
 
                      CALCULATE_K( 1, wavefunction, reservoir );

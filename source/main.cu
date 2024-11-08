@@ -43,13 +43,13 @@
 
 int main( int argc, char* argv[] ) {
     // Try and read-in any config file
-    auto config = PC3::readConfigFromFile( argc, argv );
+    auto config = PHOENIX::readConfigFromFile( argc, argv );
 
     // Convert input arguments to system and handler variables
-    auto system = PC3::SystemParameters( config.size(), config.data() );
+    auto system = PHOENIX::SystemParameters( config.size(), config.data() );
 
     // Create Solver Class
-    auto solver = PC3::Solver( system );
+    auto solver = PHOENIX::Solver( system );
 
     // Create Main Plotwindow. Needs to be compiled with -DSFML_RENDER
     initSFMLWindow( solver );
@@ -57,8 +57,8 @@ int main( int argc, char* argv[] ) {
     // Some Helper Variables
     bool running = true;
     double complete_duration = 0.;
-    PC3::Type::uint32 out_every_iterations = 1;
-    PC3::Type::real dt = system.p.dt;
+    PHOENIX::Type::uint32 out_every_iterations = 1;
+    PHOENIX::Type::real dt = system.p.dt;
     // Main Loop
 #ifdef BENCH
 #ifdef LIKWID
@@ -74,7 +74,7 @@ int main( int argc, char* argv[] ) {
       solver.iterate();
     }
     , "Main-Loop" );
-    complete_duration = PC3::TimeIt::totalRuntime();
+    complete_duration = PHOENIX::TimeIt::totalRuntime();
     system.printCMD( complete_duration, system.iteration );
 #ifdef LIKWID
     #pragma omp parallel
@@ -107,7 +107,7 @@ int main( int argc, char* argv[] ) {
             // Plot
             running = plotSFMLWindow( solver, system.p.t, complete_duration, system.iteration );
             , "Main-Loop" );
-        complete_duration = PC3::TimeIt::totalRuntime();
+        complete_duration = PHOENIX::TimeIt::totalRuntime();
 
         system.printCMD( complete_duration, system.iteration );
     }
@@ -119,8 +119,8 @@ int main( int argc, char* argv[] ) {
     solver.finalize();
 
     // Print Time statistics and output to file
-    system.printSummary( PC3::TimeIt::getTimes(), PC3::TimeIt::getTimesTotal() );
-    PC3::TimeIt::toFile( system.filehandler.getFile( "times" ) );
+    system.printSummary( PHOENIX::TimeIt::getTimes(), PHOENIX::TimeIt::getTimesTotal() );
+    PHOENIX::TimeIt::toFile( system.filehandler.getFile( "times" ) );
 #ifdef BENCH
 #ifdef LIKWID
     LIKWID_MARKER_CLOSE;

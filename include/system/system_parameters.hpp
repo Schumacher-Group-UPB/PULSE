@@ -11,7 +11,7 @@
 #include "system/filehandler.hpp"
 #include "system/envelope.hpp"
 
-namespace PC3 {
+namespace PHOENIX {
 
 /**
  * @brief Lightweight System Class containing all of the required system variables.
@@ -102,7 +102,7 @@ class SystemParameters {
     std::vector<std::string> output_keys;
 
     // Envelope ReadIns
-    PC3::Envelope pulse, pump, mask, initial_state, initial_reservoir, fft_mask, potential;
+    PHOENIX::Envelope pulse, pump, mask, initial_state, initial_reservoir, fft_mask, potential;
 
     FileHandler filehandler;
 
@@ -128,4 +128,4 @@ class SystemParameters {
     void finishCMD();
 };
 
-} // namespace PC3
+} // namespace PHOENIX

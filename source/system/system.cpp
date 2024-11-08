@@ -15,7 +15,7 @@
  * overwritten by the user cmd input.
  *
  */
-PC3::SystemParameters::SystemParameters() {
+PHOENIX::SystemParameters::SystemParameters() {
     // SI Rescaling Units
     p.m_e = 9.10938356E-31;
     p.h_bar = 1.0545718E-34;
@@ -71,7 +71,7 @@ PC3::SystemParameters::SystemParameters() {
     random_system_amplitude = 1.0;
 }
 
-void PC3::SystemParameters::calculateAuto() {
+void PHOENIX::SystemParameters::calculateAuto() {
     // If hbar_s is < 0, calculate it
     if ( p.h_bar_s < 0 ) {
         p.h_bar_s = p.h_bar / p.e_e * 1E12;
@@ -114,9 +114,9 @@ void PC3::SystemParameters::calculateAuto() {
     p.i_h_bar_s = Type::complex( 0.0, p.h_bar_s );
 }
 
-PC3::SystemParameters::SystemParameters( int argc, char** argv ) : SystemParameters() {
+PHOENIX::SystemParameters::SystemParameters( int argc, char** argv ) : SystemParameters() {
     // Check if help is requested
-    if ( PC3::CLIO::findInArgv( "--help", argc, argv ) != -1 || PC3::CLIO::findInArgv( "-h", argc, argv ) != -1 ) {
+    if ( PHOENIX::CLIO::findInArgv( "--help", argc, argv ) != -1 || PHOENIX::CLIO::findInArgv( "-h", argc, argv ) != -1 ) {
         calculateAuto();
         printHelp();
         exit( 0 );
@@ -136,6 +136,6 @@ PC3::SystemParameters::SystemParameters( int argc, char** argv ) : SystemParamet
     filehandler.init( argc, argv );
 }
 
-bool PC3::SystemParameters::evaluateStochastic() {
+bool PHOENIX::SystemParameters::evaluateStochastic() {
     return p.stochastic_amplitude != 0.0;
 }

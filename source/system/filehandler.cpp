@@ -8,59 +8,59 @@
 #include "misc/escape_sequences.hpp"
 #include "omp.h"
 
-PC3::FileHandler::FileHandler() : outputPath( "data" ), outputName( "" ), color_palette( "vik" ), color_palette_phase( "viko" ) {};
+PHOENIX::FileHandler::FileHandler() : outputPath( "data" ), outputName( "" ), color_palette( "vik" ), color_palette_phase( "viko" ) {};
 
-PC3::FileHandler::FileHandler( int argc, char** argv ) : FileHandler() {
+PHOENIX::FileHandler::FileHandler( int argc, char** argv ) : FileHandler() {
     init( argc, argv );
 }
 
-void PC3::FileHandler::init( int argc, char** argv ) {
+void PHOENIX::FileHandler::init( int argc, char** argv ) {
     int index = 0;
-    if ( ( index = PC3::CLIO::findInArgv( "--path", argc, argv ) ) != -1 )
-        outputPath = PC3::CLIO::getNextStringInput( argv, argc, "path", ++index );
+    if ( ( index = PHOENIX::CLIO::findInArgv( "--path", argc, argv ) ) != -1 )
+        outputPath = PHOENIX::CLIO::getNextStringInput( argv, argc, "path", ++index );
     if ( outputPath.back() != '/' )
         outputPath += "/";
 
-    if ( ( index = PC3::CLIO::findInArgv( "--name", argc, argv ) ) != -1 )
-        outputName = PC3::CLIO::getNextStringInput( argv, argc, "name", ++index );
+    if ( ( index = PHOENIX::CLIO::findInArgv( "--name", argc, argv ) ) != -1 )
+        outputName = PHOENIX::CLIO::getNextStringInput( argv, argc, "name", ++index );
 
     // Colormap
-    if ( ( index = PC3::CLIO::findInArgv( "--cmap", argc, argv ) ) != -1 ) {
-        color_palette = PC3::CLIO::getNextStringInput( argv, argc, "cmap", ++index );
-        color_palette_phase = PC3::CLIO::getNextStringInput( argv, argc, "cmap", index );
+    if ( ( index = PHOENIX::CLIO::findInArgv( "--cmap", argc, argv ) ) != -1 ) {
+        color_palette = PHOENIX::CLIO::getNextStringInput( argv, argc, "cmap", ++index );
+        color_palette_phase = PHOENIX::CLIO::getNextStringInput( argv, argc, "cmap", index );
     }
 
     // Creating output directory.
     try {
         std::filesystem::create_directories( outputPath );
-        std::cout << PC3::CLIO::prettyPrint( "Successfully created directory '" + outputPath + "'", PC3::CLIO::Control::Info ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Successfully created directory '" + outputPath + "'", PHOENIX::CLIO::Control::Info ) << std::endl;
     } catch ( std::filesystem::filesystem_error& e ) {
-        std::cout << PC3::CLIO::prettyPrint( "Error creating directory '" + outputPath + "'", PC3::CLIO::Control::FullError ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Error creating directory '" + outputPath + "'", PHOENIX::CLIO::Control::FullError ) << std::endl;
     }
 
     // Create timeoutput subdirectory if --historyMatrix is passed.
-    if ( PC3::CLIO::findInArgv( "--historyMatrix", argc, argv ) != -1 ) {
+    if ( PHOENIX::CLIO::findInArgv( "--historyMatrix", argc, argv ) != -1 ) {
         try {
             std::filesystem::create_directories( outputPath + "timeoutput" );
-            std::cout << PC3::CLIO::prettyPrint( "Successfully created sub-directory '" + outputPath + "timeoutput'", PC3::CLIO::Control::Info ) << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Successfully created sub-directory '" + outputPath + "timeoutput'", PHOENIX::CLIO::Control::Info ) << std::endl;
         } catch ( std::filesystem::filesystem_error& e ) {
-            std::cout << PC3::CLIO::prettyPrint( "Error creating directory '" + outputPath + "timeoutput'", PC3::CLIO::Control::FullError ) << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Error creating directory '" + outputPath + "timeoutput'", PHOENIX::CLIO::Control::FullError ) << std::endl;
         }
     }
 }
 
-std::string PC3::FileHandler::toPath( const std::string& name ) {
+std::string PHOENIX::FileHandler::toPath( const std::string& name ) {
     return outputPath + ( outputPath.back() == '/' ? "" : "/" ) + outputName + ( outputName.empty() ? "" : "_" ) + name + ".txt";
 }
 
-std::ofstream& PC3::FileHandler::getFile( const std::string& name ) {
+std::ofstream& PHOENIX::FileHandler::getFile( const std::string& name ) {
     if ( files.find( name ) == files.end() ) {
         files[name] = std::ofstream( toPath( name ) );
     }
     return files[name];
 }
 
-bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::complex* buffer ) {
+bool PHOENIX::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::complex* buffer ) {
     std::ifstream filein;
     filein.open( filepath, std::ios::in );
     std::istringstream inputstring;
@@ -69,7 +69,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::co
     Type::real re, im;
     if ( not filein.is_open() ) {
 #pragma omp critical
-        std::cout << PC3::CLIO::prettyPrint( "Unable to load '" + filepath + "'", PC3::CLIO::Control::FullWarning ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Unable to load '" + filepath + "'", PHOENIX::CLIO::Control::FullWarning ) << std::endl;
         return false;
     }
     // Header
@@ -97,11 +97,11 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::co
             }
     }
     filein.close();
-    std::cout << PC3::CLIO::prettyPrint( "Loaded " + std::to_string( i ) + " elements from '" + filepath + "'", PC3::CLIO::Control::Success ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Loaded " + std::to_string( i ) + " elements from '" + filepath + "'", PHOENIX::CLIO::Control::Success ) << std::endl;
     return true;
 }
 
-bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::real* buffer ) {
+bool PHOENIX::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::real* buffer ) {
     std::ifstream filein;
     filein.open( filepath, std::ios::in );
     std::istringstream inputstring;
@@ -110,7 +110,7 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::re
     Type::real val;
     if ( not filein.is_open() ) {
 #pragma omp critical
-        std::cout << PC3::CLIO::prettyPrint( "Unable to load '" + filepath + "'", PC3::CLIO::Control::FullWarning ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Unable to load '" + filepath + "'", PHOENIX::CLIO::Control::FullWarning ) << std::endl;
         return false;
     }
 
@@ -132,19 +132,19 @@ bool PC3::FileHandler::loadMatrixFromFile( const std::string& filepath, Type::re
         }
     }
     filein.close();
-    std::cout << PC3::CLIO::prettyPrint( "Loaded " + std::to_string( i ) + " elements from '" + filepath + "'", PC3::CLIO::Control::Success ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Loaded " + std::to_string( i ) + " elements from '" + filepath + "'", PHOENIX::CLIO::Control::Success ) << std::endl;
     return true;
 }
 
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
                                            const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, std::ofstream& out,
                                            const std::string& name ) {
     if ( !out.is_open() ) {
-        std::cout << PC3::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PC3::CLIO::Control::Error ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PHOENIX::CLIO::Control::Error ) << std::endl;
         return;
     }
     // Header
-    out << "# SIZE " << col_stop - col_start << " " << row_stop - row_start << " " << header << " :: PULSE MATRIX\n";
+    out << "# SIZE " << col_stop - col_start << " " << row_stop - row_start << " " << header << " :: PHOENIX_ MATRIX\n";
     std::stringstream output_buffer;
     // Real
     for ( int i = row_start; i < row_stop; i += increment ) {
@@ -166,34 +166,34 @@ void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::ui
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << PC3::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.",
-                                         PC3::CLIO::Control::Success )
+    std::cout << PHOENIX::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.",
+                                         PHOENIX::CLIO::Control::Success )
               << std::endl;
 }
 
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
                                            const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, col_start, col_stop, row_start, row_stop, N_c, N_r, increment, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, const std::string& out ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out,
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out,
                                            const std::string& name ) {
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, out, name );
 }
 
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
                                            const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, std::ofstream& out,
                                            const std::string& name ) {
     if ( !out.is_open() ) {
-        std::cout << PC3::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PC3::CLIO::Control::Error ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PHOENIX::CLIO::Control::Error ) << std::endl;
         return;
     }
     // Header
-    out << "# SIZE " << col_stop - col_start << " " << row_stop - row_start << " " << header << " :: PULSE MATRIX\n";
+    out << "# SIZE " << col_stop - col_start << " " << row_stop - row_start << " " << header << " :: PHOENIX_ MATRIX\n";
     std::stringstream output_buffer;
     // Real
     for ( int i = row_start; i < row_stop; i += increment ) {
@@ -207,25 +207,25 @@ void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint3
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << PC3::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.",
-                                         PC3::CLIO::Control::Success )
+    std::cout << PHOENIX::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.",
+                                         PHOENIX::CLIO::Control::Success )
               << std::endl;
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
                                            const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, col_start, col_stop, row_start, row_stop, N_c, N_r, increment, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, const std::string& out ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, file, out );
 }
-void PC3::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out,
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out,
                                            const std::string& name ) {
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, out, name );
 }
 
-std::vector<std::vector<PC3::Type::real>> PC3::FileHandler::loadListFromFile( const std::string& path, const std::string& name ) {
+std::vector<std::vector<PHOENIX::Type::real>> PHOENIX::FileHandler::loadListFromFile( const std::string& path, const std::string& name ) {
     std::vector<std::vector<Type::real>> data;
     std::ifstream filein;
     filein.open( path, std::ios::in );
@@ -233,7 +233,7 @@ std::vector<std::vector<PC3::Type::real>> PC3::FileHandler::loadListFromFile( co
     std::string line;
     Type::real val;
     if ( not filein.is_open() ) {
-        std::cout << PC3::CLIO::prettyPrint( "Unable to load '" + path + "' for purpose '" + name + "'", PC3::CLIO::Control::FullWarning ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Unable to load '" + path + "' for purpose '" + name + "'", PHOENIX::CLIO::Control::FullWarning ) << std::endl;
         return data;
     }
     while ( getline( filein, line ) ) {
@@ -250,16 +250,16 @@ std::vector<std::vector<PC3::Type::real>> PC3::FileHandler::loadListFromFile( co
         }
     }
     filein.close();
-    std::cout << PC3::CLIO::prettyPrint( "Loaded " + std::to_string( data.size() ) + " columns from '" + path + "' for purpose: '" + name + "'", PC3::CLIO::Control::Success )
+    std::cout << PHOENIX::CLIO::prettyPrint( "Loaded " + std::to_string( data.size() ) + " columns from '" + path + "' for purpose: '" + name + "'", PHOENIX::CLIO::Control::Success )
               << std::endl;
     return data;
 }
 
-void PC3::FileHandler::outputListToFile( const std::string& path, std::vector<std::vector<Type::real>>& data, const std::string& name ) {
+void PHOENIX::FileHandler::outputListToFile( const std::string& path, std::vector<std::vector<Type::real>>& data, const std::string& name ) {
     std::ofstream fileout;
     fileout.open( path, std::ios::out );
     if ( not fileout.is_open() ) {
-        std::cout << PC3::CLIO::prettyPrint( "Unable to open '" + path + "' for purpose '" + name + "' for writing!", PC3::CLIO::Control::Error ) << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Unable to open '" + path + "' for purpose '" + name + "' for writing!", PHOENIX::CLIO::Control::Error ) << std::endl;
         return;
     }
     for ( Type::uint32 i = 0; i < data[0].size(); i++ ) {
@@ -273,5 +273,5 @@ void PC3::FileHandler::outputListToFile( const std::string& path, std::vector<st
     }
     fileout.flush();
     fileout.close();
-    std::cout << PC3::CLIO::prettyPrint( "Output " + std::to_string( data[0].size() ) + " columns to '" + path + "' - '" + name + "'", PC3::CLIO::Control::Success ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Output " + std::to_string( data[0].size() ) + " columns to '" + path + "' - '" + name + "'", PHOENIX::CLIO::Control::Success ) << std::endl;
 }

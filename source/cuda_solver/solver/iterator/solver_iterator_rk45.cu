@@ -54,7 +54,7 @@
 * @param evaluate_pulse If true, the pulse is evaluated at the current time step
 */
 
-void PC3::Solver::iterateVariableTimestepRungeKutta() {
+void PHOENIX::Solver::iterateVariableTimestepRungeKutta() {
     // Accept current step?
     bool accept = false;
 
@@ -92,8 +92,8 @@ void PC3::Solver::iterateVariableTimestepRungeKutta() {
 
         Type::complex error = matrix.rk_error.sum();
         Type::real sum_abs2 = CUDA::real( matrix.wavefunction_plus.transformReduce(
-            0.0, [] PULSE_HOST_DEVICE( Type::complex a ) { return Type::complex( CUDA::abs2( a ) ); },
-            [] PULSE_HOST_DEVICE( Type::complex a, Type::complex b ) { return a + b; } ) );
+            0.0, [] PHOENIX_HOST_DEVICE( Type::complex a ) { return Type::complex( CUDA::abs2( a ) ); },
+            [] PHOENIX_HOST_DEVICE( Type::complex a, Type::complex b ) { return a + b; } ) );
 
         Type::real final_error = CUDA::abs( error ) / sum_abs2;
 

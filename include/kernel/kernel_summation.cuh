@@ -2,10 +2,10 @@
 #include "cuda/typedef.cuh"
 #include "solver/gpu_solver.hpp"
 
-namespace PC3::Kernel::Summation {
+namespace PHOENIX::Kernel::Summation {
 
 template <typename buffer_type, Type::uint32 NMax, float w, float... W>
-PULSE_DEVICE PULSE_INLINE buffer_type sum_single_k( Type::uint32 i, buffer_type* buffer, Type::uint32 offset ) {
+PHOENIX_DEVICE PHOENIX_INLINE buffer_type sum_single_k( Type::uint32 i, buffer_type* buffer, Type::uint32 offset ) {
     if constexpr ( sizeof...( W ) == 0 ) {
         // Last Weight
         return w * buffer[i + offset * ( NMax - sizeof...( W ) - 1 )];
@@ -30,24 +30,24 @@ PULSE_DEVICE PULSE_INLINE buffer_type sum_single_k( Type::uint32 i, buffer_type*
 // Specifically use Type::uint32 N instead of sizeof(Weights) to force MSVC to NOT inline this function for different solvers (RK3,RK4) which cases the respective RK solver to call the wrong template function.
 
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float... Weights>
-PULSE_DEVICE PULSE_INLINE void runge_sum_to_input_kw( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
+PHOENIX_DEVICE PHOENIX_INLINE void runge_sum_to_input_kw( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
                                                       buffer_type* k_vec ) {
     buffer_type res = sum_single_k<buffer_type, sizeof...( Weights ), Weights...>( i, k_vec, args.p.subgrid_N2_with_halo );
     if constexpr ( not complex_dt ) {
         output[i] = input[i] + args.time[1] * res;
     } else {
-        output[i] = input[i] + PC3::Type::complex( 0.0f, -args.time[1] ) * res;
+        output[i] = input[i] + PHOENIX::Type::complex( 0.0f, -args.time[1] ) * res;
     }
 }
 
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float... Weights>
-PULSE_DEVICE PULSE_INLINE void runge_add_to_input_kw( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
+PHOENIX_DEVICE PHOENIX_INLINE void runge_add_to_input_kw( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
     buffer_type res = sum_single_k<buffer_type, sizeof...( Weights ), Weights...>( i, k_vec, args.p.subgrid_N2_with_halo );
 
     if constexpr ( not complex_dt ) {
         input_output[i] += args.time[1] * res;
     } else {
-        input_output[i] += PC3::Type::complex( 0.0f, -args.time[1] ) * res;
+        input_output[i] += PHOENIX::Type::complex( 0.0f, -args.time[1] ) * res;
     }
 }
 
@@ -58,83 +58,83 @@ constexpr float sum_weights() {
 
 // Hardcoded RK1 Kernel
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w>
-PULSE_DEVICE PULSE_INLINE void runge_sum_to_input_k1( Type::uint32 i, Type::uint32 offset, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input,
+PHOENIX_DEVICE PHOENIX_INLINE void runge_sum_to_input_k1( Type::uint32 i, Type::uint32 offset, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input,
                                                       buffer_type* output, buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         output[i] = input[i] + args.time[1] * w * k_vec[i + offset];
     } else {
-        output[i] = input[i] + PC3::Type::complex( 0.0f, -args.time[1] ) * w * k_vec[i + offset];
+        output[i] = input[i] + PHOENIX::Type::complex( 0.0f, -args.time[1] ) * w * k_vec[i + offset];
     }
 }
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w>
-PULSE_DEVICE PULSE_INLINE void runge_add_to_input_k1( Type::uint32 i, Type::uint32 offset, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output,
+PHOENIX_DEVICE PHOENIX_INLINE void runge_add_to_input_k1( Type::uint32 i, Type::uint32 offset, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output,
                                                       buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         input_output[i] += args.time[1] * w * k_vec[i + offset];
     } else {
-        input_output[i] += PC3::Type::complex( 0.0f, -args.time[1] ) * w * k_vec[i + offset];
+        input_output[i] += PHOENIX::Type::complex( 0.0f, -args.time[1] ) * w * k_vec[i + offset];
     }
 }
 
 // Hardcoded RK2 Kernel
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w1, float w2>
-PULSE_DEVICE PULSE_INLINE void runge_sum_to_input_k2( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
+PHOENIX_DEVICE PHOENIX_INLINE void runge_sum_to_input_k2( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
                                                       buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         output[i] = input[i] + args.time[1] * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] );
     } else {
-        output[i] = input[i] + PC3::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] );
+        output[i] = input[i] + PHOENIX::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] );
     }
 }
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w1, float w2>
-PULSE_DEVICE PULSE_INLINE void runge_add_to_input_k2( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
+PHOENIX_DEVICE PHOENIX_INLINE void runge_add_to_input_k2( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         input_output[i] += args.time[1] * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] );
     } else {
-        input_output[i] += PC3::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] );
+        input_output[i] += PHOENIX::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] );
     }
 }
 
 // Hardcoded RK3 Kernel
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w1, float w2, float w3>
-PULSE_DEVICE PULSE_INLINE void runge_sum_to_input_k3( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
+PHOENIX_DEVICE PHOENIX_INLINE void runge_sum_to_input_k3( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
                                                       buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         output[i] = input[i] + args.time[1] * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] );
     } else {
         output[i] = input[i] +
-                    PC3::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] );
+                    PHOENIX::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] );
     }
 }
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w1, float w2, float w3>
-PULSE_DEVICE PULSE_INLINE void runge_add_to_input_k3( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
+PHOENIX_DEVICE PHOENIX_INLINE void runge_add_to_input_k3( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         input_output[i] += args.time[1] * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] );
     } else {
         input_output[i] +=
-            PC3::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] );
+            PHOENIX::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] );
     }
 }
 
 // Hardcoded RK4 kernel
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w1, float w2, float w3, float w4>
-PULSE_DEVICE PULSE_INLINE void runge_sum_to_input_k4( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
+PHOENIX_DEVICE PHOENIX_INLINE void runge_sum_to_input_k4( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
                                                       buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         output[i] = input[i] + args.time[1] * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] +
                                                 w4 * k_vec[i + 3 * args.p.subgrid_N2_with_halo] );
     } else {
-        output[i] = input[i] + PC3::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] +
+        output[i] = input[i] + PHOENIX::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] +
                                                                              w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] + w4 * k_vec[i + 3 * args.p.subgrid_N2_with_halo] );
     }
 }
 template <typename buffer_type, bool complex_dt, Type::uint32 N, float w1, float w2, float w3, float w4>
-PULSE_DEVICE PULSE_INLINE void runge_add_to_input_k4( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
+PHOENIX_DEVICE PHOENIX_INLINE void runge_add_to_input_k4( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output, buffer_type* k_vec ) {
     if constexpr ( not complex_dt ) {
         input_output[i] += args.time[1] * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] + w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] +
                                             w4 * k_vec[i + 3 * args.p.subgrid_N2_with_halo] );
     } else {
-        input_output[i] += PC3::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] +
+        input_output[i] += PHOENIX::Type::complex( 0.0f, -args.time[1] ) * ( w1 * k_vec[i] + w2 * k_vec[i + args.p.subgrid_N2_with_halo] +
                                                                          w3 * k_vec[i + 2 * args.p.subgrid_N2_with_halo] + w4 * k_vec[i + 3 * args.p.subgrid_N2_with_halo] );
     }
 }
@@ -143,7 +143,7 @@ PULSE_DEVICE PULSE_INLINE void runge_add_to_input_k4( Type::uint32 i, Type::uint
 // This way we can hardcode a lot of the RK kernels and still have a single kernel function to call, hopefully at no performance cost.
 // This way we can also hardcode more K functions, if we want to.
 template <typename buffer_type, bool complex_dt, bool include_dw, bool include_reservoir, Type::uint32 N, float... Weights>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_sum_to_input_k( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void runge_sum_to_input_k( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input, buffer_type* output,
                                                                 buffer_type* k_vec ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
@@ -171,7 +171,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_sum_to_input_k( Type::uint32 i, 
     }
 }
 template <typename buffer_type, bool complex_dt, bool include_dw, bool include_reservoir, Type::uint32 N, float... Weights>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_add_to_input_k( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output,
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void runge_add_to_input_k( Type::uint32 i, Type::uint32 current_halo, Solver::KernelArguments args, buffer_type* input_output,
                                                                 buffer_type* k_vec ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
@@ -200,7 +200,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_add_to_input_k( Type::uint32 i, 
 }
 
 template <int NMax, int N, float w, float... W>
-PULSE_DEVICE PULSE_COMPILER_SPECIFIC void sum_single_error_k( int i, Type::complex& error, Type::complex* k_wavefunction, Type::uint32 offset ) {
+PHOENIX_DEVICE PHOENIX_COMPILER_SPECIFIC void sum_single_error_k( int i, Type::complex& error, Type::complex* k_wavefunction, Type::uint32 offset ) {
     if constexpr ( w != 0.0 ) {
         error += w * k_wavefunction[i + offset * ( NMax - N )];
     }
@@ -210,17 +210,17 @@ PULSE_DEVICE PULSE_COMPILER_SPECIFIC void sum_single_error_k( int i, Type::compl
 }
 
 template <float... Weights>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void runge_sum_to_error( int i, Type::uint32 current_halo, Solver::KernelArguments args ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void runge_sum_to_error( int i, Type::uint32 current_halo, Solver::KernelArguments args ) {
     Type::complex error = 0.0;
 
     sum_single_error_k<sizeof...( Weights ), sizeof...( Weights ), Weights...>( i, error, args.dev_ptrs.k_wavefunction_plus, args.p.subgrid_N2_with_halo );
 
-    args.dev_ptrs.rk_error[i] = CUDA::abs2( PC3::Type::complex( 0.0f, -args.time[1] ) * error );
+    args.dev_ptrs.rk_error[i] = CUDA::abs2( PHOENIX::Type::complex( 0.0f, -args.time[1] ) * error );
 
     error = 0.0;
 
     sum_single_error_k<sizeof...( Weights ), sizeof...( Weights ), Weights...>( i, error, args.dev_ptrs.k_wavefunction_minus, args.p.subgrid_N2_with_halo );
 
-    args.dev_ptrs.rk_error[i] += args.p.i * CUDA::abs2( PC3::Type::complex( 0.0f, -args.time[1] ) * error );
+    args.dev_ptrs.rk_error[i] += args.p.i * CUDA::abs2( PHOENIX::Type::complex( 0.0f, -args.time[1] ) * error );
 }
-} // namespace PC3::Kernel::Summation
+} // namespace PHOENIX::Kernel::Summation

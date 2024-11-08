@@ -13,107 +13,106 @@
  * Since all subfunctions are inlined, the resulting Kernel should be a single, inlinable function
 */
 
-namespace PC3::Kernel::Compute {
+namespace PHOENIX::Kernel::Compute {
 
 template <bool tmp_use_tetm, bool tmp_use_reservoir, bool tmp_use_pulse, bool tmp_use_pump, bool tmp_use_potential, bool tmp_use_stochastic>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current_halo, Solver::KernelArguments args, Solver::InputOutput io ) {
     GENERATE_SUBGRID_INDEX( i, current_halo );
 
     // Copy Pointers and mark as restricted
-    //Type::complex* PULSE_RESTRICT in_wf_plus = io.in_wf_plus;
-    //Type::complex* PULSE_RESTRICT in_rv_plus = io.in_rv_plus;
-    //Type::complex* PULSE_RESTRICT out_wf_plus = io.out_wf_plus;
-    //Type::complex* PULSE_RESTRICT out_rv_plus = io.out_rv_plus;
+    //Type::complex* PHOENIX_RESTRICT in_wf_plus = io.in_wf_plus;
+    //Type::complex* PHOENIX_RESTRICT in_rv_plus = io.in_rv_plus;
+    //Type::complex* PHOENIX_RESTRICT out_wf_plus = io.out_wf_plus;
+    //Type::complex* PHOENIX_RESTRICT out_rv_plus = io.out_rv_plus;
 
     //BUFFER_TO_SHARED();
 
     // For now, we do a giant case switch for TE/TM, repeating a lot of code. Maybe we will change this later to include TE/TM throughout the regular kernel.
-    const Type::real m_eff_scaled=args.p.m_eff_scaled;
-    const Type::real m2_over_dx2_p_dy2=args.p.m2_over_dx2_p_dy2;
-    const Type::real one_over_dy2=args.p.one_over_dy2;
-    const Type::real one_over_dx2=args.p.one_over_dx2;
-    const int subgrid_row_offset=args.p.subgrid_row_offset;
-    const Type::real one_over_h_bar_s=args.p.one_over_h_bar_s;
-    const Type::real g_c=args.p.g_c;
-    const Type::real gamma_c=args.p.gamma_c;
+    const Type::real m_eff_scaled = args.p.m_eff_scaled;
+    const Type::real m2_over_dx2_p_dy2 = args.p.m2_over_dx2_p_dy2;
+    const Type::real one_over_dy2 = args.p.one_over_dy2;
+    const Type::real one_over_dx2 = args.p.one_over_dx2;
+    const int subgrid_row_offset = args.p.subgrid_row_offset;
+    const Type::real one_over_h_bar_s = args.p.one_over_h_bar_s;
+    const Type::real g_c = args.p.g_c;
+    const Type::real gamma_c = args.p.gamma_c;
 
     // MARK: Scalar
     if constexpr ( not tmp_use_tetm ) {
-#if defined(BENCH) && defined(USE_CPU)
+#if defined( BENCH ) && defined( USE_CPU )
         const Type::complex in_wf = io.in_wf_plus[i];
         const Type::complex in_wf_mi = io.in_wf_plus_i[i];
         const Type::real in_psi_norm = CUDA::abs2( in_wf );
-        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * io.in_wf_plus_i[i] +
-                                                          ( io.in_wf_plus_i[i + subgrid_row_offset] + io.in_wf_plus_i[i - subgrid_row_offset] ) * one_over_dy2 +
-                                                          ( io.in_wf_plus_i[i + 1] + io.in_wf_plus_i[i - 1] ) * one_over_dx2 );
-        wf_plus = wf_plus*one_over_h_bar_s;
+        Type::complex wf_plus =
+            m_eff_scaled * ( m2_over_dx2_p_dy2 * io.in_wf_plus_i[i] + ( io.in_wf_plus_i[i + subgrid_row_offset] + io.in_wf_plus_i[i - subgrid_row_offset] ) * one_over_dy2 +
+                             ( io.in_wf_plus_i[i + 1] + io.in_wf_plus_i[i - 1] ) * one_over_dx2 );
+        wf_plus = wf_plus * one_over_h_bar_s;
         wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
         wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
 
 #else
         const Type::complex in_wf = io.in_wf_plus[i];
         // Use this for -i*in_wf
-        
+
         const Type::complex in_wf_mi = Type::complex( CUDA::imag( in_wf ), -1.0f * CUDA::real( in_wf ) );
-        
+
         // |Psi|^2
         const Type::real in_psi_norm = CUDA::abs2( in_wf );
-      
+
         // Hamiltonian
-        
-        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * in_wf +
-                                                        ( io.in_wf_plus[i + subgrid_row_offset] + io.in_wf_plus[i - subgrid_row_offset] ) * one_over_dy2 +
-                                                        ( io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1] ) * one_over_dx2 );
+
+        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * in_wf + ( io.in_wf_plus[i + subgrid_row_offset] + io.in_wf_plus[i - subgrid_row_offset] ) * one_over_dy2 +
+                                                 ( io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1] ) * one_over_dx2 );
         // -i/hbar * H
-        wf_plus = Type::complex( CUDA::imag( wf_plus ), -1.0f * CUDA::real( wf_plus ))*one_over_h_bar_s;
+        wf_plus = Type::complex( CUDA::imag( wf_plus ), -1.0f * CUDA::real( wf_plus ) ) * one_over_h_bar_s;
         wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
 
         //
-        
+
         wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
 #endif
 
-      if constexpr ( tmp_use_reservoir ) {
-          const Type::complex in_rv = io.in_rv_plus[i];
-          wf_plus += args.p.one_over_h_bar_s * args.p.g_r * in_rv * in_wf_mi;
-          wf_plus += Type::real( 0.5 ) * args.p.R * in_rv * in_wf;
-          Type::complex rv_plus = -( args.p.gamma_r + args.p.R * in_psi_norm ) * in_rv;
+        if constexpr ( tmp_use_reservoir ) {
+            const Type::complex in_rv = io.in_rv_plus[i];
+            wf_plus += args.p.one_over_h_bar_s * args.p.g_r * in_rv * in_wf_mi;
+            wf_plus += Type::real( 0.5 ) * args.p.R * in_rv * in_wf;
+            Type::complex rv_plus = -( args.p.gamma_r + args.p.R * in_psi_norm ) * in_rv;
 
-          if constexpr ( tmp_use_pump ) {
-              for ( int k = 0; k < args.pump_pointers.n; k++ ) {
-                  PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
-                  rv_plus += args.dev_ptrs.pump_plus[i + offset] * args.pump_pointers.amp[k];
-              }
-          }
+            if constexpr ( tmp_use_pump ) {
+                for ( int k = 0; k < args.pump_pointers.n; k++ ) {
+                    PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+                    rv_plus += args.dev_ptrs.pump_plus[i + offset] * args.pump_pointers.amp[k];
+                }
+            }
 
-          if constexpr ( tmp_use_stochastic ) {
-              rv_plus += args.p.R * in_rv / args.p.dV;
-          }
+            if constexpr ( tmp_use_stochastic ) {
+                rv_plus += args.p.R * in_rv / args.p.dV;
+            }
 
-          io.out_rv_plus[i] = rv_plus;
-      }
+            io.out_rv_plus[i] = rv_plus;
+        }
 
-      if constexpr ( tmp_use_potential ) {
-          for ( int k = 0; k < args.potential_pointers.n; k++ ) {
-              PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
-              const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
-              wf_plus += args.p.one_over_h_bar_s * potential * in_wf_mi;
-          }
-      }
+        if constexpr ( tmp_use_potential ) {
+            for ( int k = 0; k < args.potential_pointers.n; k++ ) {
+                PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+                const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
+                wf_plus += args.p.one_over_h_bar_s * potential * in_wf_mi;
+            }
+        }
 
-      if constexpr ( tmp_use_pulse ) {
-          for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
-              PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
-              const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
-              wf_plus += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
-          }
-      }
+        if constexpr ( tmp_use_pulse ) {
+            for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
+                PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+                const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
+                wf_plus += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k];
+            }
+        }
 
-      if constexpr ( tmp_use_stochastic ) {
-          wf_plus -= args.p.one_over_h_bar_s * args.p.g_c * in_wf_mi / args.p.dV;
-      }
+        if constexpr ( tmp_use_stochastic ) {
+            wf_plus -= args.p.one_over_h_bar_s * args.p.g_c * in_wf_mi / args.p.dV;
+        }
 
-      io.out_wf_plus[i] = wf_plus;
+        io.out_wf_plus[i] = wf_plus;
 
     } else {
         // MARK: TE/TM
@@ -153,7 +152,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
         Type::complex result = args.p.one_over_h_bar_s * args.p.m_eff_scaled * hamilton_regular_plus;
 
         for ( int k = 0; k < args.potential_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
             result += args.p.one_over_h_bar_s * potential * in_wf_plus_mi; // TODO: remove this complex multiplication!
         }
@@ -168,7 +167,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
         // MARK: Pulse Plus
         for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
             result += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k]; // TODO: remove this complex multiplication!
         }
@@ -186,7 +185,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
         for ( int k = 0; k < args.pump_pointers.n; k++ ) {
             const auto gauss = args.pump_pointers.amp[k];
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             result += args.dev_ptrs.pump_plus[i + offset] * gauss; // TODO: remove this complex multiplication!
         }
 
@@ -200,7 +199,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
         result = args.p.one_over_h_bar_s * args.p.m_eff_scaled * hamilton_regular_minus;
 
         for ( int k = 0; k < args.potential_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex potential = args.dev_ptrs.potential_minus[i + offset] * args.potential_pointers.amp[k];
             result += args.p.one_over_h_bar_s * potential * in_wf_minus_mi; // TODO: remove this complex multiplication!
         }
@@ -215,7 +214,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
         // MARK: Pulse Minus
         for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex pulse = args.dev_ptrs.pulse_minus[i + offset];
             result += args.p.one_over_h_bar_s * pulse * args.pulse_pointers.amp[k]; // TODO: remove this complex multiplication!
         }
@@ -232,7 +231,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 
         for ( int k = 0; k < args.pump_pointers.n; k++ ) {
             const auto gauss = args.pump_pointers.amp[k];
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             result += args.dev_ptrs.pump_minus[i + offset] * gauss; // TODO: remove this complex multiplication!
         }
 
@@ -251,7 +250,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 current
 */
 
 template <bool tmp_use_tetm>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar_linear_fourier( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     // We do some weird looking casting to avoid intermediate casts to Type::uint32
@@ -271,7 +270,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_linear_fourier( int i, Solve
 }
 
 template <bool tmp_use_tetm>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     if constexpr ( not tmp_use_tetm ) {
@@ -283,7 +282,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::Ke
         Type::complex result = { args.p.g_c * in_psi_norm, -args.p.h_bar_s * Type::real( 0.5 ) * args.p.gamma_c };
 
         for ( int k = 0; k < args.potential_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
             result += potential;
         }
@@ -304,7 +303,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::Ke
         result = -args.p.gamma_r * in_rv;
         result -= args.p.R * in_psi_norm * in_rv;
         for ( int k = 0; k < args.pump_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             result += args.dev_ptrs.pump_plus[i + offset] * args.pump_pointers.amp[k];
         }
         // MARK: Stochastic-2
@@ -323,7 +322,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::Ke
         Type::complex result = { args.p.g_c * in_psi_plus_norm, -args.p.h_bar_s * Type::real( 0.5 ) * args.p.gamma_c };
 
         for ( int k = 0; k < args.potential_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex potential = args.dev_ptrs.potential_plus[i + offset] * args.potential_pointers.amp[k];
             result += potential;
         }
@@ -346,7 +345,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::Ke
         result = -args.p.gamma_r * in_rv_plus;
         result -= args.p.R * in_psi_plus_norm * in_rv_plus;
         for ( int k = 0; k < args.pump_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             result += args.dev_ptrs.pump_plus[i + offset] * args.pump_pointers.amp[k];
         }
         // MARK: Stochastic-2
@@ -358,7 +357,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::Ke
         result = Type::complex( args.p.g_c * in_psi_minus_norm, -args.p.h_bar_s * Type::real( 0.5 ) * args.p.gamma_c );
 
         for ( int k = 0; k < args.potential_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex potential = args.dev_ptrs.potential_minus[i + offset] * args.potential_pointers.amp[k];
             result += potential;
         }
@@ -381,7 +380,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::Ke
         result = -args.p.gamma_r * in_rv_minus;
         result -= args.p.R * in_psi_minus_norm * in_rv_minus;
         for ( int k = 0; k < args.pump_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             result += args.dev_ptrs.pump_minus[i + offset] * args.pump_pointers.amp[k];
         }
         // MARK: Stochastic-2
@@ -395,14 +394,14 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_nonlinear( int i, Solver::Ke
 // and the output reservoir hols the new reservoir. We need to use the old reservoir for calculations and then
 // write the new reservoir to the output.
 template <bool tmp_use_tetm>
-PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_independent( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar_independent( int i, Solver::KernelArguments args, Solver::InputOutput io ) {
     GET_THREAD_INDEX( i, args.p.N2 );
 
     Type::complex result = { 0.0, 0.0 };
     if constexpr ( not tmp_use_tetm ) {
         // MARK: Pulse
         for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
             result += args.p.one_over_h_bar_s * args.time[1] * pulse * args.pulse_pointers.amp[k];
         }
@@ -419,7 +418,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_independent( int i, Solver::
     } else {
         // MARK: Pulse
         for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
             result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse *
                       args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
@@ -436,7 +435,7 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_independent( int i, Solver::
 
         // MARK: Pulse
         for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
-            PC3::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
+            PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex pulse = args.dev_ptrs.pulse_minus[i + offset];
             result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse *
                       args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
@@ -450,4 +449,4 @@ PULSE_GLOBAL PULSE_COMPILER_SPECIFIC void gp_scalar_independent( int i, Solver::
     }
 }
 
-} // namespace PC3::Kernel::Compute
+} // namespace PHOENIX::Kernel::Compute

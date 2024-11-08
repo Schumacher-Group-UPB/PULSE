@@ -19,7 +19,7 @@ ColorPalette::Color &ColorPalette::getColor( double value, bool invert, bool cut
     Read colormalette from TXT file. Colors can be either hex or r g b values
 */
 void ColorPalette::readColorPaletteFromTXT( std::string filepath, int repetitions ) {
-    std::cout << PC3::CLIO::prettyPrint( "Loading .txt colormap from " + filepath, PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Loading .txt colormap from " + filepath, PHOENIX::CLIO::Control::Info ) << std::endl;
     for ( int o = 0; o < repetitions; o++ ) {
         std::ifstream file( filepath );
         std::string str;
@@ -56,7 +56,7 @@ void ColorPalette::readColorPaletteFromTXT( std::string filepath, int repetition
     Reads gnuplot colorpalette .pal, converst contained hex colors to r,g,b and saves them into input_colors array
 */
 void ColorPalette::readColorPaletteFromGnuplotDOTPAL( std::string filepath, int repetitions ) {
-    std::cout << PC3::CLIO::prettyPrint( "Loading .pal gnuplot colormap from " + filepath, PC3::CLIO::Control::Info ) << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Loading .pal gnuplot colormap from " + filepath, PHOENIX::CLIO::Control::Info ) << std::endl;
     for ( int o = 0; o < repetitions; o++ ) {
         std::ifstream file( filepath );
         std::string str;

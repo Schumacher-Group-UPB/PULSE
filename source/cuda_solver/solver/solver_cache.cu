@@ -4,7 +4,7 @@
 #include "cuda/typedef.cuh"
 #include "solver/gpu_solver.hpp"
 
-void PC3::Solver::cacheValues() {
+void PHOENIX::Solver::cacheValues() {
     // System Time
     cache_map_scalar["t"].emplace_back( system.p.t );
 
@@ -15,23 +15,23 @@ void PC3::Solver::cacheValues() {
 
     // Output Pulse, Pump and Potential Envelope functions to cache_map_scalar
     for ( int g = 0; g < system.pulse.groupSize(); g++ ) {
-        if ( system.pulse.temporal[g] & PC3::Envelope::Temporal::Constant )
+        if ( system.pulse.temporal[g] & PHOENIX::Envelope::Temporal::Constant )
             continue;
         Type::complex pulse = system.pulse.temporal_envelope[g];
-        cache_map_scalar["pulse_" + std::to_string( g ) + "_real"].push_back( PC3::CUDA::real( pulse ) );
-        cache_map_scalar["pulse_" + std::to_string( g ) + "_imag"].push_back( PC3::CUDA::imag( pulse ) );
+        cache_map_scalar["pulse_" + std::to_string( g ) + "_real"].push_back( PHOENIX::CUDA::real( pulse ) );
+        cache_map_scalar["pulse_" + std::to_string( g ) + "_imag"].push_back( PHOENIX::CUDA::imag( pulse ) );
     }
     for ( int g = 0; g < system.pump.groupSize(); g++ ) {
-        if ( system.pump.temporal[g] & PC3::Envelope::Temporal::Constant )
+        if ( system.pump.temporal[g] & PHOENIX::Envelope::Temporal::Constant )
             continue;
-        Type::real pump = PC3::CUDA::real( system.pump.temporal_envelope[g] );
-        cache_map_scalar["pump_" + std::to_string( g )].push_back( PC3::CUDA::real( pump ) );
+        Type::real pump = PHOENIX::CUDA::real( system.pump.temporal_envelope[g] );
+        cache_map_scalar["pump_" + std::to_string( g )].push_back( PHOENIX::CUDA::real( pump ) );
     }
     for ( int g = 0; g < system.potential.groupSize(); g++ ) {
-        if ( system.potential.temporal[g] & PC3::Envelope::Temporal::Constant )
+        if ( system.potential.temporal[g] & PHOENIX::Envelope::Temporal::Constant )
             continue;
-        Type::real potential = PC3::CUDA::real( system.potential.temporal_envelope[g] );
-        cache_map_scalar["potential_" + std::to_string( g )].push_back( PC3::CUDA::real( potential ) );
+        Type::real potential = PHOENIX::CUDA::real( system.potential.temporal_envelope[g] );
+        cache_map_scalar["potential_" + std::to_string( g )].push_back( PHOENIX::CUDA::real( potential ) );
     }
 
     // TE/TM Guard
@@ -44,7 +44,7 @@ void PC3::Solver::cacheValues() {
     cache_map_scalar["max_minus"].emplace_back( CUDA::abs( max_minus ) );
 }
 
-void PC3::Solver::cacheToFiles() {
+void PHOENIX::Solver::cacheToFiles() {
     if ( not system.doOutput( "all", "max", "scalar" ) )
         return;
 
@@ -62,8 +62,8 @@ void PC3::Solver::cacheToFiles() {
 
 // TODO: Support Multiple History Outputs, and also support piping them into a single file.
 // something like "append" mode, that doesnt open a new file but instead appends to the existing one.
-PC3::Type::uint32 _local_history_output_counter = 1; // output_history_matrix_every
-void PC3::Solver::cacheMatrices() {
+PHOENIX::Type::uint32 _local_history_output_counter = 1; // output_history_matrix_every
+void PHOENIX::Solver::cacheMatrices() {
     if ( not system.do_output_history_matrix ) // Don't output history matrix
         return;
     if ( system.p.t < system.output_history_start_time ) // Start time not reached

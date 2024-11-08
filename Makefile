@@ -27,9 +27,9 @@ NUMA ?= FALSE
 # Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
 GCCFLAGS = -std=c++20 -fopenmp -x c++ -mtune=native -march=native -funroll-loops -finline-limit=20000 #-fopt-info-vec
 ifeq ($(OS),Windows_NT)
-	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt  -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --expt-relaxed-constexpr --dlink-time-opt --generate-line-info
+	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --expt-relaxed-constexpr # --dlink-time-opt --generate-line-info
 else
-	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt  -diag-suppress 177 -lstdc++ -rdc=true --expt-extended-lambda --expt-relaxed-constexpr #--dlink-time-opt 
+	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt -diag-suppress 177 -lstdc++ -rdc=true --expt-extended-lambda --expt-relaxed-constexpr # --dlink-time-opt 
 endif
 SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 
@@ -70,7 +70,7 @@ ifeq ($(SFML),TRUE)
 	ADD_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system $(SFMLLIBS) -DSFML_RENDER
 endif
 ifeq ($(FP32),TRUE)
-	ADD_FLAGS += -DUSE_HALF_PRECISION
+	ADD_FLAGS += -DUSE_32_BIT_PRECISION
 endif
 ifeq ($(CPU),TRUE)
 	ADD_FLAGS += -DUSE_CPU

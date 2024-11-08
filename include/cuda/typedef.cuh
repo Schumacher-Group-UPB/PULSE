@@ -42,17 +42,17 @@
     // We pin them m****f****s ourselves!
     #include <numa.h>
     #include <sched.h>
-    #ifndef PULSE_NUMA_DOMAINS
-        #define PULSE_NUMA_DOMAINS 4
+    #ifndef PHOENIX_NUMA_DOMAINS
+        #define PHOENIX_NUMA_DOMAINS 4
     #endif
 #endif
 
 #include <cmath>
 
-namespace PC3::Type {
+namespace PHOENIX::Type {
 
 // Real Numbers
-#ifdef USE_HALF_PRECISION
+#ifdef USE_32_BIT_PRECISION
 using real = float;
 #else
 using real = double;
@@ -90,37 +90,37 @@ using stream_t = int;
 using cuda_random_state = curandState;
 using stream_t = cudaStream_t;
 #endif
-} // namespace PC3::Type
+} // namespace PHOENIX::Type
 
 #ifdef USE_CPU
-// Define PULSE_INLINE as inline when using the CPU
-    #define PULSE_INLINE __attribute__( ( always_inline ) ) inline
+// Define PHOENIX_INLINE as inline when using the CPU
+    #define PHOENIX_INLINE __attribute__( ( always_inline ) ) inline
 // For the CPU Version, we inline the Kernel Functions
-    #define PULSE_COMPILER_SPECIFIC __attribute__( ( always_inline ) ) inline
-    #define PULSE_HOST_DEVICE
-    #define PULSE_DEVICE
-    #define PULSE_HOST
-    #define PULSE_GLOBAL
-    #define PULSE_RESTRICT __restrict__
-    #define PULSE_ALIGNED( x ) __attribute__( ( aligned( sizeof( x ) ) ) )
+    #define PHOENIX_COMPILER_SPECIFIC __attribute__( ( always_inline ) ) inline
+    #define PHOENIX_HOST_DEVICE
+    #define PHOENIX_DEVICE
+    #define PHOENIX_HOST
+    #define PHOENIX_GLOBAL
+    #define PHOENIX_RESTRICT __restrict__
+    #define PHOENIX_ALIGNED( x ) __attribute__( ( aligned( sizeof( x ) ) ) )
 #else
-// Define PULSE_INLINE as nvcc's __inline__ when using the GPU
-    #define PULSE_INLINE __inline__
+// Define PHOENIX_INLINE as nvcc's __inline__ when using the GPU
+    #define PHOENIX_INLINE __inline__
 // For the GPU Version, the Kernel Functions are static to avoid name mangling
-    #define PULSE_COMPILER_SPECIFIC static
-    #define PULSE_HOST_DEVICE __host__ __device__
-    #define PULSE_DEVICE __device__
-    #define PULSE_HOST __host__
-    #define PULSE_GLOBAL __global__
-    #define PULSE_RESTRICT __restrict__
-    #define PULSE_ALIGNED( x )
+    #define PHOENIX_COMPILER_SPECIFIC static
+    #define PHOENIX_HOST_DEVICE __host__ __device__
+    #define PHOENIX_DEVICE __device__
+    #define PHOENIX_HOST __host__
+    #define PHOENIX_GLOBAL __global__
+    #define PHOENIX_RESTRICT __restrict__
+    #define PHOENIX_ALIGNED( x )
 #endif
 
 // If nvcc is not used, redefine dim3
 #ifdef USE_CPU
 class dim3 {
    public:
-    PC3::Type::uint32 x, y, z;
+    PHOENIX::Type::uint32 x, y, z;
 };
 #endif
 
@@ -128,35 +128,35 @@ class dim3 {
  * Basic Operators for cuComplex and cuDoubleComplex GPU types
 */
 
-namespace PC3::CUDA {
+namespace PHOENIX::CUDA {
 
 // Define real() and imag() for the GPU
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real real( const Type::complex& x ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real real( const Type::complex& x ) {
     return x.real();
 }
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real imag( const Type::complex& x ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real imag( const Type::complex& x ) {
     return x.imag();
 }
 
 // For real numbers, the operators can be the same
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real real( const Type::real& x ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real real( const Type::real& x ) {
     return x;
 }
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real imag( const Type::real& x ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real imag( const Type::real& x ) {
     return Type::real( 0.0 );
 }
 
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real abs2( const Type::complex& x ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real abs2( const Type::complex& x ) {
     const auto x_real = real( x );
     const auto x_imag = imag( x );
     return x_real * x_real + x_imag * x_imag;
 }
 
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real abs2( const Type::real x ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real abs2( const Type::real x ) {
     return x * x;
 }
 
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real arg( const Type::complex z ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real arg( const Type::complex z ) {
 #ifdef USE_CPU
     return std::arg( z );
 #else
@@ -192,21 +192,21 @@ using thrust::sin;
 using thrust::sqrt;
 using thrust::tan;
 // special case sqrt for regular floats
-PULSE_HOST_DEVICE static PULSE_INLINE Type::real sqrt( const Type::real x ) {
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real sqrt( const Type::real x ) {
     return std::sqrt( x );
 }
 #endif
 
-} // namespace PC3::CUDA
+} // namespace PHOENIX::CUDA
 
 // Overload the "<" and ">" operators for complex numbers. We use abs2 for comparison.
-PULSE_HOST_DEVICE static PULSE_INLINE bool operator<( const PC3::Type::complex& a, const PC3::Type::complex& b ) {
-    //return PC3::CUDA::real(a)+PC3::CUDA::imag(a) < PC3::CUDA::real(b)+PC3::CUDA::imag(b);
-    return PC3::CUDA::abs2( a ) < PC3::CUDA::abs2( b );
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE bool operator<( const PHOENIX::Type::complex& a, const PHOENIX::Type::complex& b ) {
+    //return PHOENIX::CUDA::real(a)+PHOENIX::CUDA::imag(a) < PHOENIX::CUDA::real(b)+PHOENIX::CUDA::imag(b);
+    return PHOENIX::CUDA::abs2( a ) < PHOENIX::CUDA::abs2( b );
 }
-PULSE_HOST_DEVICE static PULSE_INLINE bool operator>( const PC3::Type::complex& a, const PC3::Type::complex& b ) {
-    //return PC3::CUDA::real(a)+PC3::CUDA::imag(a) > PC3::CUDA::real(b)+PC3::CUDA::imag(b);
-    return PC3::CUDA::abs2( a ) > PC3::CUDA::abs2( b );
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE bool operator>( const PHOENIX::Type::complex& a, const PHOENIX::Type::complex& b ) {
+    //return PHOENIX::CUDA::real(a)+PHOENIX::CUDA::imag(a) > PHOENIX::CUDA::real(b)+PHOENIX::CUDA::imag(b);
+    return PHOENIX::CUDA::abs2( a ) > PHOENIX::CUDA::abs2( b );
 }
 
 #ifdef USE_CPU

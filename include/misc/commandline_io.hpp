@@ -3,10 +3,10 @@
 #include <iostream>
 #include "cuda/typedef.cuh"
 
-namespace PC3::CLIO {
+namespace PHOENIX::CLIO {
 
 /**
- * Pretty Commandline Output. Extended Symbols can be disabled by defining PC3_NO_EXTENDED_SYMBOLS
+ * Pretty Commandline Output. Extended Symbols can be disabled by defining PHOENIX_NO_EXTENDED_SYMBOLS
  * in which case no colors, symbols or other extended features will be used.
  */
 enum class Control : size_t {
@@ -58,7 +58,7 @@ int findInArgv( std::string toFind, int argc, char** argv, int start = 0 );
  * @param index The index to start searching from. This field is updated to the
  * index of the next parameter.
  */
-PC3::Type::real getNextInput( char** arguments, const int argc, const std::string name, int& index );
+PHOENIX::Type::real getNextInput( char** arguments, const int argc, const std::string name, int& index );
 std::string getNextStringInput( char** arguments, const int argc, const std::string name, int& index );
 
 /**
@@ -147,4 +147,4 @@ void print_break(const widths_t& widths)
 
 */
 
-} // namespace PC3::CLIO
+} // namespace PHOENIX::CLIO

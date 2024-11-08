@@ -13,7 +13,7 @@
 * We dont need this variable anywhere else, so we just create it
 * locally to this file here.
 */
-PC3::Type::real fft_cached_t = 0.0;
+PHOENIX::Type::real fft_cached_t = 0.0;
 bool first_time = true;
 
 /**
@@ -24,7 +24,7 @@ bool first_time = true;
  * @param N_c Number of grid points in one dimension
  * @param N_r Number of grid points in the other dimension
  */
-bool PC3::Solver::iterate() {
+bool PHOENIX::Solver::iterate() {
     // First, check if the maximum time has been reached
 #ifndef BENCH  
     if ( system.p.t >= system.t_max )
@@ -38,11 +38,11 @@ bool PC3::Solver::iterate() {
         auto [block_size, grid_size] = getLaunchParameters( 1, system.p.subgrid_N2_with_halo );
         if ( first_time ) {
             first_time = false;
-            CALL_FULL_KERNEL( PC3::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0, system.random_seed, args.dev_ptrs.random_state,
+            CALL_FULL_KERNEL( PHOENIX::Kernel::initialize_random_number_generator, "random_number_init", grid_size, block_size, 0, system.random_seed, args.dev_ptrs.random_state,
                               system.p.subgrid_N2_with_halo );
-            std::cout << PC3::CLIO::prettyPrint( "Initialized Random Number Generator", PC3::CLIO::Control::Info ) << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Initialized Random Number Generator", PHOENIX::CLIO::Control::Info ) << std::endl;
         }
-        CALL_FULL_KERNEL( PC3::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0, args.dev_ptrs.random_state, args.dev_ptrs.random_number,
+        CALL_FULL_KERNEL( PHOENIX::Kernel::generate_random_numbers, "random_number_gen", grid_size, block_size, 0, args.dev_ptrs.random_state, args.dev_ptrs.random_number,
                           system.p.subgrid_N2_with_halo, system.p.stochastic_amplitude * std::sqrt( system.p.dt ), system.p.stochastic_amplitude * std::sqrt( system.p.dt ) );
     }
     // TODO: Hide this in a solver.updateKernelArgs function

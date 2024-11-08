@@ -13,7 +13,7 @@
     #include <cufft.h>
     #include <curand_kernel.h>
     #define cuda_fft_plan cufftHandle
-    #ifdef USE_HALF_PRECISION
+    #ifdef USE_32_BIT_PRECISION
         #define FFTSOLVER cufftExecC2C
         #define FFTPLAN CUFFT_C2C
 using fft_type = cufftComplex;
@@ -32,13 +32,13 @@ using fft_type = cufftDoubleComplex;
  * system will forgive us. We could also implement a small wrapper class that
  * holds the plan and calls the destruct method when the class instance is destroyed.
  */
-static cufftHandle& getFFTPlan( PC3::Type::uint32 N_c, PC3::Type::uint32 N_r ) {
+static cufftHandle& getFFTPlan( PHOENIX::Type::uint32 N_c, PHOENIX::Type::uint32 N_r ) {
     static cufftHandle plan = 0;
     static bool isInitialized = false;
 
     if ( not isInitialized ) {
         if ( cufftPlan2d( &plan, N_c, N_r, FFTPLAN ) != CUFFT_SUCCESS ) {
-            std::cout << PC3::CLIO::prettyPrint( "Error Creating CUDA FFT Plan!", PC3::CLIO::Control::FullError ) << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Error Creating CUDA FFT Plan!", PHOENIX::CLIO::Control::FullError ) << std::endl;
             return plan;
         }
         isInitialized = true;
@@ -62,9 +62,9 @@ static cufftHandle& getFFTPlan( PC3::Type::uint32 N_c, PC3::Type::uint32 N_r ) {
  * to a cached filter mask, which itself will be shifted.
  */
 
-#define fft_template_type PC3::Type::complex, PC3::Type::real
+#define fft_template_type PHOENIX::Type::complex, PHOENIX::Type::real
 
-void PC3::Solver::applyFFTFilter( bool apply_mask ) {
+void PHOENIX::Solver::applyFFTFilter( bool apply_mask ) {
     auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
 
     matrix.wavefunction_plus.toFull( matrix.fft_plus );
@@ -81,11 +81,11 @@ void PC3::Solver::applyFFTFilter( bool apply_mask ) {
         return;
 
     // Apply the FFT Mask Filter
-    CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream
+    CALL_FULL_KERNEL( PHOENIX::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Plus", grid_size, block_size, 0, // 0 = default stream
                       GET_RAW_PTR( matrix.fft_plus ), GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c * system.p.N_r );
 
     if ( system.use_twin_mode ) {
-        CALL_FULL_KERNEL( PC3::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Minus", grid_size, block_size, 0, // 0 = default stream
+        CALL_FULL_KERNEL( PHOENIX::Kernel::kernel_mask_fft<fft_template_type>, "FFT Mask Minus", grid_size, block_size, 0, // 0 = default stream
                           GET_RAW_PTR( matrix.fft_minus ), GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c * system.p.N_r );
     }
 
@@ -99,7 +99,7 @@ void PC3::Solver::applyFFTFilter( bool apply_mask ) {
     }
 }
 
-void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir ) {
+void PHOENIX::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* device_ptr_out, FFT dir ) {
 #ifdef USE_CUDA
     // Do FFT using CUDAs FFT functions
     auto plan = getFFTPlan( system.p.N_c, system.p.N_r );
@@ -108,7 +108,7 @@ void PC3::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex* dev
         "FFT Exec" );
 #else
     // auto [plan_forward, plan_inverse] = getFFTPlan(system.p.N_c, system.p.N_r, device_ptr_in, device_ptr_out);
-    #ifdef USE_HALF_PRECISION
+    #ifdef USE_32_BIT_PRECISION
     auto plan = fftwf_plan_dft_2d( system.p.N_c, system.p.N_r, reinterpret_cast<fftwf_complex*>( device_ptr_in ), reinterpret_cast<fftwf_complex*>( device_ptr_out ),
                                    dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE );
     fftwf_execute( plan );

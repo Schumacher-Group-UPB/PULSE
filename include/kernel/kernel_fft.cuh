@@ -2,18 +2,18 @@
 #include "cuda/typedef.cuh"
 #include "cuda/cuda_macro.cuh"
 
-namespace PC3::Kernel {
+namespace PHOENIX::Kernel {
 
 template <typename T>
-PULSE_GLOBAL void kernel_make_fft_visible( int i, T* input, T* output, const Type::uint32 N ) {
+PHOENIX_GLOBAL void kernel_make_fft_visible( int i, T* input, T* output, const Type::uint32 N ) {
     GET_THREAD_INDEX( i, N );
 
     const auto val = input[i];
-    output[i] = Type::complex( std::log( CUDA::real( val ) * CUDA::real( val ) + CUDA::imag( val ) * PC3::CUDA::imag( val ) ), 0 );
+    output[i] = Type::complex( std::log( CUDA::real( val ) * CUDA::real( val ) + CUDA::imag( val ) * PHOENIX::CUDA::imag( val ) ), 0 );
 }
 
 template <typename T>
-PULSE_GLOBAL void fft_shift_2D( int i, T* data, const Type::uint32 N_c, const Type::uint32 N_r ) {
+PHOENIX_GLOBAL void fft_shift_2D( int i, T* data, const Type::uint32 N_c, const Type::uint32 N_r ) {
     GET_THREAD_INDEX( i, N_c * N_r );
 
     // Current indices of upper left quadrant
@@ -32,10 +32,10 @@ PULSE_GLOBAL void fft_shift_2D( int i, T* data, const Type::uint32 N_c, const Ty
 }
 
 template <typename T, typename U>
-PULSE_GLOBAL void kernel_mask_fft( int i, T* data, U* mask, const Type::uint32 N ) {
+PHOENIX_GLOBAL void kernel_mask_fft( int i, T* data, U* mask, const Type::uint32 N ) {
     GET_THREAD_INDEX( i, N );
 
     data[i] = data[i] / Type::real( N ) * mask[i];
 }
 
-} // namespace PC3::Kernel
+} // namespace PHOENIX::Kernel

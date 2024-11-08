@@ -4,7 +4,7 @@
 #include "misc/commandline_io.hpp"
 #include "misc/escape_sequences.hpp"
 
-std::vector<char*> PC3::readConfigFromFile( int argc, char** argv ) {
+std::vector<char*> PHOENIX::readConfigFromFile( int argc, char** argv ) {
     int index = 0;
     std::string config = "";
 
@@ -13,15 +13,15 @@ std::vector<char*> PC3::readConfigFromFile( int argc, char** argv ) {
         buffer.push_back( argv[i] );
     }
 
-    if ( ( index = PC3::CLIO::findInArgv( "--config", argc, argv ) ) == -1 )
+    if ( ( index = PHOENIX::CLIO::findInArgv( "--config", argc, argv ) ) == -1 )
         return buffer;
 
-    while ( ( config = PC3::CLIO::getNextStringInput( argv, argc, "config", ++index ) ) != "" ) {
-        std::cout << PC3::CLIO::prettyPrint( "Reading configs from file: '" + config + "'", PC3::CLIO::Control::Secondary | PC3::CLIO::Control::Info ) << std::endl;
+    while ( ( config = PHOENIX::CLIO::getNextStringInput( argv, argc, "config", ++index ) ) != "" ) {
+        std::cout << PHOENIX::CLIO::prettyPrint( "Reading configs from file: '" + config + "'", PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Info ) << std::endl;
 
         // If config file exists, read all lines, split all lines and store them in the argv array
         if ( not std::filesystem::exists( config ) ) {
-            std::cout << PC3::CLIO::prettyPrint( "Config file '" + config + "' does not exist. Skipping.", PC3::CLIO::Control::FullWarning ) << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Config file '" + config + "' does not exist. Skipping.", PHOENIX::CLIO::Control::FullWarning ) << std::endl;
             return buffer;
         }
 

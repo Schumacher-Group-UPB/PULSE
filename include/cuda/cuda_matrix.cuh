@@ -16,7 +16,7 @@
 #include "cuda/cuda_matrix_base.hpp"
 #include "misc/commandline_io.hpp"
 
-namespace PC3 {
+namespace PHOENIX {
 
 /**
  * @brief CUDA Wrapper for a matrix
@@ -140,8 +140,8 @@ class CUDAMatrix : CUDAMatrixBase {
         host_is_ahead = true;
         // Log this action
         if ( global_matrix_transfer_log ) {
-            std::cout << PC3::CLIO::prettyPrint( "Copied " + std::to_string( data.size() ) + " elements to '" + getName() + "'.",
-                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+            std::cout << PHOENIX::CLIO::prettyPrint( "Copied " + std::to_string( data.size() ) + " elements to '" + getName() + "'.",
+                                                 PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
                       << std::endl;
         }
         // Return this pointer
@@ -159,7 +159,7 @@ class CUDAMatrix : CUDAMatrixBase {
         host_is_ahead = true;
         // Log this action
         if ( global_matrix_transfer_log ) {
-            std::cout << PC3::CLIO::prettyPrint( "Copied '" + other.getName() + "' to '" + getName() + "'", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Copied '" + other.getName() + "' to '" + getName() + "'", PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary ) << std::endl;
         }
         // Return this pointer
         return *this;
@@ -174,10 +174,10 @@ class CUDAMatrix : CUDAMatrixBase {
         global_total_host_mb -= size_in_mb_host * num_matrices;
         // Log this action. Mostly for simple debugging.
         if ( global_matrix_creation_log )
-            std::cout << PC3::CLIO::prettyPrint( "Freeing " + std::to_string( num_matrices ) + "x" + std::to_string( rows ) + "x" + std::to_string( rows ) + " matrix '" + name +
+            std::cout << PHOENIX::CLIO::prettyPrint( "Freeing " + std::to_string( num_matrices ) + "x" + std::to_string( rows ) + "x" + std::to_string( rows ) + " matrix '" + name +
                                                      "'. Total allocated space: " + std::to_string( global_total_host_mb ) + "MB (host), " +
                                                      std::to_string( global_total_device_mb ) + "MB (device)",
-                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+                                                 PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
                       << std::endl;
         // Clear the Host data
         host_data.clear();
@@ -230,11 +230,11 @@ class CUDAMatrix : CUDAMatrixBase {
         global_total_host_mb_max = std::max( global_total_host_mb, global_total_host_mb_max );
         // Log this action.
         if ( global_matrix_creation_log )
-            std::cout << PC3::CLIO::prettyPrint( "Allocating " + std::to_string( size_in_mb_device ) + " MB for " + std::to_string( num_matrices ) + "x(" + std::to_string( rows ) +
+            std::cout << PHOENIX::CLIO::prettyPrint( "Allocating " + std::to_string( size_in_mb_device ) + " MB for " + std::to_string( num_matrices ) + "x(" + std::to_string( rows ) +
                                                      "+" + std::to_string( 2*halo_size ) + ")x(" + std::to_string( cols ) + "+" + std::to_string( 2*halo_size ) + ")" +
                                                      " device matrix '" + name + "' with halo " + std::to_string( halo_size ) + " and " + std::to_string( total_num_subgrids ) +
                                                      " total subgrids, total allocated device space: " + std::to_string( global_total_device_mb ) + " MB.",
-                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+                                                 PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
                       << std::endl;
         // Allocate the host data vector. This is a full size matrix.
         host_data = Type::host_vector<T>( total_size_host * num_matrices, (T)0.0 );
@@ -248,14 +248,14 @@ class CUDAMatrix : CUDAMatrixBase {
 #pragma omp parallel for schedule( static )
         for ( int i = 0; i < total_num_subgrids; i++ ) {
 #ifdef USE_NUMA
-            int numa_domain = i % PULSE_NUMA_DOMAINS;
+            int numa_domain = i % PHOENIX_NUMA_DOMAINS;
             numa_run_on_node( numa_domain );
             numa_set_preferred( numa_domain );
             int cpu = sched_getcpu();
             int node = numa_node_of_cpu( cpu );
     #pragma omp critical
-            std::cout << PC3::CLIO::prettyPrint( "Allocating subgrid " + std::to_string( i ) + " on CPU " + std::to_string( cpu ) + " on NUMA node " + std::to_string( node ) + ".",
-                                                 PC3::CLIO::Control::FullSuccess )
+            std::cout << PHOENIX::CLIO::prettyPrint( "Allocating subgrid " + std::to_string( i ) + " on CPU " + std::to_string( cpu ) + " on NUMA node " + std::to_string( node ) + ".",
+                                                 PHOENIX::CLIO::Control::FullSuccess )
                       << std::endl;
 #endif
             device_data[i] = Type::device_vector<T>( subgrid_size_with_halo * num_matrices, (T)0.0 );
@@ -266,8 +266,8 @@ class CUDAMatrix : CUDAMatrixBase {
         // This is the size of only one matrix, even if num_matrices is greater than 1. For larger matrices, a temporary buffer is created instead.
         if ( not device_data_full.count( total_size_host ) ) {
             if ( global_matrix_creation_log )
-                std::cout << PC3::CLIO::prettyPrint( "Full grid buffer for size " + std::to_string( total_size_host ) + " not found, creating new buffer.",
-                                                     PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+                std::cout << PHOENIX::CLIO::prettyPrint( "Full grid buffer for size " + std::to_string( total_size_host ) + " not found, creating new buffer.",
+                                                     PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
                           << std::endl;
             device_data_full[total_size_host] = Type::device_vector<T>( total_size_host );
         }
@@ -304,17 +304,17 @@ class CUDAMatrix : CUDAMatrixBase {
      * the corresponding device matrix when it is needed.
      * This function ALWAYS syncronizes all num_matrices individual matrices.
      */
-    CUDAMatrix<T>& hostToDeviceSync( PC3::Type::uint32 matrix = 0 ) {
+    CUDAMatrix<T>& hostToDeviceSync( PHOENIX::Type::uint32 matrix = 0 ) {
         if ( not is_constructed or num_matrices == 0 )
             return *this;
         // Log this action
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Host to Device Sync for matrix '" + name + "' (" + std::to_string( matrix ) + ").",
-                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+            std::cout << PHOENIX::CLIO::prettyPrint( "Host to Device Sync for matrix '" + name + "' (" + std::to_string( matrix ) + ").",
+                                                 PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
                       << std::endl;
 
         // If the subgrid size is 1 and the halo_size is zero, we can just copy the full matrix to the device data
-        const PC3::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
+        const PHOENIX::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
         if ( subgrid_size == 1 and halo_size == 0 ) {
             std::copy( host_data.begin() + fullgrid_host_ptr_matrix_offset, host_data.begin() + fullgrid_host_ptr_matrix_offset + total_size_host,
                        device_data[0].begin() + fullgrid_host_ptr_matrix_offset );
@@ -343,14 +343,14 @@ class CUDAMatrix : CUDAMatrixBase {
      * matrix if that has not been done yet. This allows the user to create host matrices and only create
      * the corresponding device matrix when it is needed.
      */
-    CUDAMatrix<T>& deviceToHostSync( PC3::Type::uint32 matrix = 0 ) {
+    CUDAMatrix<T>& deviceToHostSync( PHOENIX::Type::uint32 matrix = 0 ) {
         if ( not is_constructed or num_matrices == 0 )
             return *this;
         // Log this data
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Device to Host Sync for matrix '" + name + "'.", PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary ) << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Device to Host Sync for matrix '" + name + "'.", PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary ) << std::endl;
 
-        const PC3::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
+        const PHOENIX::Type::uint32 fullgrid_host_ptr_matrix_offset = total_size_host * matrix;
         if ( subgrid_size == 1 and halo_size == 0 ) {
             std::copy( device_data[0].begin(), device_data[0].end(), host_data.begin() + fullgrid_host_ptr_matrix_offset );
         } else {
@@ -403,7 +403,7 @@ class CUDAMatrix : CUDAMatrixBase {
         return total_size_host;
     }
 
-    CUDAMatrix<T>& toFull( PC3::Type::device_vector<T>& out, PC3::Type::uint32 matrix = 0, PC3::Type::stream_t stream = 0 ) {
+    CUDAMatrix<T>& toFull( PHOENIX::Type::device_vector<T>& out, PHOENIX::Type::uint32 matrix = 0, PHOENIX::Type::stream_t stream = 0 ) {
         if ( not is_constructed )
             return *this;
 // Copy all device data to a device buffer.
@@ -419,17 +419,17 @@ class CUDAMatrix : CUDAMatrixBase {
         auto fullgrid_dev_ptr = GET_RAW_PTR( out );
         auto dev_ptrs = getSubgridDevicePtrs( matrix );
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Copying " + std::to_string( subgrids_columns ) + "x" + std::to_string( subgrids_rows ) +
+            std::cout << PHOENIX::CLIO::prettyPrint( "Copying " + std::to_string( subgrids_columns ) + "x" + std::to_string( subgrids_rows ) +
                                                      " subgrids to full grid buffer for matrix '" + name + "' (" + std::to_string( matrix ) + ")",
-                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+                                                 PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
                       << std::endl;
-        CALL_FULL_KERNEL( PC3::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols,
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Halo::halo_grid_to_full_grid, "halo_to_full:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols,
                           subgrid_rows, halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;
     }
 
-    CUDAMatrix<T>& toFull( PC3::Type::uint32 matrix = 0, PC3::Type::stream_t stream = 0 ) {
+    CUDAMatrix<T>& toFull( PHOENIX::Type::uint32 matrix = 0, PHOENIX::Type::stream_t stream = 0 ) {
         // Copy all device data to the full static device_data_full buffer
         // This function will copy the data within the respective halos, if they exist,
         // to the full matrix.
@@ -437,7 +437,7 @@ class CUDAMatrix : CUDAMatrixBase {
         return *this;
     }
 
-    CUDAMatrix<T>& toSubgrids( PC3::Type::device_vector<T>& in, PC3::Type::uint32 matrix = 0, PC3::Type::stream_t stream = 0 ) {
+    CUDAMatrix<T>& toSubgrids( PHOENIX::Type::device_vector<T>& in, PHOENIX::Type::uint32 matrix = 0, PHOENIX::Type::stream_t stream = 0 ) {
         if ( not is_constructed )
             return *this;
 // Copy all device data of a device_vector to the subgrids.
@@ -454,16 +454,16 @@ class CUDAMatrix : CUDAMatrixBase {
         auto fullgrid_dev_ptr = GET_RAW_PTR( in );
         auto dev_ptrs = getSubgridDevicePtrs( matrix );
         if ( global_matrix_transfer_log )
-            std::cout << PC3::CLIO::prettyPrint( "Copying full grid buffer to subgrids for matrix '" + name + "' (" + std::to_string( matrix ) + ")",
-                                                 PC3::CLIO::Control::Info | PC3::CLIO::Control::Secondary )
+            std::cout << PHOENIX::CLIO::prettyPrint( "Copying full grid buffer to subgrids for matrix '" + name + "' (" + std::to_string( matrix ) + ")",
+                                                 PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
                       << std::endl;
-        CALL_FULL_KERNEL( PC3::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols,
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Halo::full_grid_to_halo_grid, "full_to_halo:" + name, grid_size, block_size, stream, cols, rows, subgrids_columns, subgrid_cols,
                           subgrid_rows, halo_size, fullgrid_dev_ptr, dev_ptrs );
 
         return *this;
     }
 
-    CUDAMatrix<T>& toSubgrids( PC3::Type::uint32 matrix = 0, PC3::Type::stream_t stream = 0 ) {
+    CUDAMatrix<T>& toSubgrids( PHOENIX::Type::uint32 matrix = 0, PHOENIX::Type::stream_t stream = 0 ) {
         // Copy all device data of the full static device_data_full buffer
         // This function will copy the data within the full matrix to the respective subgrid
         // The halos will remain unsynchronized
@@ -543,7 +543,7 @@ class CUDAMatrix : CUDAMatrixBase {
         return device_data_full[total_size_host].end();
     }
 
-    Type::device_vector<T>& getFullMatrix( bool sync = false, PC3::Type::uint32 matrix = 0 ) {
+    Type::device_vector<T>& getFullMatrix( bool sync = false, PHOENIX::Type::uint32 matrix = 0 ) {
         if ( sync ) {
             toFull( matrix );
         }
@@ -641,7 +641,7 @@ class CUDAMatrix : CUDAMatrixBase {
         }
 #else
         for ( int i = 0; i < total_num_subgrids; i++ ) {
-            auto result = thrust::minmax_element( device_data[i].begin(), device_data[i].end(), [] PULSE_DEVICE( T a, T b ) { return a < b; } );
+            auto result = thrust::minmax_element( device_data[i].begin(), device_data[i].end(), [] PHOENIX_DEVICE( T a, T b ) { return a < b; } );
             // Result contains pointers to DEVICE memory, so we cant just dereference them
             T min_i, max_i;
             thrust::copy( result.first, result.first + 1, &min_i );
@@ -703,7 +703,7 @@ class CUDAMatrix : CUDAMatrixBase {
     // the data back to the subgrids.
     // m.staticFunc(true) is equivalent to m.toFull().staticFunc()
 
-    CUDAMatrix<T>& staticCWiseAbs2( bool first_time = false, PC3::Type::uint32 matrix = 0 ) {
+    CUDAMatrix<T>& staticCWiseAbs2( bool first_time = false, PHOENIX::Type::uint32 matrix = 0 ) {
         if ( first_time )
             toFull( matrix );
 #ifdef USE_CPU
@@ -713,12 +713,12 @@ class CUDAMatrix : CUDAMatrixBase {
         }
 #else
         thrust::transform( device_data_full[total_size_host].begin(), device_data_full[total_size_host].end(), device_data_full[total_size_host].begin(),
-                           [] PULSE_DEVICE( T x ) { return CUDA::abs2( x ); } );
+                           [] PHOENIX_DEVICE( T x ) { return CUDA::abs2( x ); } );
 #endif
         return *this;
     }
 
-    CUDAMatrix<T>& staticNormalize( T& min, T& max, bool first_time = false, PC3::Type::uint32 matrix = 0 ) {
+    CUDAMatrix<T>& staticNormalize( T& min, T& max, bool first_time = false, PHOENIX::Type::uint32 matrix = 0 ) {
         if ( first_time )
             toFull( matrix );
 #ifdef USE_CPU
@@ -728,17 +728,17 @@ class CUDAMatrix : CUDAMatrixBase {
         }
 #else
         thrust::transform( device_data_full[total_size_host].begin(), device_data_full[total_size_host].end(), device_data_full[total_size_host].begin(),
-                           [min, max] PULSE_DEVICE( T x ) { return ( x - min ) / ( max - min ); } );
+                           [min, max] PHOENIX_DEVICE( T x ) { return ( x - min ) / ( max - min ); } );
 #endif
         return *this;
     }
 
-    CUDAMatrix<T>& staticNormalize( bool first_time = false, PC3::Type::uint32 matrix = 0 ) {
+    CUDAMatrix<T>& staticNormalize( bool first_time = false, PHOENIX::Type::uint32 matrix = 0 ) {
         auto [min, max] = extrema();
         return staticNormalize( min, max, first_time, matrix );
     }
 
-    CUDAMatrix<T>& staticAngle( bool first_time = false, PC3::Type::uint32 matrix = 0 ) {
+    CUDAMatrix<T>& staticAngle( bool first_time = false, PHOENIX::Type::uint32 matrix = 0 ) {
         if ( first_time )
             toFull( matrix );
 #ifdef USE_CPU
@@ -748,10 +748,10 @@ class CUDAMatrix : CUDAMatrixBase {
         }
 #else
         thrust::transform( device_data_full[total_size_host].begin(), device_data_full[total_size_host].end(), device_data_full[total_size_host].begin(),
-                           [] PULSE_DEVICE( T x ) { return CUDA::arg( x ); } );
+                           [] PHOENIX_DEVICE( T x ) { return CUDA::arg( x ); } );
 #endif
         return *this;
     }
 };
 
-} // namespace PC3
+} // namespace PHOENIX

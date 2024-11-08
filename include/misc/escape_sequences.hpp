@@ -4,7 +4,7 @@
 
 namespace EscapeSequence {
 
-#ifdef PC3_NO_ANSI_COLORS
+#ifdef PHOENIX_NO_ANSI_COLORS
 
 static inline std::string GRAY = "";
 static inline std::string RED = "";

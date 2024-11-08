@@ -13,7 +13,7 @@
  * Simpson's Rule for RK3
  */
 
-void PC3::Solver::iterateFixedTimestepRungeKutta3() {
+void PHOENIX::Solver::iterateFixedTimestepRungeKutta3() {
     
 //    SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
 //

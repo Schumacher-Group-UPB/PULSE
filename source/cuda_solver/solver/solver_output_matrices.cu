@@ -17,13 +17,13 @@
 
 // TODO: Should the arguments be shared ptrs?
 
-void PC3::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32 end_x, const Type::uint32 start_y, const Type::uint32 end_y, const Type::uint32 increment,
+void PHOENIX::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32 end_x, const Type::uint32 start_y, const Type::uint32 end_y, const Type::uint32 increment,
                                   const std::string& suffix, const std::string& prefix ) {
     const static std::vector<std::string> fileoutputkeys = { "wavefunction_plus", "wavefunction_minus", "reservoir_plus", "reservoir_minus", "fft_plus", "fft_minus" };
     auto header_information =
-        PC3::FileHandler::Header( system.p.L_x * ( end_x - start_x ) / system.p.N_c, system.p.L_y * ( end_y - start_y ) / system.p.N_r, system.p.dx, system.p.dy, system.p.t );
+        PHOENIX::FileHandler::Header( system.p.L_x * ( end_x - start_x ) / system.p.N_c, system.p.L_y * ( end_y - start_y ) / system.p.N_r, system.p.dx, system.p.dy, system.p.t );
     auto fft_header_information =
-        PC3::FileHandler::Header( -1.0 * ( end_x - start_x ) / system.p.N_c, -1.0 * ( end_y - start_y ) / system.p.N_r, 2.0 / system.p.N_c, 2.0 / system.p.N_r, system.p.t );
+        PHOENIX::FileHandler::Header( -1.0 * ( end_x - start_x ) / system.p.N_c, -1.0 * ( end_y - start_y ) / system.p.N_r, 2.0 / system.p.N_c, 2.0 / system.p.N_r, system.p.t );
     //auto res = std::async( std::launch::async, [&]() {
     //std::lock_guard<std::mutex> lock( mtx );
     //#pragma omp parallel for
@@ -84,9 +84,9 @@ void PC3::Solver::outputMatrices( const Type::uint32 start_x, const Type::uint32
     //} );
 }
 
-void PC3::Solver::outputInitialMatrices() {
+void PHOENIX::Solver::outputInitialMatrices() {
     std::cout << "--------------------------- Outputting Initial Matrices ---------------------------" << std::endl;
-    auto header_information = PC3::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t );
+    auto header_information = PHOENIX::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t );
     // Output Matrices to file
     // Output Matrices to file
     if ( system.doOutput( "all", "mat", "initial_plus", "initial" ) ) {
@@ -101,7 +101,7 @@ void PC3::Solver::outputInitialMatrices() {
     if ( system.use_reservoir and system.doOutput( "all", "mat", "pump_plus", "pump" ) )
         for ( int i = 0; i < system.pump.groupSize(); i++ ) {
             auto osc_header_information =
-                PC3::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i] );
+                PHOENIX::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i] );
             std::string suffix = i > 0 ? "_" + std::to_string( i ) : "";
             Type::host_vector<Type::real> buffer = matrix.pump_plus.getFullMatrix( true, i );
             auto future = std::async( std::launch::async, [buffer, osc_header_information, this, suffix]() {
@@ -112,7 +112,7 @@ void PC3::Solver::outputInitialMatrices() {
     if ( system.pulse.size() > 0 and system.doOutput( "all", "mat", "pulse_plus", "pulse" ) )
         for ( int i = 0; i < system.pulse.groupSize(); i++ ) {
             auto osc_header_information =
-                PC3::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i] );
+                PHOENIX::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i] );
             std::string suffix = i > 0 ? "_" + std::to_string( i ) : "";
             Type::host_vector<Type::complex> buffer = matrix.pulse_plus.getFullMatrix( true, i );
             auto future = std::async( std::launch::async, [buffer, osc_header_information, this, suffix]() {
@@ -122,7 +122,7 @@ void PC3::Solver::outputInitialMatrices() {
         }
     if ( system.potential.size() > 0 and system.doOutput( "all", "mat", "potential_plus", "potential" ) )
         for ( int i = 0; i < system.potential.groupSize(); i++ ) {
-            auto osc_header_information = PC3::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.potential.t0[i],
+            auto osc_header_information = PHOENIX::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.potential.t0[i],
                                                                     system.potential.freq[i], system.potential.sigma[i] );
             std::string suffix = i > 0 ? "_" + std::to_string( i ) : "";
             Type::host_vector<Type::real> buffer = matrix.potential_plus.getFullMatrix( true, i );
@@ -156,7 +156,7 @@ void PC3::Solver::outputInitialMatrices() {
     if ( system.use_reservoir and system.doOutput( "all", "mat", "pump_minus", "pump" ) )
         for ( int i = 0; i < system.pump.groupSize(); i++ ) {
             auto osc_header_information =
-                PC3::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i] );
+                PHOENIX::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pump.t0[i], system.pump.freq[i], system.pump.sigma[i] );
             std::string suffix = i > 0 ? "_" + std::to_string( i ) : "";
             Type::host_vector<Type::real> buffer = matrix.pump_minus.getFullMatrix( true, i );
             auto future = std::async( std::launch::async, [buffer, osc_header_information, this, suffix]() {
@@ -167,7 +167,7 @@ void PC3::Solver::outputInitialMatrices() {
     if ( system.doOutput( "all", "mat", "pulse_minus", "pulse" ) )
         for ( int i = 0; i < system.pulse.groupSize(); i++ ) {
             auto osc_header_information =
-                PC3::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i] );
+                PHOENIX::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.pulse.t0[i], system.pulse.freq[i], system.pulse.sigma[i] );
             std::string suffix = i > 0 ? "_" + std::to_string( i ) : "";
             Type::host_vector<Type::complex> buffer = matrix.pulse_minus.getFullMatrix( true, i );
             auto future = std::async( std::launch::async, [buffer, osc_header_information, this, suffix]() {
@@ -177,7 +177,7 @@ void PC3::Solver::outputInitialMatrices() {
         }
     if ( system.doOutput( "all", "mat", "potential_minus", "potential" ) )
         for ( int i = 0; i < system.potential.groupSize(); i++ ) {
-            auto osc_header_information = PC3::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.potential.t0[i],
+            auto osc_header_information = PHOENIX::FileHandler::Header( system.p.L_x, system.p.L_y, system.p.dx, system.p.dy, system.p.t, system.potential.t0[i],
                                                                     system.potential.freq[i], system.potential.sigma[i] );
             std::string suffix = i > 0 ? "_" + std::to_string( i ) : "";
             Type::host_vector<Type::real> buffer = matrix.potential_minus.getFullMatrix( true, i );

@@ -29,7 +29,7 @@
  * We calculate 4 rows of k1, 3 rows of k2, 2 rows of k3 and 1 row of k4 before the first iteration.
  * Then, we iterate all of the remaining rows after each other, incrementing the buffer for the next iteration.
  */
-void PC3::Solver::iterateFixedTimestepRungeKutta4() {
+void PHOENIX::Solver::iterateFixedTimestepRungeKutta4() {
 
     SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
 

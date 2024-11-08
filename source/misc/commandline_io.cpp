@@ -9,9 +9,9 @@
 // Helper Variable for logging inputs. Only for simple debugging purposes.
 static inline bool global_log = false;
 
-// #define PC3_NO_EXTENDED_SYMBOLS
+// #define PHOENIX_NO_EXTENDED_SYMBOLS
 
-#ifdef PC3_NO_EXTENDED_SYMBOLS
+#ifdef PHOENIX_NO_EXTENDED_SYMBOLS
 
 static std::string string_info_sym = "[i]";
 static std::string string_warning_sym = "[w]";
@@ -19,7 +19,7 @@ static std::string string_error_sym = "[x]";
 static std::string string_success_sym = "[v]";
 static std::string string_debug_sym = "[o]";
 
-    #ifdef PC3_NO_ANSI_COLORS
+    #ifdef PHOENIX_NO_ANSI_COLORS
 static std::string string_progress_sym_front = "=";
 static std::string string_progress_sym_back = "-";
     #else
@@ -29,14 +29,14 @@ static std::string string_progress_sym_front = "#";
 
 #else
 
-// If PC3_NO_EXTENDED_SYMBOLS is defined globally, colors are disabled.
+// If PHOENIX_NO_EXTENDED_SYMBOLS is defined globally, colors are disabled.
 static std::string string_info_sym = EscapeSequence::BLUE + std::string( reinterpret_cast<const char*>( u8"\u2139" ) ) + EscapeSequence::RESET;
 static std::string string_warning_sym = EscapeSequence::YELLOW + std::string( reinterpret_cast<const char*>( u8"\u26A0" ) ) + EscapeSequence::RESET;
 static std::string string_error_sym = EscapeSequence::RED + std::string( reinterpret_cast<const char*>( u8"\u2612" ) ) + EscapeSequence::RESET;
 static std::string string_success_sym = EscapeSequence::GREEN + std::string( reinterpret_cast<const char*>( u8"\u2611" ) ) + EscapeSequence::RESET;
 static std::string string_debug_sym = EscapeSequence::GRAY + std::string( reinterpret_cast<const char*>( u8"\u2699" ) ) + EscapeSequence::RESET;
 
-    #ifdef PC3_NO_ANSI_COLORS
+    #ifdef PHOENIX_NO_ANSI_COLORS
 static std::string string_progress_sym_front = std::string( reinterpret_cast<const char*>( u8"\u2587" ) );
 static std::string string_progress_sym_back = " ";
     #else
@@ -46,7 +46,7 @@ static std::string string_progress_sym_back = std::string( reinterpret_cast<cons
 
 #endif
 
-std::string PC3::CLIO::prettyPrint( const std::string& message, Control control ) {
+std::string PHOENIX::CLIO::prettyPrint( const std::string& message, Control control ) {
     std::string ret = "";
 
     // If the debug flag is set, but global debug is not, return an empty string.
@@ -94,7 +94,7 @@ std::string PC3::CLIO::prettyPrint( const std::string& message, Control control 
 
     return ret;
 }
-std::string PC3::CLIO::createProgressBar( double current, double total, size_t width ) {
+std::string PHOENIX::CLIO::createProgressBar( double current, double total, size_t width ) {
     std::string ret = "[" + EscapeSequence::BLUE;
     for ( int i = 0; i < width * current / total; i++ ) {
         ret += string_progress_sym_front;
@@ -107,7 +107,7 @@ std::string PC3::CLIO::createProgressBar( double current, double total, size_t w
     return ret;
 }
 
-int PC3::CLIO::findInArgv( std::string toFind, int argc, char** argv, int start ) {
+int PHOENIX::CLIO::findInArgv( std::string toFind, int argc, char** argv, int start ) {
     for ( int i = start; i < argc; i++ ) {
         std::string current = std::string( argv[i] );
         if ( current.compare( toFind ) == 0 )
@@ -116,13 +116,13 @@ int PC3::CLIO::findInArgv( std::string toFind, int argc, char** argv, int start 
     return -1;
 }
 
-PC3::Type::real PC3::CLIO::getNextInput( char** argv, const int argc, const std::string name, int& index ) {
+PHOENIX::Type::real PHOENIX::CLIO::getNextInput( char** argv, const int argc, const std::string name, int& index ) {
     if ( index >= argc )
         return 0.0;
     if ( global_log ) {
         std::cout << prettyPrint( "Read input '" + name + "' as '" + std::string( argv[index] ) + "'", Control::Secondary | Control::Info ) << std::endl;
     }
-    PC3::Type::real result = 0.0;
+    PHOENIX::Type::real result = 0.0;
     try {
         result = std::stod( argv[index++] );
     } catch ( const std::invalid_argument& e ) {
@@ -135,7 +135,7 @@ PC3::Type::real PC3::CLIO::getNextInput( char** argv, const int argc, const std:
     return result;
 }
 
-std::string PC3::CLIO::getNextStringInput( char** argv, const int argc, const std::string name, int& index ) {
+std::string PHOENIX::CLIO::getNextStringInput( char** argv, const int argc, const std::string name, int& index ) {
     if ( index >= argc )
         return "";
     if ( global_log )
@@ -182,7 +182,7 @@ std::vector<std::string> splitIntoLines( const std::string& text, int maxLen ) {
     return lines;
 }
 
-std::string PC3::CLIO::unifyLength( std::string w1, std::string w2, std::string w3, int L1, int L2, int L3, std::string seperator ) {
+std::string PHOENIX::CLIO::unifyLength( std::string w1, std::string w2, std::string w3, int L1, int L2, int L3, std::string seperator ) {
     auto lines1 = splitIntoLines( w1, L1 );
     auto lines2 = splitIntoLines( w2, L2 );
     auto lines3 = splitIntoLines( w3, L3 );
@@ -212,7 +212,7 @@ std::string PC3::CLIO::unifyLength( std::string w1, std::string w2, std::string 
     return result;
 }
 
-std::string PC3::CLIO::centerString( const std::string& input, size_t size, const char fill, const std::string& raw ) {
+std::string PHOENIX::CLIO::centerString( const std::string& input, size_t size, const char fill, const std::string& raw ) {
     size_t raw_size = raw.size() > 0 ? raw.size() : input.size();
     int padding = std::floor( ( size - raw_size ) / 2 );
     std::stringstream ss;
@@ -221,11 +221,11 @@ std::string PC3::CLIO::centerString( const std::string& input, size_t size, cons
     return ss.str();
 }
 
-std::string PC3::CLIO::centerStringRaw( const std::string& input, size_t size, const std::string& raw, const char fill ) {
-    return PC3::CLIO::centerString( input, size, fill, raw );
+std::string PHOENIX::CLIO::centerStringRaw( const std::string& input, size_t size, const std::string& raw, const char fill ) {
+    return PHOENIX::CLIO::centerString( input, size, fill, raw );
 }
 
-std::string PC3::CLIO::fillLine( size_t size, const char fill ) {
+std::string PHOENIX::CLIO::fillLine( size_t size, const char fill ) {
     std::stringstream ss;
     ss << std::setfill( fill ) << std::setw( size ) << "";
     return ss.str();

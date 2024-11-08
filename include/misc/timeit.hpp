@@ -6,7 +6,7 @@
 #include <chrono>
 #include <fstream>
 
-namespace PC3::TimeIt {
+namespace PHOENIX::TimeIt {
 
 double get( std::string name );
 
@@ -22,7 +22,7 @@ std::map<std::string, std::vector<double>>& getTimes();
 
 std::map<std::string, double>& getTimesTotal();
 
-} // namespace PC3::TimeIt
+} // namespace PHOENIX::TimeIt
 
 // build a macro that takes a function as an argument, calls the function and then returns the runtime of said function
 #define TimeThis( func, name )                                                                                                           \
@@ -31,5 +31,5 @@ std::map<std::string, double>& getTimesTotal();
         func;                                                                                                                            \
         auto _timethis_end = std::chrono::high_resolution_clock::now();                                                                  \
         auto _timethis_duration = std::chrono::duration_cast<std::chrono::nanoseconds>( _timethis_end - _timethis_start ).count() / 1E9; \
-        PC3::TimeIt::addTime( name, _timethis_duration );                                                                                \
+        PHOENIX::TimeIt::addTime( name, _timethis_duration );                                                                                \
     }

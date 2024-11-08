@@ -1,6 +1,6 @@
 #pragma once
 
-namespace PC3 {
+namespace PHOENIX {
 
 static inline bool global_matrix_creation_log = false;
 static inline bool global_matrix_transfer_log = false;
@@ -17,4 +17,4 @@ class CUDAMatrixBase {
     static inline double global_total_host_mb_max = 0;
 };
 
-} // namespace PC3
+} // namespace PHOENIX

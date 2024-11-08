@@ -12,7 +12,7 @@
 #include "solver/matrix_container.cuh"
 #include "misc/escape_sequences.hpp"
 
-namespace PC3 {
+namespace PHOENIX {
 
 /**
  * @brief GPU Solver class providing the interface for the GPU solver.
@@ -22,8 +22,8 @@ namespace PC3 {
 class Solver {
    public:
     // References to system and filehandler so we dont need to pass them around all the time
-    PC3::SystemParameters& system;
-    PC3::FileHandler& filehandler;
+    PHOENIX::SystemParameters& system;
+    PHOENIX::FileHandler& filehandler;
 
     // TODO: amp zu Type::device_vector. cudamatrix not needed
     struct TemporalEvelope {
@@ -43,18 +43,18 @@ class Solver {
     MatrixContainer matrix;
 
     struct InputOutput {
-        Type::complex* PULSE_RESTRICT in_wf_plus = nullptr;
-        Type::complex* PULSE_RESTRICT in_wf_minus = nullptr;
+        Type::complex* PHOENIX_RESTRICT in_wf_plus = nullptr;
+        Type::complex* PHOENIX_RESTRICT in_wf_minus = nullptr;
 #ifdef BENCH        
-        Type::complex* PULSE_RESTRICT in_wf_plus_i = nullptr;
-        Type::complex* PULSE_RESTRICT in_wf_minus_i = nullptr;
+        Type::complex* PHOENIX_RESTRICT in_wf_plus_i = nullptr;
+        Type::complex* PHOENIX_RESTRICT in_wf_minus_i = nullptr;
 #endif        
-        Type::complex* PULSE_RESTRICT in_rv_plus = nullptr;
-        Type::complex* PULSE_RESTRICT in_rv_minus = nullptr;
-        Type::complex* PULSE_RESTRICT out_wf_plus = nullptr;
-        Type::complex* PULSE_RESTRICT out_wf_minus = nullptr;
-        Type::complex* PULSE_RESTRICT out_rv_plus = nullptr;
-        Type::complex* PULSE_RESTRICT out_rv_minus = nullptr;
+        Type::complex* PHOENIX_RESTRICT in_rv_plus = nullptr;
+        Type::complex* PHOENIX_RESTRICT in_rv_minus = nullptr;
+        Type::complex* PHOENIX_RESTRICT out_wf_plus = nullptr;
+        Type::complex* PHOENIX_RESTRICT out_wf_minus = nullptr;
+        Type::complex* PHOENIX_RESTRICT out_rv_plus = nullptr;
+        Type::complex* PHOENIX_RESTRICT out_rv_minus = nullptr;
     };
 
     Type::device_vector<Type::real> time; // [0] is t, [1] is dt
@@ -83,8 +83,8 @@ class Solver {
     // Cache Maps
     std::map<std::string, std::vector<Type::real>> cache_map_scalar;
 
-    Solver( PC3::SystemParameters& system ) : system( system ), filehandler( system.filehandler ) {
-        std::cout << PC3::CLIO::prettyPrint( "Creating Solver...", PC3::CLIO::Control::Info ) << std::endl;
+    Solver( PHOENIX::SystemParameters& system ) : system( system ), filehandler( system.filehandler ) {
+        std::cout << PHOENIX::CLIO::prettyPrint( "Creating Solver...", PHOENIX::CLIO::Control::Info ) << std::endl;
         // Initialize all matrices
         initializeMatricesFromSystem();
         // Then output all matrices to file. If --output was not passed in argv, this method outputs everything.
@@ -152,4 +152,4 @@ class Solver {
     }
 };
 
-} // namespace PC3
+} // namespace PHOENIX

@@ -7,7 +7,7 @@
 #include <iostream>
 #include "cuda/typedef.cuh"
 
-namespace PC3 {
+namespace PHOENIX {
 
 class FileHandler {
    public:
@@ -87,4 +87,4 @@ class FileHandler {
 
 std::vector<char*> readConfigFromFile( int argc, char** argv );
 
-} // namespace PC3
+} // namespace PHOENIX
