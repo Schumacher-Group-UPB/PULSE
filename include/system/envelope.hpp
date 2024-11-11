@@ -146,6 +146,7 @@ class Envelope {
     }
 
     static Envelope fromCommandlineArguments( int argc, char** argv, const std::string& key, const bool time );
+    static Envelope fromCommandlineArguments( int argc, char** argv, const std::vector<std::string>& all_keys, const bool time );
 
     std::string toString() const;
 };

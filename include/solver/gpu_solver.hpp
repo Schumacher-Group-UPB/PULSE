@@ -88,7 +88,7 @@ class Solver {
         // Initialize all matrices
         initializeMatricesFromSystem();
         // Then output all matrices to file. If --output was not passed in argv, this method outputs everything.
-#ifdef BENCH 
+#ifndef BENCH 
         outputInitialMatrices();
 #endif        
     }

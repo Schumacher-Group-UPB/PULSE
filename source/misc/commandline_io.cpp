@@ -107,11 +107,21 @@ std::string PHOENIX::CLIO::createProgressBar( double current, double total, size
     return ret;
 }
 
-int PHOENIX::CLIO::findInArgv( std::string toFind, int argc, char** argv, int start ) {
+int PHOENIX::CLIO::findInArgv( const std::string& toFind, int argc, char** argv, int start ) {
     for ( int i = start; i < argc; i++ ) {
         std::string current = std::string( argv[i] );
         if ( current.compare( toFind ) == 0 )
             return i;
+    }
+    return -1;
+}
+
+int PHOENIX::CLIO::findInArgv( const std::vector<std::string>& toFind, int argc, char** argv, int start, const std::string& prefix ) {
+    for ( int i = start; i < argc; i++ ) {
+        std::string current = std::string( argv[i] );
+        for ( auto& tf : toFind )
+            if ( current.compare( prefix+tf ) == 0 )
+                return i;
     }
     return -1;
 }

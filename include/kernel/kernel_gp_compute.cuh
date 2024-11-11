@@ -67,8 +67,6 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 cur
         wf_plus = Type::complex( CUDA::imag( wf_plus ), -1.0f * CUDA::real( wf_plus ) ) * one_over_h_bar_s;
         wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
 
-        //
-
         wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
 #endif
 

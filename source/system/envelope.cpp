@@ -139,10 +139,15 @@ int PHOENIX::Envelope::sizeOfGroup( int g ) const {
 }
 
 PHOENIX::Envelope PHOENIX::Envelope::fromCommandlineArguments( int argc, char** argv, const std::string& key, const bool time ) {
+    return fromCommandlineArguments( argc, argv, std::vector<std::string>{ key }, time );
+}
+
+PHOENIX::Envelope PHOENIX::Envelope::fromCommandlineArguments( int argc, char** argv, const std::vector<std::string>& all_keys, const bool time ) {
     int index = 0;
     PHOENIX::Envelope ret;
+    const auto& key = all_keys.front();
 
-    while ( ( index = PHOENIX::CLIO::findInArgv( "--" + key, argc, argv, index ) ) != -1 ) {
+    while ( ( index = PHOENIX::CLIO::findInArgv( all_keys, argc, argv, index, "--" ) ) != -1 ) {
         // Spacial Component
         std::cout << PHOENIX::CLIO::prettyPrint( "Parsing envelope '" + key + "'", PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary ) << std::endl;
         // If first argument is "load", save the next argument as the path to the file to load!
@@ -346,18 +351,19 @@ std::string PHOENIX::Envelope::toString() const {
         for ( int i = 0; i < size(); i++ ) {
             if ( group_identifier[i] != g )
                 continue;
+            const std::string unit = type[i] & PHOENIX::Envelope::EnvType::Local ? "%" : "mum";
             if ( load_path[i] == "" ) {
                 os << b << "  Spatial Envelope " << i << ":" << std::endl
                    << "    " << b << "Generated from Parameters:" << std::endl
                    << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET
                    << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
                    << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width Y: ", std::to_string( width_y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width Y: ", std::to_string( width_y[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
                    << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At X: ", std::to_string( x[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At X: ", std::to_string( x[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
                    << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At Y: ", std::to_string( y[i] ), "mum", 25, 25, 25, " " ) << EscapeSequence::RESET
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At Y: ", std::to_string( y[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
                    << std::endl
                    << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " )
                    << EscapeSequence::RESET << std::endl

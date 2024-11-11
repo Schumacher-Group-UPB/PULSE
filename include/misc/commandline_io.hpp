@@ -46,7 +46,8 @@ std::string prettyPrint( const std::string& message, Control control = Control::
  * @param argv The commandline arguments.
  * @param start The index to start searching from.
  */
-int findInArgv( std::string toFind, int argc, char** argv, int start = 0 );
+int findInArgv( const std::string& toFind, int argc, char** argv, int start = 0 );
+int findInArgv( const std::vector<std::string>& toFind, int argc, char** argv, int start = 0, const std::string& prefix = "" );
 
 /**
  * @brief Takes the input vector of commandline arguments and returns parameters

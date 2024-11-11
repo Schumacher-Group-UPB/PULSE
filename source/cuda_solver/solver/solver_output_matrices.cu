@@ -131,7 +131,7 @@ void PHOENIX::Solver::outputInitialMatrices() {
             } );
             //system.filehandler.outputMatrixToFile( buffer.data(), system.p.N_c, system.p.N_r, osc_header_information, "potential_plus" + suffix );
         }
-    if ( system.fft_every < system.t_max and system.fft_mask.size() > 0 and system.doOutput( "all", "mat", "fftplus", "fft" ) ) {
+    if ( system.fft_every < system.t_max and system.fft_mask.size() > 0 and system.doOutput( "all", "mat", "fft_plus", "fft" ) ) {
         Type::host_vector<Type::real> buffer = matrix.fft_mask_plus;
         system.filehandler.outputMatrixToFile( buffer.data(), system.p.N_c, system.p.N_r, header_information, "fft_mask_plus" );
     }
@@ -186,7 +186,7 @@ void PHOENIX::Solver::outputInitialMatrices() {
             } );
             //system.filehandler.outputMatrixToFile( buffer.data(), system.p.N_c, system.p.N_r, osc_header_information, "potential_minus" + suffix );
         }
-    if ( system.fft_every < system.t_max and system.doOutput( "all", "mat", "fftminus", "fft" ) ) {
+    if ( system.fft_every < system.t_max and system.doOutput( "all", "mat", "fft_minus", "fft" ) ) {
         Type::host_vector<Type::real> buffer = matrix.fft_mask_minus;
         system.filehandler.outputMatrixToFile( buffer.data(), system.p.N_c, system.p.N_r, header_information, "fft_mask_minus" );
     }
