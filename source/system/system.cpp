@@ -39,8 +39,8 @@ PHOENIX::SystemParameters::SystemParameters() {
     // Numerics
     p.N_c = 400;
     p.N_r = 400;
-    p.subgrids_columns = 1;
-    p.subgrids_rows = 1;
+    p.subgrids_columns = 0;
+    p.subgrids_rows = 0;
     t_max = 1000;
     iteration = 0;
     // RK Solver Variables
@@ -71,6 +71,48 @@ PHOENIX::SystemParameters::SystemParameters() {
     random_system_amplitude = 1.0;
 }
 
+std::tuple<size_t, size_t> find_auto_subgridsize( size_t total_rows, size_t total_cols ) {
+    size_t row_divisor = 1;
+    size_t col_divisor = 1;
+#ifdef USE_CPU
+    // Use predefined subgrid sizes if divisible, otherwise try division by 2, 4, 6, 8, 10, or use 1.
+    // 2 should never fail, as the number of points should always be even.
+    for ( size_t try_size : { 32, 64, 50, 25, 100 } ) {
+        if ( total_cols % try_size == 0 && col_divisor == 1 ) {
+            col_divisor = total_cols / try_size;
+        }
+        if ( total_rows % try_size == 0 && row_divisor == 1 ) {
+            row_divisor = total_rows / try_size;
+        }
+    }
+    for ( size_t try_size : { 10, 8, 6, 4, 2 } ) {
+        if ( total_cols % try_size == 0 && col_divisor == 1 ) {
+            col_divisor = total_cols / try_size;
+        }
+        if ( total_rows % try_size == 0 && row_divisor == 1 ) {
+            row_divisor = total_rows / try_size;
+        }
+    }
+#else
+    // Determine Size of Iteration
+    // Subdivide grid into subgrids of approximately 500x500 cells for optimal GPU performance.
+    // To make sure we have a good balance between the number of subgrids and the number of cells in each subgrid, we use 750 as a divisor.
+
+    row_divisor = total_rows / 750 + 1;
+    col_divisor = total_cols / 750 + 1;
+    // Subdivide further if the grid is not divisible by the current divisor
+    // We also know that more than 3-5 subgrids are not beneficial, as the overhead from calling the kernel is too high.
+    while ( total_rows % row_divisor != 0 && row_divisor < 5 ) {
+        row_divisor++;
+    }
+    while ( total_cols % col_divisor != 0 && col_divisor < 5 ) {
+        col_divisor++;
+    }
+    return { col_divisor, row_divisor };
+#endif
+    return { col_divisor, row_divisor };
+}
+
 void PHOENIX::SystemParameters::calculateAuto() {
     // If hbar_s is < 0, calculate it
     if ( p.h_bar_s < 0 ) {
@@ -94,6 +136,20 @@ void PHOENIX::SystemParameters::calculateAuto() {
     p.m2_over_dx2_p_dy2 = Type::real( -2.0 ) * ( p.one_over_dx2 + p.one_over_dy2 );
     // Number of grid points
     p.N2 = p.N_c * p.N_r;
+
+    auto [suggested_subgrids_columns, suggested_subgrids_rows] = find_auto_subgridsize( p.N_r, p.N_c );
+    if ( p.subgrids_rows == 0 ) {
+        p.subgrids_rows = suggested_subgrids_rows;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Subgrid Rows automatically determined as " + PHOENIX::CLIO::to_str( suggested_subgrids_rows ), PHOENIX::CLIO::Control::Info )
+                  << std::endl;
+    }
+    if ( p.subgrids_columns == 0 ) {
+        p.subgrids_columns = suggested_subgrids_columns;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Subgrid Columns automatically determined as " + PHOENIX::CLIO::to_str( suggested_subgrids_columns ),
+                                                 PHOENIX::CLIO::Control::Info )
+                  << std::endl;
+    }
+
     // Number of subgrid points
     p.subgrid_N_c = p.N_c / p.subgrids_columns;
     p.subgrid_N_r = p.N_r / p.subgrids_rows;
