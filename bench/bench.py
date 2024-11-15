@@ -200,6 +200,8 @@ res+="\n"
 
 for ic in range(len(comb)):
     d=os.path.join("runs",name,str(ic))
+    if not os.path.isfile(os.path.join(d,"run.json")):
+        continue
     with open(os.path.join(d,"run.json"), 'r') as file:
         data = json.load(file)
     add=True
@@ -207,17 +209,35 @@ for ic in range(len(comb)):
         #check if is filter
         if f.find("=")>=0:
             g=f.split("=")[0]
-            v=f.split("=")[1]
-            if str(data[g]).strip()!=str(v).strip():
-                add=False
+            if len(g.split("-"))==1:
+                v=f.split("=")[1]
+                if str(data[g]).strip()!=str(v).strip():
+                    add=False
+            else:
+                g0=g.split("-")[0]
+                g1=g.split("-")[1]
+                v=f.split("=")[1]
+                if str(data[g0][g1]).strip()!=str(v).strip():
+                    add=False
     #build line
     if add:
         for f in args.fields.split(","):
             if not f.find("=")>=0:
-                s=str(data[f])
-                if isinstance(data[f],list):
-                    s=",".join(str(x) for x in data[f])
-                res+=s+";"
+                try:
+                    if f.find("-")>=0:
+                        f1=f.split("-")[0]
+                        f2=f.split("-")[1]
+                        if isinstance(data[f1],list):
+                            s=str(data[f1][int(f2)])
+                        else:
+                            s=str(data[f1][f2])
+                        res+=s+";"
+                    else:
+                        s=str(data[f])
+                        res+=s+";"
+                except:
+                    res+=";"
+                    pass
         res+="\n"
 
 with open(args.output, 'w') as f:
