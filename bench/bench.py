@@ -148,25 +148,34 @@ if not args.dryrun:
         #cpu
         Ecpu=0
         if "perf" in env:
-            with open(os.path.join(d,"perf.out")) as f:
-                for l in f.read().splitlines():
-                    if l.startswith("S0"):
-                        Ecpu=float(l.split(";")[2])
-                        break
+            try:
+                with open(os.path.join(d,"perf.out")) as f:
+                    for l in f.read().splitlines():
+                        if l.startswith("S0"):
+                            Ecpu=float(l.split(";")[2])
+                            break
+            except:
+                pass
         Ecpu2=0
         if "likwid" in env:
             if gv(data,comb[ic],"likwid_metrics")=="ENERGY":
-                with open(os.path.join(d,"likwid.json")) as f:
-                    likwid_data = json.load(f)
-                Ecpu2=likwid_data["ENERGY"]["ENERGY"]["Metric STAT"][lmap["ENERGY"][0]][lmap["ENERGY"][1]]
+                try:
+                    with open(os.path.join(d,"likwid.json")) as f:
+                        likwid_data = json.load(f)
+                    Ecpu2=likwid_data["ENERGY"]["ENERGY"]["Metric STAT"][lmap["ENERGY"][0]][lmap["ENERGY"][1]]
+                except:
+                    pass
        
         #gpu
         Egpu=0
         if "nvidia-smi" in env:
-            with open(os.path.join(d,"nvidia.csv")) as f:
-                for l in f.read().splitlines():
-                    if not l.find("index,")>=0:
-                        Egpu+=float(l.split(",")[2].split(" ")[1])*0.1
+            try:
+                with open(os.path.join(d,"nvidia.csv")) as f:
+                    for l in f.read().splitlines():
+                        if not l.find("index,")>=0:
+                            Egpu+=float(l.split(",")[2].split(" ")[1])*0.1
+            except:
+                pass
                
         run["gpu_energy_J"]=Egpu
         run["cpu_energy_J_perf"]=Ecpu
