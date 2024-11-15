@@ -4,7 +4,7 @@
   ],
   "envs": 
   [
-    {"label":"cuda-12.6.0","modules":["system/CUDA/12.6.0","tools/likwid/5.3.0-GCC-13.2.0","toolchain/foss/2023b","lang/Python/3.12.3-GCCcore-13.2.0"],"compiler":"nvcc","machinestate":"~/.local/bin/machinestate","nvidia-smi":"nvidia-smi","perf":"perf"}
+    {"label":"cuda-12.6.0","modules":["system/CUDA/12.6.0","tools/likwid/5.3.0-GCC-13.2.0","toolchain/foss/2023b","lang/Python/3.12.3-GCCcore-13.2.0"],"compiler":"nvcc","machinestate":"~/.local/bin/machinestate","nvidia-smi":"nvidia-smi"}
   ],
   "makes":
   [
@@ -13,12 +13,12 @@
     {"label":"calculate_k","cmd":"make SFML=FALSE FP32=TRUE TETM=FALSE GPU=TRUE ARCH=80 COMPILER=_compiler_ NO_CALCULATE_K=FALSE NO_INTERMEDIATE_SUM_K=TRUE NO_FINAL_SUM_K=TRUE NO_HALO_SYNC=TRUE AVX2=TRUE BENCH=TRUE LIKWID=TRUE"},
     {"label":"intermediate_sum_k","cmd":"make SFML=FALSE FP32=TRUE TETM=FALSE GPU=TRUE ARCH=80 COMPILER=_compiler_ NO_CALCULATE_K=TRUE NO_INTERMEDIATE_SUM_K=TRUE NO_FINAL_SUM_K=TRUE NO_HALO_SYNC=TRUE AVX2=TRUE BENCH=TRUE LIKWID=TRUE"},
     {"label":"final_k_sum","cmd":"make SFML=FALSE FP32=TRUE TETM=FALSE GPU=TRUE ARCH=80 COMPILER=_compiler_ NO_CALCULATE_K=TRUE NO_INTERMEDIATE_SUM_K=TRUE NO_FINAL_SUM_K=FALSE NO_HALO_SYNC=TRUE AVX2=TRUE BENCH=TRUE LIKWID=TRUE"},
-    {"label":"halo_sync","cmd":"make SFML=FALSE FP32=TRUE TETM=FALSE GPU=TRUE ARCH=80 COMPILER=_compiler_ NO_CALCULATE_K=TRUE NO_INTERMEDIATE_SUM_K=TRUE NO_FINAL_SUM_K=TRUE NO_HALO_SYNC=FALSE AVX2=TRUE BENCH=TRUE LIKWID=TRUE"}
+    {"label":"halo_sync","cmd":"make SFML=FALSE FP32=TRUE TETM=FALSE GPU=TRUE ARCH=80 COMPILER=_compiler_ NO_CALCULATE_K=TRUE NO_INTERMEDIATE_SUM_K=TRUE NO_FINAL_SUM_K=TRUE NO_HALO_SYNC=FALSE AVX2=TRUE BENCH=TRUE LIKWID=TRUE"},
+    {"label":"nohalo_sync","cmd":"make SFML=FALSE FP32=TRUE TETM=FALSE GPU=TRUE ARCH=80 COMPILER=_compiler_ NO_CALCULATE_K=FALSE NO_INTERMEDIATE_SUM_K=FALSE NO_FINAL_SUM_K=FALSE NO_HALO_SYNC=TRUE AVX2=TRUE BENCH=TRUE LIKWID=TRUE"}
   ],
   "threads": [16],
   "grids": [192,256,320,384,448,512,576,640,704,768,832,896,960,1024,1088,1152,1216,1280,1344,1408,1472,1536,1600,1664,1728,1792,1856,1920,1984,2048],
-  "grids": [192],
-  "subgrids": [[1,1],[2,2]],
+  "subgrids": [[1,1],[2,2],[3,3],[4,4]],
   "likwid_metrics": ["ENERGY"]
 }
 

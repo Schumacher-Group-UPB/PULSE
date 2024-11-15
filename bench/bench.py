@@ -165,7 +165,8 @@ if not args.dryrun:
         if "nvidia-smi" in env:
             with open(os.path.join(d,"nvidia.csv")) as f:
                 for l in f.read().splitlines():
-                    Egpu+=float(l.split(",")[2].split(" ")[1])*0.1
+                    if not l.find("index,")>=0:
+                        Egpu+=float(l.split(",")[2].split(" ")[1])*0.1
                
         run["gpu_energy_J"]=Egpu
         run["cpu_energy_J_perf"]=Ecpu

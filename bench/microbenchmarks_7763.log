@@ -1,0 +1,430 @@
+Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+CPU(s):              128
+On-line CPU(s) list: 0-127
+Thread(s) per core:  1
+Core(s) per socket:  64
+Socket(s):           2
+NUMA node(s):        8
+Vendor ID:           AuthenticAMD
+CPU family:          25
+Model:               1
+Model name:          AMD EPYC 7763 64-Core Processor
+Stepping:            1
+CPU MHz:             2450.000
+CPU max MHz:         3529.0520
+CPU min MHz:         1500.0000
+BogoMIPS:            4900.42
+Virtualization:      AMD-V
+L1d cache:           32K
+L1i cache:           32K
+L2 cache:            512K
+L3 cache:            32768K
+NUMA node0 CPU(s):   0-15
+NUMA node1 CPU(s):   16-31
+NUMA node2 CPU(s):   32-47
+NUMA node3 CPU(s):   48-63
+NUMA node4 CPU(s):   64-79
+NUMA node5 CPU(s):   80-95
+NUMA node6 CPU(s):   96-111
+NUMA node7 CPU(s):   112-127
+Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 invpcid_single hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a rdseed adx clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irperf xsaveerptr wbnoinvd amd_ppin brs arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload vgif v_spec_ctrl umip pku ospke vaes vpclmulqdq rdpid overflow_recov succor smca fsrm
+likwid-bench -- Version 5.3.0
+Warning: Sanitizing vector length to a multiple of the loop stride 16 and thread count 64 from 2000000 elements (16000000 bytes) to 1999872 elements (15998976 bytes)
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: triad_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 64 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 1 Global Thread 1 running on hwthread 1 - Vector length 31248 Offset 31248
+Group: 0 Thread 2 Global Thread 2 running on hwthread 2 - Vector length 31248 Offset 62496
+Group: 0 Thread 3 Global Thread 3 running on hwthread 3 - Vector length 31248 Offset 93744
+Group: 0 Thread 4 Global Thread 4 running on hwthread 4 - Vector length 31248 Offset 124992
+Group: 0 Thread 5 Global Thread 5 running on hwthread 5 - Vector length 31248 Offset 156240
+Group: 0 Thread 6 Global Thread 6 running on hwthread 6 - Vector length 31248 Offset 187488
+Group: 0 Thread 7 Global Thread 7 running on hwthread 7 - Vector length 31248 Offset 218736
+Group: 0 Thread 8 Global Thread 8 running on hwthread 8 - Vector length 31248 Offset 249984
+Group: 0 Thread 9 Global Thread 9 running on hwthread 9 - Vector length 31248 Offset 281232
+Group: 0 Thread 11 Global Thread 11 running on hwthread 11 - Vector length 31248 Offset 343728
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 31248 Offset 468720
+Group: 0 Thread 14 Global Thread 14 running on hwthread 14 - Vector length 31248 Offset 437472
+Group: 0 Thread 12 Global Thread 12 running on hwthread 12 - Vector length 31248 Offset 374976
+Group: 0 Thread 10 Global Thread 10 running on hwthread 10 - Vector length 31248 Offset 312480
+Group: 0 Thread 20 Global Thread 20 running on hwthread 20 - Vector length 31248 Offset 624960
+Group: 0 Thread 37 Global Thread 37 running on hwthread 37 - Vector length 31248 Offset 1156176
+Group: 0 Thread 39 Global Thread 39 running on hwthread 39 - Vector length 31248 Offset 1218672
+Group: 0 Thread 32 Global Thread 32 running on hwthread 32 - Vector length 31248 Offset 999936
+Group: 0 Thread 24 Global Thread 24 running on hwthread 24 - Vector length 31248 Offset 749952
+Group: 0 Thread 31 Global Thread 31 running on hwthread 31 - Vector length 31248 Offset 968688
+Group: 0 Thread 40 Global Thread 40 running on hwthread 40 - Vector length 31248 Offset 1249920
+Group: 0 Thread 18 Global Thread 18 running on hwthread 18 - Vector length 31248 Offset 562464
+Group: 0 Thread 43 Global Thread 43 running on hwthread 43 - Vector length 31248 Offset 1343664
+Group: 0 Thread 16 Global Thread 16 running on hwthread 16 - Vector length 31248 Offset 499968
+Group: 0 Thread 23 Global Thread 23 running on hwthread 23 - Vector length 31248 Offset 718704
+Group: 0 Thread 44 Global Thread 44 running on hwthread 44 - Vector length 31248 Offset 1374912
+Group: 0 Thread 22 Global Thread 22 running on hwthread 22 - Vector length 31248 Offset 687456
+Group: 0 Thread 17 Global Thread 17 running on hwthread 17 - Vector length 31248 Offset 531216
+Group: 0 Thread 38 Global Thread 38 running on hwthread 38 - Vector length 31248 Offset 1187424
+Group: 0 Thread 36 Global Thread 36 running on hwthread 36 - Vector length 31248 Offset 1124928
+Group: 0 Thread 33 Global Thread 33 running on hwthread 33 - Vector length 31248 Offset 1031184
+Group: 0 Thread 27 Global Thread 27 running on hwthread 27 - Vector length 31248 Offset 843696
+Group: 0 Thread 25 Global Thread 25 running on hwthread 25 - Vector length 31248 Offset 781200
+Group: 0 Thread 29 Global Thread 29 running on hwthread 29 - Vector length 31248 Offset 906192
+Group: 0 Thread 30 Global Thread 30 running on hwthread 30 - Vector length 31248 Offset 937440
+Group: 0 Thread 42 Global Thread 42 running on hwthread 42 - Vector length 31248 Offset 1312416
+Group: 0 Thread 41 Global Thread 41 running on hwthread 41 - Vector length 31248 Offset 1281168
+Group: 0 Thread 13 Global Thread 13 running on hwthread 13 - Vector length 31248 Offset 406224
+Group: 0 Thread 21 Global Thread 21 running on hwthread 21 - Vector length 31248 Offset 656208
+Group: 0 Thread 19 Global Thread 19 running on hwthread 19 - Vector length 31248 Offset 593712
+Group: 0 Thread 45 Global Thread 45 running on hwthread 45 - Vector length 31248 Offset 1406160
+Group: 0 Thread 34 Global Thread 34 running on hwthread 34 - Vector length 31248 Offset 1062432
+Group: 0 Thread 35 Global Thread 35 running on hwthread 35 - Vector length 31248 Offset 1093680
+Group: 0 Thread 28 Global Thread 28 running on hwthread 28 - Vector length 31248 Offset 874944
+Group: 0 Thread 46 Global Thread 46 running on hwthread 46 - Vector length 31248 Offset 1437408
+Group: 0 Thread 26 Global Thread 26 running on hwthread 26 - Vector length 31248 Offset 812448
+Group: 0 Thread 47 Global Thread 47 running on hwthread 47 - Vector length 31248 Offset 1468656
+Group: 0 Thread 49 Global Thread 49 running on hwthread 49 - Vector length 31248 Offset 1531152
+Group: 0 Thread 50 Global Thread 50 running on hwthread 50 - Vector length 31248 Offset 1562400
+Group: 0 Thread 51 Global Thread 51 running on hwthread 51 - Vector length 31248 Offset 1593648
+Group: 0 Thread 52 Global Thread 52 running on hwthread 52 - Vector length 31248 Offset 1624896
+Group: 0 Thread 53 Global Thread 53 running on hwthread 53 - Vector length 31248 Offset 1656144
+Group: 0 Thread 54 Global Thread 54 running on hwthread 54 - Vector length 31248 Offset 1687392
+Group: 0 Thread 48 Global Thread 48 running on hwthread 48 - Vector length 31248 Offset 1499904
+Group: 0 Thread 55 Global Thread 55 running on hwthread 55 - Vector length 31248 Offset 1718640
+Group: 0 Thread 56 Global Thread 56 running on hwthread 56 - Vector length 31248 Offset 1749888
+Group: 0 Thread 58 Global Thread 58 running on hwthread 58 - Vector length 31248 Offset 1812384
+Group: 0 Thread 59 Global Thread 59 running on hwthread 59 - Vector length 31248 Offset 1843632
+Group: 0 Thread 60 Global Thread 60 running on hwthread 60 - Vector length 31248 Offset 1874880
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 31248 Offset 0
+Group: 0 Thread 61 Global Thread 61 running on hwthread 61 - Vector length 31248 Offset 1906128
+Group: 0 Thread 57 Global Thread 57 running on hwthread 57 - Vector length 31248 Offset 1781136
+Group: 0 Thread 62 Global Thread 62 running on hwthread 62 - Vector length 31248 Offset 1937376
+Group: 0 Thread 63 Global Thread 63 running on hwthread 63 - Vector length 31248 Offset 1968624
+--------------------------------------------------------------------------------
+Cycles:			7800712094
+CPU Clock:		2449998922
+Cycle Clock:		2449998922
+Time:			3.183966e+00 sec
+Iterations:		8388608
+Iterations per thread:	131072
+Inner loop executions:	1953
+Size (Byte):		63995904
+Size per thread:	999936
+Number of Flops:	524254445568
+MFlops/s:		164654.56
+Data volume (Byte):	8388071129088
+MByte/s:		2634472.98
+Cycles per update:	0.029759
+Cycles per cacheline:	0.238074
+Loads per update:	3
+Stores per update:	1
+Load bytes per element:	24
+Store bytes per elem.:	8
+Load/store ratio:	3.00
+Instructions:		311276077072
+UOPs:			425956737024
+--------------------------------------------------------------------------------
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: triad_mem_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 64 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 1 Global Thread 1 running on hwthread 1 - Vector length 3125000 Offset 3125000
+Group: 0 Thread 2 Global Thread 2 running on hwthread 2 - Vector length 3125000 Offset 6250000
+Group: 0 Thread 3 Global Thread 3 running on hwthread 3 - Vector length 3125000 Offset 9375000
+Group: 0 Thread 4 Global Thread 4 running on hwthread 4 - Vector length 3125000 Offset 12500000
+Group: 0 Thread 5 Global Thread 5 running on hwthread 5 - Vector length 3125000 Offset 15625000
+Group: 0 Thread 6 Global Thread 6 running on hwthread 6 - Vector length 3125000 Offset 18750000
+Group: 0 Thread 7 Global Thread 7 running on hwthread 7 - Vector length 3125000 Offset 21875000
+Group: 0 Thread 8 Global Thread 8 running on hwthread 8 - Vector length 3125000 Offset 25000000
+Group: 0 Thread 11 Global Thread 11 running on hwthread 11 - Vector length 3125000 Offset 34375000
+Group: 0 Thread 9 Global Thread 9 running on hwthread 9 - Vector length 3125000 Offset 28125000
+Group: 0 Thread 13 Global Thread 13 running on hwthread 13 - Vector length 3125000 Offset 40625000
+Group: 0 Thread 12 Global Thread 12 running on hwthread 12 - Vector length 3125000 Offset 37500000
+Group: 0 Thread 20 Global Thread 20 running on hwthread 20 - Vector length 3125000 Offset 62500000
+Group: 0 Thread 14 Global Thread 14 running on hwthread 14 - Vector length 3125000 Offset 43750000
+Group: 0 Thread 26 Global Thread 26 running on hwthread 26 - Vector length 3125000 Offset 81250000
+Group: 0 Thread 43 Global Thread 43 running on hwthread 43 - Vector length 3125000 Offset 134375000
+Group: 0 Thread 34 Global Thread 34 running on hwthread 34 - Vector length 3125000 Offset 106250000
+Group: 0 Thread 40 Global Thread 40 running on hwthread 40 - Vector length 3125000 Offset 125000000
+Group: 0 Thread 27 Global Thread 27 running on hwthread 27 - Vector length 3125000 Offset 84375000
+Group: 0 Thread 35 Global Thread 35 running on hwthread 35 - Vector length 3125000 Offset 109375000
+Group: 0 Thread 38 Global Thread 38 running on hwthread 38 - Vector length 3125000 Offset 118750000
+Group: 0 Thread 16 Global Thread 16 running on hwthread 16 - Vector length 3125000 Offset 50000000
+Group: 0 Thread 10 Global Thread 10 running on hwthread 10 - Vector length 3125000 Offset 31250000
+Group: 0 Thread 45 Global Thread 45 running on hwthread 45 - Vector length 3125000 Offset 140625000
+Group: 0 Thread 19 Global Thread 19 running on hwthread 19 - Vector length 3125000 Offset 59375000
+Group: 0 Thread 18 Global Thread 18 running on hwthread 18 - Vector length 3125000 Offset 56250000
+Group: 0 Thread 23 Global Thread 23 running on hwthread 23 - Vector length 3125000 Offset 71875000
+Group: 0 Thread 25 Global Thread 25 running on hwthread 25 - Vector length 3125000 Offset 78125000
+Group: 0 Thread 29 Global Thread 29 running on hwthread 29 - Vector length 3125000 Offset 90625000
+Group: 0 Thread 24 Global Thread 24 running on hwthread 24 - Vector length 3125000 Offset 75000000
+Group: 0 Thread 22 Global Thread 22 running on hwthread 22 - Vector length 3125000 Offset 68750000
+Group: 0 Thread 31 Global Thread 31 running on hwthread 31 - Vector length 3125000 Offset 96875000
+Group: 0 Thread 30 Global Thread 30 running on hwthread 30 - Vector length 3125000 Offset 93750000
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 3125000 Offset 46875000
+Group: 0 Thread 41 Global Thread 41 running on hwthread 41 - Vector length 3125000 Offset 128125000
+Group: 0 Thread 44 Global Thread 44 running on hwthread 44 - Vector length 3125000 Offset 137500000
+Group: 0 Thread 32 Global Thread 32 running on hwthread 32 - Vector length 3125000 Offset 100000000
+Group: 0 Thread 36 Global Thread 36 running on hwthread 36 - Vector length 3125000 Offset 112500000
+Group: 0 Thread 37 Global Thread 37 running on hwthread 37 - Vector length 3125000 Offset 115625000
+Group: 0 Thread 17 Global Thread 17 running on hwthread 17 - Vector length 3125000 Offset 53125000
+Group: 0 Thread 28 Global Thread 28 running on hwthread 28 - Vector length 3125000 Offset 87500000
+Group: 0 Thread 42 Global Thread 42 running on hwthread 42 - Vector length 3125000 Offset 131250000
+Group: 0 Thread 39 Global Thread 39 running on hwthread 39 - Vector length 3125000 Offset 121875000
+Group: 0 Thread 33 Global Thread 33 running on hwthread 33 - Vector length 3125000 Offset 103125000
+Group: 0 Thread 46 Global Thread 46 running on hwthread 46 - Vector length 3125000 Offset 143750000
+Group: 0 Thread 47 Global Thread 47 running on hwthread 47 - Vector length 3125000 Offset 146875000
+Group: 0 Thread 48 Global Thread 48 running on hwthread 48 - Vector length 3125000 Offset 150000000
+Group: 0 Thread 49 Global Thread 49 running on hwthread 49 - Vector length 3125000 Offset 153125000
+Group: 0 Thread 50 Global Thread 50 running on hwthread 50 - Vector length 3125000 Offset 156250000
+Group: 0 Thread 51 Global Thread 51 running on hwthread 51 - Vector length 3125000 Offset 159375000
+Group: 0 Thread 52 Global Thread 52 running on hwthread 52 - Vector length 3125000 Offset 162500000
+Group: 0 Thread 53 Global Thread 53 running on hwthread 53 - Vector length 3125000 Offset 165625000
+Group: 0 Thread 54 Global Thread 54 running on hwthread 54 - Vector length 3125000 Offset 168750000
+Group: 0 Thread 21 Global Thread 21 running on hwthread 21 - Vector length 3125000 Offset 65625000
+Group: 0 Thread 55 Global Thread 55 running on hwthread 55 - Vector length 3125000 Offset 171875000
+Group: 0 Thread 57 Global Thread 57 running on hwthread 57 - Vector length 3125000 Offset 178125000
+Group: 0 Thread 58 Global Thread 58 running on hwthread 58 - Vector length 3125000 Offset 181250000
+Group: 0 Thread 59 Global Thread 59 running on hwthread 59 - Vector length 3125000 Offset 184375000
+Group: 0 Thread 60 Global Thread 60 running on hwthread 60 - Vector length 3125000 Offset 187500000
+Group: 0 Thread 61 Global Thread 61 running on hwthread 61 - Vector length 3125000 Offset 190625000
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 3125000 Offset 0
+Group: 0 Thread 56 Global Thread 56 running on hwthread 56 - Vector length 3125000 Offset 175000000
+Group: 0 Thread 63 Global Thread 63 running on hwthread 63 - Vector length 3125000 Offset 196875000
+Group: 0 Thread 62 Global Thread 62 running on hwthread 62 - Vector length 3125000 Offset 193750000
+--------------------------------------------------------------------------------
+Cycles:			51537934150
+CPU Clock:		2449992993
+Cycle Clock:		2449992993
+Time:			2.103595e+01 sec
+Iterations:		32768
+Iterations per thread:	512
+Inner loop executions:	390625
+Size (Byte):		6400000000
+Size per thread:	100000000
+Number of Flops:	204800000000
+MFlops/s:		9735.71
+Data volume (Byte):	3276800000000
+MByte/s:		155771.42
+Cycles per update:	0.503300
+Cycles per cacheline:	4.026401
+Loads per update:	3
+Stores per update:	1
+Load bytes per element:	24
+Store bytes per elem.:	8
+Load/store ratio:	3.00
+Instructions:		140800000016
+UOPs:			179200000000
+--------------------------------------------------------------------------------
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 8000000/64000000 Offset 0 Alignment 512
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: peakflops_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 64 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 1 Global Thread 1 running on hwthread 1 - Vector length 125000 Offset 125000
+Group: 0 Thread 2 Global Thread 2 running on hwthread 2 - Vector length 125000 Offset 250000
+Group: 0 Thread 3 Global Thread 3 running on hwthread 3 - Vector length 125000 Offset 375000
+Group: 0 Thread 4 Global Thread 4 running on hwthread 4 - Vector length 125000 Offset 500000
+Group: 0 Thread 5 Global Thread 5 running on hwthread 5 - Vector length 125000 Offset 625000
+Group: 0 Thread 6 Global Thread 6 running on hwthread 6 - Vector length 125000 Offset 750000
+Group: 0 Thread 7 Global Thread 7 running on hwthread 7 - Vector length 125000 Offset 875000
+Group: 0 Thread 8 Global Thread 8 running on hwthread 8 - Vector length 125000 Offset 1000000
+Group: 0 Thread 9 Global Thread 9 running on hwthread 9 - Vector length 125000 Offset 1125000
+Group: 0 Thread 13 Global Thread 13 running on hwthread 13 - Vector length 125000 Offset 1625000
+Group: 0 Thread 12 Global Thread 12 running on hwthread 12 - Vector length 125000 Offset 1500000
+Group: 0 Thread 10 Global Thread 10 running on hwthread 10 - Vector length 125000 Offset 1250000
+Group: 0 Thread 21 Global Thread 21 running on hwthread 21 - Vector length 125000 Offset 2625000
+Group: 0 Thread 18 Global Thread 18 running on hwthread 18 - Vector length 125000 Offset 2250000
+Group: 0 Thread 33 Global Thread 33 running on hwthread 33 - Vector length 125000 Offset 4125000
+Group: 0 Thread 39 Global Thread 39 running on hwthread 39 - Vector length 125000 Offset 4875000
+Group: 0 Thread 59 Global Thread 59 running on hwthread 59 - Vector length 125000 Offset 7375000
+Group: 0 Thread 60 Global Thread 60 running on hwthread 60 - Vector length 125000 Offset 7500000
+Group: 0 Thread 55 Global Thread 55 running on hwthread 55 - Vector length 125000 Offset 6875000
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 125000 Offset 1875000
+Group: 0 Thread 14 Global Thread 14 running on hwthread 14 - Vector length 125000 Offset 1750000
+Group: 0 Thread 48 Global Thread 48 running on hwthread 48 - Vector length 125000 Offset 6000000
+Group: 0 Thread 26 Global Thread 26 running on hwthread 26 - Vector length 125000 Offset 3250000
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 125000 Offset 0
+Group: 0 Thread 54 Global Thread 54 running on hwthread 54 - Vector length 125000 Offset 6750000
+Group: 0 Thread 41 Global Thread 41 running on hwthread 41 - Vector length 125000 Offset 5125000
+Group: 0 Thread 47 Global Thread 47 running on hwthread 47 - Vector length 125000 Offset 5875000
+Group: 0 Thread 51 Global Thread 51 running on hwthread 51 - Vector length 125000 Offset 6375000
+Group: 0 Thread 11 Global Thread 11 running on hwthread 11 - Vector length 125000 Offset 1375000
+Group: 0 Thread 25 Global Thread 25 running on hwthread 25 - Vector length 125000 Offset 3125000
+Group: 0 Thread 29 Global Thread 29 running on hwthread 29 - Vector length 125000 Offset 3625000
+Group: 0 Thread 20 Global Thread 20 running on hwthread 20 - Vector length 125000 Offset 2500000
+Group: 0 Thread 63 Global Thread 63 running on hwthread 63 - Vector length 125000 Offset 7875000
+Group: 0 Thread 19 Global Thread 19 running on hwthread 19 - Vector length 125000 Offset 2375000
+Group: 0 Thread 22 Global Thread 22 running on hwthread 22 - Vector length 125000 Offset 2750000
+Group: 0 Thread 57 Global Thread 57 running on hwthread 57 - Vector length 125000 Offset 7125000
+Group: 0 Thread 58 Global Thread 58 running on hwthread 58 - Vector length 125000 Offset 7250000
+Group: 0 Thread 37 Global Thread 37 running on hwthread 37 - Vector length 125000 Offset 4625000
+Group: 0 Thread 36 Global Thread 36 running on hwthread 36 - Vector length 125000 Offset 4500000
+Group: 0 Thread 34 Global Thread 34 running on hwthread 34 - Vector length 125000 Offset 4250000
+Group: 0 Thread 61 Global Thread 61 running on hwthread 61 - Vector length 125000 Offset 7625000
+Group: 0 Thread 53 Global Thread 53 running on hwthread 53 - Vector length 125000 Offset 6625000
+Group: 0 Thread 40 Global Thread 40 running on hwthread 40 - Vector length 125000 Offset 5000000
+Group: 0 Thread 62 Global Thread 62 running on hwthread 62 - Vector length 125000 Offset 7750000
+Group: 0 Thread 42 Global Thread 42 running on hwthread 42 - Vector length 125000 Offset 5250000
+Group: 0 Thread 31 Global Thread 31 running on hwthread 31 - Vector length 125000 Offset 3875000
+Group: 0 Thread 24 Global Thread 24 running on hwthread 24 - Vector length 125000 Offset 3000000
+Group: 0 Thread 27 Global Thread 27 running on hwthread 27 - Vector length 125000 Offset 3375000
+Group: 0 Thread 30 Global Thread 30 running on hwthread 30 - Vector length 125000 Offset 3750000
+Group: 0 Thread 16 Global Thread 16 running on hwthread 16 - Vector length 125000 Offset 2000000
+Group: 0 Thread 23 Global Thread 23 running on hwthread 23 - Vector length 125000 Offset 2875000
+Group: 0 Thread 17 Global Thread 17 running on hwthread 17 - Vector length 125000 Offset 2125000
+Group: 0 Thread 32 Global Thread 32 running on hwthread 32 - Vector length 125000 Offset 4000000
+Group: 0 Thread 56 Global Thread 56 running on hwthread 56 - Vector length 125000 Offset 7000000
+Group: 0 Thread 35 Global Thread 35 running on hwthread 35 - Vector length 125000 Offset 4375000
+Group: 0 Thread 38 Global Thread 38 running on hwthread 38 - Vector length 125000 Offset 4750000
+Group: 0 Thread 49 Global Thread 49 running on hwthread 49 - Vector length 125000 Offset 6125000
+Group: 0 Thread 52 Global Thread 52 running on hwthread 52 - Vector length 125000 Offset 6500000
+Group: 0 Thread 50 Global Thread 50 running on hwthread 50 - Vector length 125000 Offset 6250000
+Group: 0 Thread 46 Global Thread 46 running on hwthread 46 - Vector length 125000 Offset 5750000
+Group: 0 Thread 43 Global Thread 43 running on hwthread 43 - Vector length 125000 Offset 5375000
+Group: 0 Thread 44 Global Thread 44 running on hwthread 44 - Vector length 125000 Offset 5500000
+Group: 0 Thread 45 Global Thread 45 running on hwthread 45 - Vector length 125000 Offset 5625000
+Group: 0 Thread 28 Global Thread 28 running on hwthread 28 - Vector length 125000 Offset 3500000
+--------------------------------------------------------------------------------
+Cycles:			3784177463
+CPU Clock:		2449996472
+Cycle Clock:		2449996472
+Time:			1.544564e+00 sec
+Iterations:		1048576
+Iterations per thread:	16384
+Inner loop executions:	31250
+Size (Byte):		64000000
+Size per thread:	1000000
+Number of Flops:	3932160000000
+MFlops/s:		2545805.06
+Data volume (Byte):	1048576000000
+MByte/s:		678881.35
+Cycles per update:	0.028871
+Cycles per cacheline:	0.230968
+Loads per update:	1
+Stores per update:	0
+Load bytes per element:	8
+Store bytes per elem.:	0
+Instructions:		622592000032
+UOPs:			589824000000
+--------------------------------------------------------------------------------
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 16000000/64000000 Offset 0 Alignment 1024
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: peakflops_sp_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 64 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 1 Global Thread 1 running on hwthread 1 - Vector length 250000 Offset 250000
+Group: 0 Thread 2 Global Thread 2 running on hwthread 2 - Vector length 250000 Offset 500000
+Group: 0 Thread 3 Global Thread 3 running on hwthread 3 - Vector length 250000 Offset 750000
+Group: 0 Thread 4 Global Thread 4 running on hwthread 4 - Vector length 250000 Offset 1000000
+Group: 0 Thread 5 Global Thread 5 running on hwthread 5 - Vector length 250000 Offset 1250000
+Group: 0 Thread 6 Global Thread 6 running on hwthread 6 - Vector length 250000 Offset 1500000
+Group: 0 Thread 7 Global Thread 7 running on hwthread 7 - Vector length 250000 Offset 1750000
+Group: 0 Thread 8 Global Thread 8 running on hwthread 8 - Vector length 250000 Offset 2000000
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 250000 Offset 0
+Group: 0 Thread 9 Global Thread 9 running on hwthread 9 - Vector length 250000 Offset 2250000
+Group: 0 Thread 11 Global Thread 11 running on hwthread 11 - Vector length 250000 Offset 2750000
+Group: 0 Thread 21 Global Thread 21 running on hwthread 21 - Vector length 250000 Offset 5250000
+Group: 0 Thread 58 Global Thread 58 running on hwthread 58 - Vector length 250000 Offset 14500000
+Group: 0 Thread 14 Global Thread 14 running on hwthread 14 - Vector length 250000 Offset 3500000
+Group: 0 Thread 60 Global Thread 60 running on hwthread 60 - Vector length 250000 Offset 15000000
+Group: 0 Thread 54 Global Thread 54 running on hwthread 54 - Vector length 250000 Offset 13500000
+Group: 0 Thread 33 Global Thread 33 running on hwthread 33 - Vector length 250000 Offset 8250000
+Group: 0 Thread 39 Global Thread 39 running on hwthread 39 - Vector length 250000 Offset 9750000
+Group: 0 Thread 16 Global Thread 16 running on hwthread 16 - Vector length 250000 Offset 4000000
+Group: 0 Thread 22 Global Thread 22 running on hwthread 22 - Vector length 250000 Offset 5500000
+Group: 0 Thread 62 Global Thread 62 running on hwthread 62 - Vector length 250000 Offset 15500000
+Group: 0 Thread 36 Global Thread 36 running on hwthread 36 - Vector length 250000 Offset 9000000
+Group: 0 Thread 25 Global Thread 25 running on hwthread 25 - Vector length 250000 Offset 6250000
+Group: 0 Thread 24 Global Thread 24 running on hwthread 24 - Vector length 250000 Offset 6000000
+Group: 0 Thread 28 Global Thread 28 running on hwthread 28 - Vector length 250000 Offset 7000000
+Group: 0 Thread 46 Global Thread 46 running on hwthread 46 - Vector length 250000 Offset 11500000
+Group: 0 Thread 38 Global Thread 38 running on hwthread 38 - Vector length 250000 Offset 9500000
+Group: 0 Thread 53 Global Thread 53 running on hwthread 53 - Vector length 250000 Offset 13250000
+Group: 0 Thread 59 Global Thread 59 running on hwthread 59 - Vector length 250000 Offset 14750000
+Group: 0 Thread 43 Global Thread 43 running on hwthread 43 - Vector length 250000 Offset 10750000
+Group: 0 Thread 57 Global Thread 57 running on hwthread 57 - Vector length 250000 Offset 14250000
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 250000 Offset 3750000
+Group: 0 Thread 20 Global Thread 20 running on hwthread 20 - Vector length 250000 Offset 5000000
+Group: 0 Thread 56 Global Thread 56 running on hwthread 56 - Vector length 250000 Offset 14000000
+Group: 0 Thread 50 Global Thread 50 running on hwthread 50 - Vector length 250000 Offset 12500000
+Group: 0 Thread 52 Global Thread 52 running on hwthread 52 - Vector length 250000 Offset 13000000
+Group: 0 Thread 61 Global Thread 61 running on hwthread 61 - Vector length 250000 Offset 15250000
+Group: 0 Thread 35 Global Thread 35 running on hwthread 35 - Vector length 250000 Offset 8750000
+Group: 0 Thread 48 Global Thread 48 running on hwthread 48 - Vector length 250000 Offset 12000000
+Group: 0 Thread 23 Global Thread 23 running on hwthread 23 - Vector length 250000 Offset 5750000
+Group: 0 Thread 26 Global Thread 26 running on hwthread 26 - Vector length 250000 Offset 6500000
+Group: 0 Thread 30 Global Thread 30 running on hwthread 30 - Vector length 250000 Offset 7500000
+Group: 0 Thread 29 Global Thread 29 running on hwthread 29 - Vector length 250000 Offset 7250000
+Group: 0 Thread 55 Global Thread 55 running on hwthread 55 - Vector length 250000 Offset 13750000
+Group: 0 Thread 27 Global Thread 27 running on hwthread 27 - Vector length 250000 Offset 6750000
+Group: 0 Thread 63 Global Thread 63 running on hwthread 63 - Vector length 250000 Offset 15750000
+Group: 0 Thread 40 Global Thread 40 running on hwthread 40 - Vector length 250000 Offset 10000000
+Group: 0 Thread 32 Global Thread 32 running on hwthread 32 - Vector length 250000 Offset 8000000
+Group: 0 Thread 47 Global Thread 47 running on hwthread 47 - Vector length 250000 Offset 11750000
+Group: 0 Thread 41 Global Thread 41 running on hwthread 41 - Vector length 250000 Offset 10250000
+Group: 0 Thread 10 Global Thread 10 running on hwthread 10 - Vector length 250000 Offset 2500000
+Group: 0 Thread 18 Global Thread 18 running on hwthread 18 - Vector length 250000 Offset 4500000
+Group: 0 Thread 42 Global Thread 42 running on hwthread 42 - Vector length 250000 Offset 10500000
+Group: 0 Thread 19 Global Thread 19 running on hwthread 19 - Vector length 250000 Offset 4750000
+Group: 0 Thread 12 Global Thread 12 running on hwthread 12 - Vector length 250000 Offset 3000000
+Group: 0 Thread 17 Global Thread 17 running on hwthread 17 - Vector length 250000 Offset 4250000
+Group: 0 Thread 37 Global Thread 37 running on hwthread 37 - Vector length 250000 Offset 9250000
+Group: 0 Thread 31 Global Thread 31 running on hwthread 31 - Vector length 250000 Offset 7750000
+Group: 0 Thread 51 Global Thread 51 running on hwthread 51 - Vector length 250000 Offset 12750000
+Group: 0 Thread 45 Global Thread 45 running on hwthread 45 - Vector length 250000 Offset 11250000
+Group: 0 Thread 34 Global Thread 34 running on hwthread 34 - Vector length 250000 Offset 8500000
+Group: 0 Thread 44 Global Thread 44 running on hwthread 44 - Vector length 250000 Offset 11000000
+Group: 0 Thread 13 Global Thread 13 running on hwthread 13 - Vector length 250000 Offset 3250000
+Group: 0 Thread 49 Global Thread 49 running on hwthread 49 - Vector length 250000 Offset 12250000
+--------------------------------------------------------------------------------
+Cycles:			3782758129
+CPU Clock:		2449935823
+Cycle Clock:		2449935823
+Time:			1.544023e+00 sec
+Iterations:		1048576
+Iterations per thread:	16384
+Inner loop executions:	31250
+Size (Byte):		64000000
+Size per thread:	1000000
+Number of Flops:	7864320000000
+MFlops/s:		5093394.46
+Data volume (Byte):	1048576000000
+MByte/s:		679119.26
+Cycles per update:	0.014430
+Cycles per cacheline:	0.230881
+Loads per update:	1
+Stores per update:	0
+Load bytes per element:	4
+Store bytes per elem.:	0
+Instructions:		622592000032
+UOPs:			589824000000
+--------------------------------------------------------------------------------

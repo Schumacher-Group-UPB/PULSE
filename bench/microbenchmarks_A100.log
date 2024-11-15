@@ -1,0 +1,178 @@
+Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+CPU(s):              128
+On-line CPU(s) list: 0-127
+Thread(s) per core:  1
+Core(s) per socket:  64
+Socket(s):           2
+NUMA node(s):        8
+Vendor ID:           AuthenticAMD
+CPU family:          23
+Model:               49
+Model name:          AMD EPYC 7742 64-Core Processor
+Stepping:            0
+CPU MHz:             2250.000
+CPU max MHz:         2250.0000
+CPU min MHz:         1500.0000
+BogoMIPS:            4491.37
+Virtualization:      AMD-V
+L1d cache:           32K
+L1i cache:           32K
+L2 cache:            512K
+L3 cache:            16384K
+NUMA node0 CPU(s):   0-15
+NUMA node1 CPU(s):   16-31
+NUMA node2 CPU(s):   32-47
+NUMA node3 CPU(s):   48-63
+NUMA node4 CPU(s):   64-79
+NUMA node5 CPU(s):   80-95
+NUMA node6 CPU(s):   96-111
+NUMA node7 CPU(s):   112-127
+Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irperf xsaveerptr wbnoinvd arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif v_spec_ctrl umip rdpid overflow_recov succor smca sme sev sev_es
+Thu Nov 14 11:30:06 2024       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:07:00.0 Off |                    0 |
+| N/A   31C    P0             54W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2024 NVIDIA Corporation
+Built on Fri_Jun_14_16:34:21_PDT_2024
+Cuda compilation tools, release 12.6, V12.6.20
+Build cuda_12.6.r12.6/compiler.34431801_0
+nvcc -std=c++17 -O3 -arch=sm_70 --compiler-options="-O2 -pipe -Wall -fopenmp -g" -Xcompiler -rdynamic --generate-line-info  -Xcompiler \"-Wl,-rpath,/opt/software/pc2/EB-SW/software/CUDA/12.6.0/extras/CUPTI/lib64/\" -I/opt/software/pc2/EB-SW/software/CUDA/12.6.0/extras/CUPTI/include -I/opt/software/pc2/EB-SW/software/CUDA/12.6.0/include -o cuda-l2-cache main.cu -L/opt/software/pc2/EB-SW/software/CUDA/12.6.0/lib64 -L/opt/software/pc2/EB-SW/software/CUDA/12.6.0/extras/CUPTI/lib64 -lcupti -lcuda   -lnvidia-ml -lnvperf_host -lnvperf_target
+     data set   exec time     spread       Eff. bw
+       512 kB      1536 kB        20ms      22.6%    5307.4 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      2048 kB        19ms       0.1%    5520.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      2560 kB        19ms       0.1%    5412.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      3072 kB        19ms       0.1%    5435.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      3584 kB        19ms       0.1%    5404.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      4096 kB        19ms       0.3%    5475.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      4608 kB        19ms       0.2%    5435.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      5120 kB        19ms       0.1%    5385.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      5632 kB        19ms       0.1%    5440.4 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      6144 kB        19ms       0.1%    5428.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      6656 kB        20ms       0.0%    5370.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      7168 kB        20ms       0.1%    5345.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      7680 kB        19ms       0.1%    5384.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      8192 kB        19ms       0.1%    5438.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      8704 kB        19ms       0.1%    5391.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      9216 kB        19ms       0.2%    5387.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB      9728 kB        19ms       1.0%    5392.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     10240 kB        20ms       0.2%    5266.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     11264 kB        19ms       0.1%    5418.4 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     12288 kB        19ms       0.3%    5438.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     13312 kB        19ms       0.2%    5426.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     14336 kB        19ms       0.1%    5404.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     15360 kB        19ms       0.2%    5404.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     16896 kB        19ms       0.2%    5448.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     18432 kB        19ms       0.4%    5441.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     19968 kB        20ms       0.4%    5324.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     21504 kB        19ms       0.2%    5384.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     23552 kB        19ms       0.1%    5435.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     25600 kB        19ms       0.3%    5379.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     28160 kB        21ms       5.4%    4993.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     30720 kB        27ms       2.7%    3840.1 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     33792 kB        33ms       1.1%    3164.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     36864 kB        44ms       1.0%    2379.6 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     40448 kB        54ms       0.8%    1926.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     44032 kB        62ms       1.7%    1703.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     48128 kB        67ms       0.4%    1576.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     52736 kB        69ms       0.2%    1524.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     57856 kB        69ms       0.2%    1515.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     63488 kB        69ms       0.2%    1511.6 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     69632 kB        69ms       0.2%    1509.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     76288 kB        70ms       0.2%    1505.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     83456 kB        69ms       0.3%    1509.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB     91648 kB        70ms       0.3%    1508.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    100352 kB        70ms       0.4%    1508.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    110080 kB        69ms       0.4%    1508.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    120832 kB        70ms       0.2%    1504.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    132608 kB        70ms       0.3%    1504.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    145408 kB        70ms       0.7%    1506.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    159744 kB        70ms       0.4%    1503.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    175616 kB        70ms       0.6%    1505.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    193024 kB        70ms       0.2%    1497.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    211968 kB        70ms       0.5%    1499.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    232960 kB        70ms       0.5%    1498.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    256000 kB        70ms       0.6%    1498.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    281600 kB        70ms       0.8%    1497.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    309760 kB        70ms       0.5%    1491.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    340480 kB        70ms       1.1%    1507.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    374272 kB        70ms       1.1%    1502.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    411648 kB        69ms       1.3%    1508.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    452608 kB        70ms       2.4%    1507.1 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    497664 kB        71ms       0.6%    1476.6 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    547328 kB        71ms       0.8%    1475.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    601600 kB        71ms       0.7%    1467.2 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    661504 kB        72ms       0.9%    1466.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    727552 kB        72ms       0.7%    1458.1 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    800256 kB        72ms       0.9%    1455.1 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    880128 kB        72ms       1.0%    1450.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB    967680 kB        73ms       1.2%    1445.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   1064448 kB        73ms       1.0%    1433.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   1170432 kB        74ms       0.9%    1423.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   1287168 kB        74ms       1.2%    1419.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   1415680 kB        75ms       0.8%    1405.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   1556992 kB        75ms       1.3%    1403.4 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   1712640 kB        76ms       0.1%    1385.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   1883648 kB        76ms       0.0%    1385.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   2071552 kB        75ms       0.4%    1389.9 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   2278400 kB        75ms       0.3%    1391.1 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   2506240 kB        76ms       0.1%    1385.8 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   2756608 kB        76ms       0.1%    1385.7 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   3032064 kB        76ms       0.1%    1387.6 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   3335168 kB        75ms       0.2%    1389.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   3668480 kB        76ms       0.1%    1388.0 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   4035072 kB        75ms       0.1%    1389.3 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   4438528 kB        76ms       0.2%    1387.4 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+       512 kB   4881920 kB        75ms       0.2%    1389.5 GB/s        0 GB/s      0 GB/s      0 GB/s      0 GB/s 
+nvcc -std=c++11 -O3 -arch=sm_70 --compiler-options="-O2 -pipe -Wall -fopenmp -g" -Xcompiler -rdynamic --generate-line-info  -Xcompiler \"-Wl,-rpath,/opt/software/pc2/EB-SW/software/CUDA/12.6.0/extras/CUPTI/lib64/\" -Xcompiler "-Wall" -I/opt/software/pc2/EB-SW/software/CUDA/12.6.0/extras/CUPTI/include -o cuda-stream main.cu -L/opt/cuda/lib64 -lcuda -lnvidia-ml
+blockSize   threads       %occ  |                init       read       scale     triad       3pt        5pt
+       32        3456      3 %  |  GB/s:         159         82        150        211        142        139
+       64        6912    6.2 %  |  GB/s:         406        161        291        405        269        265
+       96       10368    9.4 %  |  GB/s:         601        233        405        561        388        381
+      128       13824   12.5 %  |  GB/s:         791        309        547        744        504        496
+      160       17280   15.6 %  |  GB/s:         964        375        629        856        606        593
+      192       20736   18.8 %  |  GB/s:        1145        447        746       1003        711        695
+      224       24192   21.9 %  |  GB/s:        1313        511        832       1108        808        789
+      256       27648   25.0 %  |  GB/s:        1482        589        952       1229        905        883
+      288       31104   28.1 %  |  GB/s:        1538        641       1017       1287        989        962
+      320       34560   31.2 %  |  GB/s:        1538        709       1109       1332       1078       1048
+      352       38016   34.4 %  |  GB/s:        1536        765       1176       1331       1147       1116
+      384       41472   37.5 %  |  GB/s:        1537        833       1242       1346       1206       1176
+      416       44928   40.6 %  |  GB/s:        1538        883       1282       1344       1255       1228
+      448       48384   43.8 %  |  GB/s:        1538        941       1317       1353       1296       1274
+      480       51840   46.9 %  |  GB/s:        1537        984       1323       1352       1315       1303
+      512       55296   50.0 %  |  GB/s:        1538       1058       1338       1359       1324       1321
+      544       58752   53.1 %  |  GB/s:        1538       1074       1338       1359       1330       1326
+      576       62208   56.2 %  |  GB/s:        1538       1132       1346       1365       1336       1334
+      608       65664   59.4 %  |  GB/s:        1534       1169       1347       1365       1338       1335
+      640       69120   62.5 %  |  GB/s:        1534       1219       1354       1370       1343       1339
+      672       72576   65.6 %  |  GB/s:        1538       1246       1354       1371       1347       1343
+      704       76032   68.8 %  |  GB/s:        1537       1288       1359       1375       1350       1347
+      736       79488   71.9 %  |  GB/s:        1538       1316       1360       1375       1351       1348
+      768       82944   75.0 %  |  GB/s:        1537       1357       1364       1365       1354       1351
+      800       86400   78.1 %  |  GB/s:        1536       1369       1364       1367       1357       1353
+      832       89856   81.2 %  |  GB/s:        1536       1397       1368       1367       1359       1355
+      864       93312   84.4 %  |  GB/s:        1536       1414       1369       1366       1361       1357
+      896       96768   87.5 %  |  GB/s:        1536       1436       1372       1363       1363       1358
+      928      100224   90.6 %  |  GB/s:        1537       1449       1373       1364       1364       1361
+      960      103680   93.8 %  |  GB/s:        1538       1469       1375       1362       1367       1363
+      992      107136   96.9 %  |  GB/s:        1537       1480       1377       1361       1368       1365
+     1024      110592  100.0 %  |  GB/s:        1538       1498       1381       1358       1371       1367
