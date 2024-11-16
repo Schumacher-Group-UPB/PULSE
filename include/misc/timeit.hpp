@@ -31,5 +31,5 @@ std::map<std::string, double>& getTimesTotal();
         func;                                                                                                                            \
         auto _timethis_end = std::chrono::high_resolution_clock::now();                                                                  \
         auto _timethis_duration = std::chrono::duration_cast<std::chrono::nanoseconds>( _timethis_end - _timethis_start ).count() / 1E9; \
-        PHOENIX::TimeIt::addTime( name, _timethis_duration );                                                                                \
+        PHOENIX::TimeIt::addTime( name, _timethis_duration );                                                                            \
     }

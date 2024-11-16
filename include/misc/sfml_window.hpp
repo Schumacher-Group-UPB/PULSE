@@ -121,8 +121,7 @@ class BasicWindow {
                 pixMat.push_back( sf::Vertex( sf::Vector2f( i + .5f, j + .5f ), sf::Color( 0, 0, 0 ) ) );
             }
         }
-        std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size()
-                  << " pixels." << std::endl;
+        std::cout << "Constructed Basic window with " << width << "x" << height << " pixels, reserved are " << texture_w << "x" << texture_h << " -> " << pixMat.size() << " pixels." << std::endl;
     }
 
     void init() {
@@ -162,8 +161,7 @@ class BasicWindow {
         window.display();
     }
 
-    void blitMatrixPtr( const PHOENIX::Type::real* vector, PHOENIX::Type::real min, PHOENIX::Type::real max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
-                        int border = 0, int skip = 1 ) {
+    void blitMatrixPtr( const PHOENIX::Type::real* vector, PHOENIX::Type::real min, PHOENIX::Type::real max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
         const int cols_over_skip = cols / skip;
         const int rows_over_skip = rows / skip;
         //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;
@@ -184,8 +182,7 @@ class BasicWindow {
         }
         maintexture_has_changed = true;
     }
-    void blitMatrixPtr( const PHOENIX::Type::complex* vector, PHOENIX::Type::complex min, PHOENIX::Type::complex max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0,
-                        int border = 0, int skip = 1 ) {
+    void blitMatrixPtr( const PHOENIX::Type::complex* vector, PHOENIX::Type::complex min, PHOENIX::Type::complex max, ColorPalette& cp, int cols = 0, int rows = 0, int posX = 0, int posY = 0, int border = 0, int skip = 1 ) {
         const int cols_over_skip = cols / skip;
         const int rows_over_skip = rows / skip;
         //std::cout << "Attempting to blit array at " << posX << "x" << posY << " with cols x rows = " << cols << "x" << rows << " pixels, skipping " << skip << " pixels, resulting in " << cols_over_skip << "x" << rows_over_skip << " pixels." << std::endl;

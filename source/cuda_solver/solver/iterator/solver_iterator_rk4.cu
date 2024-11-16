@@ -30,7 +30,6 @@
  * Then, we iterate all of the remaining rows after each other, incrementing the buffer for the next iteration.
  */
 void PHOENIX::Solver::iterateFixedTimestepRungeKutta4() {
-
     SOLVER_SEQUENCE( true /*Capture CUDA Graph*/,
 
                      CALCULATE_K( 1, wavefunction, reservoir );

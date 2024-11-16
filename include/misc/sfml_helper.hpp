@@ -48,8 +48,7 @@ PHOENIX::Type::host_vector<Type::complex> __plotarray;
 PHOENIX::Type::host_vector<Type::complex> snapshot_wavefunction_plus, snapshot_wavefunction_minus, snapshot_reservoir_plus, snapshot_reservoir_minus;
 
 template <typename T>
-void plot( PHOENIX::CUDAMatrix<T>& matrix, bool angle, int N_cols, int N_rows, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "",
-           bool plot_min_max = true ) {
+void plot( PHOENIX::CUDAMatrix<T>& matrix, bool angle, int N_cols, int N_rows, int posX, int posY, int skip, ColorPalette& cp, const std::string& title = "", bool plot_min_max = true ) {
     T min, max;
     if ( angle ) {
         __plotarray = matrix.staticAngle( true ).getFullMatrix();
@@ -67,9 +66,7 @@ void plot( PHOENIX::CUDAMatrix<T>& matrix, bool angle, int N_cols, int N_rows, i
     N_cols = N_cols / skip;
     N_rows = N_rows / skip;
     auto text_height = getWindow().textheight / skip;
-    getWindow().scaledPrint( posX + 5, posY + N_rows - text_height - 5, text_height,
-                             title + "Min: " + toScientific( std::sqrt( PHOENIX::CUDA::abs( min ) ) ) + " Max: " + toScientific( std::sqrt( PHOENIX::CUDA::abs( max ) ) ),
-                             sf::Color::White );
+    getWindow().scaledPrint( posX + 5, posY + N_rows - text_height - 5, text_height, title + "Min: " + toScientific( std::sqrt( PHOENIX::CUDA::abs( min ) ) ) + " Max: " + toScientific( std::sqrt( PHOENIX::CUDA::abs( max ) ) ), sf::Color::White );
 }
 
 // Very bad practice, as this header can only be imported once without redefinitions.
@@ -139,9 +136,7 @@ void initSFMLWindow( PHOENIX::Solver& solver ) {
 
 int __local_inset = 0;
 
-std::vector<std::string> subplot_names{ "FFT - ",          "Wavefunction K1 - ", "Wavefunction K2 - ", "Wavefunction K3 - ", "Wavefunction K4 - ",
-                                        "Reservoir K1 - ", "Reservoir K2 - ",    "Reservoir K3 - ",    "Reservoir K4 - ",    "Pump - ",
-                                        "Pulse - ",        "Potential - ",       "RandomNumber - " };
+std::vector<std::string> subplot_names{ "FFT - ", "Wavefunction K1 - ", "Wavefunction K2 - ", "Wavefunction K3 - ", "Wavefunction K4 - ", "Reservoir K1 - ", "Reservoir K2 - ", "Reservoir K3 - ", "Reservoir K4 - ", "Pump - ", "Pulse - ", "Potential - ", "RandomNumber - " };
 
 bool plotSFMLWindow( PHOENIX::Solver& solver, double simulation_time, double elapsed_time, size_t iterations ) {
     if ( solver.system.disableRender )
@@ -179,28 +174,25 @@ bool plotSFMLWindow( PHOENIX::Solver& solver, double simulation_time, double ela
     // Plot it again without static synchronization
     plot( solver.matrix.wavefunction_plus, true, solver.system.p.N_c, solver.system.p.N_r, 0, 0, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
     // Plot Reservoir Plus
-    plot( solver.matrix.reservoir_plus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, 2 * solver.system.p.N_c, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
+    if ( solver.system.use_reservoir )
+        plot( solver.matrix.reservoir_plus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, 2 * solver.system.p.N_c, 0, 1, __local_colorpalette, "n+ ", plot_min_max );
 
     // Plot Minus
     if ( solver.system.use_twin_mode ) {
         // Plot WF Minus
-        plot( solver.matrix.wavefunction_minus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, solver.system.p.N_c, solver.system.p.N_r, 1, __local_colorpalette,
-              "Psi+ ", plot_min_max );
+        plot( solver.matrix.wavefunction_minus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, solver.system.p.N_c, solver.system.p.N_r, 1, __local_colorpalette, "Psi+ ", plot_min_max );
         // Plot it again without static synchronization
         plot( solver.matrix.wavefunction_minus, true, solver.system.p.N_c, solver.system.p.N_r, 0, solver.system.p.N_r, 1, __local_colorpalette_phase, "ang(Psi+) ", plot_min_max );
         // Plot Reservoir Minus
-        plot( solver.matrix.reservoir_minus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, 2 * solver.system.p.N_c, solver.system.p.N_r, 1, __local_colorpalette, "n+ ",
-              plot_min_max );
+        if ( solver.system.use_reservoir )
+            plot( solver.matrix.reservoir_minus, false, solver.system.p.N_c, solver.system.p.N_r /*size*/, 2 * solver.system.p.N_c, solver.system.p.N_r, 1, __local_colorpalette, "n+ ", plot_min_max );
     }
 
     const auto ps_per_second = simulation_time / elapsed_time;
     const auto iterations_per_second = iterations / elapsed_time;
 
     // FPS and ps/s
-    getWindow().print( 5, 5,
-                       "t = " + std::to_string( int( solver.system.p.t ) ) + ", FPS: " + std::to_string( int( getWindow().fps ) ) +
-                           ", ps/s: " + std::to_string( int( ps_per_second ) ) + ", it/s: " + std::to_string( int( iterations_per_second ) ),
-                       sf::Color::White );
+    getWindow().print( 5, 5, "t = " + std::to_string( int( solver.system.p.t ) ) + ", FPS: " + std::to_string( int( getWindow().fps ) ) + ", ps/s: " + std::to_string( int( ps_per_second ) ) + ", it/s: " + std::to_string( int( iterations_per_second ) ), sf::Color::White );
 
     // If the mouse position is less than 200 on the x axis, draw the gui. else, set all gui components invisible
     if ( getWindow().MouseX() < 200 ) {

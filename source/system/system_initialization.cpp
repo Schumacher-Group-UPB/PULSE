@@ -30,7 +30,7 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
     if ( ( index = PHOENIX::CLIO::findInArgv( "--R", argc, argv ) ) != -1 ) {
         p.R = PHOENIX::CLIO::getNextInput( argv, argc, "R", ++index );
     }
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"L", "gridlength"}, argc, argv, 0, "--" ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "L", "gridlength" }, argc, argv, 0, "--" ) ) != -1 ) {
         p.L_x = PHOENIX::CLIO::getNextInput( argv, argc, "L", ++index );
         p.L_y = PHOENIX::CLIO::getNextInput( argv, argc, "L", index );
     }
@@ -64,13 +64,13 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
     }
 
     // Numerik
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"N","gridsize"}, argc, argv, 0, "--" ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "N", "gridsize" }, argc, argv, 0, "--" ) ) != -1 ) {
         p.N_c = (int)PHOENIX::CLIO::getNextInput( argv, argc, "N_c", ++index );
         p.N_r = (int)PHOENIX::CLIO::getNextInput( argv, argc, "N_r", index );
     }
-    p.subgrids_columns = 1;
-    p.subgrids_rows = 1;
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"subgrids","sg"}, argc, argv, 0, "--" ) ) != -1 ) {
+    p.subgrids_columns = 0;
+    p.subgrids_rows = 0;
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "subgrids", "sg" }, argc, argv, 0, "--" ) ) != -1 ) {
         p.subgrids_columns = (int)PHOENIX::CLIO::getNextInput( argv, argc, "subgrids_columns", ++index );
         p.subgrids_rows = (int)PHOENIX::CLIO::getNextInput( argv, argc, "subgrids_rows", index );
     }
@@ -82,9 +82,9 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
         disableRender = false;
 #endif
 
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"tmax", "tend"}, argc, argv, 0, "--" ) ) != -1 )
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "tmax", "tend" }, argc, argv, 0, "--" ) ) != -1 )
         t_max = PHOENIX::CLIO::getNextInput( argv, argc, "s_t_max", ++index );
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"tstep", "dt"}, argc, argv, 0, "--" ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "tstep", "dt" }, argc, argv, 0, "--" ) ) != -1 ) {
         p.dt = PHOENIX::CLIO::getNextInput( argv, argc, "t_step", ++index );
         do_overwrite_dt = false;
         std::cout << PHOENIX::CLIO::prettyPrint( "Overwritten (initial) dt to " + PHOENIX::CLIO::to_str( p.dt ), PHOENIX::CLIO::Control::Warning ) << std::endl;
@@ -107,9 +107,6 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
 
     // Choose the iterator
     iterator = "rk4";
-    if ( ( index = PHOENIX::CLIO::findInArgv( "-rk45", argc, argv ) ) != -1 ) {
-        iterator = "rk45";
-    }
     if ( ( index = PHOENIX::CLIO::findInArgv( "-ssfm", argc, argv ) ) != -1 ) {
         iterator = "ssfm";
     }
@@ -118,18 +115,15 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
         iterator = it;
     }
 
-    // Temporary: RK3 and RK45 are not implemented correctly, which is why we fall back to RK4 for now.
-    // We leave all the code for RK3 and RK45 in place, so that we can easily switch back to them once they are implemented.
-    if ( iterator == "rk3" || iterator == "rk45" ) {
-        iterator = "rk4";
+    std::map<std::string, Type::uint32> halo_size_for_it = { { "rk4", 4 }, { "ssfm", 0 }, { "newton", 1 } };
+    if ( halo_size_for_it.find( iterator ) == halo_size_for_it.end() ) {
         std::cout << PHOENIX::CLIO::prettyPrint( "Iterator '" + iterator + "' is not implemented. Falling back to 'rk4'", PHOENIX::CLIO::Control::Warning ) << std::endl;
+        iterator = "rk4";
     }
-
-    std::map<std::string, Type::uint32> halo_size_for_it = { { "rk4", 4 }, { "rk45", 7 }, { "ssfm", 0 }, { "newton", 1 }, { "rk3", 3 } };
     p.halo_size = halo_size_for_it[iterator];
     std::cout << PHOENIX::CLIO::prettyPrint( "Halo Size for iterator '" + iterator + "' = " + std::to_string( p.halo_size ), PHOENIX::CLIO::Control::Info ) << std::endl;
 
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"initRandom", "iR"}, argc, argv, 0, "--" ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "initRandom", "iR" }, argc, argv, 0, "--" ) ) != -1 ) {
         randomly_initialize_system = true;
         random_system_amplitude = PHOENIX::CLIO::getNextInput( argv, argc, "random_system_amplitude", ++index );
         random_seed = std::random_device{}();
@@ -155,7 +149,7 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
     do_output_history_matrix = false;
     output_history_matrix_every = 1;
     output_history_start_time = 0.0;
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"historyMatrix", "hM"}, argc, argv, 0, "--" ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "historyMatrix", "hM" }, argc, argv, 0, "--" ) ) != -1 ) {
         history_matrix_start_x = (Type::uint32)PHOENIX::CLIO::getNextInput( argv, argc, "history_matrix_start_x", ++index );
         history_matrix_end_x = (Type::uint32)PHOENIX::CLIO::getNextInput( argv, argc, "history_matrix_end_x", index );
         history_matrix_start_y = (Type::uint32)PHOENIX::CLIO::getNextInput( argv, argc, "history_matrix_start_y", index );
@@ -163,7 +157,7 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
         history_matrix_output_increment = (Type::uint32)PHOENIX::CLIO::getNextInput( argv, argc, "history_matrix_output_increment", index );
         do_output_history_matrix = true;
     }
-    if ( ( index = PHOENIX::CLIO::findInArgv( {"historyTime", "hT"}, argc, argv, 0, "--" ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "historyTime", "hT" }, argc, argv, 0, "--" ) ) != -1 ) {
         output_history_start_time = PHOENIX::CLIO::getNextInput( argv, argc, "history_time", ++index );
         output_history_matrix_every = int( PHOENIX::CLIO::getNextInput( argv, argc, "history_time_every", index ) );
     }
@@ -206,8 +200,6 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
     if ( ( index = PHOENIX::CLIO::findInArgv( "--meff", argc, argv ) ) != -1 )
         p.m_eff = PHOENIX::CLIO::getNextInput( argv, argc, "m_eff", ++index );
 
-    // Solver Halo and Subgrid configuration
-
     //////////////////////////////
     // Custom Read-Ins go here! //
     //////////////////////////////
@@ -221,16 +213,17 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
     // FFT Mask
     fft_mask = PHOENIX::Envelope::fromCommandlineArguments( argc, argv, "fftMask", false );
     // Initial State and Reservoir
-    initial_state = PHOENIX::Envelope::fromCommandlineArguments( argc, argv, {"initState", "initialState", "iS"}, false );
-    initial_reservoir = PHOENIX::Envelope::fromCommandlineArguments( argc, argv, {"initReservoir", "initialReservoir", "iR"}, false );
+    initial_state = PHOENIX::Envelope::fromCommandlineArguments( argc, argv, { "initState", "initialState", "iS" }, false );
+    initial_reservoir = PHOENIX::Envelope::fromCommandlineArguments( argc, argv, { "initReservoir", "initialReservoir", "iR" }, false );
 
     // Set evaluation flags
     use_reservoir = true;
     use_pumps = pump.size() > 0;
     use_pulses = pulse.size() > 0;
     use_potentials = potential.size() > 0;
+    use_fft_mask = fft_mask.size() > 0;
     use_stochastic = p.stochastic_amplitude > 0.0;
-    if ( pump.size() == 0 and initial_reservoir.size() == 0 ) {
+    if ( pump.size() == 0 && initial_reservoir.size() == 0 ) {
         use_reservoir = false;
     }
     if ( ( index = PHOENIX::CLIO::findInArgv( "-noReservoir", argc, argv ) ) != -1 ) {

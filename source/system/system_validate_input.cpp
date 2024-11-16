@@ -2,15 +2,12 @@
 #include "misc/escape_sequences.hpp"
 #include "misc/commandline_io.hpp"
 
-// TODO: make sure this does the right things for every possible input. 
+// TODO: make sure this does the right things for every possible input.
 
 void PHOENIX::SystemParameters::validateInputs() {
     // Warnings
     if ( output_every < 2 * p.dt ) {
-        std::cout << PHOENIX::CLIO::prettyPrint(
-                         "Output Interval = " + PHOENIX::CLIO::to_str( output_every ) + " is very small! This may lead to slower runtimes due to extensive caching.",
-                         PHOENIX::CLIO::Control::Warning )
-                  << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "Output Interval = " + PHOENIX::CLIO::to_str( output_every ) + " is very small! This may lead to slower runtimes due to extensive caching.", PHOENIX::CLIO::Control::Warning ) << std::endl;
     }
     // TODO.
     // Also: make sure Envelopes are constructed using try:catch blocks. if PHOENIX tries to read an envelope but fails, it should display a bright yellow message
@@ -20,8 +17,7 @@ void PHOENIX::SystemParameters::validateInputs() {
     bool valid = true;
 
     if ( p.N_c <= 0 or p.N_r <= 0 ) {
-        std::cout << PHOENIX::CLIO::prettyPrint( "N = " + PHOENIX::CLIO::to_str( p.N_c ) + ", " + PHOENIX::CLIO::to_str( p.N_r ) + " cannot be negative!", PHOENIX::CLIO::Control::Warning )
-                  << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "N = " + PHOENIX::CLIO::to_str( p.N_c ) + ", " + PHOENIX::CLIO::to_str( p.N_r ) + " cannot be negative!", PHOENIX::CLIO::Control::Warning ) << std::endl;
         valid = false;
     }
 
@@ -39,9 +35,7 @@ void PHOENIX::SystemParameters::validateInputs() {
         valid = false;
     }
     if ( p.dt > t_max ) {
-        std::cout << PHOENIX::CLIO::prettyPrint( "dt = " + PHOENIX::CLIO::to_str( p.dt ) + " cannot be larger than t_max = " + PHOENIX::CLIO::to_str( t_max ) + "!",
-                                             PHOENIX::CLIO::Control::Warning )
-                  << std::endl;
+        std::cout << PHOENIX::CLIO::prettyPrint( "dt = " + PHOENIX::CLIO::to_str( p.dt ) + " cannot be larger than t_max = " + PHOENIX::CLIO::to_str( t_max ) + "!", PHOENIX::CLIO::Control::Warning ) << std::endl;
         valid = false;
     }
     if ( dt_max < 0 ) {

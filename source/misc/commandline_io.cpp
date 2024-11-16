@@ -7,7 +7,7 @@
 #include "misc/commandline_io.hpp"
 
 // Helper Variable for logging inputs. Only for simple debugging purposes.
-static inline bool global_log = false;
+static inline bool global_log = true;
 
 // #define PHOENIX_NO_EXTENDED_SYMBOLS
 
@@ -120,7 +120,7 @@ int PHOENIX::CLIO::findInArgv( const std::vector<std::string>& toFind, int argc,
     for ( int i = start; i < argc; i++ ) {
         std::string current = std::string( argv[i] );
         for ( auto& tf : toFind )
-            if ( current.compare( prefix+tf ) == 0 )
+            if ( current.compare( prefix + tf ) == 0 )
                 return i;
     }
     return -1;
@@ -137,9 +137,7 @@ PHOENIX::Type::real PHOENIX::CLIO::getNextInput( char** argv, const int argc, co
         result = std::stod( argv[index++] );
     } catch ( const std::invalid_argument& e ) {
         std::cout << prettyPrint( "Error: Invalid argument for '" + name + "'", Control::FullError ) << std::endl;
-        std::cout << prettyPrint( "Error: parsing variable '" + name + "' as '" + std::string( argv[index] ) + "' cannot be converted to a numerical value! Exitting!",
-                                  Control::FullError )
-                  << std::endl;
+        std::cout << prettyPrint( "Error: parsing variable '" + name + "' as '" + std::string( argv[index] ) + "' cannot be converted to a numerical value! Exitting!", Control::FullError ) << std::endl;
         exit( EXIT_FAILURE );
     }
     return result;
@@ -154,8 +152,7 @@ std::string PHOENIX::CLIO::getNextStringInput( char** argv, const int argc, cons
         return std::string( argv[index++] );
     } catch ( const std::invalid_argument& e ) {
         std::cout << prettyPrint( "Error: Invalid argument for " + name, Control::FullError ) << std::endl;
-        std::cout << prettyPrint( "Error: parsing variable '" + name + "' as '" + std::string( argv[index] ) + "'. Maybe you missed some arguments? Exitting!", Control::FullError )
-                  << std::endl;
+        std::cout << prettyPrint( "Error: parsing variable '" + name + "' as '" + std::string( argv[index] ) + "'. Maybe you missed some arguments? Exitting!", Control::FullError ) << std::endl;
         exit( EXIT_FAILURE );
     }
 }

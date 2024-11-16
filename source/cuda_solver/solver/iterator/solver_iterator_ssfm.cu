@@ -21,15 +21,9 @@ void PHOENIX::Solver::iterateSplitStepFourier() {
     if ( system.use_twin_mode )
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
     if ( system.use_twin_mode ) {
-        CALL_FULL_KERNEL(
-            PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<true>, "linear_half_step", grid_size, block_size, 0, kernel_arguments,
-            { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
-              kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<true>, "linear_half_step", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
     } else {
-        CALL_FULL_KERNEL(
-            PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<false>, "linear_half_step", grid_size, block_size, 0, kernel_arguments,
-            { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
-              kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<false>, "linear_half_step", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
     }
     // Transform back. WF now holds the half-stepped wavefunction.
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::inverse );
@@ -38,15 +32,9 @@ void PHOENIX::Solver::iterateSplitStepFourier() {
 
     // Nonlinear Full Step
     if ( system.use_twin_mode ) {
-        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_nonlinear<true>, "nonlinear_full_step", grid_size, block_size, 0, kernel_arguments,
-                          { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.reservoir_plus,
-                            kernel_arguments.dev_ptrs.reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus,
-                            kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_nonlinear<true>, "nonlinear_full_step", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus } );
     } else {
-        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_nonlinear<false>, "nonlinear_full_step", grid_size, block_size, 0, kernel_arguments,
-                          { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.reservoir_plus,
-                            kernel_arguments.dev_ptrs.reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus,
-                            kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_nonlinear<false>, "nonlinear_full_step", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus } );
     }
     // WF now holds the nonlinearly evolved wavefunction.
 
@@ -56,15 +44,9 @@ void PHOENIX::Solver::iterateSplitStepFourier() {
     if ( system.use_twin_mode )
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::forward );
     if ( system.use_twin_mode ) {
-        CALL_FULL_KERNEL(
-            PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<true>, "linear_half_step", grid_size, block_size, 0, kernel_arguments,
-            { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
-              kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<true>, "linear_half_step", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
     } else {
-        CALL_FULL_KERNEL(
-            PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<false>, "linear_half_step", grid_size, block_size, 0, kernel_arguments,
-            { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard,
-              kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_linear_fourier<false>, "linear_half_step", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.discard, kernel_arguments.dev_ptrs.discard } );
     }
     // Transform back. WF now holds the half-stepped wavefunction.
     calculateFFT( kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.fft_plus, FFT::inverse );
@@ -72,15 +54,9 @@ void PHOENIX::Solver::iterateSplitStepFourier() {
         calculateFFT( kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.fft_minus, FFT::inverse );
 
     if ( system.use_twin_mode ) {
-        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_independent<true>, "independent", grid_size, block_size, 0, kernel_arguments,
-                          { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus,
-                            kernel_arguments.dev_ptrs.buffer_reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus,
-                            kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_independent<true>, "independent", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus } );
     } else {
-        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_independent<false>, "independent", grid_size, block_size, 0, kernel_arguments,
-                          { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus,
-                            kernel_arguments.dev_ptrs.buffer_reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus,
-                            kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus } );
+        CALL_FULL_KERNEL( PHOENIX::Kernel::Compute::gp_scalar_independent<false>, "independent", grid_size, block_size, 0, kernel_arguments, { kernel_arguments.dev_ptrs.fft_plus, kernel_arguments.dev_ptrs.fft_minus, kernel_arguments.dev_ptrs.buffer_reservoir_plus, kernel_arguments.dev_ptrs.buffer_reservoir_minus, kernel_arguments.dev_ptrs.wavefunction_plus, kernel_arguments.dev_ptrs.wavefunction_minus, kernel_arguments.dev_ptrs.reservoir_plus, kernel_arguments.dev_ptrs.reservoir_minus } );
     }
     // WF now holds the new result
 }

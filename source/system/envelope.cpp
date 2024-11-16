@@ -32,8 +32,7 @@ eval_enum _cast_string_list_to_enum( const std::string& input, std::string split
     return ret;
 }
 
-void PHOENIX::Envelope::addSpacial( PHOENIX::Type::real amp, PHOENIX::Type::real width_x, PHOENIX::Type::real width_y, PHOENIX::Type::real x, PHOENIX::Type::real y, PHOENIX::Type::real exponent,
-                                const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m ) {
+void PHOENIX::Envelope::addSpacial( PHOENIX::Type::real amp, PHOENIX::Type::real width_x, PHOENIX::Type::real width_y, PHOENIX::Type::real x, PHOENIX::Type::real y, PHOENIX::Type::real exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m ) {
     this->amp.push_back( amp );
     this->width_x.push_back( width_x );
     this->width_y.push_back( width_y );
@@ -153,8 +152,7 @@ PHOENIX::Envelope PHOENIX::Envelope::fromCommandlineArguments( int argc, char** 
         // If first argument is "load", save the next argument as the path to the file to load!
         if ( PHOENIX::CLIO::getNextStringInput( argv, argc, key + "_load", ++index ) == "load" ) {
             auto path = PHOENIX::CLIO::getNextStringInput( argv, argc, key + "_path", index );
-            std::cout << PHOENIX::CLIO::prettyPrint( "Queuing envelope '" + key + "' to be loaded from file: '" + path + "'", PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
-                      << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Queuing envelope '" + key + "' to be loaded from file: '" + path + "'", PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary ) << std::endl;
             // Ampltitude.
             PHOENIX::Type::real amp = PHOENIX::CLIO::getNextInput( argv, argc, key + "_amp", index );
             // Behaviour
@@ -203,9 +201,7 @@ PHOENIX::Envelope PHOENIX::Envelope::fromCommandlineArguments( int argc, char** 
         }
         if ( PHOENIX::CLIO::getNextStringInput( argv, argc, key + "_load", index ) == "load" ) {
             auto path = PHOENIX::CLIO::getNextStringInput( argv, argc, key + "_path", index );
-            std::cout << PHOENIX::CLIO::prettyPrint( "Queuing temporal envelope '" + key + "' to be loaded from file: '" + path + "'",
-                                                 PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary )
-                      << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Queuing temporal envelope '" + key + "' to be loaded from file: '" + path + "'", PHOENIX::CLIO::Control::Info | PHOENIX::CLIO::Control::Secondary ) << std::endl;
             ret.addTemporal( path );
         } else {
             index--;
@@ -216,9 +212,7 @@ PHOENIX::Envelope PHOENIX::Envelope::fromCommandlineArguments( int argc, char** 
             sigma = PHOENIX::CLIO::getNextInput( argv, argc, key + "_sigma", index );
             freq = PHOENIX::CLIO::getNextInput( argv, argc, key + "_freq", index );
             ret.addTemporal( t0, sigma, freq, s_type );
-            std::cout << PHOENIX::CLIO::prettyPrint( "Added Temporal Component '" + s_type + "' to Envelope '" + key + "'",
-                                                 PHOENIX::CLIO::Control::Success | PHOENIX::CLIO::Control::Secondary )
-                      << std::endl;
+            std::cout << PHOENIX::CLIO::prettyPrint( "Added Temporal Component '" + s_type + "' to Envelope '" + key + "'", PHOENIX::CLIO::Control::Success | PHOENIX::CLIO::Control::Secondary ) << std::endl;
         }
     }
 
@@ -355,27 +349,17 @@ std::string PHOENIX::Envelope::toString() const {
             if ( load_path[i] == "" ) {
                 os << b << "  Spatial Envelope " << i << ":" << std::endl
                    << "    " << b << "Generated from Parameters:" << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET
-                   << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
-                   << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width Y: ", std::to_string( width_y[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
-                   << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At X: ", std::to_string( x[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
-                   << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At Y: ", std::to_string( y[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET
-                   << std::endl
-                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " )
-                   << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Amplitude: ", std::to_string( amp[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width X: ", std::to_string( width_x[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Width Y: ", std::to_string( width_y[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At X: ", std::to_string( x[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "At Y: ", std::to_string( y[i] ), unit, 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
+                   << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Gauss Exponent: ", std::to_string( exponent[i] ), "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
                    << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Type: ", s_type[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
                    << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Polarization: ", s_pol[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl
                    << "    " << b << EscapeSequence::GRAY << PHOENIX::CLIO::unifyLength( "Behavior: ", s_behavior[i], "", 25, 25, 25, " " ) << EscapeSequence::RESET << std::endl;
             } else {
-                os << b << "  Envelope " << i << ":" << std::endl
-                   << b << EscapeSequence::GRAY << "     Loaded from: " << load_path[i] << EscapeSequence::RESET << std::endl
-                   << b << EscapeSequence::GRAY << "     Scaling Amp: " << amp[i] << EscapeSequence::RESET << std::endl
-                   << b << EscapeSequence::GRAY << "     Behavior: " << s_behavior[i] << EscapeSequence::RESET << std::endl
-                   << b << EscapeSequence::GRAY << "     Polarization: " << s_pol[i] << EscapeSequence::RESET << std::endl;
+                os << b << "  Envelope " << i << ":" << std::endl << b << EscapeSequence::GRAY << "     Loaded from: " << load_path[i] << EscapeSequence::RESET << std::endl << b << EscapeSequence::GRAY << "     Scaling Amp: " << amp[i] << EscapeSequence::RESET << std::endl << b << EscapeSequence::GRAY << "     Behavior: " << s_behavior[i] << EscapeSequence::RESET << std::endl << b << EscapeSequence::GRAY << "     Polarization: " << s_pol[i] << EscapeSequence::RESET << std::endl;
             }
         }
     }
