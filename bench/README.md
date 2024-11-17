@@ -97,7 +97,7 @@ For each benchmark run, the main result file `run.json` holds all relevant resul
 }
 ```
 
-## Creating CSV-Files and Plotting
+## Creating CSV-Files
 A csv file can be produced from the benchmark runs for example with
 ```
 python3 bench.py -c noctua2_7763.json --dryrun --fields=grids,subgrids,mus/it,likwid_metrics,likwid_measurement,threads=64 --output grids_7763.csv
@@ -107,3 +107,6 @@ The meaning of the command line arguments is:
 * `--dryrun` or `-d`: doesn't build and run the benchmarks but just uses the data availbale in the directory structure
 * `--output` or `-o`: path of the csv output file
 * `--fields` or `-f`: specifies the fields to be included in the csv. Filters can be defined with `fieldname=value`
+
+## Plotting
+To recreate the plots shown in the paper, first decompress the data files in the `runs` directory and then run the Pyhton script `plots.py`.
