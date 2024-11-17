@@ -213,6 +213,17 @@ for ic in range(len(comb)):
         continue
     with open(os.path.join(d,"run.json"), 'r') as file:
         data = json.load(file)
+
+    try:
+        Ecpu=data["cpu_energy_J_perf"]
+        with open(os.path.join(d,"perf.out")) as f:
+            for l in f.read().splitlines():
+                if l.startswith("S0"):
+                    Ecpu=float(l.replace(",",".").split(";")[2])
+                    break
+        data["cpu_energy_J_perf"]=Ecpu
+    except:
+        pass
     add=True
     for f in args.fields.split(","):
         #check if is filter
