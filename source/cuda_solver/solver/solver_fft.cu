@@ -103,19 +103,15 @@ void PHOENIX::Solver::calculateFFT( Type::complex* device_ptr_in, Type::complex*
 #ifdef USE_CUDA
     // Do FFT using CUDAs FFT functions
     auto plan = getFFTPlan( system.p.N_c, system.p.N_r );
-    CHECK_CUDA_ERROR(
-        FFTSOLVER( plan, reinterpret_cast<fft_type*>( device_ptr_in ), reinterpret_cast<fft_type*>( device_ptr_out ), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ),
-        "FFT Exec" );
+    CHECK_CUDA_ERROR( FFTSOLVER( plan, reinterpret_cast<fft_type*>( device_ptr_in ), reinterpret_cast<fft_type*>( device_ptr_out ), dir == FFT::inverse ? CUFFT_INVERSE : CUFFT_FORWARD ), "FFT Exec" );
 #else
     // auto [plan_forward, plan_inverse] = getFFTPlan(system.p.N_c, system.p.N_r, device_ptr_in, device_ptr_out);
     #ifdef USE_32_BIT_PRECISION
-    auto plan = fftwf_plan_dft_2d( system.p.N_c, system.p.N_r, reinterpret_cast<fftwf_complex*>( device_ptr_in ), reinterpret_cast<fftwf_complex*>( device_ptr_out ),
-                                   dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE );
+    auto plan = fftwf_plan_dft_2d( system.p.N_c, system.p.N_r, reinterpret_cast<fftwf_complex*>( device_ptr_in ), reinterpret_cast<fftwf_complex*>( device_ptr_out ), dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE );
     fftwf_execute( plan );
     fftwf_destroy_plan( plan );
     #else
-    auto plan = fftw_plan_dft_2d( system.p.N_c, system.p.N_r, reinterpret_cast<fftw_complex*>( device_ptr_in ), reinterpret_cast<fftw_complex*>( device_ptr_out ),
-                                  dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE );
+    auto plan = fftw_plan_dft_2d( system.p.N_c, system.p.N_r, reinterpret_cast<fftw_complex*>( device_ptr_in ), reinterpret_cast<fftw_complex*>( device_ptr_out ), dir == FFT::inverse ? FFTW_BACKWARD : FFTW_FORWARD, FFTW_ESTIMATE );
     fftw_execute( plan );
     fftw_destroy_plan( plan );
     #endif

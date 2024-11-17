@@ -15,18 +15,18 @@ namespace PHOENIX {
 
 struct MatrixContainer {
     // Cache triggers
-    bool use_twin_mode, use_fft, use_stochastic;
+    bool use_twin_mode, use_fft, use_stochastic, use_reservoir;
 
     // Wavefunction and Reservoir Matrices.
     PHOENIX::CUDAMatrix<Type::complex> wavefunction_plus, wavefunction_minus, reservoir_plus, reservoir_minus;
-#ifdef BENCH        
+#ifdef BENCH
     PHOENIX::CUDAMatrix<Type::complex> wavefunction_iplus, wavefunction_iminus;
-#endif    
+#endif
     // Corresponding Buffer Matrices
     PHOENIX::CUDAMatrix<Type::complex> buffer_wavefunction_plus, buffer_wavefunction_minus, buffer_reservoir_plus, buffer_reservoir_minus;
-#ifdef BENCH        
+#ifdef BENCH
     PHOENIX::CUDAMatrix<Type::complex> buffer_wavefunction_iplus, buffer_wavefunction_iminus;
-#endif    
+#endif
     // Corresponding initial States. These are simple host vectors, not CUDAMatrices.
     PHOENIX::Type::host_vector<Type::complex> initial_state_plus, initial_state_minus, initial_reservoir_plus, initial_reservoir_minus;
 
@@ -62,14 +62,13 @@ struct MatrixContainer {
     // Empty Constructor
     MatrixContainer() = default;
 
-    // Construction Chain. The Host Matrix is always constructed (who cares about RAM right?) and the device matrix is constructed if the condition is met.
-    void constructAll( const int N_c, const int N_r, bool use_twin_mode, bool use_fft, bool use_stochastic, int k_max, const int n_pulses_plus, const int n_pumps_plus,
-                       const int n_potentials_plus, const int n_pulses_minus, const int n_pumps_minus, const int n_potentials_minus, const int subgrids_columns,
-                       const int subgrids_rows, const int halo_size ) {
+    // Construction Chain.
+    void constructAll( const int N_c, const int N_r, bool use_twin_mode, bool use_fft, bool use_stochastic, bool use_reservoir, int k_max, const int n_pulses_plus, const int n_pumps_plus, const int n_potentials_plus, const int n_pulses_minus, const int n_pumps_minus, const int n_potentials_minus, const int subgrids_columns, const int subgrids_rows, const int halo_size ) {
         // Cache triggers
         this->use_twin_mode = use_twin_mode;
         this->use_fft = use_fft;
         this->use_stochastic = use_stochastic;
+        this->use_reservoir = use_reservoir;
 
         // MARK: Plus Components
         // ======================================================================================================== //
@@ -78,17 +77,20 @@ struct MatrixContainer {
 
         // Wavefunction and Reservoir Matrices
         wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_plus" );
-#ifdef BENCH        
+#ifdef BENCH
         wavefunction_iplus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_iplus" );
-#endif      
-        reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_plus" );
+#endif
         buffer_wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_plus" );
-#ifdef BENCH        
+#ifdef BENCH
         buffer_wavefunction_iplus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_iplus" );
-#endif      
-        buffer_reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_plus" );
+#endif
+
         initial_state_plus = PHOENIX::Type::device_vector<Type::complex>( N_c * N_r );
-        initial_reservoir_plus = PHOENIX::Type::device_vector<Type::complex>( N_c * N_r );
+        if ( use_reservoir ) {
+            reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_plus" );
+            buffer_reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_plus" );
+            initial_reservoir_plus = PHOENIX::Type::device_vector<Type::complex>( N_c * N_r );
+        }
 
         // Pump, Pulse and Potential Matrices
         pump_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "pump_plus", n_pumps_plus );
@@ -96,7 +98,8 @@ struct MatrixContainer {
         potential_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "potential_plus", n_potentials_plus );
 
         k_wavefunction_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_wavefunction_plus_" + std::to_string( k_max ), k_max );
-        k_reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_reservoir_plus_" + std::to_string( k_max ), k_max );
+        if ( use_reservoir )
+            k_reservoir_plus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_reservoir_plus_" + std::to_string( k_max ), k_max );
 
         // FFT Matrices
         if ( use_fft ) {
@@ -117,6 +120,7 @@ struct MatrixContainer {
         }
 
         // RK Error Matrix. For now, use k_max > 4 as a construction condition.
+        // TODO: we removed RK45, so we dont need this any more.
         if ( k_max > 4 )
             rk_error.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "rk_error" );
 
@@ -141,14 +145,16 @@ struct MatrixContainer {
 
         // Wavefunction and Reservoir Matrices
         wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_minus" );
-#ifdef BENCH        
+#ifdef BENCH
         wavefunction_iminus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "wavefunction_iminus" );
-#endif        
-        reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_minus" );
+#endif
         buffer_wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_wavefunction_minus" );
-        buffer_reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_minus" );
         initial_state_minus = PHOENIX::Type::device_vector<Type::complex>( N_c * N_r );
-        initial_reservoir_minus = PHOENIX::Type::device_vector<Type::complex>( N_c * N_r );
+        if ( use_reservoir ) {
+            reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "reservoir_minus" );
+            buffer_reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "buffer_reservoir_minus" );
+            initial_reservoir_minus = PHOENIX::Type::device_vector<Type::complex>( N_c * N_r );
+        }
 
         // Pump, Pulse and Potential Matrices
         pump_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "pump_minus", n_pumps_minus );
@@ -157,7 +163,8 @@ struct MatrixContainer {
 
         // K Matrices
         k_wavefunction_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_wavefunction_minus_" + std::to_string( k_max ), k_max );
-        k_reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_reservoir_minus_" + std::to_string( k_max ), k_max );
+        if ( use_reservoir )
+            k_reservoir_minus.construct( N_r, N_c, subgrids_columns, subgrids_rows, halo_size, "k_reservoir_minus_" + std::to_string( k_max ), k_max );
 
         // FFT Matrices
         if ( use_fft ) {
@@ -170,19 +177,19 @@ struct MatrixContainer {
         // Wavefunction and Reservoir Matrices
         Type::complex* wavefunction_plus PHOENIX_ALIGNED( Type::complex ) = nullptr;
         Type::complex* wavefunction_minus PHOENIX_ALIGNED( Type::complex ) = nullptr;
-#ifdef BENCH        
+#ifdef BENCH
         Type::complex* wavefunction_iplus PHOENIX_ALIGNED( Type::complex ) = nullptr;
         Type::complex* wavefunction_iminus PHOENIX_ALIGNED( Type::complex ) = nullptr;
-#endif        
+#endif
         Type::complex* reservoir_plus PHOENIX_ALIGNED( Type::complex ) = nullptr;
         Type::complex* reservoir_minus PHOENIX_ALIGNED( Type::complex ) = nullptr;
         // Corresponding Buffer Matrices
         Type::complex* buffer_wavefunction_plus PHOENIX_ALIGNED( Type::complex ) = nullptr;
         Type::complex* buffer_wavefunction_minus PHOENIX_ALIGNED( Type::complex ) = nullptr;
-#ifdef BENCH        
+#ifdef BENCH
         Type::complex* buffer_wavefunction_iplus PHOENIX_ALIGNED( Type::complex ) = nullptr;
         Type::complex* buffer_wavefunction_iminus PHOENIX_ALIGNED( Type::complex ) = nullptr;
-#endif        
+#endif
         Type::complex* buffer_reservoir_plus PHOENIX_ALIGNED( Type::complex ) = nullptr;
         Type::complex* buffer_reservoir_minus PHOENIX_ALIGNED( Type::complex ) = nullptr;
 
@@ -234,14 +241,15 @@ struct MatrixContainer {
         // Wavefunction and Reservoir Matrices. Only the Plus components are initialized here. If the twin mode is enabled, the minus components are initialized in the next step.
         // The kernels can then check for nullptr and use the minus components if they are not nullptr.
         ptrs.wavefunction_plus = wavefunction_plus.getDevicePtr( subgrid );
-#ifdef BENCH        
+#ifdef BENCH
         ptrs.wavefunction_iplus = wavefunction_iplus.getDevicePtr( subgrid );
-#endif        
-        ptrs.reservoir_plus = reservoir_plus.getDevicePtr( subgrid );
+#endif
         ptrs.buffer_wavefunction_plus = buffer_wavefunction_plus.getDevicePtr( subgrid );
-#ifdef BENCH        
+#ifdef BENCH
         ptrs.buffer_wavefunction_iplus = buffer_wavefunction_iplus.getDevicePtr( subgrid );
-#endif        
+#endif
+
+        ptrs.reservoir_plus = reservoir_plus.getDevicePtr( subgrid );
         ptrs.buffer_reservoir_plus = buffer_reservoir_plus.getDevicePtr( subgrid );
 
         // Pump, Pulse and Potential Matrices
@@ -283,9 +291,9 @@ struct MatrixContainer {
 
         // Wavefunction and Reservoir Matrices
         ptrs.wavefunction_minus = wavefunction_minus.getDevicePtr( subgrid );
-#ifdef BENCH        
+#ifdef BENCH
         ptrs.wavefunction_iminus = wavefunction_iminus.getDevicePtr( subgrid );
-#endif        
+#endif
         ptrs.reservoir_minus = reservoir_minus.getDevicePtr( subgrid );
         ptrs.buffer_wavefunction_minus = buffer_wavefunction_minus.getDevicePtr( subgrid );
         ptrs.buffer_reservoir_minus = buffer_reservoir_minus.getDevicePtr( subgrid );

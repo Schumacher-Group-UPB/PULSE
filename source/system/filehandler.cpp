@@ -83,7 +83,7 @@ bool PHOENIX::FileHandler::loadMatrixFromFile( const std::string& filepath, Type
     while ( getline( filein, line ) ) {
         inputstring = std::istringstream( line );
         // If the line is empty or starts with "#", skip it.
-        if ( line.size() < 1 or line[0] == '#' )
+        if ( line.size() < 1 || line[0] == '#' )
             continue;
         if ( i < N )
             while ( inputstring >> re ) {
@@ -124,7 +124,7 @@ bool PHOENIX::FileHandler::loadMatrixFromFile( const std::string& filepath, Type
     Type::uint32 N = N_c * N_r;
     while ( getline( filein, line ) ) {
         // If the line is empty or starts with "#", skip it.
-        if ( line.size() < 1 or line[0] == '#' )
+        if ( line.size() < 1 || line[0] == '#' )
             continue;
         while ( inputstring >> val ) {
             buffer[i] = Type::real( val );
@@ -136,9 +136,7 @@ bool PHOENIX::FileHandler::loadMatrixFromFile( const std::string& filepath, Type
     return true;
 }
 
-void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
-                                           const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, std::ofstream& out,
-                                           const std::string& name ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, std::ofstream& out, const std::string& name ) {
     if ( !out.is_open() ) {
         std::cout << PHOENIX::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PHOENIX::CLIO::Control::Error ) << std::endl;
         return;
@@ -166,13 +164,10 @@ void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << PHOENIX::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.",
-                                         PHOENIX::CLIO::Control::Success )
-              << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.", PHOENIX::CLIO::Control::Success ) << std::endl;
 }
 
-void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
-                                           const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, const std::string& out ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, col_start, col_stop, row_start, row_stop, N_c, N_r, increment, header, file, out );
 }
@@ -180,14 +175,11 @@ void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, cons
     auto& file = getFile( out );
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, file, out );
 }
-void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out,
-                                           const std::string& name ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::complex* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out, const std::string& name ) {
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, out, name );
 }
 
-void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
-                                           const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, std::ofstream& out,
-                                           const std::string& name ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, std::ofstream& out, const std::string& name ) {
     if ( !out.is_open() ) {
         std::cout << PHOENIX::CLIO::prettyPrint( "File '" + name + "' is not open! Cannot output matrix to file!", PHOENIX::CLIO::Control::Error ) << std::endl;
         return;
@@ -207,12 +199,9 @@ void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::u
     out.flush();
     out.close();
 #pragma omp critical
-    std::cout << PHOENIX::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.",
-                                         PHOENIX::CLIO::Control::Success )
-              << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Output " + std::to_string( ( row_stop - row_start ) * ( col_stop - col_start ) / increment ) + " elements to '" + toPath( name ) + "'.", PHOENIX::CLIO::Control::Success ) << std::endl;
 }
-void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop,
-                                           const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, const std::string& out ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, Type::uint32 col_start, Type::uint32 col_stop, Type::uint32 row_start, Type::uint32 row_stop, const Type::uint32 N_c, const Type::uint32 N_r, Type::uint32 increment, const Header& header, const std::string& out ) {
     auto& file = getFile( out );
     outputMatrixToFile( buffer, col_start, col_stop, row_start, row_stop, N_c, N_r, increment, header, file, out );
 }
@@ -220,8 +209,7 @@ void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, const T
     auto& file = getFile( out );
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, file, out );
 }
-void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out,
-                                           const std::string& name ) {
+void PHOENIX::FileHandler::outputMatrixToFile( const Type::real* buffer, const Type::uint32 N_c, const Type::uint32 N_r, const Header& header, std::ofstream& out, const std::string& name ) {
     outputMatrixToFile( buffer, 0, N_c, 0, N_r, N_c, N_r, 1.0, header, out, name );
 }
 
@@ -238,7 +226,7 @@ std::vector<std::vector<PHOENIX::Type::real>> PHOENIX::FileHandler::loadListFrom
     }
     while ( getline( filein, line ) ) {
         // If the line is empty or starts with "#", skip it.
-        if ( line.size() < 1 or line[0] == '#' )
+        if ( line.size() < 1 || line[0] == '#' )
             continue;
         inputstring = std::istringstream( line );
         Type::uint32 col = 0;
@@ -250,8 +238,7 @@ std::vector<std::vector<PHOENIX::Type::real>> PHOENIX::FileHandler::loadListFrom
         }
     }
     filein.close();
-    std::cout << PHOENIX::CLIO::prettyPrint( "Loaded " + std::to_string( data.size() ) + " columns from '" + path + "' for purpose: '" + name + "'", PHOENIX::CLIO::Control::Success )
-              << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Loaded " + std::to_string( data.size() ) + " columns from '" + path + "' for purpose: '" + name + "'", PHOENIX::CLIO::Control::Success ) << std::endl;
     return data;
 }
 

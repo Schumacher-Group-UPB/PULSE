@@ -5,8 +5,7 @@
 namespace PHOENIX::Kernel::Halo {
 
 template <typename T>
-PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void full_grid_to_halo_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c,
-                                                                  Type::uint32 subgrid_N_r, Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void full_grid_to_halo_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r, Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
     GET_THREAD_INDEX( i, N_c * N_r );
 
     const Type::uint32 r = i / N_c;
@@ -25,8 +24,7 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void full_grid_to_halo_grid( int i, Typ
 }
 
 template <typename T>
-PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void halo_grid_to_full_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c,
-                                                                  Type::uint32 subgrid_N_r, Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void halo_grid_to_full_grid( int i, Type::uint32 N_c, Type::uint32 N_r, Type::uint32 subgrids_columns, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r, Type::uint32 halo_size, T* fullgrid, T** subgrids ) {
     GET_THREAD_INDEX( i, N_c * N_r );
 
     const Type::uint32 r = i / N_c;
@@ -45,15 +43,12 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void halo_grid_to_full_grid( int i, Typ
 }
 
 template <typename T>
-PHOENIX_DEVICE PHOENIX_INLINE void __synchronize_halo( Type::uint32 subgrid_to, Type::uint32 index_to, Type::uint32 subgrid_from, Type::uint32 index_from,
-                                                   T** current_subgridded_matrix ) {
+PHOENIX_DEVICE PHOENIX_INLINE void __synchronize_halo( Type::uint32 subgrid_to, Type::uint32 index_to, Type::uint32 subgrid_from, Type::uint32 index_from, T** current_subgridded_matrix ) {
     current_subgridded_matrix[subgrid_to][index_to] = current_subgridded_matrix[subgrid_from][index_from];
 }
 
 template <typename T>
-PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void synchronize_halos( int i, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r,
-                                                             Type::uint32 halo_size, Type::uint32 halo_num, bool periodic_boundary_x, bool periodic_boundary_y, int* subgrid_map,
-                                                             T** current_subgridded_matrix ) {
+PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void synchronize_halos( int i, Type::uint32 subgrids_columns, Type::uint32 subgrids_rows, Type::uint32 subgrid_N_c, Type::uint32 subgrid_N_r, Type::uint32 halo_size, Type::uint32 halo_num, bool periodic_boundary_x, bool periodic_boundary_y, int* subgrid_map, T** current_subgridded_matrix ) {
     GET_THREAD_INDEX( i, halo_num * subgrids_columns * subgrids_rows );
 
     const Type::uint32 sg = i / halo_num;        // subgrid index from 0 to subgrids_columns*subgrids_rows.
@@ -76,8 +71,7 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void synchronize_halos( int i, Type::ui
     } else {
         const Type::uint32 r_new = ( R + dr ) % subgrids_rows;
         const Type::uint32 c_new = ( C + dc ) % subgrids_columns;
-        __synchronize_halo( subgrid, tr * ( subgrid_N_c + 2 * halo_size ) + tc, r_new * subgrids_columns + c_new, fr * ( subgrid_N_c + 2 * halo_size ) + fc,
-                            current_subgridded_matrix );
+        __synchronize_halo( subgrid, tr * ( subgrid_N_c + 2 * halo_size ) + tc, r_new * subgrids_columns + c_new, fr * ( subgrid_N_c + 2 * halo_size ) + fc, current_subgridded_matrix );
     }
 }
 } // namespace PHOENIX::Kernel::Halo

@@ -9,17 +9,18 @@
 #include "misc/commandline_io.hpp"
 
 void PHOENIX::Solver::initializeMatricesFromSystem() {
-    std::cout << EscapeSequence::BOLD << "-------------------- Initializing Host and Device Matrices ------------------------" << EscapeSequence::RESET << std::endl;
+    std::cout << EscapeSequence::BOLD
+              << "-------------------- Initializing Host and Device Matrices "
+                 "------------------------"
+              << EscapeSequence::RESET << std::endl;
 
     // First, construct all required host matrices
     bool use_fft = system.fft_every < system.t_max or system.iterator == "ssfm";
-    bool use_stochastic = system.p.stochastic_amplitude > 0.0;
     // For now, both the plus and the minus components are the same. TODO: Change
     Type::uint32 pulse_size = system.pulse.groupSize();
     Type::uint32 pump_size = system.pump.groupSize();
     Type::uint32 potential_size = system.potential.groupSize();
-    matrix.constructAll( system.p.N_c, system.p.N_r, system.use_twin_mode, use_fft, use_stochastic, iterator[system.iterator].k_max, pulse_size, pump_size, potential_size,
-                         pulse_size, pump_size, potential_size, system.p.subgrids_columns, system.p.subgrids_rows, system.p.halo_size );
+    matrix.constructAll( system.p.N_c, system.p.N_r, system.use_twin_mode, use_fft, system.use_stochastic, system.use_reservoir, iterator[system.iterator].k_max, pulse_size, pump_size, potential_size, pulse_size, pump_size, potential_size, system.p.subgrids_columns, system.p.subgrids_rows, system.p.halo_size );
 
     // ==================================================
     // =................... Halo Map ...................=
@@ -35,10 +36,12 @@ void PHOENIX::Solver::initializeMatricesFromSystem() {
 
     // First, check whether we should adjust the starting states to match a mask. This will initialize the buffer.
     system.initial_state.calculate( system.filehandler, matrix.initial_state_plus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Plus, dim );
-    system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_plus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Plus, dim );
+    if ( system.use_reservoir )
+        system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_plus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Plus, dim );
     if ( system.use_twin_mode ) {
         system.initial_state.calculate( system.filehandler, matrix.initial_state_minus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim );
-        system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_minus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim );
+        if ( system.use_reservoir )
+            system.initial_reservoir.calculate( system.filehandler, matrix.initial_reservoir_minus.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim );
     }
 
     // Then, check whether we should initialize the system randomly. Add that random value to the initial state.
@@ -46,28 +49,30 @@ void PHOENIX::Solver::initializeMatricesFromSystem() {
         // Fill the buffer with random values
         std::mt19937 gen{ system.random_seed };
         std::uniform_real_distribution<Type::real> dist{ -system.random_system_amplitude, system.random_system_amplitude };
-        std::ranges::for_each( matrix.initial_state_plus.begin(), matrix.initial_state_plus.end(),
-                               [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
+        std::ranges::for_each( matrix.initial_state_plus.begin(), matrix.initial_state_plus.end(), [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
         // Also fill minus component if use_twin_mode is true
         if ( system.use_twin_mode )
-            std::ranges::for_each( matrix.initial_state_minus.begin(), matrix.initial_state_minus.end(),
-                                   [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
+            std::ranges::for_each( matrix.initial_state_minus.begin(), matrix.initial_state_minus.end(), [&dist, &gen]( Type::complex& z ) { z += Type::complex{ dist( gen ), dist( gen ) }; } );
     }
     // Copy the initial state to the device wavefunction, synchronize it to the device and synchronize the halos
     matrix.wavefunction_plus.setTo( matrix.initial_state_plus );
     matrix.wavefunction_plus.hostToDeviceSync();
     SYNCHRONIZE_HALOS( 0, matrix.wavefunction_plus.getSubgridDevicePtrs() );
-    matrix.reservoir_plus.setTo( matrix.initial_reservoir_plus );
-    matrix.reservoir_plus.hostToDeviceSync();
-    SYNCHRONIZE_HALOS( 0, matrix.reservoir_plus.getSubgridDevicePtrs() );
+    if ( system.use_reservoir ) {
+        matrix.reservoir_plus.setTo( matrix.initial_reservoir_plus );
+        matrix.reservoir_plus.hostToDeviceSync();
+        SYNCHRONIZE_HALOS( 0, matrix.reservoir_plus.getSubgridDevicePtrs() );
+    }
 
     if ( system.use_twin_mode ) {
         matrix.wavefunction_minus.setTo( matrix.initial_state_minus );
         matrix.wavefunction_minus.hostToDeviceSync();
         SYNCHRONIZE_HALOS( 0, matrix.wavefunction_minus.getSubgridDevicePtrs() );
-        matrix.reservoir_minus.setTo( matrix.initial_reservoir_minus );
-        matrix.reservoir_minus.hostToDeviceSync();
-        SYNCHRONIZE_HALOS( 0, matrix.reservoir_minus.getSubgridDevicePtrs() );
+        if ( system.use_reservoir ) {
+            matrix.reservoir_minus.setTo( matrix.initial_reservoir_minus );
+            matrix.reservoir_minus.hostToDeviceSync();
+            SYNCHRONIZE_HALOS( 0, matrix.reservoir_minus.getSubgridDevicePtrs() );
+        }
     }
 
     // ==================================================
@@ -84,9 +89,7 @@ void PHOENIX::Solver::initializeMatricesFromSystem() {
             SYNCHRONIZE_HALOS( 0, matrix.pump_minus.getSubgridDevicePtrs( pump ) );
         }
     }
-    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of pump groups: " + std::to_string( system.pump.groupSize() ),
-                                         PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
-              << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of pump groups: " + std::to_string( system.pump.groupSize() ), PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success ) << std::endl;
 
     // ==================================================
     // =............. Potential Envelopes ..............=
@@ -102,9 +105,7 @@ void PHOENIX::Solver::initializeMatricesFromSystem() {
             SYNCHRONIZE_HALOS( 0, matrix.potential_minus.getSubgridDevicePtrs( potential ) );
         }
     }
-    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of potential groups: " + std::to_string( system.potential.groupSize() ),
-                                         PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
-              << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of potential groups: " + std::to_string( system.potential.groupSize() ), PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success ) << std::endl;
 
     // ==================================================
     // =............... Pulse Envelopes ................=
@@ -120,16 +121,14 @@ void PHOENIX::Solver::initializeMatricesFromSystem() {
             SYNCHRONIZE_HALOS( 0, matrix.pulse_minus.getSubgridDevicePtrs( pulse ) );
         }
     }
-    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of pulse groups: " + std::to_string( system.pulse.groupSize() ),
-                                         PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
-              << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Succesfull, designated number of pulse groups: " + std::to_string( system.pulse.groupSize() ), PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success ) << std::endl;
 
     // ==================================================
     // =................. FFT Envelopes ................=
     // ==================================================
     Type::host_vector<Type::real> buffer( system.p.N_c * system.p.N_r, 0.0 );
     std::cout << PHOENIX::CLIO::prettyPrint( "Initializing FFT Envelopes...", PHOENIX::CLIO::Control::Info ) << std::endl;
-    if ( system.fft_mask.size() == 0 ) {
+    if ( !system.use_fft_mask ) {
         std::cout << PHOENIX::CLIO::prettyPrint( "No fft mask provided.", PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Warning ) << std::endl;
     } else {
         system.fft_mask.calculate( system.filehandler, buffer.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Plus, dim, 1.0 /* Default if no mask is applied */ );
@@ -138,12 +137,10 @@ void PHOENIX::Solver::initializeMatricesFromSystem() {
         auto [block_size, grid_size] = getLaunchParameters( system.p.N_c, system.p.N_r );
         CALL_FULL_KERNEL( PHOENIX::Kernel::fft_shift_2D<Type::real>, "FFT Shift Plus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_plus ), system.p.N_c, system.p.N_r );
         if ( system.use_twin_mode ) {
-            system.fft_mask.calculate( system.filehandler, buffer.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim,
-                                       1.0 /* Default if no mask is applied */ );
+            system.fft_mask.calculate( system.filehandler, buffer.data(), PHOENIX::Envelope::AllGroups, PHOENIX::Envelope::Polarization::Minus, dim, 1.0 /* Default if no mask is applied */ );
             matrix.fft_mask_minus = buffer;
             // Shift the filter
-            CALL_FULL_KERNEL( PHOENIX::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c,
-                              system.p.N_r );
+            CALL_FULL_KERNEL( PHOENIX::Kernel::fft_shift_2D<Type::real>, "FFT Shift Minus", grid_size, block_size, 0, GET_RAW_PTR( matrix.fft_mask_minus ), system.p.N_c, system.p.N_r );
         }
     }
 
@@ -195,7 +192,6 @@ void PHOENIX::Solver::initializeHaloMap() {
             }
         }
     }
-    std::cout << PHOENIX::CLIO::prettyPrint( "Designated number of halo cells: " + std::to_string( halo_map.size() / 6 ), PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success )
-              << std::endl;
+    std::cout << PHOENIX::CLIO::prettyPrint( "Designated number of halo cells: " + std::to_string( halo_map.size() / 6 ), PHOENIX::CLIO::Control::Secondary | PHOENIX::CLIO::Control::Success ) << std::endl;
     matrix.halo_map = halo_map;
 }

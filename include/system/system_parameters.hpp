@@ -96,7 +96,7 @@ class SystemParameters {
     Type::real imag_time_amplitude;
 
     // Flags for the different system branches. These will be set after the input is read.
-    bool use_reservoir, use_pulses, use_pumps, use_potentials, use_stochastic, use_twin_mode;
+    bool use_reservoir, use_pulses, use_pumps, use_potentials, use_stochastic, use_twin_mode, use_fft_mask;
 
     // Output of Variables
     std::vector<std::string> output_keys;

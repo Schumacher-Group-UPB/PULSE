@@ -14,8 +14,7 @@ PHOENIX_GLOBAL void PHOENIX::Kernel::initialize_random_number_generator( int i, 
 std::normal_distribution<PHOENIX::Type::real> _local_normal_distribution( 0.0, 1.0 );
 #endif
 
-PHOENIX_GLOBAL void PHOENIX::Kernel::generate_random_numbers( int i, Type::cuda_random_state* state, Type::complex* buffer, const Type::uint32 N, const Type::real real_amp,
-                                                        const Type::real imag_amp ) {
+PHOENIX_GLOBAL void PHOENIX::Kernel::generate_random_numbers( int i, Type::cuda_random_state* state, Type::complex* buffer, const Type::uint32 N, const Type::real real_amp, const Type::real imag_amp ) {
     GET_THREAD_INDEX( i, N );
 #ifdef USE_CPU
     // TODO: normal distribution for cpu random numbers

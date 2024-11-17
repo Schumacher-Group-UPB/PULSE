@@ -36,9 +36,9 @@
 #include "misc/sfml_helper.hpp"
 #include "solver/gpu_solver.hpp"
 #ifdef BENCH
-#ifdef LIKWID
-#include <likwid.h>
-#endif
+    #ifdef LIKWID
+        #include <likwid.h>
+    #endif
 #endif
 
 int main( int argc, char* argv[] ) {
@@ -61,34 +61,24 @@ int main( int argc, char* argv[] ) {
     PHOENIX::Type::real dt = system.p.dt;
     // Main Loop
 #ifdef BENCH
-#ifdef LIKWID
+    #ifdef LIKWID
     LIKWID_MARKER_INIT;
-    #pragma omp parallel
-    {
-      LIKWID_MARKER_START("iterator");
-    }
-#endif
-    double tstart=omp_get_wtime();
-    TimeThis(
-    while ( omp_get_wtime()-tstart<=BENCH_TIME ) {
-      solver.iterate();
-    }
-    , "Main-Loop" );
+        #pragma omp parallel
+    { LIKWID_MARKER_START( "iterator" ); }
+    #endif
+    double tstart = omp_get_wtime();
+    TimeThis( while ( omp_get_wtime() - tstart <= BENCH_TIME ) { solver.iterate(); }, "Main-Loop" );
     complete_duration = PHOENIX::TimeIt::totalRuntime();
     system.printCMD( complete_duration, system.iteration );
-#ifdef LIKWID
-    #pragma omp parallel
-    {
-      LIKWID_MARKER_STOP("iterator");
-    }
-#endif
+    #ifdef LIKWID
+        #pragma omp parallel
+    { LIKWID_MARKER_STOP( "iterator" ); }
+    #endif
 #else
     while ( system.p.t < system.t_max and running ) {
         TimeThis(
             // Iterate #output_every ps
-            auto start = system.p.t; while ( ( ( not system.disableRender and system.p.t < start + system.output_every ) or
-                                               ( system.disableRender and system.p.t < out_every_iterations * system.output_every ) ) and
-                                             solver.iterate() ) {
+            auto start = system.p.t; while ( ( ( not system.disableRender and system.p.t < start + system.output_every ) or ( system.disableRender and system.p.t < out_every_iterations * system.output_every ) ) and solver.iterate() ) {
                 // If we use live rendering, do not adjust dt
                 if ( not system.disableRender )
                     continue;
@@ -122,9 +112,9 @@ int main( int argc, char* argv[] ) {
     system.printSummary( PHOENIX::TimeIt::getTimes(), PHOENIX::TimeIt::getTimesTotal() );
     PHOENIX::TimeIt::toFile( system.filehandler.getFile( "times" ) );
 #ifdef BENCH
-#ifdef LIKWID
+    #ifdef LIKWID
     LIKWID_MARKER_CLOSE;
-#endif    
+    #endif
 #endif
 
     return 0;

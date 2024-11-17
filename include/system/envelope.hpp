@@ -86,8 +86,7 @@ class Envelope {
 
     static inline int AllGroups = -1;
 
-    void addSpacial( PHOENIX::Type::real amp, PHOENIX::Type::real width_x, PHOENIX::Type::real width_y, PHOENIX::Type::real x, PHOENIX::Type::real y, PHOENIX::Type::real exponent,
-                     const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m );
+    void addSpacial( PHOENIX::Type::real amp, PHOENIX::Type::real width_x, PHOENIX::Type::real width_y, PHOENIX::Type::real x, PHOENIX::Type::real y, PHOENIX::Type::real exponent, const std::string& s_type, const std::string& s_pol, const std::string& s_behavior, const std::string& s_m );
     void addSpacial( const std::string& path, PHOENIX::Type::real amp, const std::string& s_behaviour, const std::string& s_pol );
     void addTemporal( PHOENIX::Type::real t0, PHOENIX::Type::real sigma, PHOENIX::Type::real freq, const std::string& s_temp );
     void addTemporal( const std::string& path );
@@ -98,8 +97,7 @@ class Envelope {
     struct Dimensions {
         Type::uint32 N_c, N_r;
         PHOENIX::Type::real L_x, L_y, dx, dy;
-        Dimensions( Type::uint32 N_c, Type::uint32 N_r, PHOENIX::Type::real L_x, PHOENIX::Type::real L_y, PHOENIX::Type::real dx, PHOENIX::Type::real dy )
-            : N_c( N_c ), N_r( N_r ), L_x( L_x ), L_y( L_y ), dx( dx ), dy( dy ) {
+        Dimensions( Type::uint32 N_c, Type::uint32 N_r, PHOENIX::Type::real L_x, PHOENIX::Type::real L_y, PHOENIX::Type::real dx, PHOENIX::Type::real dy ) : N_c( N_c ), N_r( N_r ), L_x( L_x ), L_y( L_y ), dx( dx ), dy( dy ) {
         }
     };
 
@@ -119,9 +117,7 @@ class Envelope {
                 continue;
             temporal_time_points[c] = filehandler.loadListFromFile( load_path_temporal[c], "temporal" );
             if ( temporal_time_points[c].size() != 3 ) {
-                std::cout << PHOENIX::CLIO::prettyPrint( "Error: Temporal envelope must have 3 columns: time, real, imag. PHOENIX_ will most likely crash!",
-                                                     PHOENIX::CLIO::Control::FullWarning )
-                          << std::endl;
+                std::cout << PHOENIX::CLIO::prettyPrint( "Error: Temporal envelope must have 3 columns: time, real, imag. PHOENIX_ will most likely crash!", PHOENIX::CLIO::Control::FullWarning ) << std::endl;
             }
         }
         // Load Spatial Components
@@ -153,20 +149,14 @@ class Envelope {
 
 // Overload the bitwise OR (|) operator
 template <typename T>
-typename std::enable_if<std::is_enum<T>::value && ( std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value ||
-                                                    std::is_same<T, Envelope::EnvType>::value || std::is_same<T, Envelope::Temporal>::value ),
-                        T>::type
-operator|( T lhs, T rhs ) {
+typename std::enable_if<std::is_enum<T>::value && ( std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::EnvType>::value || std::is_same<T, Envelope::Temporal>::value ), T>::type operator|( T lhs, T rhs ) {
     using underlying_type = typename std::underlying_type<T>::type;
     return static_cast<T>( static_cast<underlying_type>( lhs ) | static_cast<underlying_type>( rhs ) );
 }
 
 // Overload the bitwise AND (&) operator. Return a boolean, because we dont need the '&' operator for enums
 template <typename T>
-typename std::enable_if<std::is_enum<T>::value && ( std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value ||
-                                                    std::is_same<T, Envelope::EnvType>::value || std::is_same<T, Envelope::Temporal>::value ),
-                        bool>::type
-operator&( T lhs, T rhs ) {
+typename std::enable_if<std::is_enum<T>::value && ( std::is_same<T, Envelope::Behavior>::value || std::is_same<T, Envelope::Polarization>::value || std::is_same<T, Envelope::EnvType>::value || std::is_same<T, Envelope::Temporal>::value ), bool>::type operator&( T lhs, T rhs ) {
     using underlying_type = typename std::underlying_type<T>::type;
     return std::has_single_bit<underlying_type>( static_cast<underlying_type>( lhs ) & static_cast<underlying_type>( rhs ) );
 }

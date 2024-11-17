@@ -74,6 +74,5 @@ void PHOENIX::Solver::cacheMatrices() {
     }
     std::string suffix = "_" + std::to_string( system.p.t );
     _local_history_output_counter = 1;
-    outputMatrices( system.history_matrix_start_x, system.history_matrix_end_x, system.history_matrix_start_y, system.history_matrix_end_y, system.history_matrix_output_increment,
-                    suffix, "timeoutput/" );
+    outputMatrices( system.history_matrix_start_x, system.history_matrix_end_x, system.history_matrix_start_y, system.history_matrix_end_y, system.history_matrix_output_increment, suffix, "timeoutput/" );
 }

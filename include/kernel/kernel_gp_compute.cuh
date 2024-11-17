@@ -43,9 +43,7 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 cur
         const Type::complex in_wf = io.in_wf_plus[i];
         const Type::complex in_wf_mi = io.in_wf_plus_i[i];
         const Type::real in_psi_norm = CUDA::abs2( in_wf );
-        Type::complex wf_plus =
-            m_eff_scaled * ( m2_over_dx2_p_dy2 * io.in_wf_plus_i[i] + ( io.in_wf_plus_i[i + subgrid_row_offset] + io.in_wf_plus_i[i - subgrid_row_offset] ) * one_over_dy2 +
-                             ( io.in_wf_plus_i[i + 1] + io.in_wf_plus_i[i - 1] ) * one_over_dx2 );
+        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * io.in_wf_plus_i[i] + ( io.in_wf_plus_i[i + subgrid_row_offset] + io.in_wf_plus_i[i - subgrid_row_offset] ) * one_over_dy2 + ( io.in_wf_plus_i[i + 1] + io.in_wf_plus_i[i - 1] ) * one_over_dx2 );
         wf_plus = wf_plus * one_over_h_bar_s;
         wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
         wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
@@ -61,8 +59,7 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 cur
 
         // Hamiltonian
 
-        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * in_wf + ( io.in_wf_plus[i + subgrid_row_offset] + io.in_wf_plus[i - subgrid_row_offset] ) * one_over_dy2 +
-                                                 ( io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1] ) * one_over_dx2 );
+        Type::complex wf_plus = m_eff_scaled * ( m2_over_dx2_p_dy2 * in_wf + ( io.in_wf_plus[i + subgrid_row_offset] + io.in_wf_plus[i - subgrid_row_offset] ) * one_over_dy2 + ( io.in_wf_plus[i + 1] + io.in_wf_plus[i - 1] ) * one_over_dx2 );
         // -i/hbar * H
         wf_plus = Type::complex( CUDA::imag( wf_plus ), -1.0f * CUDA::real( wf_plus ) ) * one_over_h_bar_s;
         wf_plus += one_over_h_bar_s * g_c * in_psi_norm * in_wf_mi;
@@ -124,14 +121,8 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 cur
         Type::complex vertical_plus = ( io.in_wf_plus[i + args.p.subgrid_row_offset] + io.in_wf_plus[i - args.p.subgrid_row_offset] ) * args.p.one_over_dy2;
         Type::complex horizontal_minus = ( io.in_wf_minus[i + 1] + io.in_wf_minus[i - 1] ) * args.p.one_over_dx2;
         Type::complex vertical_minus = ( io.in_wf_minus[i + args.p.subgrid_row_offset] + io.in_wf_minus[i - args.p.subgrid_row_offset] ) * args.p.one_over_dy2;
-        Type::complex hamilton_cross_plus = horizontal_minus - vertical_minus +
-                                            args.p.half_i / args.p.dx / args.p.dy *
-                                                ( io.in_wf_minus[i + args.p.subgrid_row_offset + 1] + io.in_wf_minus[i - args.p.subgrid_row_offset - 1] -
-                                                  io.in_wf_minus[i + args.p.subgrid_row_offset - 1] - io.in_wf_minus[i - args.p.subgrid_row_offset + 1] );
-        Type::complex hamilton_cross_minus = horizontal_plus - vertical_plus -
-                                             args.p.half_i / args.p.dx / args.p.dy *
-                                                 ( io.in_wf_plus[i + args.p.subgrid_row_offset + 1] + io.in_wf_plus[i - args.p.subgrid_row_offset - 1] -
-                                                   io.in_wf_plus[i + args.p.subgrid_row_offset - 1] - io.in_wf_plus[i - args.p.subgrid_row_offset + 1] );
+        Type::complex hamilton_cross_plus = horizontal_minus - vertical_minus + args.p.half_i / args.p.dx / args.p.dy * ( io.in_wf_minus[i + args.p.subgrid_row_offset + 1] + io.in_wf_minus[i - args.p.subgrid_row_offset - 1] - io.in_wf_minus[i + args.p.subgrid_row_offset - 1] - io.in_wf_minus[i - args.p.subgrid_row_offset + 1] );
+        Type::complex hamilton_cross_minus = horizontal_plus - vertical_plus - args.p.half_i / args.p.dx / args.p.dy * ( io.in_wf_plus[i + args.p.subgrid_row_offset + 1] + io.in_wf_plus[i - args.p.subgrid_row_offset - 1] - io.in_wf_plus[i + args.p.subgrid_row_offset - 1] - io.in_wf_plus[i - args.p.subgrid_row_offset + 1] );
         Type::complex hamilton_regular_plus = args.p.m2_over_dx2_p_dy2 * in_wf_plus + horizontal_plus + vertical_plus;
         Type::complex hamilton_regular_minus = args.p.m2_over_dx2_p_dy2 * in_wf_minus + horizontal_minus + vertical_minus;
 
@@ -418,8 +409,7 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar_independent( int i, Solv
         for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
             PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex pulse = args.dev_ptrs.pulse_plus[i + offset];
-            result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse *
-                      args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
+            result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
         }
         if ( args.p.stochastic_amplitude > 0.0 ) {
             const Type::complex in_rv = io.in_rv_plus[i];
@@ -435,8 +425,7 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar_independent( int i, Solv
         for ( int k = 0; k < args.pulse_pointers.n; k++ ) {
             PHOENIX::Type::uint32 offset = args.p.subgrid_N2_with_halo * k;
             const Type::complex pulse = args.dev_ptrs.pulse_minus[i + offset];
-            result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse *
-                      args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
+            result += args.p.minus_i_over_h_bar_s * args.time[1] * pulse * args.pulse_pointers.amp[k]; //CUDA::gaussian_complex_oscillator(t, args.pulse_pointers.t0[k], args.pulse_pointers.sigma[k], args.pulse_pointers.freq[k]);
         }
         if ( args.p.stochastic_amplitude > 0.0 ) {
             const Type::complex in_rv = io.in_rv_minus[i];

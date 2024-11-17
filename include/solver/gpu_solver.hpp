@@ -14,7 +14,7 @@
 
 namespace PHOENIX {
 
-/**
+/** 
  * @brief GPU Solver class providing the interface for the GPU solver.
  * Implements RK4, RK45, FFT calculations.
  *
@@ -45,10 +45,10 @@ class Solver {
     struct InputOutput {
         Type::complex* PHOENIX_RESTRICT in_wf_plus = nullptr;
         Type::complex* PHOENIX_RESTRICT in_wf_minus = nullptr;
-#ifdef BENCH        
+#ifdef BENCH
         Type::complex* PHOENIX_RESTRICT in_wf_plus_i = nullptr;
         Type::complex* PHOENIX_RESTRICT in_wf_minus_i = nullptr;
-#endif        
+#endif
         Type::complex* PHOENIX_RESTRICT in_rv_plus = nullptr;
         Type::complex* PHOENIX_RESTRICT in_rv_minus = nullptr;
         Type::complex* PHOENIX_RESTRICT out_wf_plus = nullptr;
@@ -88,17 +88,16 @@ class Solver {
         // Initialize all matrices
         initializeMatricesFromSystem();
         // Then output all matrices to file. If --output was not passed in argv, this method outputs everything.
-#ifndef BENCH 
+#ifndef BENCH
         outputInitialMatrices();
-#endif        
+#endif
     }
 
     void initializeMatricesFromSystem(); // Evaluates the envelopes and initializes the matrices
     void initializeHaloMap();            // Initializes the halo map
 
     // Output (Final) Host Matrices to files
-    void outputMatrices( const Type::uint32 start_x, const Type::uint32 end_x, const Type::uint32 start_y, const Type::uint32 end_y, const Type::uint32 increment,
-                         const std::string& suffix = "", const std::string& prefix = "" );
+    void outputMatrices( const Type::uint32 start_x, const Type::uint32 end_x, const Type::uint32 start_y, const Type::uint32 end_y, const Type::uint32 increment, const std::string& suffix = "", const std::string& prefix = "" );
     // Output Initial Host Matrices to files
     void outputInitialMatrices();
 
@@ -118,11 +117,7 @@ class Solver {
         int k_max;
         std::function<void()> iterate;
     };
-    std::map<std::string, iteratorFunction> iterator = { { "newton", { 1, std::bind( &Solver::iterateNewton, this ) } },
-                                                         { "rk3", { 3, std::bind( &Solver::iterateFixedTimestepRungeKutta3, this ) } },
-                                                         { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this ) } },
-                                                         { "rk45", { 7, std::bind( &Solver::iterateVariableTimestepRungeKutta, this ) } },
-                                                         { "ssfm", { 0, std::bind( &Solver::iterateSplitStepFourier, this ) } } };
+    std::map<std::string, iteratorFunction> iterator = { { "newton", { 1, std::bind( &Solver::iterateNewton, this ) } }, { "rk4", { 4, std::bind( &Solver::iterateFixedTimestepRungeKutta4, this ) } }, { "ssfm", { 0, std::bind( &Solver::iterateSplitStepFourier, this ) } } };
 
     // Main System function. Either gp_scalar or gp_tetm.
     // Both functions have signature void(int i, Type::uint32 current_halo, Solver::VKernelArguments time, Solver::KernelArguments args, Solver::InputOutput io)
