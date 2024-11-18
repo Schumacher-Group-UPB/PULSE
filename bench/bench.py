@@ -148,24 +148,34 @@ if not args.dryrun:
         #cpu
         Ecpu=0
         if "perf" in env:
-            with open(os.path.join(d,"perf.out")) as f:
-                for l in f.read().splitlines():
-                    if l.startswith("S0"):
-                        Ecpu=float(l.split(";")[2])
-                        break
+            try:
+                with open(os.path.join(d,"perf.out")) as f:
+                    for l in f.read().splitlines():
+                        if l.startswith("S0"):
+                            Ecpu=float(l.split(";")[2])
+                            break
+            except:
+                pass
         Ecpu2=0
         if "likwid" in env:
             if gv(data,comb[ic],"likwid_metrics")=="ENERGY":
-                with open(os.path.join(d,"likwid.json")) as f:
-                    likwid_data = json.load(f)
-                Ecpu2=likwid_data["ENERGY"]["ENERGY"]["Metric STAT"][lmap["ENERGY"][0]][lmap["ENERGY"][1]]
+                try:
+                    with open(os.path.join(d,"likwid.json")) as f:
+                        likwid_data = json.load(f)
+                    Ecpu2=likwid_data["ENERGY"]["ENERGY"]["Metric STAT"][lmap["ENERGY"][0]][lmap["ENERGY"][1]]
+                except:
+                    pass
        
         #gpu
         Egpu=0
         if "nvidia-smi" in env:
-            with open(os.path.join(d,"nvidia.csv")) as f:
-                for l in f.read().splitlines():
-                    Egpu+=float(l.split(",")[2].split(" ")[1])*0.1
+            try:
+                with open(os.path.join(d,"nvidia.csv")) as f:
+                    for l in f.read().splitlines():
+                        if not l.find("index,")>=0:
+                            Egpu+=float(l.split(",")[2].split(" ")[1])*0.1
+            except:
+                pass
                
         run["gpu_energy_J"]=Egpu
         run["cpu_energy_J_perf"]=Ecpu
@@ -199,24 +209,55 @@ res+="\n"
 
 for ic in range(len(comb)):
     d=os.path.join("runs",name,str(ic))
+    if not os.path.isfile(os.path.join(d,"run.json")):
+        continue
     with open(os.path.join(d,"run.json"), 'r') as file:
         data = json.load(file)
+
+    try:
+        Ecpu=data["cpu_energy_J_perf"]
+        with open(os.path.join(d,"perf.out")) as f:
+            for l in f.read().splitlines():
+                if l.startswith("S0"):
+                    Ecpu=float(l.replace(",",".").split(";")[2])
+                    break
+        data["cpu_energy_J_perf"]=Ecpu
+    except:
+        pass
     add=True
     for f in args.fields.split(","):
         #check if is filter
         if f.find("=")>=0:
             g=f.split("=")[0]
-            v=f.split("=")[1]
-            if str(data[g]).strip()!=str(v).strip():
-                add=False
+            if len(g.split("-"))==1:
+                v=f.split("=")[1]
+                if str(data[g]).strip()!=str(v).strip():
+                    add=False
+            else:
+                g0=g.split("-")[0]
+                g1=g.split("-")[1]
+                v=f.split("=")[1]
+                if str(data[g0][g1]).strip()!=str(v).strip():
+                    add=False
     #build line
     if add:
         for f in args.fields.split(","):
             if not f.find("=")>=0:
-                s=str(data[f])
-                if isinstance(data[f],list):
-                    s=",".join(str(x) for x in data[f])
-                res+=s+";"
+                try:
+                    if f.find("-")>=0:
+                        f1=f.split("-")[0]
+                        f2=f.split("-")[1]
+                        if isinstance(data[f1],list):
+                            s=str(data[f1][int(f2)])
+                        else:
+                            s=str(data[f1][f2])
+                        res+=s+";"
+                    else:
+                        s=str(data[f])
+                        res+=s+";"
+                except:
+                    res+=";"
+                    pass
         res+="\n"
 
 with open(args.output, 'w') as f:

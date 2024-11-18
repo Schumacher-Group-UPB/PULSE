@@ -1,0 +1,247 @@
+Architecture:                         x86_64
+CPU op-mode(s):                       32-bit, 64-bit
+Address sizes:                        48 bits physical, 48 bits virtual
+Byte Order:                           Little Endian
+CPU(s):                               16
+On-line CPU(s) list:                  0-15
+Vendor ID:                            AuthenticAMD
+Model name:                           AMD Ryzen 7 5800X3D 8-Core Processor
+CPU family:                           25
+Model:                                33
+Thread(s) per core:                   2
+Core(s) per socket:                   8
+Socket(s):                            1
+Stepping:                             2
+Frequency boost:                      enabled
+CPU(s) scaling MHz:                   54%
+CPU max MHz:                          4550,0000
+CPU min MHz:                          550,0000
+BogoMIPS:                             6786,98
+Flags:                                fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 invpcid cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irperf xsaveerptr rdpru wbnoinvd arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif v_spec_ctrl umip pku ospke vaes vpclmulqdq rdpid overflow_recov succor smca debug_swap
+Virtualization:                       AMD-V
+L1d cache:                            256 KiB (8 instances)
+L1i cache:                            256 KiB (8 instances)
+L2 cache:                             4 MiB (8 instances)
+L3 cache:                             96 MiB (1 instance)
+NUMA node(s):                         1
+NUMA node0 CPU(s):                    0-15
+Vulnerability Gather data sampling:   Not affected
+Vulnerability Itlb multihit:          Not affected
+Vulnerability L1tf:                   Not affected
+Vulnerability Mds:                    Not affected
+Vulnerability Meltdown:               Not affected
+Vulnerability Mmio stale data:        Not affected
+Vulnerability Reg file data sampling: Not affected
+Vulnerability Retbleed:               Not affected
+Vulnerability Spec rstack overflow:   Mitigation; Safe RET
+Vulnerability Spec store bypass:      Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:             Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:             Mitigation; Retpolines; IBPB conditional; IBRS_FW; STIBP always-on; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected
+Vulnerability Srbds:                  Not affected
+Vulnerability Tsx async abort:        Not affected
+likwid-bench -- Version 5.3.0
+Warning: Sanitizing vector length to a multiple of the loop stride 16 and thread count 16 from 2000000 elements (16000000 bytes) to 1999872 elements (15998976 bytes)
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 1999872/15998976 Offset 0 Alignment 512
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: triad_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 16 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 124992 Offset 0
+Group: 0 Thread 1 Global Thread 1 running on hwthread 8 - Vector length 124992 Offset 124992
+Group: 0 Thread 2 Global Thread 2 running on hwthread 1 - Vector length 124992 Offset 249984
+Group: 0 Thread 3 Global Thread 3 running on hwthread 9 - Vector length 124992 Offset 374976
+Group: 0 Thread 4 Global Thread 4 running on hwthread 2 - Vector length 124992 Offset 499968
+Group: 0 Thread 5 Global Thread 5 running on hwthread 10 - Vector length 124992 Offset 624960
+Group: 0 Thread 6 Global Thread 6 running on hwthread 3 - Vector length 124992 Offset 749952
+Group: 0 Thread 7 Global Thread 7 running on hwthread 11 - Vector length 124992 Offset 874944
+Group: 0 Thread 8 Global Thread 8 running on hwthread 4 - Vector length 124992 Offset 999936
+Group: 0 Thread 10 Global Thread 10 running on hwthread 5 - Vector length 124992 Offset 1249920
+Group: 0 Thread 11 Global Thread 11 running on hwthread 13 - Vector length 124992 Offset 1374912
+Group: 0 Thread 12 Global Thread 12 running on hwthread 6 - Vector length 124992 Offset 1499904
+Group: 0 Thread 13 Global Thread 13 running on hwthread 14 - Vector length 124992 Offset 1624896
+Group: 0 Thread 14 Global Thread 14 running on hwthread 7 - Vector length 124992 Offset 1749888
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 124992 Offset 1874880
+Group: 0 Thread 9 Global Thread 9 running on hwthread 12 - Vector length 124992 Offset 1124928
+--------------------------------------------------------------------------------
+Cycles:			12252818238
+CPU Clock:		3393543211
+Cycle Clock:		3393543211
+Time:			3.610627e+00 sec
+Iterations:		524288
+Iterations per thread:	32768
+Inner loop executions:	7812
+Size (Byte):		63995904
+Size per thread:	3999744
+Number of Flops:	131063611392
+MFlops/s:		36299.41
+Data volume (Byte):	2097017782272
+MByte/s:		580790.50
+Cycles per update:	0.186975
+Cycles per cacheline:	1.495801
+Loads per update:	3
+Stores per update:	1
+Load bytes per element:	24
+Store bytes per elem.:	8
+Load/store ratio:	3.00
+Instructions:		77819019280
+UOPs:			106489184256
+--------------------------------------------------------------------------------
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 200000000/1600000000 Offset 0 Alignment 512
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: triad_mem_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 16 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 12500000 Offset 0
+Group: 0 Thread 1 Global Thread 1 running on hwthread 8 - Vector length 12500000 Offset 12500000
+Group: 0 Thread 14 Global Thread 14 running on hwthread 7 - Vector length 12500000 Offset 175000000
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 12500000 Offset 187500000
+Group: 0 Thread 2 Global Thread 2 running on hwthread 1 - Vector length 12500000 Offset 25000000
+Group: 0 Thread 3 Global Thread 3 running on hwthread 9 - Vector length 12500000 Offset 37500000
+Group: 0 Thread 4 Global Thread 4 running on hwthread 2 - Vector length 12500000 Offset 50000000
+Group: 0 Thread 5 Global Thread 5 running on hwthread 10 - Vector length 12500000 Offset 62500000
+Group: 0 Thread 6 Global Thread 6 running on hwthread 3 - Vector length 12500000 Offset 75000000
+Group: 0 Thread 7 Global Thread 7 running on hwthread 11 - Vector length 12500000 Offset 87500000
+Group: 0 Thread 8 Global Thread 8 running on hwthread 4 - Vector length 12500000 Offset 100000000
+Group: 0 Thread 9 Global Thread 9 running on hwthread 12 - Vector length 12500000 Offset 112500000
+Group: 0 Thread 10 Global Thread 10 running on hwthread 5 - Vector length 12500000 Offset 125000000
+Group: 0 Thread 11 Global Thread 11 running on hwthread 13 - Vector length 12500000 Offset 137500000
+Group: 0 Thread 12 Global Thread 12 running on hwthread 6 - Vector length 12500000 Offset 150000000
+Group: 0 Thread 13 Global Thread 13 running on hwthread 14 - Vector length 12500000 Offset 162500000
+--------------------------------------------------------------------------------
+Cycles:			89100876442
+CPU Clock:		3393589907
+Cycle Clock:		3393589907
+Time:			2.625564e+01 sec
+Iterations:		2048
+Iterations per thread:	128
+Inner loop executions:	1562500
+Size (Byte):		6400000000
+Size per thread:	400000000
+Number of Flops:	51200000000
+MFlops/s:		1950.06
+Data volume (Byte):	819200000000
+MByte/s:		31200.91
+Cycles per update:	3.480503
+Cycles per cacheline:	27.844024
+Loads per update:	3
+Stores per update:	1
+Load bytes per element:	24
+Store bytes per elem.:	8
+Load/store ratio:	3.00
+Instructions:		35200000016
+UOPs:			44800000000
+--------------------------------------------------------------------------------
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 8000000/64000000 Offset 0 Alignment 512
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: peakflops_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 16 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 500000 Offset 0
+Group: 0 Thread 1 Global Thread 1 running on hwthread 8 - Vector length 500000 Offset 500000
+Group: 0 Thread 2 Global Thread 2 running on hwthread 1 - Vector length 500000 Offset 1000000
+Group: 0 Thread 3 Global Thread 3 running on hwthread 9 - Vector length 500000 Offset 1500000
+Group: 0 Thread 4 Global Thread 4 running on hwthread 2 - Vector length 500000 Offset 2000000
+Group: 0 Thread 5 Global Thread 5 running on hwthread 10 - Vector length 500000 Offset 2500000
+Group: 0 Thread 6 Global Thread 6 running on hwthread 3 - Vector length 500000 Offset 3000000
+Group: 0 Thread 7 Global Thread 7 running on hwthread 11 - Vector length 500000 Offset 3500000
+Group: 0 Thread 8 Global Thread 8 running on hwthread 4 - Vector length 500000 Offset 4000000
+Group: 0 Thread 9 Global Thread 9 running on hwthread 12 - Vector length 500000 Offset 4500000
+Group: 0 Thread 10 Global Thread 10 running on hwthread 5 - Vector length 500000 Offset 5000000
+Group: 0 Thread 11 Global Thread 11 running on hwthread 13 - Vector length 500000 Offset 5500000
+Group: 0 Thread 12 Global Thread 12 running on hwthread 6 - Vector length 500000 Offset 6000000
+Group: 0 Thread 13 Global Thread 13 running on hwthread 14 - Vector length 500000 Offset 6500000
+Group: 0 Thread 14 Global Thread 14 running on hwthread 7 - Vector length 500000 Offset 7000000
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 500000 Offset 7500000
+--------------------------------------------------------------------------------
+Cycles:			12241568012
+CPU Clock:		3393469493
+Cycle Clock:		3393469493
+Time:			3.607390e+00 sec
+Iterations:		131072
+Iterations per thread:	8192
+Inner loop executions:	125000
+Size (Byte):		64000000
+Size per thread:	4000000
+Number of Flops:	1966080000000
+MFlops/s:		545014.54
+Data volume (Byte):	524288000000
+MByte/s:		145337.21
+Cycles per update:	0.186792
+Cycles per cacheline:	1.494332
+Loads per update:	1
+Stores per update:	0
+Load bytes per element:	8
+Store bytes per elem.:	0
+Instructions:		311296000032
+UOPs:			294912000000
+--------------------------------------------------------------------------------
+Allocate: Process running on hwthread 0 (Domain S0) - Vector length 16000000/64000000 Offset 0 Alignment 1024
+Initialization: Each thread in domain initializes its own stream chunks
+--------------------------------------------------------------------------------
+LIKWID MICRO BENCHMARK
+Test: peakflops_sp_avx_fma
+--------------------------------------------------------------------------------
+Using 1 work groups
+Using 16 threads
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+Group: 0 Thread 0 Global Thread 0 running on hwthread 0 - Vector length 1000000 Offset 0
+Group: 0 Thread 1 Global Thread 1 running on hwthread 8 - Vector length 1000000 Offset 1000000
+Group: 0 Thread 2 Global Thread 2 running on hwthread 1 - Vector length 1000000 Offset 2000000
+Group: 0 Thread 3 Global Thread 3 running on hwthread 9 - Vector length 1000000 Offset 3000000
+Group: 0 Thread 4 Global Thread 4 running on hwthread 2 - Vector length 1000000 Offset 4000000
+Group: 0 Thread 5 Global Thread 5 running on hwthread 10 - Vector length 1000000 Offset 5000000
+Group: 0 Thread 6 Global Thread 6 running on hwthread 3 - Vector length 1000000 Offset 6000000
+Group: 0 Thread 7 Global Thread 7 running on hwthread 11 - Vector length 1000000 Offset 7000000
+Group: 0 Thread 8 Global Thread 8 running on hwthread 4 - Vector length 1000000 Offset 8000000
+Group: 0 Thread 9 Global Thread 9 running on hwthread 12 - Vector length 1000000 Offset 9000000
+Group: 0 Thread 10 Global Thread 10 running on hwthread 5 - Vector length 1000000 Offset 10000000
+Group: 0 Thread 11 Global Thread 11 running on hwthread 13 - Vector length 1000000 Offset 11000000
+Group: 0 Thread 12 Global Thread 12 running on hwthread 6 - Vector length 1000000 Offset 12000000
+Group: 0 Thread 13 Global Thread 13 running on hwthread 14 - Vector length 1000000 Offset 13000000
+Group: 0 Thread 14 Global Thread 14 running on hwthread 7 - Vector length 1000000 Offset 14000000
+Group: 0 Thread 15 Global Thread 15 running on hwthread 15 - Vector length 1000000 Offset 15000000
+--------------------------------------------------------------------------------
+Cycles:			12321169934
+CPU Clock:		3393588110
+Cycle Clock:		3393588110
+Time:			3.630721e+00 sec
+Iterations:		131072
+Iterations per thread:	8192
+Inner loop executions:	125000
+Size (Byte):		64000000
+Size per thread:	4000000
+Number of Flops:	3932160000000
+MFlops/s:		1083024.70
+Data volume (Byte):	524288000000
+MByte/s:		144403.29
+Cycles per update:	0.094003
+Cycles per cacheline:	1.504049
+Loads per update:	1
+Stores per update:	0
+Load bytes per element:	4
+Store bytes per elem.:	0
+Instructions:		311296000032
+UOPs:			294912000000
+--------------------------------------------------------------------------------
