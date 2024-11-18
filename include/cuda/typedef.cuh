@@ -156,6 +156,15 @@ PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real abs2( const Type::real x ) 
     return x * x;
 }
 
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::complex conjugate( const Type::complex z ) {
+    return Type::complex( real( z ), -imag( z ) );
+}
+
+// Calculates -i*z
+PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::complex mi_conjugate( const Type::complex z ) {
+    return Type::complex( imag( z ), -real( z ) );
+}
+
 PHOENIX_HOST_DEVICE static PHOENIX_INLINE Type::real arg( const Type::complex z ) {
 #ifdef USE_CPU
     return std::arg( z );
