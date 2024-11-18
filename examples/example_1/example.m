@@ -44,15 +44,13 @@ omega = -5.68828730684262;
 E0 = 5.6856E-3;
 
 %-----------------------------------call-pulse-------------------------------------------%
-str1 = 'phoenix_64.exe ';  
-%str1 = 'main_fp64.exe ';                                                                                               %call PULSE main.exe
-str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary zero zero '];                  %define the real-space grid
-str3 = ['--tmax ',num2str(tmax),' --tstep ',num2str(dt),' --outEvery 1 --fftEvery 1000 '];                             %time discretization
-%str4 = ['--pulse ',num2str(E0),' add 1E12 1E12 0 0 plus 10 0 gauss+noDivide osc 0 ',num2str(omega),' 1E12 '];          %define resonant pump
-str4 = ['--pulse ',num2str(E0),' add 1E12 1E12 0 0 plus 10 0 gauss+noDivide time iexp 0 1E12 ',num2str(omega),' '];          %define resonant pump
+str1 = 'phoenix_64.exe ';                                                                                                  %call PULSE main.exe
+str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary zero zero '];                      %define the real-space grid
+str3 = ['--tmax ',num2str(tmax),' --tstep ',num2str(dt),' --outEvery 1 --fftEvery 1000 '];                                 %time discretization
+str4 = ['--pulse ',num2str(E0),' add 1E12 1E12 0 0 plus 10 0 gauss+noDivide time iexp 0 1E12 ',num2str(omega),' '];        %define resonant pump
 str5 = '--potential load data/load/potential_plus.txt 1 add plus --wavefunction load data/load/wavefunction_plus.txt 1 add plus ';              %load initial condition and potential
-str6 = ['--gammaC ',num2str(gammaC),' --gc ',num2str(gc),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' '];                    %set GP-Parameters
-str7 = '--path data/results/';                                                                                                                %set output directory
+str6 = ['--gammaC ',num2str(gammaC),' --gc ',num2str(gc),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' '];                            %set GP-Parameters
+str7 = '--path data/results/';                                                                                                                  %set output directory
 
 inputstr = [str1,str2,str3,str4,str5,str6,str7];
 [~,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
@@ -128,13 +126,13 @@ omega = -5.68178730684262-X*1e-2;
 E0 = 5.6856E-3;
 %-----------------------------------call-pulse-------------------------------------------%
 
-str1 = 'main_fp64.exe ';                                                                                                 
-str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary zero zero '];   
-str3 = ['--tmax ',num2str(tmax),' --tstep ',num2str(dt),' --outEvery 1 --fftEvery 1000 '];                          
-str4 = ['--pulse ',num2str(E0),' add 1E12 1E12 0 0 plus 10 0 gauss+noDivide osc 0 ',num2str(omega),' 1E12 '];      
-str5 = '--potential load data/load/potential_plus.txt 1 add plus --wavefunction load data/load/wavefunction_plus.txt 1 add plus ';                                                                           
-str6 = ['--gammaC ',num2str(gammaC),' --gc ',num2str(gc),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' '];                              
-str7 = '--path data/results/';                                                                                        
+str1 = 'phoenix_64.exe ';                                                                                                  %call PULSE main.exe
+str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary zero zero '];                      %define the real-space grid
+str3 = ['--tmax ',num2str(tmax),' --tstep ',num2str(dt),' --outEvery 1 --fftEvery 1000 '];                                 %time discretization
+str4 = ['--pulse ',num2str(E0),' add 1E12 1E12 0 0 plus 10 0 gauss+noDivide time iexp 0 1E12 ',num2str(omega),' '];        %define resonant pump
+str5 = '--potential load data/load/potential_plus.txt 1 add plus --wavefunction load data/load/wavefunction_plus.txt 1 add plus ';              %load initial condition and potential
+str6 = ['--gammaC ',num2str(gammaC),' --gc ',num2str(gc),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' '];                            %set GP-Parameters
+str7 = '--path data/results/';                                                                                                                  %set output directory                                                                                     
 
 inputstr = [str1,str2,str3,str4,str5,str6,str7];
 [~,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
