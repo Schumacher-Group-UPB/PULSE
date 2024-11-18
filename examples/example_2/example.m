@@ -104,12 +104,12 @@ for lambda=lambda_min:lambda_max
 
     writematrix(pump,'data/load/pump_plus.txt','Delimiter',' ','WriteMode','append')
 
-    %-----------------------------------call-pulse-------------------------------------------%
+    %-----------------------------------call-PHOENIX-------------------------------------------%
     str1 = 'phoenix_gpu_fp32.exe ';                                                                                                 
     str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary periodic periodic '];
     str3 = ['--tmax ',num2str(tmax),' --tstep ',num2str(dt),' --outEvery 1 --fftMask 1.0 add 0.2 0.2 0 0 both 6 none gauss+noDivide+local --fftEvery ',num2str(dt),' '];  
     str4 = ['--historyMatrix 0 ',num2str(N),' 0 ',num2str(N),' 1 --output wavefunction --outEvery ',num2str(FFT_sample_rate),' ']; 
-    str5 = '--potential load data/load/potential_plus.txt 1 add both --initialState load data/load/wavefunction_plus.txt 1 add both --pump load data/load/pump_plus.txt 1 add both ';                                                                            %load initial condition and potential
+    str5 = '--potential load data/load/potential_plus.txt 1 add both --initialState load data/load/wavefunction_plus.txt 1 add both --pump load data/load/pump_plus.txt 1 add both ';                                                                            
     str6 = ['--gammaC ',num2str(gammaC),' --gammaR ',num2str(gammaR),' --gc ',num2str(gc),' --gr ',num2str(gr),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' --R ',num2str(R),' '];                            
     str7 = '--path data/results/'; 
     inputstr = [str1,str2,str3,str4,str5,str6,str7];
@@ -172,6 +172,10 @@ set(gca,'linewidth',1);set(gca,'fontsize',15);pbaspect([1 1 1]);
 set(gcf,'position',get(0, 'Screensize'));box on;set(gca,'linewidth',2);
 set(gca,'XLim',[0 max(pump_intensitys_scaned)]);set(gca,'fontsize',24);
 set(gcf,'position',[x0,y0,width,height]);
+
+%----------------------------------Optimizer----------------------------------%
+options = optimset('Display','iter','PlotFcns',@optimplotfval,'TolX',1E-1);
+EP_loc = fminbnd(@costfunction,0,20,options);
 
 %----------------------------------String handeling functions----------------------------------%
 function cleanedString = removeAnsiCodes(inputString)
@@ -237,22 +241,77 @@ B = repmat( [ sr; sc ].', min(m,n),1 );
 T = spdiags( B,d,m,n );
 end
 
-%{
-fileID = fopen('data/load/potential_plus.txt', 'a'); % Open the file in append mode
-fileID2 = fopen('data/load/wavefunction_plus.txt', 'a'); % Open the file in append mode
-fileID3 = fopen('data/load/reservoir_plus.txt', 'a'); % Open the file in append mode
+function cost = costfunction(X)
+N=200;                  %grid size
+dxy=0.1;                %spatial discretization step
+L=N*dxy;                %real space grid length
+x=sparse(dxy*(-N/2+1:N/2)).';   %x dimension discretization
+y=sparse(dxy*(-N/2+1:N/2)).';   %y dimension discretization
 
-% Write the data with space delimiter
-for row = 1:size(potential, 1)
-    fprintf(fileID, '%.4f ', potential(row, :)); % Use %g for formatting
-    fprintf(fileID, '\n'); % New line after each row
-    fprintf(fileID2, '%.4f ', wavefunction(row, :)); % Use %g for formatting
-    fprintf(fileID2, '\n'); % New line after each row
-    fprintf(fileID3, '%.4f ', reservoir(row, :)); % Use %g for formatting
-    fprintf(fileID3, '\n'); % New line after each row
+dt=0.02;                %time-evolution step
+tmax=2000;              %time-evolution range
+FFT_sample_rate=1;      %sample rate for wave-profile (affects the frequency range covered during the FFT)
+sample_t0=1500;          %off-set for FFT-sampling to ensure convergence of the system before the sampling
+
+%-------------------------------GP - parameter definition-------------------------------%
+mc = 0.5*5.864E-4;      %effective polariton mass (0.5E-4*me)
+gammaC = 0.16;          %polariton loss rate
+gammaR = 1.5*gammaC;    %reservoir loss rate
+R = 0.01;               %condensation rate
+gc = 6E-6;              %polariton-polariton interaction strength
+gr = 2*gc;              %polariton-reservoir interaction strength
+
+dis=4;                  %potential well separation
+P1 =12;                 %pump intensity 1
+p1w=1.0;                %pump width 1
+p2w=p1w;                %pump width 2
+
+pump = writepump(X,N,L,dxy,x,y,dis,P1,p1w,p2w);
+delete('output\timeoutput\*.txt');
+%-----------------------------------call-PHOENIX-------------------------------------------%
+str1 = 'phoenix_gpu_fp32.exe ';                                                                                                 
+str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary periodic periodic '];
+str3 = ['--tmax ',num2str(tmax),' --tstep ',num2str(dt),' --outEvery 1 --fftMask 1.0 add 0.2 0.2 0 0 both 6 none gauss+noDivide+local --fftEvery ',num2str(dt),' '];  
+str4 = ['--historyMatrix 0 ',num2str(N),' 0 ',num2str(N),' 1 --output wavefunction --outEvery ',num2str(FFT_sample_rate),' ']; 
+str5 = '--potential load data/load/potential_plus.txt 1 add both --initialState load data/load/wavefunction_plus.txt 1 add both --pump load data/load/pump_plus.txt 1 add both ';                                                                            
+str6 = ['--gammaC ',num2str(gammaC),' --gammaR ',num2str(gammaR),' --gc ',num2str(gc),' --gr ',num2str(gr),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' --R ',num2str(R),' '];                            
+str7 = '--path data/results/'; 
+inputstr = [str1,str2,str3,str4,str5,str6,str7];
+[~,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
+
+projectdir = 'output\timeoutput\';
+dinfo = dir( fullfile(projectdir, '*.txt'));
+nfiles = length(dinfo);
+filenames = fullfile(projectdir, {dinfo.name});
+y1sum=zeros(N,N);
+for K = 0 : nfiles-1-sample_t0
+    thisfile = ['output\timeoutput\wavefunction_plus_',num2str(K+sample_t0),'.txt'];
+    thisdata = readmatrix(thisfile);
+    Y1 = abs(thisdata(1:N,:)+1i*thisdata(N+1:2*N,:)).^2;
+    y1sum = y1sum + Y1;
 end
-
-fclose(fileID); % Close the file
-fclose(fileID2); % Close the file
-fclose(fileID3); % Close the file
-%}
+psi = readmatrix('output\wavefunction_plus.txt');
+psi=psi(1:N,1:N)+1i*psi(N+1:2*N,1:N);
+Y1 = abs(reshape(psi,N,N)).^2;
+figure(1);
+ax(1)=subplot(1,2,1);surf(x,y,Y1);shading interp;view(2);colorbar;colormap(ax(1),'jet');
+pbaspect([1 1 1]);axis tight;xlabel('x (µm)');ylabel('y (µm)');shading interp;set(gca, 'Fontsize',20);
+ax(2)=subplot(1,2,2);surf(x,y,angle(reshape(psi,N,N)));colorbar;shading interp;view(2);colormap(ax(2),'jet');
+pbaspect([1 1 1]);axis tight;set(gca,'YTickLabel',[]);xlabel('x (µm)');shading interp;set(gca, 'Fontsize',20);
+cost = sum(sum(y1sum));
+end
+%----------------------------------Pump-Adaptation Function for Optimizer----------------------------------%
+function P = writepump(lambda,N,L,dxy,x,y,dis,P1,p1w,p2w)
+header = {'#' 'SIZE' num2str(N) num2str(N) num2str(L) num2str(L) num2str(dxy) num2str(dxy)};
+writecell(header,'loads/pump_plus.txt','Delimiter',' ');
+P=zeros(N,N);
+P2 =lambda;
+for i=1:N
+    for j=1:N
+        P(i,j) = P1*exp(-sqrt(x(i)^2+(y(j)+dis/2)^2)/p1w^2)+P2*exp(-sqrt(x(i)^2+(y(j)-dis/2)^2)/p2w^2);
+    end
+end
+pump(1:N,1:N) = real(P);
+pump(N+1:2*N,1:N) = imag(P);
+writematrix(pump,'loads/pump_plus.txt','Delimiter',' ','WriteMode','append');
+end
