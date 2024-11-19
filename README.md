@@ -14,75 +14,9 @@ If you are on Windows it is required to install some kind of UNIX based software
 You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path if you want to compile PHOENIX yourself.
 Also, make sure to check the C++ Desktop Development section in the VS installer! Then, add [cl.exe](https://stackoverflow.com/questions/7865432/command-line-compile-using-cl-exe) to your [path](https://stackoverflow.com/questions/9546324/adding-a-directory-to-the-path-environment-variable-in-windows)
 
-# Getting Started with PHOENIX
+# Quickstart
 
-To successfully execute a precompiled version of PHOENIX for the first time, follow the steps outlined below:
-
-#### 1. Verify Your Hardware
-
-PHOENIX is designed to run exclusively on Nvidia GPUs. Verify your hardware to ensure compatibility:
-
-- **Windows**: Open the Start menu, type "Device Manager," and press Enter to launch the Control Panel. Expand the "Display adapters" section to see your GPU listed. Right-click on the listed GPU and select "Properties" to view the manufacturer details if necessary.
-- **Linux**: Use the command `lspci` to identify the GPU.
-
-#### Steps 2 - 4 will give you detailed instructions on how to install the mandatory requirements. If you have already installed them or do not need help, please continue with step 5.
-
-#### 2. Install Visual Studio Microsoft (Windows) or the GNU Compiler GCC (linux)
-
-Select the right software for your operating system. Download and install it. If you are installing Microsoft Visual Studios, make sure you check "C++ Desktop Development section" during the installation process (see Screenshot). **Do not make any changes to the installation path for Visual Studio!**
-![image](https://github.com/AG-Schumacher-UPB/PULSE/assets/139117697/9f6fed2a-ce10-49d9-8a23-3bf5c37b91b0)
-
-#### 3. Install CUDA and MSYS2
-
-Download the latest CUDA-Version [here](https://developer.nvidia.com/cuda-downloads) and follow the instructions given. **Do not make any changes to the installation path for CUDA!**
-Download MSYS2 [here](https://www.msys2.org/) and install it.
-
-#### 4. Add the new executables to your path
-
-Open your Enviroment Variables
-
-- **Windows**: Right-click on Start-button then click on "System" in the context menu. Click "Advanced system settings" and go to "Advanced" tab. Now click Enviroment Variables. Here, double-click on "Path" in the lower section. Click on new to add to your path.
-
-Now you need to find the path to your cl.exe of Visual Studio and nvcc.exe for CUDA, if you have not changed the preset path during installation you should find your executable at the same location as marked orange in the screenshot.
-![image](https://github.com/AG-Schumacher-UPB/PULSE/assets/139117697/127b096e-1f0d-4bda-ac54-a41305891785)
-
-Note that in your case the version-number in the path (\14.37.32822\ for VS and \v12.3\ for CUDA) can be different.
-
-#### Great! That was the hardest part. Now you can continue with executing PHOENIX for the very first time.
-
-#### 5. Download and Prepare PHOENIX
-
-Download the precompiled PHOENIX executable from [here](https://github.com/AG-Schumacher-UPB/PHOENIX/releases). This version supports single-precision float operations on your GPU and includes the SFML multimedia library for visualization.
-
-1. Place the downloaded executable into an empty directory on your system.
-2. Open a console window and navigate to your newly created PHOENIX directory.
-
-#### 6. Execute PHOENIX
-
-You are now ready to run PHOENIX for the first time. Copy and execute the following command in your console:
-
-```sh
-./phoenix.exe[.o] --N 400 400 --L 40 40 --boundary zero zero --tmax 1000 --initialState 0.1 add 70 70 0 0 plus 1 0 gauss+noDivide --gammaC 0.15 --pump 100 add 4.5 4.5 0 0 both 1 none gauss+noDivide+ring --outEvery 5 --path output\
-```
-
-This command will:
-
-- Execute PHOENIX on a 400x400 grid with zero boundary conditions for a real-space grid of 40x40 micrometers.
-- Evolve the system for 1 ns (`--tmax`).
-- Use PHOENIX-predefined pump and initial conditions, defining the initial state as a vortex with topological charge +1 (`--initialState`).
-- Set the polariton loss rate of the condensate to 0.15 (`--gammaC`).
-- Create a ring-shaped pump (`--pump`).
-- Set the data output rate to every 5 picoseconds (`--outEvery`) and specify the output directory (`--path output`).
-
-For further details on the command syntax, use `./phoenix.exe[.o] --help`.
-
-#### 7. Review Results
-
-Upon successful execution, the time-evolution will be displayed. After the program completes, it will print a summary of the process. The output directory will contain the desired results.
-
-Congratulations on performing your first GPU-accelerated calculation using PHOENIX. For a comprehensive introduction to all other features of PHOENIX, please refer to the extended documentation.
-
-If you want to compile your own (modified) version of PHOENIX please read on.
+First, download one of the [release versions](https://github.com/Schumacher-Group-UPB/PHOENIX/releases) of PHOENIX. For CPU versions, you'll need to install [FFTW](https://www.fftw.org/). GPU versions require only the CUDA framework NVCC and a suitable host compiler — either MSVC on Windows or GCC on Linux (both are necessary prerequisites for installing NVCC). If you're using the SFML versions, make sure to install [SFML](https://www.sfml-dev.org/download.php). After setting up the required components, the respective executable should run successfully.
 
 # Build PHOENIX yourself
 
@@ -150,10 +84,7 @@ when using the Makefile, where xy is your CC, is most beneficial.
 
 # Current Issues
 
-- RK45 not working properly. The RK45 solver is seldom used, which is why it is not up to date.
 - SSFM not working for TE/TM.
-
-In both cases, a fallback to RK4 is used as a temporary workaround
 
 - Some code refactoring required to prettify things
 
@@ -167,23 +98,18 @@ If you get syntax or missing file errors, your Visual Studio installation may be
 Current working combinations: VS Community Edition or VS Build Tools 17.9.2 - CUDA 12.4
  
 # Current Stats
-PHOENIX is currently benchmarked against common Matlab Solvers for the nonlinear Schrödinger Equation as well as against itself as a CPU version.
+PHOENIX is currently benchmarked against common Matlab Solvers for the nonlinear Schrödinger Equation as well as against itself as a CPU version. Here we demonstrate runtime results for a 1024x1024 grid per iteration in $\mu$s:
 
-We reproduce recent research results using PHOENIX and compare the runtimes. 
-
-TODO
-
-## Current Benchmark Times
-TODO
-
-|  | FP32  | FP64 | CPU |
-| - | - | - | - |
-| RTX 3070ti / AMD Ryzen 6c | 0 | 0 | 0 |
-| RTX 4090 / AMD Ryzen 48c | 0 | 0 | 0 |
-| A100 / AMD Milan | 0 | 0 | 0 |
+|  | FP32 GPU  | FP64 GPU | FP32 CPU | FP64 CPU |
+| - | - | - | - | - |
+| RTX 3070ti / AMD Ryzen 6c | 311 | 1120 | 8330 | 12800 |
+| RTX 4090 / AMD Ryzen 24c | 94 | 313 | tbd | tbd |
+| A100 / AMD Milan  7763 | 125 | 232 | 378 | 504 |
 
 old values: Scalar  `~135ms/ps`  `~465ms/ps` 
 old values: TE/TM  tbd.   `~920ms/ps` 
+
+We also reproduce recent research results using PHOENIX and compare the runtimes. These are detailed in the respective publication [todo].
 
 # Custom Kernel Variables
 Right now, changing Kernels is quite easy to do. Just go to [the kernel source directory](source/cuda_solver/kernel/compute/) and edit one of the Kernel files. Recompile and you are good to go!
