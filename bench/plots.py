@@ -148,6 +148,12 @@ def selectmin(D,L):
     return d
     raise RuntimeError("set not found "+str(L))
 
+def lmax(s):
+    m=0
+    for v in s:
+        m=max(v,m)
+    return m
+
 #plt.rcParams['text.usetex'] = True
 
 col=[]
@@ -155,9 +161,9 @@ for i in mcolors.TABLEAU_COLORS:
     col.append(i)
 
 #bandwidths in MB/s
-cachebw={"7763_ccd":517.22370,"a100":5400.000,"7763_full":2600.000,"5800X3D":580,"4060ti":1600}
-membw={"7763_ccd":38.60948,"a100":1400.000,"7763_full":155.000,"5800X3D":31,"4060ti":275}
-fp={"4060ti":0.3,"5800X3D":0.5}
+cachebw={"7763_ccd":517.22370,"a100":5400.000,"7763_full":2600.000,"5800X3D":580,"4060ti":1600,"4090":5300}
+membw={"7763_ccd":38.60948,"a100":1400.000,"7763_full":155.000,"5800X3D":31,"4060ti":275,"4090":950}
+fp={"4060ti":0.3,"5800X3D":0.5,"4090":1.3}
 
 buffer_fp32=8
 buffer_fp64=16
@@ -168,7 +174,7 @@ rw={"full":23+8,"calculate_k":4*(3+1),"intermediate_sum":3*(2+1),"final_sum":1*(
 fig = plt.figure()
 fig, ax = plt.subplots(figsize=(5, 3))
 ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'LLC cache size [MB]')
+ax.set_ylabel(r'LLC cache size [MiB]')
 #ax.set_yscale("log")
 #ax.set_xlim(0,120)
 
@@ -178,13 +184,14 @@ x=list(range(0,3000))
 for X in x:
     y.append(X*X*buffer_fp32*6/1024/1024)
     y2.append(X*X*buffer_fp64*6/1024/1024)
-ax.plot(x,y,linewidth=1,label="active data size in fp32",color=col[0])
-ax.plot(x,y2,linewidth=1,label="active data size in fp64",color=col[1])
+ax.plot(x,y,linewidth=1,label="active data size in fp32",color="black")
+ax.plot(x,y2,linewidth=1,label="active data size in fp64",linestyle="dashed",color="black")
 
+ax.hlines(32,0,10000,linestyles="dashed",linewidth=1,label="LLC size NVIDIA 4060 TI",color=col[0])
+ax.hlines(72,0,10000,linestyles="dashed",linewidth=1,label="LLC size NVIDIA 4090",color=col[1])
 ax.hlines(40,0,10000,linestyles="dashed",linewidth=1,label="LLC size NVIDIA A100",color=col[2])
-ax.hlines(32,0,10000,linestyles="dashed",linewidth=1,label="LLC size NVIDIA 4060TI",color=col[3])
+ax.hlines(96,0,10000,linestyles="dashed",linewidth=1,label="LLC size AMD 5800X3D",color=col[3])
 ax.hlines(256,0,10000,linestyles="dashed",linewidth=1,label="LLC size AMD 7763",color=col[4])
-ax.hlines(96,0,10000,linestyles="dashed",linewidth=1,label="LLC size AMD 5800X3D",color=col[5])
 
 gradient = np.linspace(0, 1, 100).reshape(1, -1)
 x0=0
@@ -199,492 +206,103 @@ for x in range(x1):
 ax.set_xlim(x0,x1)
 ax.set_ylim(y0,y1)
 plt.imshow(a , extent=[x1,x0,y0,y1], aspect='auto', cmap='RdYlBu')
-plt.text(50,180,'cache bandwidth bound',fontsize="7")
-plt.text(1600,65,'memory bandwidth bound',fontsize="7")
+plt.text(50,180,'cache bandwidth bound',fontsize="8")
+plt.text(1500,53,'memory bandwidth bound',fontsize="8")
 #ax.set_yscale('log')
 plt.legend(loc='upper left',ncol=1,fontsize="7")
 plt.tight_layout()
-fig.savefig("cache_sizes.png",dpi=600)
+fig.savefig("cache_sizes.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
 plt.close(fig)
 
-#subgrid dependency: 7763_ccd
-########################################################################################
-d="noctua2_7763_subgrids_ccd"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp32,grids,subgrids-0,subgrids-1,mus/it")
+#subplots for alignment
+##########################
+fig, axs = plt.subplots(6, 2, sharex=True, sharey=False, layout="constrained",figsize=(6, 14))
 
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
+meta=[]
+meta.append({"i":0,"j":0,"xlim":[64,4096],"yoffset":0.1,"dev":"4060ti","text":'NVIDIA\n4060 TI\nfp32',"text_x":950,"text_y":5.0,"d":"4060ti_subgrids","fp":"fp32","sg":[{"x":1,"y":1,"l":"no subgrids"},{"x":2,"y":1,"l":"2x1"},{"x":4,"y":1,"l":"4x1"},{"x":8,"y":1,"l":"8x1"}],"xticks":2,"xspace":1})
+meta.append({"i":0,"j":1,"xlim":[64,4096],"yoffset":0.05,"dev":"4060ti","text":'NVIDIA\n4060 TI\nfp64',"text_x":400,"text_y":2.5,"d":"4060ti_subgrids","fp":"fp64","sg":[{"x":1,"y":1,"l":"no subgrids"},{"x":2,"y":1,"l":"2x1"},{"x":4,"y":1,"l":"4x1"},{"x":8,"y":1,"l":"8x1"}],"xticks":1,"xspace":1})
 
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,1.6,'AMD 7763\none CCD\nfp32',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-#[[2,4],[4,2],[4,4],[4,6],[8,4],[8,8],[16,8],[16,16],[16,32],[32,32]],
-s=select(D,{"makes-label":"full_fp32","subgrids-0":2,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x4",color=col[0])
+meta.append({"i":1,"j":0,"xlim":[64,4096],"yoffset":0.2,"dev":"4090","text":'NVIDIA\n4090\nfp32',"text_x":400,"text_y":17.0,"d":"4090_subgrids","fp":"fp32","sg":[{"x":1,"y":1,"l":"no subgrids"},{"x":2,"y":1,"l":"2x1"},{"x":4,"y":1,"l":"4x1"},{"x":8,"y":1,"l":"8x1"}],"xticks":5,"xspace":0})
+meta.append({"i":1,"j":1,"xlim":[64,4096],"yoffset":0.1,"dev":"4090","text":'NVIDIA\n4090\nfp64',"text_x":400,"text_y":8.5,"d":"4090_subgrids","fp":"fp64","sg":[{"x":1,"y":1,"l":"no subgrids"},{"x":2,"y":1,"l":"2x1"},{"x":4,"y":1,"l":"4x1"},{"x":8,"y":1,"l":"8x1"}],"xticks":2,"xspace":0})
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":4,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x4",color=col[1])
+meta.append({"i":2,"j":0,"xlim":[64,4096],"yoffset":0.35,"dev":"a100","text":'NVIDIA\nA100\nfp32',"text_x":400,"text_y":17.0,"d":"noctua2_a100_subgrids","fp":"fp32","sg":[{"x":1,"y":1,"l":"no subgrids"},{"x":2,"y":1,"l":"2x1"},{"x":4,"y":1,"l":"4x1"},{"x":8,"y":1,"l":"8x1"}],"xticks":5,"xspace":0})
+meta.append({"i":2,"j":1,"xlim":[64,4096],"yoffset":0.15,"dev":"a100","text":'NVIDIA\nA100\nfp64',"text_x":400,"text_y":8.5,"d":"noctua2_a100_subgrids","fp":"fp64","sg":[{"x":1,"y":1,"l":"no subgrids"},{"x":2,"y":1,"l":"2x1"},{"x":4,"y":1,"l":"4x1"},{"x":8,"y":1,"l":"8x1"}],"xticks":2,"xspace":0})
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":8,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x4",color=col[2])
+meta.append({"i":3,"j":0,"xlim":[64,4096],"yoffset":0.025,"dev":"5800X3D","text":'AMD\n5800X3D\nfp32',"text_x":400,"text_y":1.8,"d":"5800X3D_subgrids_socket","fp":"fp32","sg":[{"x":2,"y":4,"l":"2x4"},{"x":4,"y":4,"l":"4x4"},{"x":8,"y":4,"l":"8x4"},{"x":8,"y":8,"l":"8x8"},{"x":16,"y":8,"l":"16x8"}],"xticks":1,"xspace":1})
+meta.append({"i":3,"j":1,"xlim":[64,4096],"yoffset":0.0125,"dev":"5800X3D","text":'AMD\n5800X3D\nfp64',"text_x":400,"text_y":0.9,"d":"5800X3D_subgrids_socket","fp":"fp64","sg":[{"x":2,"y":4,"l":"2x4"},{"x":4,"y":4,"l":"4x4"},{"x":8,"y":4,"l":"8x4"},{"x":8,"y":8,"l":"8x8"},{"x":16,"y":8,"l":"16x8"}],"xticks":0.5,"xspace":1})
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":8,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x8",color=col[3])
+meta.append({"i":4,"j":0,"xlim":[64,4096],"yoffset":0.025,"dev":"7763_ccd","text":'AMD 7763\none CCD\nfp32',"text_x":400,"text_y":1.6,"d":"noctua2_7763_subgrids_ccd","fp":"fp32","sg":[{"x":2,"y":4,"l":"2x4"},{"x":4,"y":4,"l":"4x4"},{"x":8,"y":4,"l":"8x4"},{"x":8,"y":8,"l":"8x8"},{"x":16,"y":8,"l":"16x8"}],"xticks":1,"xspace":1})
+meta.append({"i":4,"j":1,"xlim":[64,4096],"yoffset":0.0125,"dev":"7763_ccd","text":'AMD 7763\none CCD\nfp64',"text_x":400,"text_y":0.8,"d":"noctua2_7763_subgrids_ccd","fp":"fp64","sg":[{"x":2,"y":4,"l":"2x4"},{"x":4,"y":4,"l":"4x4"},{"x":8,"y":4,"l":"8x4"},{"x":8,"y":8,"l":"8x8"},{"x":16,"y":8,"l":"16x8"}],"xticks":0.5,"xspace":0})
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":16,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x8",color=col[4])
+meta.append({"i":5,"j":0,"xlim":[64,4096],"yoffset":0.1,"dev":"7763_full","text":'AMD 7763\nall CCDs\nfp32',"text_x":400,"text_y":8,"d":"noctua2_7763_subgrids_full","fp":"fp32","sg":[{"x":8,"y":8,"l":"8x8"},{"x":16,"y":8,"l":"16x8"},{"x":16,"y":16,"l":"16x16"},{"x":16,"y":32,"l":"16x32"},{"x":32,"y":32,"l":"32x32"}],"xticks":2,"xspace":0})
+meta.append({"i":5,"j":1,"xlim":[64,4096],"yoffset":0.05,"dev":"7763_full","text":'AMD 7763\nall CCDs\nfp64',"text_x":400,"text_y":4,"d":"noctua2_7763_subgrids_full","fp":"fp64","sg":[{"x":8,"y":8,"l":"8x8"},{"x":16,"y":8,"l":"16x8"},{"x":16,"y":16,"l":"16x16"},{"x":16,"y":32,"l":"16x32"},{"x":32,"y":32,"l":"32x32"}],"xticks":1,"xspace":1})
 
-#cache-bw
-pcache=cachebw["7763_ccd"]/(buffer_fp32*rw["full"])
-pmem=membw["7763_ccd"]/(buffer_fp32*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L3 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-ax.yaxis.set_major_locator(MultipleLocator(1)) 
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("7763_ccd_subgrids_fp32.png",dpi=600)
-plt.close(fig)
-
-
-#subgrid dependency: 7763_ccd
-########################################################################################
-d="noctua2_7763_subgrids_ccd"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp64,grids,subgrids-0,subgrids-1,mus/it")
-
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,0.8,'AMD 7763\none CCD\nfp64',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":2,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x4",color=col[0])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":4,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x4",color=col[1])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":8,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x4",color=col[2])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":8,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x8",color=col[3])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":16,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x8",color=col[4])
-
-#cache-bw
-pcache=cachebw["7763_ccd"]/(buffer_fp64*rw["full"])
-pmem=membw["7763_ccd"]/(buffer_fp64*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L3 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-ax.yaxis.set_major_locator(MultipleLocator(1)) 
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("7763_ccd_subgrids_fp64.png",dpi=600)
-plt.close(fig)
-
-#subgrid dependency: 7763_full
-########################################################################################
-d="noctua2_7763_subgrids_full"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp32,grids,subgrids-0,subgrids-1,mus/it")
-
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,9,'AMD 7763\nfp32',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":8,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x8",color=col[0])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":16,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x8",color=col[1])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":16,"subgrids-1":16})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x16",color=col[2])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":16,"subgrids-1":32})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x32",color=col[3])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":32,"subgrids-1":32})
-ax.plot(s["x"],s["y"],linewidth=1,label="32x32",color=col[4])
-
-
-#cache-bw
-pcache=cachebw["7763_full"]/(buffer_fp32*rw["full"])
-pmem=membw["7763_full"]/(buffer_fp32*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L3 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("7763_full_subgrids_fp32.png",dpi=600)
-plt.close(fig)
-
-
-#subgrid dependency: 7763_full
-########################################################################################
-d="noctua2_7763_subgrids_full"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp64,grids,subgrids-0,subgrids-1,mus/it")
-
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,4.5,'AMD 7763\nfp64',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":8,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x8",color=col[0])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":16,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x8",color=col[1])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":16,"subgrids-1":16})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x16",color=col[2])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":16,"subgrids-1":32})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x32",color=col[3])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":32,"subgrids-1":32})
-ax.plot(s["x"],s["y"],linewidth=1,label="32x32",color=col[4])
-
-
-#cache-bw
-pcache=cachebw["7763_full"]/(buffer_fp64*rw["full"])
-pmem=membw["7763_full"]/(buffer_fp64*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L3 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("7763_full_subgrids_fp64.png",dpi=600)
-plt.close(fig)
-
-#subgrid dependency: 5800X3d
-########################################################################################
-d="5800X3D_subgrids_socket"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp32,grids,subgrids-0,subgrids-1,mus/it")
-
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,1.8,'AMD\n5800X3D\nfp32',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-#[[2,4],[4,2],[4,4],[4,6],[8,4],[8,8],[16,8],[16,16],[16,32],[32,32]],
-s=select(D,{"makes-label":"full_fp32","subgrids-0":2,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x4",color=col[0])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":4,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x4",color=col[1])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":8,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x4",color=col[2])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":8,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x8",color=col[3])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":16,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x8",color=col[4])
-
-#cache-bw
-pcache=cachebw["5800X3D"]/(buffer_fp32*rw["full"])
-pmem=membw["5800X3D"]/(buffer_fp32*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L3 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-ax.yaxis.set_major_locator(MultipleLocator(1)) 
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("5800X3D_subgrids_fp32.png",dpi=600)
-plt.close(fig)
-
-
-#subgrid dependency: 5800X3D
-########################################################################################
-d="5800X3D_subgrids_socket"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp64,grids,subgrids-0,subgrids-1,mus/it")
-
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,0.9,'AMD\n5800X3D\nfp64',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":2,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x4",color=col[0])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":4,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x4",color=col[1])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":8,"subgrids-1":4})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x4",color=col[2])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":8,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x8",color=col[3])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":16,"subgrids-1":8})
-ax.plot(s["x"],s["y"],linewidth=1,label="16x8",color=col[4])
-
-#cache-bw
-pcache=cachebw["5800X3D"]/(buffer_fp64*rw["full"])
-pmem=membw["5800X3D"]/(buffer_fp64*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L3 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-ax.yaxis.set_major_locator(MultipleLocator(1)) 
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("5800X3D_subgrids_fp64.png",dpi=600)
-plt.close(fig)
-
-
-#subgrid dependency: a100
-########################################################################################
-d="noctua2_a100_subgrids"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp32,grids,subgrids-0,subgrids-1,mus/it")
-
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(400,19,'NVIDIA A100\nfp32',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":1,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="1x1",color=col[0])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":2,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x1",color=col[1])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":4,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x1",color=col[2])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":8,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x1",color=col[3])
-
-s=select(D,{"makes-label":"full_fp32","subgrids-0":10,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="10x1",color=col[4])
-
-#cache-bw
-pcache=cachebw["a100"]/(buffer_fp32*rw["full"])
-pmem=membw["a100"]/(buffer_fp32*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L2 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("a100_subgrids_fp32.png",dpi=600)
-plt.close(fig)
-
-#subgrid dependency: a100
-########################################################################################
-d="noctua2_a100_subgrids"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp64,grids,subgrids-0,subgrids-1,mus/it")
-
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(400,9.5,'NVIDIA A100\nfp64',fontsize="8")
-
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":1,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="1x1",color=col[0])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":2,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x1",color=col[1])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":4,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x1",color=col[2])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":8,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x1",color=col[3])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":10,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="10x1",color=col[4])
-
-#cache-bw
-pcache=cachebw["a100"]/(buffer_fp64*rw["full"])
-pmem=membw["a100"]/(buffer_fp64*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L2 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("a100_subgrids_fp64.png",dpi=600)
-plt.close(fig)
 
 #subgrid dependency: 4060TI
+
 ########################################################################################
-d="4060ti_subgrids"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp32,grids,subgrids-0,subgrids-1,mus/it")
+for m in meta:
+    i=m["i"]
+    j=m["j"]
+    d=m["d"]
+    run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_"+m["fp"]+",grids,subgrids-0,subgrids-1,mus/it")
 
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
+    df=read(d+".csv")  
+    D=getdata(df,"grids","mus/it")
 
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(400,6.5,'NVIDIA 4060TI\nfp32',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
+    axs[i,j].text(m["text_x"],m["text_y"],m["text"],fontsize="8")
+    axs[i,j].set_xlim(m["xlim"][0],m["xlim"][1])
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":1,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="1x1",color=col[0])
+    pm=0
+    ic=0
+    for sg in m["sg"]:
+        s=select(D,{"makes-label":"full_"+m["fp"],"subgrids-0":sg["x"],"subgrids-1":sg["y"]})
+        axs[i,j].plot(s["x"],s["y"],linewidth=1,label=sg["l"],color=col[ic])
+        pm=max(pm,lmax(s["y"]))
+        ic=ic+1
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":2,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x1",color=col[1])
+    #cache-bw
+    if m["fp"]=="fp32":
+        pcache=cachebw[m["dev"]]/(buffer_fp32*rw["full"])
+        pmem=membw[m["dev"]]/(buffer_fp32*rw["full"])
+    else:
+        pcache=cachebw[m["dev"]]/(buffer_fp64*rw["full"])
+        pmem=membw[m["dev"]]/(buffer_fp64*rw["full"])
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":4,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x1",color=col[2])
+    print("max",d,pm,pcache,pmem,pm/pcache,pm/pmem)
+    axs[i,j].yaxis.set_major_locator(MultipleLocator(m["xticks"])) 
+    if m["xticks"]>=1:
+        if m["xspace"]==0:
+            axs[i,j].yaxis.set_major_formatter(FormatStrFormatter('% 1.0f')) 
+        if m["xspace"]==1:
+            axs[i,j].yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
+        if m["xspace"]==2:
+            axs[i,j].yaxis.set_major_formatter(FormatStrFormatter('  % 1.0f')) 
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":8,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x1",color=col[3])
 
-s=select(D,{"makes-label":"full_fp32","subgrids-0":10,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="10x1",color=col[4])
+    axs[i,j].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L2 cache bound",color="black")
+    axs[i,j].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
+    if m["fp"]=="fp64":
+        if m["dev"] in  fp:
+            pfp=fp[m["dev"]]/(buffer_fp64*rw["full"]*0.333)*1000
+            axs[i,j].hlines(pfp,0,10000,linestyles="dashdot",linewidth=1,label="fp64 bound",color="black")
+    axs[i,j].set_ylim(0,pcache+m["yoffset"])
+    #axs[i,j].yaxis.set_major_locator(MultipleLocator(2)) 
+    #axs[i,j].yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
+    axs[i,j].legend(loc='upper right',ncol=1,fontsize=8)
 
-#cache-bw
-pcache=cachebw["4060ti"]/(buffer_fp32*rw["full"])
-pmem=membw["4060ti"]/(buffer_fp32*rw["full"])
-
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L2 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+1.1)
-ax.yaxis.set_major_locator(MultipleLocator(1)) 
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("4060ti_subgrids_fp32.png",dpi=600)
-plt.close(fig)
-
-#subgrid dependency: 4060ti
 ########################################################################################
-d="4060ti_subgrids"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,makes-label=full_fp64,grids,subgrids-0,subgrids-1,mus/it")
+########################################################################################
 
-df=read(d+".csv")  
-D=getdata(df,"grids","mus/it")
-
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(400,2.7,'NVIDIA 4060TI\nfp64',fontsize="8")
-
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":1,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="1x1",color=col[0])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":2,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="2x1",color=col[1])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":4,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="4x1",color=col[2])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":8,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="8x1",color=col[3])
-
-s=select(D,{"makes-label":"full_fp64","subgrids-0":10,"subgrids-1":1})
-ax.plot(s["x"],s["y"],linewidth=1,label="10x1",color=col[4])
-
-#cache-bw
-pcache=cachebw["4060ti"]/(buffer_fp64*rw["full"])
-pmem=membw["4060ti"]/(buffer_fp64*rw["full"])
-pfp=fp["4060ti"]/(buffer_fp64*rw["full"]*0.333)*1000
-print("fp bound",pfp)
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="L2 cache bound",color="black")
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="mem bound",color="black")
-ax.hlines(pfp,0,10000,linestyles="dashdot",linewidth=1,label="fp64 bound",color="black")
-
-ax.set_xlim(s["x"][0],s["x"][-1])
-ax.set_ylim(0,pcache+0.1)
-ax.yaxis.set_major_locator(MultipleLocator(1)) 
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("4060ti_subgrids_fp64.png",dpi=600)
+axs[0,0].set_ylabel(r'grid point update rate [GUP/s]')
+axs[1,0].set_ylabel(r'grid point update rate [GUP/s]')
+axs[2,0].set_ylabel(r'grid point update rate [GUP/s]')
+axs[3,0].set_ylabel(r'grid point update rate [GUP/s]')
+axs[4,0].set_ylabel(r'grid point update rate [GUP/s]')
+axs[5,0].set_ylabel(r'grid point update rate [GUP/s]')
+axs[5,0].set_xlabel(r'grid size $N$')
+axs[5,1].set_xlabel(r'grid size $N$')
+fig.savefig("subgrids.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
 plt.close(fig)
 
 
@@ -700,7 +318,6 @@ fig, ax = plt.subplots(figsize=(3, 3))
 ax.set_xlabel(r'grid size $N$')
 ax.set_ylabel(r'grid point update rate [GUP/s]')
 plt.text(200,45,'AMD\n7763',fontsize="8")
-#ax.set_yscale("log")
 #ax.set_xlim(0,120)
 
 s=select(D,{"makes-label":"full"})
@@ -710,6 +327,7 @@ pmem=membw["7763_full"]/(buffer_fp32*rw["full"])
 ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[0])
 ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[0])
 ax.set_xlim(s["x"][0],s["x"][-1])
+
 
 s=select(D,{"makes-label":"calculate_k"})
 ax.plot(s["x"],s["y"],linewidth=1,label="only derivative",color=col[1])
@@ -735,10 +353,15 @@ ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[3])
 ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[3])
 ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
 
+#s=select(D,{"makes-label":"parallelization"})
+#ax.plot(s["x"],s["y"],linewidth=1,label="parallelization",color=col[4])
+#ax.set_yscale("log")
+ax.set_xlim(s["x"][0],s["x"][-1])
+#ax.set_ylim(0.5,300)
 
 plt.legend(loc='upper right',ncol=1,fontsize=8)
 plt.tight_layout()
-fig.savefig("7763_full_kernel_fp32.png",dpi=600)
+fig.savefig("7763_full_kernel_fp32.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
 plt.close(fig)
 
 #individual kernel
@@ -787,10 +410,16 @@ pmem=membw["a100"]/(buffer_fp32*rw["final_sum"])
 ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[3])
 ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[3])
 
+#s=select(D,{"makes-label":"parallelization"})
+#ax.plot(s["x"],s["y"],linewidth=1,label="parallelization",color=col[4])
+#ax.set_yscale("log")
+ax.set_xlim(s["x"][0],s["x"][-1])
+#ax.set_ylim(3,400)
+
 
 plt.legend(loc='upper right',ncol=1,fontsize=8)
 plt.tight_layout()
-fig.savefig("a100_kernel_fp32.png",dpi=600)
+fig.savefig("a100_kernel_fp32.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
 plt.close(fig)
 
 
@@ -801,33 +430,34 @@ fig, ax = plt.subplots(figsize=(5, 3))
 ax.set_xlabel(r'grid size $N$')
 ax.set_ylabel(r'energy per grid point update [nJ]')
 
-d="noctua2_a100_subgrids"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,gpu_energy_J")
-df=read(d+".csv")
-D=getdatadiv(df,"grids","mus/it","gpu_energy_J")
-
-s=selectmin(D,{"makes-label":"full_fp32"})
-ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA A100",color=col[0])
-s=selectmin(D,{"makes-label":"full_fp64"})
-ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[0])
 
 d="4060ti_subgrids"
 run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,gpu_energy_J")
 df=read(d+".csv")
 D=getdatadiv(df,"grids","mus/it","gpu_energy_J")
 s=selectmin(D,{"makes-label":"full_fp32"})
-ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA 4060TI",color=col[1])
+ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA 4060TI",color=col[0])
+s=selectmin(D,{"makes-label":"full_fp64"})
+ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[0])
+
+d="4090_subgrids"
+run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,gpu_energy_J")
+df=read(d+".csv")
+D=getdatadiv(df,"grids","mus/it","gpu_energy_J")
+s=selectmin(D,{"makes-label":"full_fp32"})
+ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA 4090",color=col[1])
 s=selectmin(D,{"makes-label":"full_fp64"})
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[1])
 
-d="noctua2_7763_subgrids_full"
-run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,cpu_energy_J_perf")
+d="noctua2_a100_subgrids"
+run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,gpu_energy_J")
 df=read(d+".csv")
-D=getdatadiv(df,"grids","mus/it","cpu_energy_J_perf")
+D=getdatadiv(df,"grids","mus/it","gpu_energy_J")
 s=selectmin(D,{"makes-label":"full_fp32"})
-ax.plot(s["x"],s["y"],linewidth=1,label="AMD 7763",color=col[2])
+ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA A100",color=col[2])
 s=selectmin(D,{"makes-label":"full_fp64"})
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[2])
+
 
 d="5800X3D_subgrids_socket"
 run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,cpu_energy_J_perf")
@@ -838,10 +468,19 @@ ax.plot(s["x"],s["y"],linewidth=1,label="AMD 5800X3D",color=col[3])
 s=selectmin(D,{"makes-label":"full_fp64"})
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[3])
 
+d="noctua2_7763_subgrids_full"
+run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,cpu_energy_J_perf")
+df=read(d+".csv")
+D=getdatadiv(df,"grids","mus/it","cpu_energy_J_perf")
+s=selectmin(D,{"makes-label":"full_fp32"})
+ax.plot(s["x"],s["y"],linewidth=1,label="AMD 7763",color=col[4])
+s=selectmin(D,{"makes-label":"full_fp64"})
+ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[4])
+
 ax.set_xlim(s["x"][0],s["x"][-1])
 ax.set_ylim(0,650)
 
 plt.legend(loc='upper right',ncol=1,fontsize=8)
 plt.tight_layout()
-fig.savefig("energy_per_update.png",dpi=600)
+fig.savefig("energy_per_update.png",dpi=600)#,bbox_inches = 'tight',pad_inches = 0)
 plt.close(fig)

@@ -1,0 +1,19 @@
+{
+  "commits":[
+    {"label":"9d15b50cf50b18c3db9faefc563d7306a436b605","repo":"https://github.com/davidbauch/PHOENIX/","type":"commit"}
+  ],
+  "envs": 
+  [
+    {"label":"cuda-12.6.0","modules":["system/CUDA/12.6.0","tools/likwid/5.3.0-GCC-13.2.0","toolchain/foss/2023b","lang/Python/3.12.3-GCCcore-13.2.0"],"compiler":"nvcc","machinestate":"~/.local/bin/machinestate","nvidia-smi":"nvidia-smi"}
+  ],
+  "makes":
+  [
+    {"label":"full_fp32","cmd":"make SFML=FALSE FP32=TRUE  TETM=FALSE GPU=TRUE ARCH=89 COMPILER=_compiler_ NO_CALCULATE_K=FALSE NO_INTERMEDIATE_SUM_K=FALSE NO_FINAL_SUM_K=FALSE NO_HALO_SYNC=FALSE AVX2=TRUE BENCH=TRUE LIKWID=TRUE"},
+    {"label":"full_fp64","cmd":"make SFML=FALSE FP32=FALSE TETM=FALSE GPU=TRUE ARCH=89 COMPILER=_compiler_ NO_CALCULATE_K=FALSE NO_INTERMEDIATE_SUM_K=FALSE NO_FINAL_SUM_K=FALSE NO_HALO_SYNC=FALSE AVX2=FALSE BENCH=TRUE LIKWID=TRUE"}
+  ],
+  "threads": [16],
+  "grids": [64,128,192,256,320,384,448,512,576,640,704,768,832,896,960,1024,1088,1152,1216,1280,1344,1408,1472,1536,1600,1664,1728,1792,1856,1920,1984,2048,2112,2176,2240,2304,2368,2432,2496,2560,2624,2688,2752,2816,2880,2944,3008,3072,3136,3200,3264,3328,3392,3456,3520,3584,3648,3712,3776,3840,3904,3968,4032,4096],
+  "subgrids": [[1,1],[2,1],[4,1],[8,1]],
+  "likwid_metrics": ["ENERGY"]
+}
+
