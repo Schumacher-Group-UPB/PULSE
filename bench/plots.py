@@ -432,14 +432,18 @@ fig, ax = plt.subplots(figsize=(5, 3))
 ax.set_xlabel(r'number of grid points per spatial dimension $N$')
 ax.set_ylabel(r'energy per grid point update [nJ]')
 
+popt32=1000000
+popt64=1000000
 
 d="4060ti_subgrids"
 run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it,gpu_energy_J")
 df=read(d+".csv")
 D=getdatadiv(df,"grids","mus/it","gpu_energy_J")
 s=selectmin(D,{"makes-label":"full_fp32"})
+print(d,"fp32",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA 4060TI",color=col[0])
 s=selectmin(D,{"makes-label":"full_fp64"})
+print(d,"fp64",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[0])
 
 d="4090_subgrids"
@@ -447,8 +451,10 @@ run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids
 df=read(d+".csv")
 D=getdatadiv(df,"grids","mus/it","gpu_energy_J")
 s=selectmin(D,{"makes-label":"full_fp32"})
+print(d,"fp32",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA 4090",color=col[1])
 s=selectmin(D,{"makes-label":"full_fp64"})
+print(d,"fp64",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[1])
 
 d="noctua2_a100_subgrids"
@@ -456,8 +462,10 @@ run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids
 df=read(d+".csv")
 D=getdatadiv(df,"grids","mus/it","gpu_energy_J")
 s=selectmin(D,{"makes-label":"full_fp32"})
+print(d,"fp32",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="NVIDIA A100",color=col[2])
 s=selectmin(D,{"makes-label":"full_fp64"})
+print(d,"fp64",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[2])
 
 
@@ -466,8 +474,10 @@ run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids
 df=read(d+".csv")
 D=getdatadiv(df,"grids","mus/it","cpu_energy_J_perf")
 s=selectmin(D,{"makes-label":"full_fp32"})
+print(d,"fp32",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="AMD 5800X3D",color=col[3])
 s=selectmin(D,{"makes-label":"full_fp64"})
+print(d,"fp64",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[3])
 
 d="noctua2_7763_subgrids_full"
@@ -475,8 +485,10 @@ run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids
 df=read(d+".csv")
 D=getdatadiv(df,"grids","mus/it","cpu_energy_J_perf")
 s=selectmin(D,{"makes-label":"full_fp32"})
+print(d,"fp32",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="AMD 7763",color=col[4])
 s=selectmin(D,{"makes-label":"full_fp64"})
+print(d,"fp64",min(s["y"]))
 ax.plot(s["x"],s["y"],linewidth=1,label="",linestyle="dashed",color=col[4])
 
 ax.set_xlim(s["x"][0],s["x"][-1])
