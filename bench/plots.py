@@ -173,7 +173,8 @@ rw={"full":23+8,"calculate_k":4*(3+1),"intermediate_sum":3*(2+1),"final_sum":1*(
 ########################################################################################
 fig = plt.figure()
 fig, ax = plt.subplots(figsize=(5, 3))
-ax.set_xlabel(r'grid size $N$')
+#ax.set_xlabel(r'grid size $N$')
+ax.set_xlabel(r'number of grid points per spatial dimension $N$')
 ax.set_ylabel(r'LLC cache size [MiB]')
 #ax.set_yscale("log")
 #ax.set_xlim(0,120)
@@ -238,8 +239,7 @@ meta.append({"i":5,"j":0,"xlim":[64,4096],"yoffset":0.1,"dev":"7763_full","text"
 meta.append({"i":5,"j":1,"xlim":[64,4096],"yoffset":0.05,"dev":"7763_full","text":'AMD 7763\nall CCDs\nfp64',"text_x":400,"text_y":4,"d":"noctua2_7763_subgrids_full","fp":"fp64","sg":[{"x":8,"y":8,"l":"8x8"},{"x":16,"y":8,"l":"16x8"},{"x":16,"y":16,"l":"16x16"},{"x":16,"y":32,"l":"16x32"},{"x":32,"y":32,"l":"32x32"}],"xticks":1,"xspace":1})
 
 
-#subgrid dependency: 4060TI
-
+#subgrid dependency: all
 ########################################################################################
 for m in meta:
     i=m["i"]
@@ -300,69 +300,70 @@ axs[2,0].set_ylabel(r'grid point update rate [GUP/s]')
 axs[3,0].set_ylabel(r'grid point update rate [GUP/s]')
 axs[4,0].set_ylabel(r'grid point update rate [GUP/s]')
 axs[5,0].set_ylabel(r'grid point update rate [GUP/s]')
-axs[5,0].set_xlabel(r'grid size $N$')
-axs[5,1].set_xlabel(r'grid size $N$')
+#axs[5,0].set_xlabel(r'grid size $N$')
+#axs[5,1].set_xlabel(r'grid size $N$')
+#axs[5,0].set_xlabel(r'number of grid points per spatial dimension $N$')
+#axs[5,1].set_xlabel(r'grid size $N$')
+fig.text(0.5, -0.01, r'number of grid points per spatial dimension $N$', ha='center')
+
 fig.savefig("subgrids.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
 plt.close(fig)
 
 
 #individual kernel
 ########################################################################################
+fig, axs = plt.subplots(1, 2, sharex=True, sharey=False, layout="constrained",figsize=(6, 3))
+
+axs[1].set_xlim(64,4096)
+
 d="noctua2_7763_kernel_full"
 run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids-0,subgrids-1,mus/it")
 df=read(d+".csv")  
 D=getdata(df,"grids","mus/it")
 
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,45,'AMD\n7763',fontsize="8")
-#ax.set_xlim(0,120)
+#axs[0,0]set_xlabel(r'grid size $N$')
+#axs[0].set_xlabel(r'number of grid points per spatial dimension $N$')
+axs[1].text(200,45,'AMD\n7763',fontsize="8")
+#axs[0,0]set_xlim(0,120)
 
 s=select(D,{"makes-label":"full"})
-ax.plot(s["x"],s["y"],linewidth=1,label="all kernel",color=col[0])
+axs[1].plot(s["x"],s["y"],linewidth=1,label="all kernel",color=col[0])
 pcache=cachebw["7763_full"]/(buffer_fp32*rw["full"])
 pmem=membw["7763_full"]/(buffer_fp32*rw["full"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[0])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[0])
-ax.set_xlim(s["x"][0],s["x"][-1])
+axs[1].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[0])
+axs[1].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[0])
 
 
 s=select(D,{"makes-label":"calculate_k"})
-ax.plot(s["x"],s["y"],linewidth=1,label="only derivative",color=col[1])
+axs[1].plot(s["x"],s["y"],linewidth=1,label="only derivative",color=col[1])
 pcache=cachebw["7763_full"]/(buffer_fp32*rw["calculate_k"])
 pmem=membw["7763_full"]/(buffer_fp32*rw["calculate_k"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[1])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[1])
+axs[1].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[1])
+axs[1].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[1])
 
 
 s=select(D,{"makes-label":"intermediate_sum"})
-ax.plot(s["x"],s["y"],linewidth=1,label="only two-term-sum",color=col[2])
+axs[1].plot(s["x"],s["y"],linewidth=1,label="only two-term-sum",color=col[2])
 pcache=cachebw["7763_full"]/(buffer_fp32*rw["intermediate_sum"])
 pmem=membw["7763_full"]/(buffer_fp32*rw["intermediate_sum"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[2])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[2])
+axs[1].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[2])
+axs[1].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[2])
 
 
 s=select(D,{"makes-label":"final_sum"})
-ax.plot(s["x"],s["y"],linewidth=1,label="only five-term-sum",color=col[3])
+axs[1].plot(s["x"],s["y"],linewidth=1,label="only five-term-sum",color=col[3])
 pcache=cachebw["7763_full"]/(buffer_fp32*rw["final_sum"])
 pmem=membw["7763_full"]/(buffer_fp32*rw["final_sum"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[3])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[3])
-ax.yaxis.set_major_formatter(FormatStrFormatter(' % 1.0f')) 
+axs[1].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[3])
+axs[1].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[3])
+
+axs[1].legend(loc='upper right',ncol=1,fontsize=8)
 
 #s=select(D,{"makes-label":"parallelization"})
-#ax.plot(s["x"],s["y"],linewidth=1,label="parallelization",color=col[4])
+#axs[0,0]plot(s["x"],s["y"],linewidth=1,label="parallelization",color=col[4])
 #ax.set_yscale("log")
-ax.set_xlim(s["x"][0],s["x"][-1])
 #ax.set_ylim(0.5,300)
 
-plt.legend(loc='upper right',ncol=1,fontsize=8)
-plt.tight_layout()
-fig.savefig("7763_full_kernel_fp32.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
-plt.close(fig)
 
 #individual kernel
 ########################################################################################
@@ -371,55 +372,55 @@ run("python bench.py -c "+d+".json -d -o "+d+".csv -f makes-label,grids,subgrids
 df=read(d+".csv")
 D=getdata(df,"grids","mus/it")
 
-fig = plt.figure()
-fig, ax = plt.subplots(figsize=(3, 3))
-ax.set_xlabel(r'grid size $N$')
-ax.set_ylabel(r'grid point update rate [GUP/s]')
-plt.text(200,90,'NVIDIA\nA100',fontsize="8")
-#ax.set_yscale("log")
-#ax.set_xlim(0,120)
+#axs[0,1]set_xlabel(r'grid size $N$')
+#axs[1].set_xlabel(r'number of grid points per spatial dimension $N$')
+#axs[1].set_ylabel(r'grid point update rate [GUP/s]')
+axs[0].text(200,92,'NVIDIA\nA100',fontsize="8")
+#axs[0,1]set_yscale("log")
+#axs[0,1]set_xlim(0,120)
 
 s=select(D,{"makes-label":"full"})
-ax.plot(s["x"],s["y"],linewidth=1,label="all kernel",color=col[0])
+axs[0].plot(s["x"],s["y"],linewidth=1,label="all kernel",color=col[0])
 pcache=cachebw["a100"]/(buffer_fp32*rw["full"])
 pmem=membw["a100"]/(buffer_fp32*rw["full"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[0])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[0])
-ax.set_xlim(s["x"][0],s["x"][-1])
+axs[0].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[0])
+axs[0].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[0])
+axs[0].set_xlim(s["x"][0],s["x"][-1])
 
 s=select(D,{"makes-label":"calculate_k"})
-ax.plot(s["x"],s["y"],linewidth=1,label="only derivative",color=col[1])
+axs[0].plot(s["x"],s["y"],linewidth=1,label="only derivative",color=col[1])
 pcache=cachebw["a100"]/(buffer_fp32*rw["calculate_k"])
 pmem=membw["a100"]/(buffer_fp32*rw["calculate_k"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[1])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[1])
+axs[0].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[1])
+axs[0].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[1])
 
 
 s=select(D,{"makes-label":"intermediate_sum"})
-ax.plot(s["x"],s["y"],linewidth=1,label="only two-term-sum",color=col[2])
+axs[0].plot(s["x"],s["y"],linewidth=1,label="only two-term-sum",color=col[2])
 pcache=cachebw["a100"]/(buffer_fp32*rw["intermediate_sum"])
 pmem=membw["a100"]/(buffer_fp32*rw["intermediate_sum"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[2])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[2])
+axs[0].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[2])
+axs[0].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[2])
 
 
 s=select(D,{"makes-label":"final_sum"})
-ax.plot(s["x"],s["y"],linewidth=1,label="only five-term-sum",color=col[3])
+axs[0].plot(s["x"],s["y"],linewidth=1,label="only five-term-sum",color=col[3])
 pcache=cachebw["a100"]/(buffer_fp32*rw["final_sum"])
 pmem=membw["a100"]/(buffer_fp32*rw["final_sum"])
-ax.hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[3])
-ax.hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[3])
+axs[0].hlines(pcache,0,10000,linestyles="dashed",linewidth=1,label="",color=col[3])
+axs[0].hlines(pmem,0,10000,linestyles="dotted",linewidth=1,label="",color=col[3])
 
 #s=select(D,{"makes-label":"parallelization"})
-#ax.plot(s["x"],s["y"],linewidth=1,label="parallelization",color=col[4])
-#ax.set_yscale("log")
-ax.set_xlim(s["x"][0],s["x"][-1])
+#axs[0,1]plot(s["x"],s["y"],linewidth=1,label="parallelization",color=col[4])
+#axs[0,1]set_yscale("log")
+#axs[0].set_xlim(s["x"][0],s["x"][-1])
 #ax.set_ylim(3,400)
+axs[0].legend(loc='upper right',ncol=1,fontsize=8)
 
-
-plt.legend(loc='upper right',ncol=1,fontsize=8)
+axs[0].set_ylabel(r'grid point update rate [GUP/s]')
 plt.tight_layout()
-fig.savefig("a100_kernel_fp32.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
+fig.text(0.5, -0.01, r'number of grid points per spatial dimension $N$', ha='center')
+fig.savefig("kernel_fp32.png",dpi=600,bbox_inches = 'tight',pad_inches = 0)
 plt.close(fig)
 
 
@@ -427,7 +428,8 @@ plt.close(fig)
 ###############################################################################################
 fig = plt.figure()
 fig, ax = plt.subplots(figsize=(5, 3))
-ax.set_xlabel(r'grid size $N$')
+#ax.set_xlabel(r'grid size $N$')
+ax.set_xlabel(r'number of grid points per spatial dimension $N$')
 ax.set_ylabel(r'energy per grid point update [nJ]')
 
 
