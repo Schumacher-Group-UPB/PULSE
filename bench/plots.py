@@ -217,7 +217,7 @@ plt.close(fig)
 
 #subplots for alignment
 ##########################
-fig, axs = plt.subplots(6, 2, sharex=True, sharey=False, layout="constrained",figsize=(6, 14))
+fig, axs = plt.subplots(6, 2, sharex=True, sharey=False, layout="constrained",figsize=(8, 12))
 
 meta=[]
 meta.append({"i":0,"j":0,"xlim":[64,4096],"yoffset":0.1,"dev":"4060ti","text":'NVIDIA\n4060 TI\nfp32',"text_x":950,"text_y":5.0,"d":"4060ti_subgrids","fp":"fp32","sg":[{"x":1,"y":1,"l":"no subgrids"},{"x":2,"y":1,"l":"2x1"},{"x":4,"y":1,"l":"4x1"},{"x":8,"y":1,"l":"8x1"}],"xticks":2,"xspace":1})
