@@ -1,8 +1,7 @@
-clear;    %clear Matlab Workspace
-rng('shuffle');
 x0=10; y0=10;  width=1200; height=1000;
-%------------------------------------------Misc------------------------------------------%
-N = 256;                  %grid size
+
+% system discretisation
+N = 256;                   %grid size
 L = 230.4;                 %real space grid length
 dxy = L/N;                 %spatial discretization step
 x = sparse(dxy*(-N/2+1:N/2)).';   %x dimension discretization
@@ -10,16 +9,18 @@ y = sparse(dxy*(-N/2+1:N/2)).';   %y dimension discretization
 kx = (2*pi*(-N/2+1:N/2)/L).';     %wavevector discretization
 ky = (2*pi*(-N/2+1:N/2)/L).';     %wavevector discretization
 
+% set Wigner Noise and sampling
 dV = L^2/N^2;
 MultP = 1:0.25:8;
 Nj=150; 
 
+% time evolution settings
 tsave = 5;
-tav=0;%1000;
+tav=1000;
 dt = 0.04;
 tend = 2000;
 
-%---------------------GP - parameter definition--------------------------%
+% parameter definition
 hbar = 6.582119569E-1;  %hbar in eVps^-1
 mc = 5.684E-1;          %effective polariton mass
 gammaC = 0.2;           %polariton loss rate
@@ -29,7 +30,8 @@ gc = 6E-3;              %polariton-polariton interaction strength
 gr = 2*gc;              %polariton-reservoir interaction strength      
 
 header = {'#' 'SIZE' num2str(N) num2str(N) num2str(L) num2str(L) num2str(dxy) num2str(dxy)};
-%-------------------------------Pump profile-----------------------------%
+
+% create pump profile and initial condition
 Pthr = gammaC*gammaR/R;
 wp = 65; %mum
 p = zeros(N,N);
@@ -44,7 +46,6 @@ y0 = 0;
 
 for i=1:N
     for j=1:N
-        mask(i,j) = exp(-((x(i)-x0).^2/(2*sx^2)+(y(j)-y0).^2/(2*sy^2)).^Py);
         r = sqrt(x(i)^2+y(j)^2);
         p(i,j) = Pthr*exp(-r^4/wp^4);
     end
@@ -59,18 +60,13 @@ wavefunction(N+1:2*N,1:N) = imag(psi);
 reservoir(1:N,1:N) = real(res);
 reservoir(N+1:2*N,1:N) = imag(res);
 
-fftmask(1:N,1:N) = real(mask);
-fftmask(N+1:2*N,1:N) = imag(mask);
-
-writecell(header,'data/load/fftmask.txt','Delimiter',' ');
 writecell(header,'data/load/wavefunction_plus.txt','Delimiter',' ');
 writecell(header,'data/load/reservoir_plus.txt','Delimiter',' ');
 
-writematrix(fftmask,'data/load/fftmask.txt','Delimiter',' ','WriteMode','append');
 writematrix(wavefunction,'data/load/wavefunction_plus.txt','Delimiter',' ','WriteMode','append');
 writematrix(reservoir,'data/load/reservoir_plus.txt','Delimiter',' ','WriteMode','append');
-tic;
-for j=1:length(MultP) %2 p_thr = 5
+
+for j=1:length(MultP)
     disp(['Amplitude multiplier = ',num2str(MultP(j))]);
     for k=1:Nj
         pump_new = MultP(j)*p;
@@ -80,7 +76,7 @@ for j=1:length(MultP) %2 p_thr = 5
         writecell(header,'data/load/pump_plus.txt','Delimiter',' ');
         writematrix(pump,'data/load/pump_plus.txt','Delimiter',' ','WriteMode','append');
 
-        %-----------------------------------call-pulse-------------------------------------------%
+        % create runstring
         str1 = 'main.exe --dw 1 --threads 2 ';  
         str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary periodic periodic ']; 
         str3 = ['--tmax ',num2str(tend),' --tstep ',num2str(dt),' '];                                                 
@@ -88,15 +84,13 @@ for j=1:length(MultP) %2 p_thr = 5
         str5 = ['--gammaC ',num2str(gammaC),' --gammaR ',num2str(gammaR),' --gc ',num2str(gc),' --gr ',num2str(gr),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' --R ',num2str(R),' '];
         str6 = ['--historyMatrix 0 ',num2str(N),' 0 ',num2str(N),' 1 --output wavefunction --outEvery ',num2str(tsave),' --path data/results/'];
 
-        %--fftMask 1 add 74.88 74.88 0 0 plus 15 none gauss+noDivide --fftEvery 0.04 
-
+        % execute PHOENIX
         inputstr = [str1,str2,str3,str4,str5,str6];
         [~,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
         htmlString = removeAnsiCodes(cmdout);
-        %disp(htmlString(end-2630:end));
+        disp(htmlString(end-2630:end));
 
-        %----------------------------------post-processing---------------------------------------%
-       
+        % post-processing: save data for evaluation of the quantum coherence, the correlation function and mean and variance of averaged polariton excitation number 
         projectdir = 'data/results/timeoutput/';
         dinfo = dir( fullfile(projectdir, 'wavefunction*.txt'));
         nfiles = length(dinfo); 
@@ -120,122 +114,62 @@ for j=1:length(MultP) %2 p_thr = 5
 
     end
 end
-toc;
-load('MaximaleMaxima.mat');
 
-figure(4);clf;
-hold on;
-plot(maxn,'r');
-plot(MaxPsiMaxi(1,:),'b');
-plot(MaxPsiJan(1,:),'k');
-legend('PULSE','Maxi','PULSE_{old}');box on;grid on;ylabel('max($|\psi|^2$)','Interpreter','latex','FontSize',20);axis tight;
-hold off;set(gca,'fontsize',20);
-
-thisdata = readmatrix('data/results/wavefunction_plus.txt');
-psi = thisdata(1:N,:)+1i*thisdata(N+1:2*N,:);
-
-figure(2);
-ax(1)=subplot(1,4,1);surf(x,y,abs(psi).^2);shading interp;view(2);colorbar;colormap(ax(1),'jet');
-pbaspect([1 1 1]);axis tight;xlabel('x (µm)');ylabel('y (µm)');shading interp;set(gca, 'Fontsize',20);
-ax(2)=subplot(1,4,2);surf(x,y,angle(psi));colorbar;shading interp;view(2);colormap(ax(2),'jet');
-pbaspect([1 1 1]);axis tight;set(gca,'YTickLabel',[]);xlabel('x (µm)');shading interp;set(gca, 'Fontsize',20);
-ax(3)=subplot(1,4,3);surf(kx,ky,abs(fftshift(fft2(psi))*L/N^2-0.5).^2);shading interp;view(2);colorbar;colormap(ax(3),'jet');
-pbaspect([1 1 1]);axis tight;xlabel('kx (1/µm)');ylabel('ky (1/µm)');shading interp;set(gca, 'Fontsize',20);
-ax(4)=subplot(1,4,4);hold on;
-plot(maxn,'r');
-plot(MaxPsiMaxi(1,:),'b');
-plot(MaxPsiJan(1,:),'k');
-legend('PULSE','Maxi','PULSE_{old}');box on;grid on;ylabel('max($|\psi|^2$)','Interpreter','latex','FontSize',20);axis tight;pbaspect([1 1 1]);
-hold off;set(gca,'fontsize',20);colorbar;
-
-thisfile = 'data/results/timeoutput/wavefunction_plus_398.txt';
-thisdata = readmatrix(thisfile);
-psi = thisdata(1:N,:)+1i*thisdata(N+1:2*N,:);
-
-figure(1);
-ax(1)=subplot(1,3,1);surf(x,y,abs(psi).^2);shading interp;view(2);colorbar;colormap(ax(1),'jet');
-pbaspect([1 1 1]);axis tight;xlabel('x (µm)');ylabel('y (µm)');shading interp;set(gca, 'Fontsize',20);
-ax(2)=subplot(1,3,2);surf(x,y,angle(psi));colorbar;shading interp;view(2);colormap(ax(2),'jet');
-pbaspect([1 1 1]);axis tight;set(gca,'YTickLabel',[]);xlabel('x (µm)');shading interp;set(gca, 'Fontsize',20);
-ax(3)=subplot(1,3,3);surf(kx,ky,abs(fftshift(fft2(psi))*L/N^2-0.5).^2);shading interp;view(2);colorbar;colormap(ax(3),flipud(gray));xlim([-1 1]);ylim([-1 1]);
-pbaspect([1 1 1]);xlabel('kx (1/µm)');ylabel('ky (1/µm)');shading interp;set(gca, 'Fontsize',20);clim([0 800]);
-
-str1 = VideoWriter('wavefunction_evolve.mp4','MPEG-4');
-str1.FrameRate = 60;str1.Quality = 90;open(str1);
-
-for K = 0 : nfiles-1-tav/tsave
-    thisfile = ['data/results/timeoutput/wavefunction_plus_',num2str(K+tav/tsave),'.txt'];
-    thisdata = readmatrix(thisfile);
-    psi = reshape(thisdata(1:N,:)+1i*thisdata(N+1:2*N,:),N,N);
-
-    obj1= figure(3);
-    ax(1)=subplot(1,3,1);surf(x,y,abs(psi).^2);shading interp;view(2);colorbar;colormap(ax(1),'jet');
-    pbaspect([1 1 1]);axis tight;xlabel('x (µm)');ylabel('y (µm)');shading interp;set(gca, 'Fontsize',20);
-    ax(2)=subplot(1,3,2);surf(x,y,angle(psi));colorbar;shading interp;view(2);colormap(ax(2),'jet');
-    pbaspect([1 1 1]);axis tight;set(gca,'YTickLabel',[]);xlabel('x (µm)');shading interp;set(gca, 'Fontsize',20);
-    ax(1)=subplot(1,3,3);surf(kx,ky,abs(fftshift(fft2(psi))*L/N^2-0.5).^2);shading interp;view(2);colorbar;colormap(ax(1),'jet');
-    pbaspect([1 1 1]);axis tight;xlabel('kx (1/µm)');ylabel('ky (1/µm)');shading interp;set(gca, 'Fontsize',20);
-    currFrame = getframe(obj1);
-    writeVideo (str1, currFrame);
-end
-close(str1);
-
-
-%----------------------------------String handeling functions----------------------------------%
 function cleanedString = removeAnsiCodes(inputString)
 % Use regexprep to remove ANSI escape codes
 cleanedString = strrep(inputString, '[90m#[0m', ' ');
 cleanedString = regexprep(cleanedString, '\[0m|\[1m|\[2m|\[3m|\[4m|\[30m|\[31m|\[32m|\[33m|\[34m|\[35m|\[36m|\[37m|[93m|\[94m|\[?25h|\[2K|\[?25l|\[90m|\[A', '');
 end
 
-% Data processing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% this part of the code determines the quantum coherence, the correlation function and mean and variance of averaged polariton excitation number 
 
-N=256;                                                                      %Anzahl Gitterpunkte
-L=230.4; %mum                                                               %Größe der "Probe"
+N=256;                                                                   
+L=230.4; 
 
 dx = L/(N-1);
 x = -L/2:dx:L/2;
 dV = L^2/N^2;
 kx = -2*pi/(2*dx):2*pi/L:2*pi/(2*dx);
 
-tend = 2000; %ps                                                            %Länge der Rechnung
-dt = 0.04; %ps                                                              %Zeitschritt
-tsave = 5; %ps                                                              %Abstand in denen gespeichert wird
+tend = 2000;                                                       
+dt = 0.04;                                                            
+tsave = 5;                                                            
 
-Nj=5;                                                                      %Anzahl der unabhängigen Rechnungen
+Nj=5;                                                                      
 
-tav=1000;                                                                   %Ab welchem Zeitpunkt soll in der zeit gemittelt werden?
+tav=1000;                                                                  
 
-MultP = 1:0.5:8;                                                            %Vielfaches der Threshold-Pumpaplitude
+MultP = 1:0.5:8;                                                            
 
-DirName='BroadEx/Psi/';                                                        %Bezeichnung des Pfades wo die "Rohdaten" liegen
+DirName='BroadEx/Psi/';                                                       
 PsiName="navPsi";
 
-QCplt=zeros(1,length(MultP));                                               %fürs Plotten später
+QCplt=zeros(1,length(MultP));                                              
 g2plt=zeros(1,length(MultP));
 g2anplt=zeros(1,length(MultP));
 ncplt=zeros(1,length(MultP));
 dnc2plt=zeros(1,length(MultP));
 
-for m=1:length(MultP)                                                       %Ausführen von Nj Rechnungen 
+for m=1:length(MultP)                                                       
     %% Average berechnen
-    AvPsi=zeros(N^2,tend/tsave+1);                                      %gemitteltes Psi
-    Avk2=zeros(N^2,tend/tsave+1);                                       %im k-Raum gemitteltes Psi
+    AvPsi=zeros(N^2,tend/tsave+1);                                      
+    Avk2=zeros(N^2,tend/tsave+1);                                       
     Avk4=zeros(N^2,tend/tsave+1);
     for j=1:Nj
-        DataName=strcat('Broad',string(j),'_Pump',string(MultP(1,m)),'.mat');   %Name der zu ladenden Daten
-        load(strcat(DirName,DataName),PsiName);                               %Datei laden
+        DataName=strcat('Broad',string(j),'_Pump',string(MultP(1,m)),'.mat');  
+        load(strcat(DirName,DataName),PsiName);                              
         Psi=eval(PsiName);
-        AvPsi = AvPsi+abs(Psi).^2;                                          %Summe im Ortsraum über verschiedene Datensätze
+        AvPsi = AvPsi+abs(Psi).^2;                                         
         temp=zeros(N^2,tend/tsave+1);
         for i=1:tend/tsave+1
-            temp(:,i)=reshape(abs(fftshift(fft2(reshape(Psi(:,i),N,N)))*dV/L-0.5).^2,N^2,1);    %Furriertrafo von jedem Zeitschritt
+            temp(:,i)=reshape(abs(fftshift(fft2(reshape(Psi(:,i),N,N)))*dV/L-0.5).^2,N^2,1);    
         end
-        Avk2 = Avk2+temp;                                                   %Summe im k-Space über verschiedene Datensätze
+        Avk2 = Avk2+temp;                                                   
         Avk4 = Avk4+temp.^2;
      
     end
-    AvPsi=sum(AvPsi(:,tav/tsave+1:end),2)/(Nj*((tend-tav)/tsave+1));    %Summe über der Zeit und Mittelung
+    AvPsi=sum(AvPsi(:,tav/tsave+1:end),2)/(Nj*((tend-tav)/tsave+1));    
     Avk2=sum(Avk2(:,tav/tsave+1:end),2)/(Nj*((tend-tav)/tsave+1));
     Avk4=sum(Avk4(:,tav/tsave+1:end),2)/(Nj*((tend-tav)/tsave+1));
     save(strcat(DirName,'AvData_Pump',string(MultP(1,m)),'.mat'),"Avk4","AvPsi","Avk2");
@@ -243,13 +177,13 @@ for m=1:length(MultP)                                                       %Aus
     %% Quatum Coherence berechnen
     load(strcat(DirName,'AvData_Pump',string(MultP(1,m)),'.mat'),"Avk4","Avk2");
     
-    if mod(N,2)==0                                                      %definiere Mittelpunkt von Gitter
+    if mod(N,2)==0                                                     
         middle=N/2;
     else
         middle=floor(N/2)+1;
     end
     
-    temp=reshape(Avk2,N,N);                                             %Radius zum Mitteln im k-Space finden
+    temp=reshape(Avk2,N,N);                                             
     for i=middle+1:N
         if temp(i,middle)<250
             rk=kx(1,i+1);
@@ -257,14 +191,14 @@ for m=1:length(MultP)                                                       %Aus
         end
     end
 
-    Np=0;                                                               %Anzahl der Punkte im Radius ermitteln
+    Np=0;                                                               
     for i=1:N^2
         if sqrt(kx(1,getx(i,N))^2+kx(1,gety(i,N))^2)<=rk
             Np=Np+1;
         end
     end
     
-    k2=zeros(Np,1);                                                     %Speichern der notwendigen Punkte im k-Space
+    k2=zeros(Np,1);                                                    
     k4=zeros(Np,1);
     countk=1;
     for i=1:N^2
@@ -275,7 +209,7 @@ for m=1:length(MultP)                                                       %Aus
         end
     end
 
-    nc=sum(k2-0.5)/Np;                                                 %Calc nc, dnc2, alpha0^2, nbar, etc. aus k-Raum Average
+    nc=sum(k2-0.5)/Np;                                                 
     dnc2=(sum(k4-k2)-sum((k2-0.5).^2))/Np;
     alpha02=sqrt(nc^2+nc-dnc2);
     nbar=nc-alpha02;
