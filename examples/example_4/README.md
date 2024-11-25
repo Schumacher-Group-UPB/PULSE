@@ -3,15 +3,18 @@
 This section demonstrates how PHOENIX can analyze statistical properties of polariton condensates, including quantum coherence, using the truncated Wigner approximation (TWA). Quantum coherence provides a measure of Fock-state superpositions within the condensate, offering insights beyond traditional first- and second-order correlation functions ($g^{(1)}$ and $g^{(2)}$).
 
 Monte Carlo methods were used to simulate stochastic differential equations incorporating quantum and classical fluctuations. PHOENIX's implementation solves these equations efficiently, allowing systematic sampling of the condensate wavefunction. The stochastic noise term is scaled by parameter $\nu$, and correlations of the complex Wiener noise are defined as:
+
 $$
 \langle dW(\textbf{r})dW(\textbf{r'})\rangle = 0, \quad 
 \langle dW(\textbf{r})dW^*(\textbf{r'})\rangle = (Rn + \gamma_\mathrm{c})\frac{\delta_{\textbf{r,r'}}}{2\Delta V}.
 $$
 
 A continuous-wave pump with a super-Gaussian profile was applied:
+
 $$
 P(\textbf{r}) = P_0 \exp\left(-\frac{\textbf{r}^4}{w_p^2}\right),
 $$
+
 where $w_p = 65~\mu\text{m}$. The simulation involved $150$ repetitions, sampling wavefunctions every $5~\text{ps}$ over $1~\text{ns}$. After convergence, key properties such as polariton excitation number, $g^{(2)}(0)$, and quantum coherence $\zeta$ were evaluated for varying pump intensities.
 
 PHOENIX performed $2250$ samples with GPU acceleration, requiring approximately 60 hours of computation. Each sample took 95 seconds on an NVIDIA RTX 4090 GPU. PHOENIX's computational efficiency allows for comprehensive statistical analyses and is extendable to quantum state tomography and density matrix reconstruction, as demonstrated in recent studies.

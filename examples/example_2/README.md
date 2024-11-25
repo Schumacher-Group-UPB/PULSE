@@ -3,9 +3,11 @@
 This example explores the stability and excitation of polariton topological corner states in large 2D AAH-SSH potential lattices, enabled by the computational efficiency of PHOENIX. These systems extend prior studies to significantly larger structures, utilizing a grid of $9000 \times 9000$ points and $272 \times 272$ potential wells. The robustness of topologically protected states is demonstrated in this extended setup, which is relevant for applications such as unidirectional signal propagation, optical communication, and quantum information processing.
 
 The potential well distribution in the lattice is modeled by:
+
 $$
 V(x, y) = \sum_n V_0 \exp\left(-\frac{(x-x_n)^2 + (y\pm y_n)^2}{w_v^2}\right)^{10}
 $$
+
 with well depth $V_0 = -5~\text{meV}$ and width $w_v = 1~\mu\text{m}$.
 
 The system is driven near the frequency of a predetermined corner state, $\omega = -5.6883~\text{THz}$, optimized using \textit{fmindbnd}. Numerical efficiency is achieved using GPU acceleration (NVIDIA RTX 4090) and subgrid decomposition ($18 \times 18$ subgrids), enabling time-domain simulations for large grids in approximately 7.5 hours.
