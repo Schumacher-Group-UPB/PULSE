@@ -16,6 +16,7 @@ static inline std::string ORANGE = "";
 static inline std::string RESET = "";
 static inline std::string BOLD = "";
 static inline std::string UNDERLINE = "";
+static inline std::string ITALIC = "";
 
 static inline std::string CLEAR_LINE = "\033[2K";
 static inline std::string LINE_UP = "\033[A";
@@ -35,6 +36,7 @@ static inline std::string ORANGE = "\033[38;2;128;59;3m";
 static inline std::string RESET = "\033[0m";
 static inline std::string BOLD = "\033[1m";
 static inline std::string UNDERLINE = "\033[4m";
+static inline std::string ITALIC = "\033[3m";
 
 static inline std::string CLEAR_LINE = "\033[2K";
 static inline std::string LINE_UP = "\033[A";

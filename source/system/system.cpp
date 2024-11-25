@@ -140,11 +140,9 @@ void PHOENIX::SystemParameters::calculateAuto() {
     auto [suggested_subgrids_columns, suggested_subgrids_rows] = find_auto_subgridsize( p.N_r, p.N_c );
     if ( p.subgrids_rows == 0 ) {
         p.subgrids_rows = suggested_subgrids_rows;
-        std::cout << PHOENIX::CLIO::prettyPrint( "Subgrid Rows automatically determined as " + PHOENIX::CLIO::to_str( suggested_subgrids_rows ), PHOENIX::CLIO::Control::Info ) << std::endl;
     }
     if ( p.subgrids_columns == 0 ) {
         p.subgrids_columns = suggested_subgrids_columns;
-        std::cout << PHOENIX::CLIO::prettyPrint( "Subgrid Columns automatically determined as " + PHOENIX::CLIO::to_str( suggested_subgrids_columns ), PHOENIX::CLIO::Control::Info ) << std::endl;
     }
 
     // Number of subgrid points

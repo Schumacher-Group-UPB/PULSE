@@ -19,25 +19,25 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
         use_twin_mode = true;
     }
 
-    if ( ( index = PHOENIX::CLIO::findInArgv( "--gammaC", argc, argv ) ) != -1 )
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "gammaC", "gamma_C", "gammac", "gamma_c" }, argc, argv, 0, "--" ) ) != -1 )
         p.gamma_c = PHOENIX::CLIO::getNextInput( argv, argc, "gamma_c", ++index );
-    if ( ( index = PHOENIX::CLIO::findInArgv( "--gammaR", argc, argv ) ) != -1 )
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "gammaR", "gamma_R", "gammar", "gamma_r" }, argc, argv, 0, "--" ) ) != -1 )
         p.gamma_r = PHOENIX::CLIO::getNextInput( argv, argc, "gamma_r", ++index );
-    if ( ( index = PHOENIX::CLIO::findInArgv( "--gc", argc, argv ) ) != -1 )
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "gc", "g_c" }, argc, argv, 0, "--" ) ) != -1 )
         p.g_c = PHOENIX::CLIO::getNextInput( argv, argc, "g_c", ++index );
-    if ( ( index = PHOENIX::CLIO::findInArgv( "--gr", argc, argv ) ) != -1 )
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "gr", "g_r" }, argc, argv, 0, "--" ) ) != -1 )
         p.g_r = PHOENIX::CLIO::getNextInput( argv, argc, "g_r", ++index );
     if ( ( index = PHOENIX::CLIO::findInArgv( "--R", argc, argv ) ) != -1 ) {
         p.R = PHOENIX::CLIO::getNextInput( argv, argc, "R", ++index );
     }
-    if ( ( index = PHOENIX::CLIO::findInArgv( { "L", "gridlength" }, argc, argv, 0, "--" ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "L", "gridlength", "xmax" }, argc, argv, 0, "--" ) ) != -1 ) {
         p.L_x = PHOENIX::CLIO::getNextInput( argv, argc, "L", ++index );
         p.L_y = PHOENIX::CLIO::getNextInput( argv, argc, "L", index );
     }
-    if ( ( index = PHOENIX::CLIO::findInArgv( "--g_pm", argc, argv ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "g_pm", "gpm", "g_PM" }, argc, argv, 0, "--" ) ) != -1 ) {
         p.g_pm = PHOENIX::CLIO::getNextInput( argv, argc, "gm", ++index );
     }
-    if ( ( index = PHOENIX::CLIO::findInArgv( "--deltaLT", argc, argv ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( { "deltaLT", "deltalt", "dlt" }, argc, argv, 0, "--" ) ) != -1 ) {
         p.delta_LT = PHOENIX::CLIO::getNextInput( argv, argc, "deltaLT", ++index );
     }
 
@@ -49,7 +49,7 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
     if ( ( index = PHOENIX::CLIO::findInArgv( "--blocksize", argc, argv ) ) != -1 )
         block_size = (int)PHOENIX::CLIO::getNextInput( argv, argc, "block_size", ++index );
 
-    if ( ( index = PHOENIX::CLIO::findInArgv( "--output", argc, argv ) ) != -1 ) {
+    if ( ( index = PHOENIX::CLIO::findInArgv( "output", argc, argv ) ) != -1 ) {
         output_keys.clear();
         auto output_string = PHOENIX::CLIO::getNextStringInput( argv, argc, "output", ++index );
         // Split output_string at ","
@@ -78,7 +78,7 @@ void PHOENIX::SystemParameters::init( int argc, char** argv ) {
     // We can also disable to SFML renderer by using the --nosfml flag.
     disableRender = true;
 #ifdef SFML_RENDER
-    if ( PHOENIX::CLIO::findInArgv( "-nosfml", argc, argv ) == -1 )
+    if ( PHOENIX::CLIO::findInArgv( "-nosfml", argc, argv ) == -1 or PHOENIX::CLIO::findInArgv( "-norender", argc, argv ) == -1 )
         disableRender = false;
 #endif
 
