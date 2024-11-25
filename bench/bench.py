@@ -46,6 +46,8 @@ if not args.dryrun:
         #build run
         d=os.path.join("runs",name,str(ic))
         os.makedirs(d,exist_ok=True)
+        #if gv(data,comb[ic],"makes")["label"]!="full_fp64" or gv(data,comb[ic],"grids")!=704 or gv(data,comb[ic],"subgrids")[0]!=8 or gv(data,comb[ic],"subgrids")[1]!=8:
+        #   continue
 
         #build code
         bindir="build"
