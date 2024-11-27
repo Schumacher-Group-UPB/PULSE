@@ -24,13 +24,21 @@ OPTIMIZATION ?= -O3
 # NUMA
 NUMA ?= FALSE
 
+TUNE ?= native
+
 # Compiler flags. Warning 4005 is for redefinitions of macros, which we actively use.
-GCCFLAGS = -std=c++20 -fopenmp -x c++ -mtune=native -march=native -funroll-loops -finline-limit=20000 #-fopt-info-vec
+GCCFLAGS = -std=c++20 -fopenmp -x c++ -funroll-loops -finline-limit=20000 #-fopt-info-vec
+
+ifeq ($(TUNE),native)
+	GCCFLAGS += -mtune=native -march=native
+endif
+
 ifeq ($(OS),Windows_NT)
 	NVCCFLAGS = -std=c++20 -Xcompiler -openmp -lcufft -lcurand -lcudart -lcudadevrt -Xcompiler="-wd4005" -rdc=true --expt-extended-lambda --expt-relaxed-constexpr # --dlink-time-opt --generate-line-info
 else
 	NVCCFLAGS = -std=c++20 -Xcompiler -fopenmp -lcufft -lcurand -lcudart -lcudadevrt -diag-suppress 177 -lstdc++ -rdc=true --expt-extended-lambda --expt-relaxed-constexpr # --dlink-time-opt 
 endif
+
 SFMLLIBS = -I$(SFML_PATH)/include/ -L$(SFML_PATH)/lib
 
 ifneq ($(ARCH),NONE)

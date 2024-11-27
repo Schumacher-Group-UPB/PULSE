@@ -61,8 +61,8 @@ void print_name() {
     ss.clear();
 
     // Version Information
-    ss << "Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.1.0" << EscapeSequence::RESET;
-    std::cout << PHOENIX::CLIO::centerStringRaw( ss.str(), console_width, "Version: 0.1.0" ) << std::endl;
+    ss << "Version: " << EscapeSequence::BOLD << EscapeSequence::BLUE << "0.2.0a" << EscapeSequence::RESET;
+    std::cout << PHOENIX::CLIO::centerStringRaw( ss.str(), console_width, "Version: 0.2.0a" ) << std::endl;
     //std::cout << PHOENIX::CLIO::centerString( "https://github.com/Schumacher-Group-UPB/PHOENIX", console_width ) << std::endl;
 
     // Citation Information
