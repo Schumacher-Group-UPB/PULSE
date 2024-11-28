@@ -11,8 +11,8 @@ This folder contains examples demonstrating the capabilities of PHOENIX for mode
 2. [Example 2: Algorithm-Assisted Localization of Exceptional Points](example_2/README.md)  
    Demonstrates the localization of exceptional points in reservoir-coupled polariton condensates using numerical optimization.
 
-3. [Example 3: Localized Vortices in Spinor Polariton Condensates](example_3/README.md)  
-   Investigates the formation and classification of vortex states with spin-orbit coupling in spinor polariton condensates.
-
-4. [Example 4: Phase-Space Sampling and Quantum-State Tomography](example_4/README.md)  
+3. [Example 3: Phase-Space Sampling and Quantum-State Tomography](example_3/README.md)  
    Analyzes quantum coherence and statistical properties of polariton condensates using Monte Carlo simulations.
+   
+4. [Example 4: Localized Vortices in Spinor Polariton Condensates](example_4/README.md)  
+   Investigates the formation and classification of vortex states with spin-orbit coupling in spinor polariton condensates.
