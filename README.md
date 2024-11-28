@@ -1,4 +1,9 @@
 ![resources/banner.png](resources/banner.png)
+---
+
+Related Publications:
+
+[![arXiv](https://img.shields.io/badge/arXiv-2411.18341-b31b1b.svg)](https://arxiv.org/abs/2411.18341)
 
 PHOENIX is a CUDA-accelerated Solver for the nonlinear two-dimensional Schrödinger Equation. Primarily developped to simulate Polariton Condensates, PHOENIX is able to do much more than that!
 
