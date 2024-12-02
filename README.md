@@ -7,7 +7,7 @@ Related Publications:
 
 PHOENIX is a CUDA-accelerated Solver for the nonlinear two-dimensional Schrödinger Equation. Primarily developped to simulate Polariton Condensates, PHOENIX is able to do much more than that!
 
-We provide multiple examples using PHOENIX in scientific work. See the [examples folder](/examples/) for an overview. We provide Jupyter Notebooks as well as MatLab files to launch PHOENIX into different configurations. Simply use one of the precompiled binaries from the [current release](https://github.com/AG-Schumacher-UPB/PHOENIX/releases) and drop it into the same folder as the example you want to run. Make sure to edit the respective example file to match the executable.
+We provide multiple examples using PHOENIX in scientific work. See the [examples folder](/examples/) for an overview. We provide Jupyter Notebooks as well as MatLab files to launch PHOENIX into different configurations. Simply use one of the precompiled binaries from the [current release](https://github.com/Schumacher-Group-UPB/PHOENIX/releases/) and drop it into the same folder as the example you want to run. Make sure to edit the respective example file to match the executable.
 
 # Requirements
 - [MSVC](https://visualstudio.microsoft.com/de/downloads/) [Windows] or [GCC](https://gcc.gnu.org/) [Linux]
