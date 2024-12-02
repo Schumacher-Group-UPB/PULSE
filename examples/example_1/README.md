@@ -1,33 +1,22 @@
-# Algorithm-Assisted Localization of Exceptional Points in Reservoir-Coupled Polariton Condensates
+# Coherent Excitation of Polariton Topological Corner States in Large AAH-SSH Potential Lattices
 
-This section investigates the localization of exceptional points (EPs) in reservoir-coupled polariton condensates, leveraging PHOENIX's computational efficiency. Exceptional points are singularities in non-Hermitian systems where eigenvalues and eigenvectors coalesce, enabling unique phenomena like loss-induced transparency and unidirectional invisibility. These points, particularly in nonlinear systems, present challenges for precise localization due to the coupling of mode gain, loss, and energy through nonlinearities.
+This example explores the stability and excitation of polariton topological corner states in large 2D AAH-SSH potential lattices, enabled by the computational efficiency of PHOENIX. These systems extend prior studies to significantly larger structures, utilizing a grid of $9000 \times 9000$ points and $272 \times 272$ potential wells. The robustness of topologically protected states is demonstrated in this extended setup, which is relevant for applications such as unidirectional signal propagation, optical communication, and quantum information processing.
 
-A second-order exceptional point is studied in a double-well potential described by:
-
-$$
-V(x, y) = V_1 f(x_1, w_v) + V_2 f(x_2, w_v),
-$$
-
-where the envelope function is:
+The potential well distribution in the lattice is modeled by:
 
 $$
-f(x_\text{shift}, w) = \exp\left(-\frac{(x-x_\text{shift})^2 + y^2}{w^2}\right)^2.
+V(x, y) = \sum_n V_0 \exp\left(-\frac{(x-x_n)^2 + (y\pm y_n)^2}{w_v^2}\right)^{10}
 $$
 
-The well depths are $V_1 = -2.2~\text{meV}$ and $V_2 = -2.0~\text{meV}$, with a separation of $d = 4~\mu\text{m}$ and a well radius $w_v = 1.5~\mu\text{m}$. Nonresonant excitation is applied via a Gaussian-shaped pump:
+with well depth $V_0 = -5~\text{meV}$ and width $w_v = 1~\mu\text{m}$.
 
-$$
-P(x, y) = P_1 f(x_1, w_p) + P_2 f(x_2, w_p),
-$$
+The system is driven near the frequency of a predetermined corner state, $\omega = -5.6883~\text{THz}$, optimized using \textit{fmindbnd}. Numerical efficiency is achieved using GPU acceleration (NVIDIA RTX 4090) and subgrid decomposition ($18 \times 18$ subgrids), enabling time-domain simulations for large grids in approximately 7.5 hours.
 
-where $w_p = 1~\mu\text{m}$ and pump intensities are $P_1 = 12~\text{ps}^{-1}\mu\text{m}^{-2}$ (left) and $P_2$ (right, variable). 
+After $5~\text{ns}$, the system converges to a corner state localized in the lattice corners, as illustrated in the image below.
 
-By gradually increasing $P_2$, the exceptional point is traced, showcasing condensation dynamics, mode energy bifurcation, and the characteristic condensation switch-off near the EP. The EP is automatically localized using MATLAB’s one-dimensional optimizer on the interval $P_2 = [0, 20]~\text{ps}^{-1}\mu\text{m}^{-2}$. Iterations converge to the EP, minimizing the integrated density in the system, a process completed in approximately one hour with GPU acceleration.
 
-![example2_overview_tc2.png](example2_overview_tc2.png)
+![example1_overview_tc2.png](example1_overview_tc2.png)
 
 The figure shows:  
-(a) Spatial distribution of the Gaussian pump intensity in $\text{ps}^{-1}\mu\text{m}^{-2}$.  
-(b) Double-well potential distribution in $\text{meV}$.  
-(c) Integrated density of polariton modes and mode energy bifurcation at the exceptional point. Insets show bonding and antibonding modes localized in the wells.  
-(d) Algorithm-assisted localization of the exceptional point with increasing iterations marked by progressively lighter colors.
+(a) The extended double-wave lattice with $9000 \times 9000$ grid points and $272 \times 272$ potential wells.  
+(b-c) Density and phase of the localized topological corner state, focusing on a segment around the bottom-left corner of the potential lattice. Insets highlight a single potential well and the corresponding corner state.
