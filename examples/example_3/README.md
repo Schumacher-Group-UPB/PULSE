@@ -1,28 +1,27 @@
-# Phase-Space Sampling and Quantum-State Tomography of Polariton Condensates with Monte Carlo Simulations
+# Localized Vortices in Spinor Polariton Condensates with Spin-Orbit Coupling
 
-This section demonstrates how PHOENIX can analyze statistical properties of polariton condensates, including quantum coherence, using the truncated Wigner approximation (TWA). Quantum coherence provides a measure of Fock-state superpositions within the condensate, offering insights beyond traditional first- and second-order correlation functions ($g^{(1)}$ and $g^{(2)}$).
+This section examines the formation and stability of localized vortices in spinor polariton condensates, focusing on the effects of spin-orbit coupling. Quantized vortices in polariton condensates are characterized by phase singularities and topological charges, which give rise to quantized orbital angular momentum (OAM). These vortices have potential applications in information processing and qubit analogs, where their topological charge can serve as bit or qubit values.
 
-Monte Carlo methods were used to simulate stochastic differential equations incorporating quantum and classical fluctuations. PHOENIX's implementation solves these equations efficiently, allowing systematic sampling of the condensate wavefunction. The stochastic noise term is scaled by parameter $\nu$, and correlations of the complex Wiener noise are defined as:
+Polariton condensates' spin degrees of freedom, originating from coupled exciton and photon polarization states, enable complex vortex states such as:
+- **Half-quantum vortices**: A vortex in one spin component and no vortex in the other ($m_\pm \neq 0 \wedge m_\mp = 0$).
+- **Full-spin vortices**: Parallel ($m_+ = m_-$) or antiparallel ($m_+ = -m_-$) vortices in both spin components.
 
+Spin-orbit interaction, induced by TE-TM (longitudinal-transverse) splitting, couples the vortex states of the two spin components, breaking symmetry and creating diverse vortex configurations.
+
+Numerical simulations were conducted using PHOENIX to solve the coupled equations for both spinor components ($\psi_\pm$) and their reservoirs. A $x$-linearly polarized continuous-wave pump with a ring profile was used:
 $$
-\langle dW(\textbf{r})dW(\textbf{r'})\rangle = 0, \quad 
-\langle dW(\textbf{r})dW^*(\textbf{r'})\rangle = (Rn + \gamma_\mathrm{c})\frac{\delta_{\textbf{r,r'}}}{2\Delta V}.
+P_\pm(\textbf{r}) = P_0\frac{\textbf{r}^2}{w_p^2} \exp\left(\frac{\textbf{r}^2}{w_p^2}\right),
 $$
+with $P_0 = 100~\mu\text{m}^{-2}\text{ps}^{-1}$ and radius $w_p$.
 
-A continuous-wave pump with a super-Gaussian profile was applied:
+High computational efficiency allowed systematic scanning of vortex states across various topological charge configurations ($m_+ - m_-$, $m_+ + m_-$), as shown in Fig.~\ref{fig:example3}. These simulations revealed diverse vortex patterns and their associated real-space symmetries, driven by spin-orbit coupling.
 
-$$
-P(\textbf{r}) = P_0 \exp\left(-\frac{\textbf{r}^4}{w_p^2}\right),
-$$
+Each simulation evaluated $10~\text{ns}$ of temporal evolution on a $500 \times 500$ grid, with runtime of approximately 1 minute per run using an NVIDIA RTX 4090 GPU and AMD EPYC 7443P CPU. 
 
-where $w_p = 65~\mu\text{m}$. The simulation involved $150$ repetitions, sampling wavefunctions every $5~\text{ps}$ over $1~\text{ns}$. After convergence, key properties such as polariton excitation number, $g^{(2)}(0)$, and quantum coherence $\zeta$ were evaluated for varying pump intensities.
+![example3_overview_with_symmetries_tc.png](example3_overview_with_symmetries_tc.png)
 
-PHOENIX performed $2250$ samples with GPU acceleration, requiring approximately 60 hours of computation. Each sample took 95 seconds on an NVIDIA RTX 4090 GPU. PHOENIX's computational efficiency allows for comprehensive statistical analyses and is extendable to quantum state tomography and density matrix reconstruction, as demonstrated in recent studies.
-
-![example4_overview_tc.png](example4_overview_tc.png)
-
-The figure displays:  
-(a) $k$-space expectation values above the condensation threshold ($P_0 = P_\mathrm{thr}$). The red ring highlights the selected modes for analysis.  
-(b) Mean and variance of the polariton excitation number as a function of excitation power in multiples of $P_\mathrm{thr}$.  
-(c) Transition of $g^{(2)}(0)$ from thermal ($g^{(2)}=2$) to coherent ($g^{(2)}=1$) states with increasing excitation power.  
-(d) Quantum coherence $\zeta$ as a function of excitation power, saturating around $\zeta = 0.2$.
+The figure shows:  
+- **Grid of vortex states** arranged by the topological charge difference ($m_+ - m_-$, vertical axis) and sum ($m_+ + m_-$, horizontal axis).  
+- **Density and phase distributions** of the circular polarizations for each vortex state, depicted with respective color bars.  
+- **Real-space symmetries** resulting from spin-orbit interaction.  
+At the bottom, a schematic shows the layout of densities and phases, with pump radii and plot window sizes for marked regions.
