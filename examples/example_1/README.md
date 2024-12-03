@@ -4,7 +4,7 @@ This example explores the stability and excitation of polariton topological corn
 To describe the dynamics of the polariton condensate under resonant excitation we solve the following form of the Gross-Pitaevskii model:
 
 $$
-\partial_t\psi= \frac{-i}{\hbar}\biggl(-\frac{\hbar^2}{2m}\nabla^2+V(x,y)+g|\psi_\pm|^2- \frac{i\hbar}{2}\gamma \biggr) \psi+E,
+\partial_t\psi= \frac{-i}{\hbar}\biggl(-\frac{\hbar^2}{2m}\nabla^2+V(x,y)+g|\psi|^2- \frac{i\hbar}{2}\gamma \biggr) \psi+E,
 $$
 
 Here $m=10^{-4}m_\mathrm{e}$ defines the effective polariton mass, $\gamma=0.005~\mathrm{ps^{-1}}$ the polariton loss rate, $g=2~\mathrm{\upmu eV\upmu m^2}$ the polariton-polariton interaction strength, and $E=E_0\mathrm{exp}\left(-i\omega t\right)$ the resonant excitation profile. The potential well distribution in the lattice is modeled by:
