@@ -117,11 +117,11 @@ old values: TE/TM  tbd.   `~920ms/ps`
 We also reproduce recent research results using PHOENIX and compare the runtimes. These are detailed in the respective publication [todo].
 
 # Custom Kernel Variables
-Right now, changing Kernels is quite easy to do. Just go to [the kernel source directory](source/cuda_solver/kernel/compute/) and edit one of the Kernel files. Recompile and you are good to go!
+Right now, changing Kernels is quite easy to do. Just go to [the kernel source](include/cuda/kernel_compute.cuh) and edit the Kernel. Recompile and you are good to go!
 
 ## Adding new variables to the Kernels
 Adding new user defined variables to the Kernels is also quite straight forward. All of the inputs are hardcoded into the program, but we can insert code at two places to make them available in the Kernels.
-### Definition of the variable in the [system header file](include/system/system.hpp). 
+### Definition of the variable in the [system header file](include/system/system_parameters.hpp). 
 
 Insert custom variable definitions into the `Parameters` struct at the designated location. This is marked in the source file so you can't miss it.
 
@@ -155,7 +155,7 @@ If done correctly, you can now add your own variables to the Kernels, parse them
 ## Adding new Envelopes to the Kernels
 Adding new matrices and their respective spatial envelopes is quite a bit more challenging, but also doable. You need to add the matrix to the solver, which is quite easy, add an envelope to the system header and then read-in that envelope.
 
-### Definition of the matrix in the [matrix container header file](include/solver/matrix_container.hpp)
+### Definition of the matrix in the [matrix container header file](include/solver/matrix_container.cuh)
 Again add the definition of your matrix at the designated location in the code. 
 
 Example:
@@ -176,7 +176,7 @@ Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix_pl
 ### Defining envelope parsing to fill the custom matrix during [the system initialization](source/system/system_initialization.cpp)
 Custom envelopes require three things: Definition of the envelope variable, parsing of the envelope and calculating/transferring it onto your custom matrix.
 
-Define your envelope in a group with the others in the [system header file](include/system/system.hpp). Search for `PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;` inside the file, and add your envelope to the list.
+Define your envelope in a group with the others in the [system header file](include/system/system_parameters.hpp). Search for `PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;` inside the file, and add your envelope to the list.
 
 Example:
     
@@ -196,7 +196,7 @@ custom_envelope = PC3::Envelope::fromCommandlineArguments( argc, argv, "customEn
 
 This envelope can then be passed via the commandline using `--customEnvelope ...`
 
-Finally, add the evaluation of the envelope. Go to the [solver initialization source file](source/cuda_solver/solver/solver_initialization.cpp), search for the designated location in the code and copy one of the already defined initialization sections. Change the variable names and you are done!
+Finally, add the evaluation of the envelope. Go to the [solver initialization source file](source/cuda_solver/solver/solver_initialization.cu), search for the designated location in the code and copy one of the already defined initialization sections. Change the variable names and you are done!
 
 Example:
 ```C++
@@ -216,7 +216,7 @@ if ( system.custom_envelope.size() == 0 ) {
 
 You are done! The host matrix will automatically get synchronized with the device matrix on the GPU whenever its device pointer is used.
 
-As a final note, you can also add outputting of your matrix in the [solver matrix output methods](source/cuda_solver/solver/solver_output_matrices.cpp). Go the the `outputInitialMatrices()` method and insert your code at the designated location.
+As a final note, you can also add outputting of your matrix in the [solver matrix output methods](source/cuda_solver/solver/solver_output_matrices.cu). Go the the `outputInitialMatrices()` method and insert your code at the designated location.
 
 Example:
 
