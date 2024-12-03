@@ -1,229 +1,325 @@
 ![resources/banner.png](resources/banner.png)
 ---
 
-Related Publications:
-
+# PHOENIX: CUDA-Accelerated Solver for the Nonlinear 2D Schrödinger Equation
 [![arXiv](https://img.shields.io/badge/arXiv-2411.18341-b31b1b.svg)](https://arxiv.org/abs/2411.18341)
 
-PHOENIX is a CUDA-accelerated Solver for the nonlinear two-dimensional Schrödinger Equation. Primarily developed to simulate Polariton Condensates, PHOENIX is able to do much more than that!
+PHOENIX is a high-performance, CUDA-accelerated solver for the nonlinear two-dimensional Schrödinger equation. Originally designed for simulating polariton condensates, it has a broad range of applications. 
 
-We provide multiple examples using PHOENIX in scientific work. See the [examples folder](/examples/) for an overview. We provide Jupyter Notebooks as well as MATLAB files to launch PHOENIX into different configurations. Simply use one of the precompiled binaries from the [current release](https://github.com/Schumacher-Group-UPB/PHOENIX/releases/) and drop it into the same folder as the example you want to run. Make sure to edit the respective example file to match the executable.
+The project comes with a variety of examples, including Jupyter Notebooks and MATLAB files, that demonstrate how to use PHOENIX in scientific research. You can explore these examples in the [examples folder](/examples/). Simply download one of the precompiled binaries from the [latest release](https://github.com/Schumacher-Group-UPB/PHOENIX/releases/) and place it in the same folder as the example you wish to run. Make sure to edit the configuration files to match your executable.
 
-# Requirements
-- [MSVC](https://visualstudio.microsoft.com/de/downloads/) [Windows] or [GCC](https://gcc.gnu.org/) [Linux]
-- [CUDA](https://developer.nvidia.com/cuda-downloads)
-- Optional: [SFML](https://www.sfml-dev.org/download.php) v 2.6.x
-- Optional: [FFTW](https://www.fftw.org/) for the CPU version
+## Table of Contents
 
-If you are on Windows it is required to install some kind of UNIX based software distribution like [msys2](https://www.msys2.org/) or any wsl UNIX distribution for the makefile to work.
-You also need to add the VS cl.exe as well as the CUDA nvcc.exe to your path if you want to compile PHOENIX yourself.
-Also, make sure to check the C++ Desktop Development section in the VS installer! Then, add [cl.exe](https://stackoverflow.com/questions/7865432/command-line-compile-using-cl-exe) to your [path](https://stackoverflow.com/questions/9546324/adding-a-directory-to-the-path-environment-variable-in-windows)
+1. [System Requirements](#system-requirements)
+2. [Quickstart Guide](#quickstart-guide)
+3. [Building PHOENIX](#building-phoenix)
+    - [With SFML Rendering](#build-with-sfml-rendering)
+    - [Without Rendering](#build-without-rendering)
+    - [CPU Kernel Compilation](#build-with-cpu-kernel)
+4. [Advanced Features](#advanced-features)
+    - [FP32 Precision](#fp32-single-precision)
+    - [CUDA Architecture Optimization](#cuda-architecture)
+5. [Troubleshooting](#troubleshooting)
+6. [Benchmark Examples](#benchmarks)
+7. [Custom Kernel Development](#custom-kernel-development)
+    - [Adding Custom Variables](#adding-new-variables-to-the-kernels)
+    - [Defining Custom Envelopes](#adding-new-envelopes-to-the-kernels)
+8. [Current Issues](#current-issues)
 
-# Quickstart
+---
 
-First, download one of the [release versions](https://github.com/Schumacher-Group-UPB/PHOENIX/releases) of PHOENIX. For CPU versions, you'll need to install [FFTW](https://www.fftw.org/). GPU versions require only the CUDA framework NVCC and a suitable host compiler — either MSVC on Windows or GCC on Linux (both are necessary prerequisites for installing NVCC). If you're using the SFML versions, make sure to install [SFML](https://www.sfml-dev.org/download.php). After setting up the required components, the respective executable should run successfully.
+## System Requirements
 
-# Build PHOENIX yourself
+To run PHOENIX, the following components are required:
 
-If you desire custom modifications to the code, or none of the precompiled versions work for you, you may as well build PHOENIX yourself. We use a simple Makefile to create binaries for either Windows or Linux.
+### Mandatory
+- **Windows**: [MSVC](https://visualstudio.microsoft.com/de/downloads/)  
+  **Linux**: [GCC](https://gcc.gnu.org/)
+- [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)  
+  Ensure the `nvcc` compiler is installed and added to your PATH.
+  
+### Optional
+- [SFML](https://www.sfml-dev.org/download.php) v2.6.x for graphical rendering
+- [FFTW](https://www.fftw.org/) for the CPU-only version of PHOENIX
 
-### Build with SFML rendering
-1 -  Clone the repository using
-```    
-    git clone --recursive https://github.com/Schumacher-Group-UPB/PHOENIX
-``` 
-This will also download the SFML repository. We suggest also downloading a precompiled version of the library using the link at the top.
+#### Additional Notes for Windows
+- Install a UNIX-based software distribution such as [msys2](https://www.msys2.org/) or any WSL-compatible Linux distribution for Makefile compatibility.
+- Add the `cl.exe` (MSVC) and `nvcc.exe` (CUDA) executables to your PATH. Follow [these steps](https://stackoverflow.com/questions/9546324/adding-a-directory-to-the-path-environment-variable-in-windows) for PATH setup.
+- Enable "C++ Desktop Development" in the Visual Studio installer.
 
-2 - Build SFML using CMake and/or MSVC
+---
 
-Alternatively, download SFML 2.6.1 or higher for MSVC if you are on Windows or for gcc if you are on linux.
+## Quickstart Guide
 
-3 - Compile PHOENIX using 
+1. **Download Precompiled Binary**  
+   Download the latest release from the [releases page](https://github.com/Schumacher-Group-UPB/PHOENIX/releases).
 
-```
-make SFML=TRUE/FALSE [SFML_PATH=external/SFML/ FP32=TRUE/FALSE ARCH=NONE/ALL/XY]
-```
-Note, that arguments in `[]` are optional and default to `FALSE` (or `NONE`) if omitted. Pass only one parameter to the arguments, for example *either* `TRUE` *or* `FALSE`.
+2. **Install Required Libraries**  
+   - GPU versions require only CUDA.  
+   - For CPU versions, install [FFTW](https://www.fftw.org/).  
+   - If using the SFML version, ensure [SFML](https://www.sfml-dev.org/download.php) is properly installed.
 
-When using SFML rendering, you need to either install all SFML libraries correctly, or copy the .dll files that come either with building SFML yourself or with the download of precompiled versions to the main folder of your PHOENIX executable. If you do not do this and still compile with SFML support, PHOENIX will crash on launch. For the compilation, you also *need* to provide the path to your SFML installation if it's not already in your systems path. You can do this by setting the `SFML_PATH=...` variable when compiling, similar to passing `SFML=TRUE`. The SFML path needs to contain the SFML `include/...` as well as the `lib/...` folder. These are NOT contained directly in the recursively cloned SFML repository, but rather get created when building SFML yourself. They are also contained in any precompiled version of SFML, so I suggest to simply download a precompiled version.
+3. **Run the Executable**  
+   Place the executable in the same folder as the desired example and configure the example files as needed.
 
-### Build without rendering
-1 - Clone the repository using 
-```bash
-git clone https://github.com/Schumacher-Group-UPB/PHOENIX
-```
+---
 
-2 - Compile PHOENIX using 
-```bash
-make [ARCH=NONE/ALL/XY]`
-```
+## Building PHOENIX
+
+If the precompiled versions don’t meet your needs, or you wish to modify the source code, you can build PHOENIX yourself.
+
+### Build with SFML Rendering
+1. **Clone the Repository**
+   ```bash
+   git clone --recursive https://github.com/Schumacher-Group-UPB/PHOENIX
+   ```
+   Ensure the `--recursive` flag is used to fetch the SFML submodule.
+
+2. **Build SFML**  
+   Use CMake or MSVC to compile SFML. Alternatively, download a precompiled version.
+
+3. **Compile PHOENIX**
+   ```bash
+   make SFML=TRUE [SFML_PATH=path/to/SFML FP32=TRUE/FALSE ARCH=CC]
+   ```
+   - **`SFML_PATH`**: Specify the SFML installation directory (if not in the system PATH).  
+   - **`FP32`**: Use single-precision floats (default: double-precision).  
+   - **`ARCH`**: Specify the CUDA compute capability (e.g., `ARCH=75`).
+
+### Build Without Rendering
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/Schumacher-Group-UPB/PHOENIX
+   ```
+
+2. **Compile PHOENIX**
+   ```bash
+   make [ARCH=CC]
+   ```
 
 ### Build with CPU Kernel
-If you, for some reason, want to compile this program as a CPU version, you can do this by adding the `CPU=TRUE` compiler flag to `make`. This is probably only useful if you do not have a NVIDIA GPU.
-While nvcc can compile this into CPU code, it generally makes more sense to use [GCC](https://gcc.gnu.org/) or any other compiler of your choice, as those are generally faster and better for CPU code than nvcc.
-You can specify the compiler using the `COMPILER=` flag to `make`.
-
+To build PHOENIX for CPU execution, use the `CPU=TRUE` flag:
 ```bash
-make [SFML=TRUE/FALSE FP32=TRUE/FALSE CPU=TRUE COMPILER=g++]
+make CPU=TRUE COMPILER=g++
 ```
 
-## FP32 - Single Precision
-By default, the program is compiled using double precision 64b floats.
-For some cases, FP32 may be sufficient for convergent simulations.
-To manually change the precision to 32b floats, use
+---
 
-```
-FP32=TRUE
-```
+## Advanced Features
 
-when using the makefile.
-
-# CUDA architecture
-You can also specify the architecture used when compiling PHOENIX. The release binaries are compiled with a variety of Compute Capabilities (CC). To ensure maximum performance, picking the CC for your specific GPU and using 
-
-```
-ARCH=xy
+### FP32 Single Precision
+By default, PHOENIX uses double-precision (64-bit) floats. For performance optimization in convergent simulations, you can switch to single-precision:
+```bash
+make FP32=TRUE
 ```
 
-when using the Makefile, where xy is your CC, is most beneficial.
+### CUDA Architecture
+Optimize for your GPU by specifying its compute capability:
+```bash
+make ARCH=CC
+```
+Replace `CC` with your GPU’s compute capability (e.g., `ARCH=86` for an RTX 3070).
 
-# Current Issues
+---
 
-- SSFM not working for TE/TM.
+## Troubleshooting
 
-- Some code refactoring required to prettify things
+### Compilation Errors Despite Correct Setup
+- **Cause**: Version mismatch between Visual Studio and CUDA.  
+- **Solution**: Update or downgrade one of the components. Compatible combinations:  
+  - VS Community 17.9.2 + CUDA 12.4
 
-# Trouble Shooting
+### Missing SFML DLLs
+Ensure the required `.dll` files are copied to the folder containing your executable.
 
-Here are some common errors and how to hopefully fix them
+---
 
-### Errors on Compilation even though VS and CUDA are installed, CUDA and cl are in the path variable
-If you get syntax or missing file errors, your Visual Studio installation may be incompatible with your current CUDA version. Try updating or downgrading either CUDA or VS, depending on what's older on your system. Older versions of VS can be downloaded [from here](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history#fixed-version-bootstrappers). Don't forget to add the new VS installation to your path. You can download older version for CUDA directly from NVIDIA's website. 
+## Benchmarks
 
-Current working combinations: VS Community Edition or VS Build Tools 17.9.2 - CUDA 12.4
- 
-# Current Stats
-PHOENIX is currently benchmarked against common Matlab Solvers for the nonlinear Schrödinger Equation as well as against itself as a CPU version. Here we demonstrate runtime results for a 1024x1024 grid per iteration in $\mu$s:
+PHOENIX has been benchmarked against MATLAB solvers and CPU implementations. Below are the runtime results (1024x1024 grid per iteration):
 
-|  | FP32 GPU  | FP64 GPU | FP32 CPU | FP64 CPU |
-| - | - | - | - | - |
-| RTX 3070ti / AMD Ryzen 6c | 311 | 1120 | 8330 | 12800 |
-| RTX 4090 / AMD Ryzen 24c | 94 | 313 | tbd | tbd |
-| A100 / AMD Milan  7763 | 125 | 232 | 378 | 504 |
+| System                     | FP32 GPU | FP64 GPU | FP32 CPU | FP64 CPU |
+|----------------------------|----------|----------|----------|----------|
+| RTX 3070 Ti / Ryzen 6c     | 311 µs   | 1120 µs  | 8330 µs  | 12800 µs |
+| RTX 4090 / Ryzen 24c       | 94 µs    | 313 µs   | TBD      | TBD      |
+| A100 / AMD Milan 7763      | 125 µs   | 232 µs   | 378 µs   | 504 µs   |
 
-old values: Scalar  `~135ms/ps`  `~465ms/ps` 
-old values: TE/TM  tbd.   `~920ms/ps` 
+---
 
-We also reproduce recent research results using PHOENIX and compare the runtimes. These are detailed in the respective publication [todo].
+## Custom Kernel Development
 
-# Custom Kernel Variables
-Right now, changing Kernels is quite easy to do. Just go to [the kernel source](include/cuda/kernel_compute.cuh) and edit the Kernel. Recompile and you are good to go!
+PHOENIX is designed to allow users to customize its computational behavior by editing the kernels. While this requires some familiarity with the codebase, we’ve provided detailed instructions to make the process as straightforward as possible, even for those with limited C++ experience.
 
-## Adding new variables to the Kernels
-Adding new user defined variables to the Kernels is also quite straight forward. All of the inputs are hardcoded into the program, but we can insert code at two places to make them available in the Kernels.
-### Definition of the variable in the [system header file](include/system/system_parameters.hpp). 
+---
 
-Insert custom variable definitions into the `Parameters` struct at the designated location. This is marked in the source file so you can't miss it.
+### Editing the Kernels
 
-Examples:
+All kernel-related computations are found in the file:
 
-```C++
-real_number custom_var; // No default value at definition
-  
-real_number custom_var = 0.5; // Default value at definition
+- **Kernel Source File**: [`include/kernel/kernel_gp_compute.cuh`](include/kernel/kernel_gp_compute.cuh)  
+
+The kernels are responsible for solving the nonlinear Schrödinger equation. To modify the kernel logic, locate the designated section within this file.
+
+#### Key Sections of the Kernel Source File
+
+- **Complete Kernel Function**:  
+  This is used for the Runge-Kutta (RK) iterator. Modify this section for changes affecting the RK solver.
+
+- **Partial Functions**:  
+  These are used for the Split-Step Fourier (SSF) solver. If you want both solvers to reflect your changes, ensure you edit these as well.
+
+---
+
+### Adding Custom Variables
+
+Adding new user-defined variables to the kernels is a two-step process. You’ll first define the variable in the program's parameter structure, then ensure it is parsed and accessible in the kernel.
+
+#### Step 1: Define the Variable
+Navigate to the **System Header File**:  
+[`include/system/system_parameters.hpp`](include/system/system_parameters.hpp)
+
+Find the `Parameters` struct and add your custom variable. There is a marked section for custom variable definitions, making it easy to locate.
+
+**Examples**:
+```cpp
+real_number custom_var; // Define without a default value
+real_number custom_var = 0.5; // Define with a default value
+complex_number complex_var = {0.5, -0.5}; // Complex variable with default value 0.5 - 0.5i
 ```
 
-### Read-In of custom variables. 
+#### Step 2: Parse the Variable
+Navigate to the **System Initialization File**:  
+[`source/system/system_initialization.cpp`](source/system/system_initialization.cpp)
 
-If setting the value directly at the definition is not an option, you can also add parsing of your variable. Go to [the system's initialization source file](source/system/system_initialization.cpp) and edit the source file according to your needs at the designated location. Examples on how to parse two or more parameters from a single input can also be found there. 
+Look for the designated location to add parsing logic. You can add a new command-line argument to set the variable's value dynamically when the program is executed.
 
-Examples:
+**Examples**:
+```cpp
+if ((index = findInArgv("--custom_var", argc, argv)) != -1)
+    p.custom_var = getNextInput(argv, argc, "custom_var", ++index);
 
-```C++
-if ( ( index = findInArgv( "--custom_var", argc, argv ) ) != -1 )
-    p.custom_var = getNextInput( argv, argc, "custom_var", ++index );
-
-if ( ( index = findInArgv( "--custom_vars", argc, argv ) ) != -1 ) {
-    p.custom_var_1 = getNextInput( argv, argc, "custom_var_1", ++index ); // <-- Note the "++index"
-    p.custom_var_2 = getNextInput( argv, argc, "custom_var_2", index ); 
-    p.custom_var_3 = getNextInput( argv, argc, "custom_var_3", index );
+if ((index = findInArgv("--custom_vars", argc, argv)) != -1) {
+    p.custom_var_1 = getNextInput(argv, argc, "custom_var_1", ++index);
+    p.custom_var_2 = getNextInput(argv, argc, "custom_var_2", index);
+    p.custom_var_3 = getNextInput(argv, argc, "custom_var_3", index);
 }
 ```
 
-If done correctly, you can now add your own variables to the Kernels, parse them using the same syntax as you can for the remaining parameters and use them in the Kernels by calling `p.custom_var`!
+Once added, the variable will be accessible in the kernel code using `p.custom_var`.
 
-## Adding new Envelopes to the Kernels
-Adding new matrices and their respective spatial envelopes is quite a bit more challenging, but also doable. You need to add the matrix to the solver, which is quite easy, add an envelope to the system header and then read-in that envelope.
+You can now pass this variable as the command-line argument 
 
-### Definition of the matrix in the [matrix container header file](include/solver/matrix_container.cuh)
-Again add the definition of your matrix at the designated location in the code. 
-
-Example:
-
-```C++
-// Macro for definition: 
-// DEFINE_MATRIX(type, name, size_scaling, condition_for_construction)
-
-DEFINE_MATRIX(complex_number, custom_matrix_plus, 1, true) \
-DEFINE_MATRIX(complex_number, custom_matrix_minus, 1, use_twin_mode) \
-//                       This ^^^^^^^^^^^^^^^^^^^ is your matrix definition
+```
+--custom_var a
+--custom_vars a b c
 ```
 
-You usually only have to change the name of your matrix. If you want to support TE/TM splitting, make sure to use two matrices, ideally with a trailing `_plus` or `_minus`. Don't forget the trailing backslashes.
+---
 
-Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix_plus[i]`!
+### Adding New Envelopes
 
-### Defining envelope parsing to fill the custom matrix during [the system initialization](source/system/system_initialization.cpp)
-Custom envelopes require three things: Definition of the envelope variable, parsing of the envelope and calculating/transferring it onto your custom matrix.
+Custom envelopes are useful for spatially varying initial conditions or parameter fields. This process involves defining the envelope, parsing it, and linking it to a matrix.
 
-Define your envelope in a group with the others in the [system header file](include/system/system_parameters.hpp). Search for `PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;` inside the file, and add your envelope to the list.
+#### Step 1: Define the Envelope
+Navigate to the **System Header File**:  
+[`include/system/system_parameters.hpp`](include/system/system_parameters.hpp)
 
-Example:
-    
-```C++
+Locate the envelope definitions, marked with comments for easy identification. Add your envelope to the list.
+
+**Example**:
+```cpp
 PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential, custom_envelope;
-// This is your envelope definition                                   ^^^^^^^^^^^^^^^
+// Add your envelope to the end of this line
 ```
 
-Add parsing of your envelope inside the [system initialization source file](source/system/system_initialization.cpp). Search for the designated location inside the code. The other envelopes also get parsed there.
+#### Step 2: Parse the Envelope
+Navigate to the **System Initialization File**:  
+[`source/system/system_initialization.cpp`](source/system/system_initialization.cpp)
 
-Example:
+Find the section where other envelopes are parsed, and add your envelope.
 
-```C++
-custom_envelope = PC3::Envelope::fromCommandlineArguments( argc, argv, "customEnvelope", false );
-// ^^^^^^^^^^^ this is your envelope name in the code and        this   ^^^^^^^^^^^^^ is the name used for parsing the command line.
+**Example**:
+```cpp
+custom_envelope = PC3::Envelope::fromCommandlineArguments(argc, argv, "customEnvelope", false);
+// The name used for parsing the command line is "customEnvelope"
 ```
 
-This envelope can then be passed via the commandline using `--customEnvelope ...`
+You can now pass this envelope as a command-line argument using:
+```
+--customEnvelope [evelope arguments]
+```
 
-Finally, add the evaluation of the envelope. Go to the [solver initialization source file](source/cuda_solver/solver/solver_initialization.cu), search for the designated location in the code and copy one of the already defined initialization sections. Change the variable names and you are done!
+#### Step 3: Initialize the Envelope
+Navigate to the **Solver Initialization File**:  
+[`source/cuda_solver/solver/solver_initialization.cu`](source/cuda_solver/solver/solver_initialization.cu)
 
-Example:
-```C++
+Find the designated location for envelope evaluation and add your code. This step ensures the envelope’s values are transferred to the appropriate matrix.
+
+**Example**:
+```cpp
 std::cout << "Initializing Custom Envelopes..." << std::endl;
-if ( system.custom_envelope.size() == 0 ) {
-    //      ^^^^^^^^^^^^^^^  make sure this matches your definition
+if (system.custom_envelope.size() == 0) {
     std::cout << "No custom envelope provided." << std::endl;
 } else {
-    system.custom_envelope( matrix.custom_matrix_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0 /* Default if no mask is applied */ );
-    //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^ this too
-    if ( system.p.use_twin_mode ) {
-        system.custom_envelope( matrix.custom_matrix_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0 /* Default if no mask is applied */ );
-        //     ^^^^^^^^^^^^^^^  and    ^^^^^^^^^^^^^^^^^^^^^ this too
+    system.custom_envelope(matrix.custom_matrix_plus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Plus, 0.0);
+    if (system.p.use_twin_mode) {
+        system.custom_envelope(matrix.custom_matrix_minus.getHostPtr(), PC3::Envelope::AllGroups, PC3::Envelope::Polarization::Minus, 0.0);
     }
 }
 ```
 
-You are done! The host matrix will automatically get synchronized with the device matrix on the GPU whenever its device pointer is used.
+The envelope will now initialize the custom matrix during runtime.
 
-As a final note, you can also add outputting of your matrix in the [solver matrix output methods](source/cuda_solver/solver/solver_output_matrices.cu). Go the the `outputInitialMatrices()` method and insert your code at the designated location.
+---
 
-Example:
+### Adding New Matrices
 
-```C++
-if ( system.doOutput( "all" ) ) // Or add your custom keys here
-    system.filehandler.outputMatrixToFile( matrix.custom_matrix.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "custom_matrix" );
-    //                             make sure this ^^^^^^^^^^^^^ again matches your definition.    This is the output file name ^^^^^^^^^^^^^ without the ".txt"
+To add new matrices for use in the solver, you’ll need to define the matrix, ensure it is properly constructed, and link it to the envelopes.
+
+#### Step 1: Define the Matrix
+Navigate to the **Matrix Container Header File**:  
+[`include/solver/matrix_container.cuh`](include/solver/matrix_container.cuh)
+
+Use the macro `DEFINE_MATRIX` to define your matrix. Add your definition at the designated location.
+
+**Example**:
+```cpp
+DEFINE_MATRIX(complex_number, custom_matrix_plus, 1, true) \
+DEFINE_MATRIX(complex_number, custom_matrix_minus, 1, use_twin_mode) \
 ```
 
-You can of course also load external .txt matrices using the regular envelope syntax.
+- **Type**: Use `complex_number` or `real_number`.  
+- **Name**: The matrix name (`custom_matrix_plus`).  
+- **Condition for Construction**: Define conditions (`use_twin_mode`).
+
+#### Step 2: Link to Envelopes
+Once defined, matrices can be linked to envelopes in the solver initialization file:  
+[`source/cuda_solver/solver/solver_initialization.cu`](source/cuda_solver/solver/solver_initialization.cu)
+
+Use the initialization code as shown in the envelope example.
+
+---
+
+### Testing and Debugging
+
+After making these changes:
+1. **Compile the Code**: Rebuild the program using `make`.  
+2. **Test Your Changes**: Run the executable with the new command-line arguments or input files.  
+3. **Output the Results**: Use the matrix output functionality in `solver_output_matrices.cu` to inspect the results.
+
+**Example**:
+```cpp
+system.filehandler.outputMatrixToFile(matrix.custom_matrix.getHostPtr(), system.p.N_x, system.p.N_y, header_information, "custom_matrix");
+```
+
+This outputs your matrix as a `.txt` file for easy analysis.
+
+---
+
+These instructions are designed to guide users through customizing the PHOENIX solver with minimal prior C++ experience. For further assistance, refer to existing code and comments within the files to better understand the structure. The compiler will flag errors, which can help identify and correct mistakes during the editing process.
+
+---
+
+## Current Issues
+- SSFM does not work for TE/TM modes.
+- Code refactoring required to improve readability.

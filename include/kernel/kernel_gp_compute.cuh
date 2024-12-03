@@ -29,8 +29,13 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 cur
     const Type::real g_c = args.p.g_c;
     const Type::real gamma_c = args.p.gamma_c;
 
+    //==========================================================================================//
+    //==================================== Scalar GP Kernel ====================================//
+    //==========================================================================================//
     // MARK: Scalar
+
     if constexpr ( not tmp_use_tetm ) {
+        // Specialized Benchmark for CPU
 #if defined( BENCH ) && defined( USE_CPU )
         const Type::complex in_wf = io.in_wf_plus[i];
         const Type::complex in_wf_mi = io.in_wf_plus_i[i];
@@ -41,6 +46,7 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 cur
         wf_plus -= Type::real( 0.5 ) * gamma_c * in_wf;
 
 #else
+
         const Type::complex in_wf = io.in_wf_plus[i];
         // Use this for -i*in_wf
 
@@ -104,6 +110,9 @@ PHOENIX_GLOBAL PHOENIX_COMPILER_SPECIFIC void gp_scalar( int i, Type::uint32 cur
         io.out_wf_plus[i] = wf_plus;
 
     } else {
+        //==========================================================================================//
+        //===================================== TE/TM GP Kernel ====================================//
+        //==========================================================================================//
         // MARK: TE/TM
         const Type::complex in_wf_plus = io.in_wf_plus[i];
         const Type::complex in_wf_minus = io.in_wf_minus[i];
