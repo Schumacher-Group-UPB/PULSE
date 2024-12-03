@@ -50,7 +50,7 @@ When using SFML rendering, you need to either install all SFML libraries correct
 ### Build without rendering
 1 - Clone the repository using 
 ```bash
-git clone https://github.com/AG-Schumacher-UPB/PHOENIX
+git clone https://github.com/Schumacher-Group-UPB/PHOENIX
 ```
 
 2 - Compile PHOENIX using 
