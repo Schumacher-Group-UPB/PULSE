@@ -1,8 +1,13 @@
 # Coherent Excitation of Polariton Topological Corner States in Large AAH-SSH Potential Lattices
 
 This example explores the stability and excitation of polariton topological corner states in large 2D AAH-SSH potential lattices, enabled by the computational efficiency of PHOENIX. These systems extend prior studies to significantly larger structures, utilizing a grid of $9000 \times 9000$ points and $272 \times 272$ potential wells. The robustness of topologically protected states is demonstrated in this extended setup, which is relevant for applications such as unidirectional signal propagation, optical communication, and quantum information processing.
+To describe the dynamics of the polariton condensate under resonant excitation we solve the following form of the Gross-Pitaevskii model:
 
-The potential well distribution in the lattice is modeled by:
+$$
+\partial_t\psi= \frac{-i}{\hbar}\biggl(-\frac{\hbar^2}{2m}\nabla^2+V(x,y)+g|\psi_\pm|^2- \frac{i\hbar}{2}\gamma \biggr) \psi+E,
+$$
+
+Here $m=10^{-4}m_\mathrm{e}$ defines the effective polariton mass, $\gamma=0.005~\mathrm{ps^{-1}}$ the polariton loss rate, $g=2~\mathrm{\upmu eV\upmu m^2}$ the polariton-polariton interaction strength, and $E=E_0\mathrm{exp}\left(-i\omega t\right)$ the resonant excitation profile. The potential well distribution in the lattice is modeled by:
 
 $$
 V(x, y) = \sum_n V_0 \exp\left(-\frac{(x-x_n)^2 + (y\pm y_n)^2}{w_v^2}\right)^{10}
