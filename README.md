@@ -30,9 +30,9 @@ If you desire custom modifications to the code, or none of the precompiled versi
 ### Build with SFML rendering
 1 -  Clone the repository using
 ```    
-    git clone --recursive https://github.com/AG-Schumacher-UPB/PHOENIX
+    git clone --recursive https://github.com/Schumacher-Group-UPB/PHOENIX
 ``` 
-This will also download the SFML repository. I suggest also downloading a precompiled version of the library using the link at the top.
+This will also download the SFML repository. We suggest also downloading a precompiled version of the library using the link at the top.
 
 2 - Build SFML using CMake and/or MSVC
 
