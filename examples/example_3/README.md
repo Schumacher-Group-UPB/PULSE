@@ -7,7 +7,7 @@ Polariton condensates' spin degrees of freedom, originating from coupled exciton
 - **Full-spin vortices**: Parallel ($m_+ = m_-$) or antiparallel ($m_+ = -m_-$) vortices in both spin components.
 
 Spin-orbit interaction, induced by TE-TM (longitudinal-transverse) splitting, couples the vortex states of the two spin components, breaking symmetry and creating diverse vortex configurations.
-To describe the dynamics of the spinor polariton condensate under non-resonant excitation, we solve the following form of the Gross-Pitaevskii model with the phenomenological extension of an excitonic reservoir:
+To simulate the dynamics of the spinor polariton condensate under non-resonant excitation, we solve the following form of the Gross-Pitaevskii model with the phenomenological extension of an excitonic reservoir:
 
 $$
 \partial_t\psi_\pm= \frac{-i}{\hbar}\biggl(-\frac{\hbar^2}{2m_\mathrm{eff}}\nabla^2+g|\psi_\pm|^2+g_\mathrm{r}n_\pm +g_\mathrm{x}n_\mp + \frac{i\hbar}{2} [Rn-\gamma] \biggr) \psi_\pm +J_\pm \psi_∓ ,
