@@ -5,9 +5,9 @@ Related Publications:
 
 [![arXiv](https://img.shields.io/badge/arXiv-2411.18341-b31b1b.svg)](https://arxiv.org/abs/2411.18341)
 
-PHOENIX is a CUDA-accelerated Solver for the nonlinear two-dimensional Schrödinger Equation. Primarily developped to simulate Polariton Condensates, PHOENIX is able to do much more than that!
+PHOENIX is a CUDA-accelerated Solver for the nonlinear two-dimensional Schrödinger Equation. Primarily developed to simulate Polariton Condensates, PHOENIX is able to do much more than that!
 
-We provide multiple examples using PHOENIX in scientific work. See the [examples folder](/examples/) for an overview. We provide Jupyter Notebooks as well as MatLab files to launch PHOENIX into different configurations. Simply use one of the precompiled binaries from the [current release](https://github.com/Schumacher-Group-UPB/PHOENIX/releases/) and drop it into the same folder as the example you want to run. Make sure to edit the respective example file to match the executable.
+We provide multiple examples using PHOENIX in scientific work. See the [examples folder](/examples/) for an overview. We provide Jupyter Notebooks as well as MATLAB files to launch PHOENIX into different configurations. Simply use one of the precompiled binaries from the [current release](https://github.com/Schumacher-Group-UPB/PHOENIX/releases/) and drop it into the same folder as the example you want to run. Make sure to edit the respective example file to match the executable.
 
 # Requirements
 - [MSVC](https://visualstudio.microsoft.com/de/downloads/) [Windows] or [GCC](https://gcc.gnu.org/) [Linux]
@@ -48,7 +48,7 @@ Note, that arguments in `[]` are optional and default to `FALSE` (or `NONE`) if 
 When using SFML rendering, you need to either install all SFML libraries correctly, or copy the .dll files that come either with building SFML yourself or with the download of precompiled versions to the main folder of your PHOENIX executable. If you do not do this and still compile with SFML support, PHOENIX will crash on launch. For the compilation, you also *need* to provide the path to your SFML installation if it's not already in your systems path. You can do this by setting the `SFML_PATH=...` variable when compiling, similar to passing `SFML=TRUE`. The SFML path needs to contain the SFML `include/...` as well as the `lib/...` folder. These are NOT contained directly in the recursively cloned SFML repository, but rather get created when building SFML yourself. They are also contained in any precompiled version of SFML, so I suggest to simply download a precompiled version.
 
 ### Build without rendering
-1 - Clone the repositry using 
+1 - Clone the repository using 
 ```bash
 git clone https://github.com/AG-Schumacher-UPB/PHOENIX
 ```
@@ -59,7 +59,7 @@ make [ARCH=NONE/ALL/XY]`
 ```
 
 ### Build with CPU Kernel
-If you, for some reason, want to compile this program as a CPU version, you can do this by adding the `CPU=TRUE` compiler flag to `make`. This is probably only usefull if you do not have a NVIDIA GPU.
+If you, for some reason, want to compile this program as a CPU version, you can do this by adding the `CPU=TRUE` compiler flag to `make`. This is probably only useful if you do not have a NVIDIA GPU.
 While nvcc can compile this into CPU code, it generally makes more sense to use [GCC](https://gcc.gnu.org/) or any other compiler of your choice, as those are generally faster and better for CPU code than nvcc.
 You can specify the compiler using the `COMPILER=` flag to `make`.
 
@@ -78,8 +78,8 @@ FP32=TRUE
 
 when using the makefile.
 
-# CUDA Architexture
-You can also specify the architexture used when compiling PHOENIX. The release binaries are compiled with a variety of Compute Capabilities (CC). To ensure maximum performance, picking the CC for your specific GPU and using 
+# CUDA architecture
+You can also specify the architecture used when compiling PHOENIX. The release binaries are compiled with a variety of Compute Capabilities (CC). To ensure maximum performance, picking the CC for your specific GPU and using 
 
 ```
 ARCH=xy
@@ -98,7 +98,7 @@ when using the Makefile, where xy is your CC, is most beneficial.
 Here are some common errors and how to hopefully fix them
 
 ### Errors on Compilation even though VS and CUDA are installed, CUDA and cl are in the path variable
-If you get syntax or missing file errors, your Visual Studio installation may be incompatible with your current CUDA version. Try updating or downgrading either CUDA or VS, depending on what's older on your system. Older versions of VS can be downloaded [from here](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history#fixed-version-bootstrappers). Don't forget to add the new VS installation to your path. You can download older version for CUDA directly from Nvidias website. 
+If you get syntax or missing file errors, your Visual Studio installation may be incompatible with your current CUDA version. Try updating or downgrading either CUDA or VS, depending on what's older on your system. Older versions of VS can be downloaded [from here](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history#fixed-version-bootstrappers). Don't forget to add the new VS installation to your path. You can download older version for CUDA directly from NVIDIA's website. 
 
 Current working combinations: VS Community Edition or VS Build Tools 17.9.2 - CUDA 12.4
  
@@ -174,7 +174,7 @@ You usually only have to change the name of your matrix. If you want to support 
 Your matrix is now available inside the Kernels using `dev_ptrs.custom_matrix_plus[i]`!
 
 ### Defining envelope parsing to fill the custom matrix during [the system initialization](source/system/system_initialization.cpp)
-Custom envelopes require three things: Definition of the envelope variable, parsing of the envelope and calculating/transfering it onto your custom matrix.
+Custom envelopes require three things: Definition of the envelope variable, parsing of the envelope and calculating/transferring it onto your custom matrix.
 
 Define your envelope in a group with the others in the [system header file](include/system/system.hpp). Search for `PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential;` inside the file, and add your envelope to the list.
 
@@ -182,7 +182,7 @@ Example:
     
 ```C++
 PC3::Envelope pulse, pump, mask, initial_state, fft_mask, potential, custom_envelope;
-// This is your envelope defintion                                   ^^^^^^^^^^^^^^^
+// This is your envelope definition                                   ^^^^^^^^^^^^^^^
 ```
 
 Add parsing of your envelope inside the [system initialization source file](source/system/system_initialization.cpp). Search for the designated location inside the code. The other envelopes also get parsed there.
