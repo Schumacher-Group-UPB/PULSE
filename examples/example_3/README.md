@@ -21,7 +21,7 @@ Here $m_\mathrm{eff}= 10^{-4}m_\mathrm{e}$ defines the effective polariton mass,
 A $x$-linearly polarized continuous-wave pump with a ring profile was used:
 
 $$
-P_\pm(\textbf{r}) = P_0\frac{\textbf{r}^2}{w_p^2} \exp\left(\frac{\textbf{r}^2}{w_p^2}\right),
+P_\pm(\textbf{r}) = P_0\frac{\textbf{r}^2}{w_p^2} \exp\left(-\frac{\textbf{r}^2}{w_p^2}\right),
 $$
 
 with $P_0 = 100~\mu\text{m}^{-2}\text{ps}^{-1}$ and radius $w_p$.
