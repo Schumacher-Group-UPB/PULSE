@@ -9,7 +9,7 @@ $$
 \partial_t n = P(x,y) - (\gamma_\mathrm{r}+R|\psi|^2)n.
 $$
 
-Here $m=0.5\cdot 10^{-4}m_\mathrm{e}$ defines the effective polariton mass, $\gamma=0.16~\mathrm{ps^{-1}}$ the polariton and $\gamma_\mathrm{r}=1.5\gamma$ the reservoir loss rate, $g=6~\mathrm{\upmu eV\upmu m^2}$ the polariton-polariton and $g_\mathrm{r}=2g$ the polariton-exciton interaction strength, and $R = 0.01 \mathrm{ps^{-1}\upmu m^2}$ the condensation rate.
+Here $m=0.5\cdot 10^{-4}m_\mathrm{e}$ defines the effective polariton mass, $\gamma=0.16~\mathrm{ps^{-1}}$ the polariton loss rate and $\gamma_\mathrm{r}=1.5\gamma$ the reservoir loss rate, $g=6~\mathrm{\upmu eV\upmu m^2}$ the polariton-polariton and $g_\mathrm{r}=2g$ the polariton-exciton interaction strength, and $R = 0.01 \mathrm{ps^{-1}\upmu m^2}$ the condensation rate.
 
 A second-order exceptional point is studied in a double-well potential described by:
 
