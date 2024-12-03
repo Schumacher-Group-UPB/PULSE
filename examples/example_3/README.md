@@ -7,8 +7,18 @@ Polariton condensates' spin degrees of freedom, originating from coupled exciton
 - **Full-spin vortices**: Parallel ($m_+ = m_-$) or antiparallel ($m_+ = -m_-$) vortices in both spin components.
 
 Spin-orbit interaction, induced by TE-TM (longitudinal-transverse) splitting, couples the vortex states of the two spin components, breaking symmetry and creating diverse vortex configurations.
+To describe the dynamics of the spinor polariton condensate under non-resonant excitation, we solve the following form of the Gross-Pitaevskii model with the phenomenological extension of an excitonic reservoir:
 
-Numerical simulations were conducted using PHOENIX to solve the coupled equations for both spinor components ($\psi_\pm$) and their reservoirs. A $x$-linearly polarized continuous-wave pump with a ring profile was used:
+$$
+\partial_t\psi_\pm= \frac{-i}{\hbar}\biggl(-\frac{\hbar^2}{2m_\mathrm{eff}}\nabla^2+g|\psi_\pm|^2+g_\mathrm{r}n_\pm +g_\mathrm{x}n_\mp + \frac{i\hbar}{2} [Rn-\gamma] \biggr) \psi_\pm +J_\pm \psi_∓ ,
+$$
+$$
+\partial_t n_\pm = P_\pm(x,y) - (\gamma_\mathrm{r}+R|\psi_\pm|^2)n_\pm.
+$$
+
+Here $m_\mathrm{eff}= 10^{-4}m_\mathrm{e}$ defines the effective polariton mass, $\gamma=0.15~\mathrm{ps^{-1}}$ the polariton loss rate and $\gamma_\mathrm{r}=1.5\gamma$ the reservoir loss rate, $g=3~\mathrm{\upmu eV\upmu m^2}$ the polariton-polariton and $g_\mathrm{r}=2g$ the polariton-exciton interaction strength for particles of identical spin, $g_\mathrm{x}=0.2g$ the cross-interaction strength between spinor components of the condensate and $R = 0.01 \mathrm{ps^{-1}\upmu m^2}$ the condensation rate. The TE-TM splitting operator is modeled by the operator $J_\pm= \Delta_\mathrm{LT}(\partial_x ∓ i\partial_y)^2$ and the TE-TM splitting strength is defined by $\Delta_\mathrm{LT}=0.025~\mathrm{meV\upmu m^2}$.
+
+A $x$-linearly polarized continuous-wave pump with a ring profile was used:
 
 $$
 P_\pm(\textbf{r}) = P_0\frac{\textbf{r}^2}{w_p^2} \exp\left(\frac{\textbf{r}^2}{w_p^2}\right),
