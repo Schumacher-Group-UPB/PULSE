@@ -9,9 +9,11 @@ Polariton condensates' spin degrees of freedom, originating from coupled exciton
 Spin-orbit interaction, induced by TE-TM (longitudinal-transverse) splitting, couples the vortex states of the two spin components, breaking symmetry and creating diverse vortex configurations.
 
 Numerical simulations were conducted using PHOENIX to solve the coupled equations for both spinor components ($\psi_\pm$) and their reservoirs. A $x$-linearly polarized continuous-wave pump with a ring profile was used:
+
 $$
 P_\pm(\textbf{r}) = P_0\frac{\textbf{r}^2}{w_p^2} \exp\left(\frac{\textbf{r}^2}{w_p^2}\right),
 $$
+
 with $P_0 = 100~\mu\text{m}^{-2}\text{ps}^{-1}$ and radius $w_p$.
 
 High computational efficiency allowed systematic scanning of vortex states across various topological charge configurations ($m_+ - m_-$, $m_+ + m_-$), as shown in Fig.~\ref{fig:example3}. These simulations revealed diverse vortex patterns and their associated real-space symmetries, driven by spin-orbit coupling.
