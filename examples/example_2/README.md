@@ -1,6 +1,15 @@
 # Algorithm-Assisted Localization of Exceptional Points in Reservoir-Coupled Polariton Condensates
 
-This section investigates the localization of exceptional points (EPs) in reservoir-coupled polariton condensates, leveraging PHOENIX's computational efficiency. Exceptional points are singularities in non-Hermitian systems where eigenvalues and eigenvectors coalesce, enabling unique phenomena like loss-induced transparency and unidirectional invisibility. These points, particularly in nonlinear systems, present challenges for precise localization due to the coupling of mode gain, loss, and energy through nonlinearities.
+This section investigates the localization of exceptional points (EPs) in reservoir-coupled polariton condensates, leveraging PHOENIX's computational efficiency. Exceptional points are singularities in non-Hermitian systems where eigenvalues and eigenvectors coalesce, enabling unique phenomena like loss-induced transparency and unidirectional invisibility. These points, particularly in nonlinear systems, present challenges for precise localization due to the coupling of mode gain, loss, and energy through nonlinearities. To describe the dynamics of the polariton condensate under non-resonant excitation, we solve the following form of the Gross-Pitaevskii model with the phenomenological extension of an excitonic reservoir:
+
+$$
+\partial_t\psi= \frac{-i}{\hbar}\biggl(-\frac{\hbar^2}{2m}\nabla^2+V(x,y)+g|\psi|^2+g_\mathrm{r} n + \frac{i\hbar}{2} [Rn-\gamma] \biggr) \psi,
+$$
+$$
+\partial_t n = P(x,y) - (\gamma_\mathrm{r}+R|\psi|^2)n.
+$$
+
+Here $m=0.5\cdot 10^{-4}m_\mathrm{e}$ defines the effective polariton mass, $\gamma=0.16~\mathrm{ps^{-1}}$ the polariton and $\gamma_\mathrm{r}=1.5\gamma$ the reservoir loss rate, $g=6~\mathrm{\upmu eV\upmu m^2}$ the polariton-polariton and $g_\mathrm{r}=2g$ the polariton-exciton interaction strength, and $R = 0.01 \mathrm{ps^{-1}\upmu m^2}$ the condensation rate.
 
 A second-order exceptional point is studied in a double-well potential described by:
 
