@@ -1,269 +1,96 @@
 x0=10; y0=10;  width=1200; height=1000;
 
 % system discretisation
-N = 256;                   %grid size
-L = 230.4;                 %real space grid length
-dxy = L/N;                 %spatial discretization step
+N = 500;                  %grid size
+dxy = 0.4;                 %spatial discretization step
+L = N*dxy;                 %real space grid length
 x = sparse(dxy*(-N/2+1:N/2)).';   %x dimension discretization
 y = sparse(dxy*(-N/2+1:N/2)).';   %y dimension discretization
 kx = (2*pi*(-N/2+1:N/2)/L).';     %wavevector discretization
 ky = (2*pi*(-N/2+1:N/2)/L).';     %wavevector discretization
 
-% set Wigner Noise and sampling
-dV = L^2/N^2;
-MultP = 1:0.25:8;
-Nj=150; 
-
-% time evolution settings
-tsave = 5;
-tav=1000;
-dt = 0.04;
-tend = 2000;
-
 % parameter definition
-hbar = 6.582119569E-1;  %hbar in eVps^-1
-mc = 5.684E-1;          %effective polariton mass
-gammaC = 0.2;           %polariton loss rate
-gammaR = 1.5*gammaC;    %reservoir loss rate    
-R = 0.015;              %condensation rate 
-gc = 6E-3;              %polariton-polariton interaction strength
-gr = 2*gc;              %polariton-reservoir interaction strength      
+hbar = 6.582119569E-4;  %hbar in eVps^-1
+mc = 5.684E-4;          %effective polariton mass
+gammaC = 0.005;         %polariton loss rate in ps^-1
+gc = 2E-6;              %polariton-polariton interaction strength in eVum^2
 
-header = {'#' 'SIZE' num2str(N) num2str(N) num2str(L) num2str(L) num2str(dxy) num2str(dxy)};
-
-% create pump profile and initial condition
-Pthr = gammaC*gammaR/R;
-wp = 65; %mum
-p = zeros(N,N);
-
-mask = zeros(N,N);
-sx = 0.325*L;
-sy = 0.325*L;
-Px = 15;
-Py = 15;
-x0 = 0;
-y0 = 0;
-
-for i=1:N
-    for j=1:N
-        r = sqrt(x(i)^2+y(j)^2);
-        p(i,j) = Pthr*exp(-r^4/wp^4);
-    end
+% run through combinations of topolgical charges
+for sec = 1:3
+if  sec == 1
+    wp = 4.5;
+    xres=30; 
+    yres=30;
+    marray = [-1 1; 0 0; 1 -1; 0 1; 1 0; 1 1; 0 -1; -1 0; -1 -1];
+elseif sec == 2
+    wp = 8;
+    xres=50; 
+    yres=50;
+    marray = [-3 1; -3 0; -3 -1; -1 3; 0 3; 1 3; -3 -1; -3 0; -3 1; 3 1; 3 0; 3 -1];
+elseif sec == 3
+    wp = 12;
+    xres=70; 
+    yres=70;
+    marray = [0 -4; -4 0; 4 0; 0 4];
 end
 
-psi=1/sqrt(4*dV)*(normrnd(0,1,N,N)+1i*normrnd(0,1,N,N));
-res=normrnd(0,1,N,N);
+[rows,~] = size(marray);
 
-wavefunction(1:N,1:N) = real(psi);
-wavefunction(N+1:2*N,1:N) = imag(psi);
+for mscan = 1:1%rows
 
-reservoir(1:N,1:N) = real(res);
-reservoir(N+1:2*N,1:N) = imag(res);
+mp = marray(mscan,1);
+mm = marray(mscan,2);
 
-writecell(header,'data/load/wavefunction_plus.txt','Delimiter',' ');
-writecell(header,'data/load/reservoir_plus.txt','Delimiter',' ');
 
-writematrix(wavefunction,'data/load/wavefunction_plus.txt','Delimiter',' ','WriteMode','append');
-writematrix(reservoir,'data/load/reservoir_plus.txt','Delimiter',' ','WriteMode','append');
+% create runstring
+str1 = 'phoenix_64.exe -tetm ';                                         %call PHOENIX with TE-TM splitting
+str2 = '--N 500 500 --L 100 100 --boundary zero zero ';                 %define the real-space grid
+str3 = '--tmax 10000 ';                                                 %time settings
+str4 = ['--initialState 0.1 add 70 70 0 0 plus 1 ',num2str(mp),' gauss+noDivide --initialState 0.1 add 70 70 0 0 minus 1 ',num2str(mm),' gauss+noDivide '];  %define initial condition
+str5 = '--g_pm 6E-7 --deltaLT 0.025E-3 ';                                                         %set GP-Parameters
+str6 = ['--pump 100 add ',num2str(wp),' ',num2str(wp),' 0 0 both 1 none gauss+noDivide+ring '];   %define pump
+str7 = '--outEvery 5 --path data/results/';                                                       %set output directory
 
-for j=1:length(MultP)
-    disp(['Amplitude multiplier = ',num2str(MultP(j))]);
-    for k=1:Nj
-        pump_new = MultP(j)*p;
-        pump(1:N,1:N) = real(pump_new);
-        pump(N+1:2*N,1:N) = imag(pump_new);
-  
-        writecell(header,'data/load/pump_plus.txt','Delimiter',' ');
-        writematrix(pump,'data/load/pump_plus.txt','Delimiter',' ','WriteMode','append');
+% execute PHOENIX
+inputstr = [str1,str2,str3,str4,str5,str6,str7];
+[status,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
 
-        % create runstring
-        str1 = 'main.exe --dw 1 --threads 2 ';  
-        str2 = ['--N ',num2str(N),' ',num2str(N),' --L ',num2str(L),' ',num2str(L),' --boundary periodic periodic ']; 
-        str3 = ['--tmax ',num2str(tend),' --tstep ',num2str(dt),' '];                                                 
-        str4 = '--pump load data/load/pump_plus.txt 1 add plus --reservoir load data/load/reservoir_plus.txt 1 add plus --initialState load data/load/wavefunction_plus.txt 1 add plus '; 
-        str5 = ['--gammaC ',num2str(gammaC),' --gammaR ',num2str(gammaR),' --gc ',num2str(gc),' --gr ',num2str(gr),' --meff ',num2str(mc),' --hbarscaled ',num2str(hbar),' --R ',num2str(R),' '];
-        str6 = ['--historyMatrix 0 ',num2str(N),' 0 ',num2str(N),' 1 --output wavefunction --outEvery ',num2str(tsave),' --path data/results/'];
+htmlString = removeAnsiCodes(cmdout);
+disp(htmlString(end-2630:end));
 
-        % execute PHOENIX
-        inputstr = [str1,str2,str3,str4,str5,str6];
-        [~,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
-        htmlString = removeAnsiCodes(cmdout);
-        disp(htmlString(end-2630:end));
+% post-processing: visualize results
+psiiniplus = readmatrix('data/results/initial_condition_plus.txt');
+psiiniplus=psiiniplus(1:N,1:N)+1i*psiiniplus(N+1:2*N,1:N);
+Y1iniplus = abs(reshape(psiiniplus,N,N)).^2;
 
-        % post-processing: save data for evaluation of the quantum coherence, the correlation function and mean and variance of averaged polariton excitation number 
-        projectdir = 'data/results/timeoutput/';
-        dinfo = dir( fullfile(projectdir, 'wavefunction*.txt'));
-        nfiles = length(dinfo); 
-        filenames = fullfile(projectdir, {dinfo.name});
-        navPsi = zeros(N^2, nfiles-tav/tsave+1);        
+psiiniminus = readmatrix('data/results/initial_condition_minus.txt');
+psiiniminus=psiiniminus(1:N,1:N)+1i*psiiniminus(N+1:2*N,1:N);
+Y1iniminus = abs(reshape(psiiniminus,N,N)).^2;
 
-        thisdata = readmatrix('load/wavefunction_plus.txt');
-        psi_k = reshape(thisdata(1:N,:)+1i*thisdata(N+1:2*N,:),N^2,1);
-        navPsi(:,1) = psi_k; 
+pump = readmatrix('data/results/pump_plus.txt');
+pump=pump(1:N,1:N)+1i*pump(N+1:2*N,1:N);
 
-        for K = 0 : nfiles-1-tav/tsave
-            thisfile = ['data/results/timeoutput/wavefunction_plus_',num2str(K+tav/tsave),'.txt'];
-            thisdata = readmatrix(thisfile);
-            psi_k = reshape(thisdata(1:N,:)+1i*thisdata(N+1:2*N,:),N^2,1);
-            navPsi(:,K+2) = psi_k; 
-            maxn(K+1) = max(max(abs(psi_k).^2));
-        end
+psi = readmatrix('data/results/wavefunction_plus.txt');
+psi=psi(1:N,1:N)+1i*psi(N+1:2*N,1:N);
+Y1 = abs(reshape(psi,N,N)).^2;
 
-        name = strcat('Broad',string(k),'_Pump',string(MultP(1,j)));
-        save(strcat('BroadEx/Psi/',name,'.mat'),'-v7.3',"navPsi","N","L","tend","dt","tsave","tav","gammaR","gammaC","R","gc","gr");
+psim = readmatrix('data/results/wavefunction_minus.txt');
+psim=psim(1:N,1:N)+1i*psim(N+1:2*N,1:N);
+Y1m = abs(reshape(psim,N,N)).^2;
 
-    end
+figure(2);surf(x,y,Y1);shading interp;view(2);colormap('jet');pbaspect([1 1 1]);axis tight;set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);shading interp;xlim([-xres xres]);ylim([-yres yres]);clim([0 160])
+saveas(gca,['Figure\msum=',num2str(mp+mm),'_mdif=',num2str(mp-mm),'_psip_d.png']);
+figure(3);surf(x,y,Y1m);shading interp;view(2);colormap('jet');pbaspect([1 1 1]);axis tight;set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);shading interp;xlim([-xres xres]);ylim([-yres yres]);clim([0 160])
+saveas(gca,['Figure\msum=',num2str(mp+mm),'_mdif=',num2str(mp-mm),'_psim_d.png']);
+figure(4);surf(x,y,angle(reshape(psi,N,N)));shading interp;view(2);colormap('gray');pbaspect([1 1 1]);axis tight;set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);shading interp;xlim([-xres xres]);ylim([-yres yres]);clim([-pi pi])
+saveas(gca,['Figure\msum=',num2str(mp+mm),'_mdif=',num2str(mp-mm),'_psip_arg.png']);
+figure(5);surf(x,y,angle(reshape(psim,N,N)));shading interp;view(2);colormap('gray');pbaspect([1 1 1]);axis tight;set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);shading interp;xlim([-xres xres]);ylim([-yres yres]);clim([-pi pi])
+saveas(gca,['Figure\msum=',num2str(mp+mm),'_mdif=',num2str(mp-mm),'_psim_arg.png']);
+
 end
-
+end
 function cleanedString = removeAnsiCodes(inputString)
-% Use regexprep to remove ANSI escape codes
-cleanedString = strrep(inputString, '[90m#[0m', ' ');
-cleanedString = regexprep(cleanedString, '\[0m|\[1m|\[2m|\[3m|\[4m|\[30m|\[31m|\[32m|\[33m|\[34m|\[35m|\[36m|\[37m|[93m|\[94m|\[?25h|\[2K|\[?25l|\[90m|\[A', '');
+    % Use regexprep to remove ANSI escape codes
+    cleanedString = strrep(inputString, '[90m#[0m', ' ');
+    cleanedString = regexprep(cleanedString, '\[0m|\[1m|\[2m|\[3m|\[4m|\[30m|\[31m|\[32m|\[33m|\[34m|\[35m|\[36m|\[37m|[93m|\[94m|\[?25h|\[2K|\[?25l|\[90m|\[A', '');
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% this part of the code determines the quantum coherence, the correlation function and mean and variance of averaged polariton excitation number 
-
-N=256;                                                                   
-L=230.4; 
-
-dx = L/(N-1);
-x = -L/2:dx:L/2;
-dV = L^2/N^2;
-kx = -2*pi/(2*dx):2*pi/L:2*pi/(2*dx);
-
-tend = 2000;                                                       
-dt = 0.04;                                                            
-tsave = 5;                                                            
-
-Nj=5;                                                                      
-
-tav=1000;                                                                  
-
-MultP = 1:0.5:8;                                                            
-
-DirName='BroadEx/Psi/';                                                       
-PsiName="navPsi";
-
-QCplt=zeros(1,length(MultP));                                              
-g2plt=zeros(1,length(MultP));
-g2anplt=zeros(1,length(MultP));
-ncplt=zeros(1,length(MultP));
-dnc2plt=zeros(1,length(MultP));
-
-for m=1:length(MultP)                                                       
-    %% Average berechnen
-    AvPsi=zeros(N^2,tend/tsave+1);                                      
-    Avk2=zeros(N^2,tend/tsave+1);                                       
-    Avk4=zeros(N^2,tend/tsave+1);
-    for j=1:Nj
-        DataName=strcat('Broad',string(j),'_Pump',string(MultP(1,m)),'.mat');  
-        load(strcat(DirName,DataName),PsiName);                              
-        Psi=eval(PsiName);
-        AvPsi = AvPsi+abs(Psi).^2;                                         
-        temp=zeros(N^2,tend/tsave+1);
-        for i=1:tend/tsave+1
-            temp(:,i)=reshape(abs(fftshift(fft2(reshape(Psi(:,i),N,N)))*dV/L-0.5).^2,N^2,1);    
-        end
-        Avk2 = Avk2+temp;                                                   
-        Avk4 = Avk4+temp.^2;
-     
-    end
-    AvPsi=sum(AvPsi(:,tav/tsave+1:end),2)/(Nj*((tend-tav)/tsave+1));    
-    Avk2=sum(Avk2(:,tav/tsave+1:end),2)/(Nj*((tend-tav)/tsave+1));
-    Avk4=sum(Avk4(:,tav/tsave+1:end),2)/(Nj*((tend-tav)/tsave+1));
-    save(strcat(DirName,'AvData_Pump',string(MultP(1,m)),'.mat'),"Avk4","AvPsi","Avk2");
-
-    %% Quatum Coherence berechnen
-    load(strcat(DirName,'AvData_Pump',string(MultP(1,m)),'.mat'),"Avk4","Avk2");
-    
-    if mod(N,2)==0                                                     
-        middle=N/2;
-    else
-        middle=floor(N/2)+1;
-    end
-    
-    temp=reshape(Avk2,N,N);                                             
-    for i=middle+1:N
-        if temp(i,middle)<250
-            rk=kx(1,i+1);
-            break
-        end
-    end
-
-    Np=0;                                                               
-    for i=1:N^2
-        if sqrt(kx(1,getx(i,N))^2+kx(1,gety(i,N))^2)<=rk
-            Np=Np+1;
-        end
-    end
-    
-    k2=zeros(Np,1);                                                    
-    k4=zeros(Np,1);
-    countk=1;
-    for i=1:N^2
-        if sqrt(kx(1,getx(i,N))^2+kx(1,gety(i,N))^2)<=rk
-            k2(countk,1)=Avk2(i,1);
-            k4(countk,1)=Avk4(i,1);
-            countk=countk+1;
-        end
-    end
-
-    nc=sum(k2-0.5)/Np;                                                 
-    dnc2=(sum(k4-k2)-sum((k2-0.5).^2))/Np;
-    alpha02=sqrt(nc^2+nc-dnc2);
-    nbar=nc-alpha02;
-    besen=besseli(0,(2*alpha02)/((nbar+1)^2-nbar^2));
-    g2=1+(dnc2-nc)/(nc^2);
-    g2an=2-(1+(nbar/alpha02))^(-2);
-    Qc=(1-exp(-(2*alpha02)/((nbar+1)^2-nbar^2))*besen)/((nbar+1)^2-nbar^2);
-    
-    save(strcat(DirName,'AvData_Pump',string(MultP(1,m)),'.mat'),"Qc","g2","g2an","nc","dnc2","alpha02","nbar",'-append');
-
-    QCplt(1,m)=Qc;
-    g2plt(1,m)=g2; 
-    g2anplt(1,m)=g2an;
-    ncplt(1,m)=nc;
-    dnc2plt(1,m)=dnc2;
-end
-
-F1=figure;
-set(gcf,'Position',[100 300 1500 1500],'Color','w');
-
-figure(F1);
-subplot(2,2,3);
-plot(MultP,QCplt(1,:),'Color','b','LineWidth',2.5);
-ylabel('Quantum Coherence $\mathcal{C}$','Interpreter','latex','FontSize',20); xlabel('$P_0 [P_{thr}]$','Interpreter','latex','FontSize',20);
-subplot(2,2,4);
-plot(MultP,g2plt(1,:),'Color','b','LineWidth',2.5); hold on;
-plot(MultP,g2anplt(1,:),'Color','r','LineStyle','--','LineWidth',2.5); hold off;
-ylabel('$g^{(2)}$-Function','Interpreter','latex','FontSize',20); xlabel('$P_0 [P_{thr}]$','Interpreter','latex','FontSize',20); legend('$g^{(2)}$ aus $\langle n_c\rangle, \langle(\Delta n_c)^2\rangle$','$g^{(2)}$ aus $\overline{n}, |\alpha_0|^2$','Interpreter','latex','FontSize',20)
-subplot(2,2,2);
-semilogy(MultP,ncplt(1,:),'Color','b','LineWidth',2.5); hold on;
-semilogy(MultP,dnc2plt(1,:),'Color','r','LineWidth',2.5); hold off;
-xlabel('$P_0 [P_{thr}]$','Interpreter','latex','FontSize',20); legend('$\langle n_c\rangle$','$\langle(\Delta n_c)^2\rangle$','Interpreter','latex','FontSize',20)
-
-for m=1:length(MultP)
-    load(strcat(DirName,'AvData_Pump',string(MultP(1,m)),'.mat'),"AvPsi","Avk2");
-    figure(F1);
-    subplot(2,2,1);
-    surf(x,x,reshape(AvPsi,N,N)); colormap(flipud(gray)); shading interp; pbaspect([1 1 1]); axis([x(1,1) x(1,end) x(1,1) x(1,end)]); view([0 90]); CO=colorbar; box on;
-    ylabel('$y [\mu m]$','Interpreter','latex','FontSize',20); xlabel('$x [\mu m]$','Interpreter','latex','FontSize',20); ylabel(CO,'$\overline{|\Psi|^2} [\mu m^{-2}]$','Interpreter','latex','FontSize',20,'Rotation',270); title('$\overline{|\Psi|^2}$ in Real-Space','Interpreter','latex','FontSize',20);
-    subplot(2,2,3);
-    plot(MultP,QCplt(1,:),'Color','b','LineWidth',2.5); hold on;
-    scatter(MultP(1,m),QCplt(1,m),125,'red','x','LineWidth',1.5); hold off;
-    ylabel('Quantum Coherence $\mathcal{C}$','Interpreter','latex','FontSize',20); xlabel('$P_0 [P_{thr}]$','Interpreter','latex','FontSize',20); legend('$\mathcal{C}$','current Data-Set','Interpreter','latex','FontSize',20,'Location','southeast')
-    saveas(F1,strcat(DirName,'Bilder/Skala_MultP',string(MultP(1,m)),'.png'));
-    subplot(2,2,1);
-    surf(kx,kx,reshape(Avk2,N,N)); colormap(flipud(gray)); shading interp; pbaspect([1 1 1]); axis([-1 1 -1 1]); view([0 90]); CO=colorbar; box on; %axis([kx(1,1) kx(1,end) kx(1,1) kx(1,end)]);
-    ylabel('$k_y [\frac{1}{\mu m}]$','Interpreter','latex','FontSize',20); xlabel('$k_x [\frac{1}{\mu m}]$','Interpreter','latex','FontSize',20); title('$\overline{|\Psi|^2}$ in k-Space','Interpreter','latex','FontSize',20); %ylabel(CO,'$\overline{|\Psi|^2} [\mu m^{-2}]$','Interpreter','latex','FontSize',20,'Rotation',270);
-    saveas(F1,strcat(DirName,'Bilder/Skala_kS_MultP',string(MultP(1,m)),'.png'));
-end
-
-
-function ret=gety(i,N)
-    ret = floor((i-1)/N)+1;
-end
-function ret=getx(i,N)
-    ret = mod(i-1,N)+1;
-end        
