@@ -101,7 +101,6 @@ gc = 2E-3;              %polariton-polariton interaction strength in eVum^2
 
 % create potential and initial condition
 load('potential_N600.mat'); pot=vpotmatrix;
-load('initialstate_600.mat','psi');
 
 I_Noise = 1E-1; psi=I_Noise*(-1+2*rand(N,N)-1i+2*1i*rand(N,N)); 
 
