@@ -50,6 +50,8 @@ str7 = '--path data/results/';                                                  
 inputstr = [str1,str2,str3,str4,str5,str6,str7];
 [~,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
 
+% in cmdout you can view the output of PHOENIX
+
 %post-processing: visualize results
 psi = readmatrix('data/results/wavefunction_plus.txt');
 psi=psi(1:N,1:N)+1i*psi(N+1:2*N,1:N);
