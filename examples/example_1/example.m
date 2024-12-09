@@ -49,8 +49,6 @@ str7 = '--path data/results/';                                                  
 % execute PHOENIX
 inputstr = [str1,str2,str3,str4,str5,str6,str7];
 [~,cmdout] = system(inputstr,'CUDA_VISIBLE_DEVICES','0');
-htmlString = removeAnsiCodes(cmdout);
-disp(htmlString(end-2630:end));
 
 %post-processing: visualize results
 psi = readmatrix('data/results/wavefunction_plus.txt');
